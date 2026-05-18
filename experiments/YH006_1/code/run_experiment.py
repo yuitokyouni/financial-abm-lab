@@ -186,6 +186,7 @@ def run_lob_trial_smoke(
     max_normal_orders: int = 500,
     c_ticks: float = 28.0,
     q_const: Optional[int] = None,
+    mmfcn_order_volume: Optional[int] = None,
 ) -> SimResult:
     """LOB smoke (S2 plan v2 §3.5 / 修正 4): WInitLoggingSpeculationAgent の
     wiring 動作確認用。短縮 sim 長で agent parquet に w_init non-NaN を assertion。
@@ -229,6 +230,9 @@ def run_lob_trial_smoke(
             max_normal_orders=max_normal_orders,
         )
     cfg["FCNAgents"]["numAgents"] = num_fcn
+    # S5.6: MMFCN orderVolume override (Phase 1 後方互換、None 経路は既存挙動 bit-一致)
+    if mmfcn_order_volume is not None:
+        cfg["FCNAgents"]["orderVolume"] = int(mmfcn_order_volume)
     # S2: w_init logging subclass。S4-S5: A1 ablation で QConst subclass へ差替。
     if is_ablation_a1:
         cfg["SGAgents"]["class"] = "QConstSpeculationAgent"
@@ -321,12 +325,18 @@ def run_lob_trial_smoke(
 # LOB full-length runner (S3 plan v2 §3.2、Mac でのみ実行可、PAMS 必要)
 # ---------------------------------------------------------------------------
 
-def run_lob_trial(cond_name: str, seed: int, q_const: Optional[int] = None) -> SimResult:
+def run_lob_trial(
+    cond_name: str, seed: int,
+    q_const: Optional[int] = None,
+    mmfcn_order_volume: Optional[int] = None,
+) -> SimResult:
     """LOB full-length 1 trial (warmup=200, main=1500、Phase 1 default 設定)。
 
     `run_lob_trial_smoke` を `LOB_PARAMS` で driven。S4-S5 で `q_const` を渡すと A1
-    ablation 経路 (QConstSpeculationAgent 切替) が有効。wealth_ts は終了時 1 snapshot
-    のみ取る (smoke と同じ実装)。
+    ablation 経路 (QConstSpeculationAgent 切替) が有効。S5.6 で `mmfcn_order_volume`
+    を渡すと MMFCN sensitivity scan 経路 (cfg["FCNAgents"]["orderVolume"] override)。
+    両者とも None 経路は既存挙動と bit-一致 (Phase 1 後方互換 protocol、S4 §0.4 と同)。
+    wealth_ts は終了時 1 snapshot のみ取る (smoke と同じ実装)。
     """
     from config import LOB_PARAMS, CONDITIONS as _CONDS  # noqa: E402
     p = LOB_PARAMS
@@ -345,6 +355,7 @@ def run_lob_trial(cond_name: str, seed: int, q_const: Optional[int] = None) -> S
         max_normal_orders=p["max_normal_orders"],
         c_ticks=p["c_ticks"],
         q_const=q_const,
+        mmfcn_order_volume=mmfcn_order_volume,
     )
 
 
@@ -355,15 +366,22 @@ def run_lob_trial(cond_name: str, seed: int, q_const: Optional[int] = None) -> S
 def run_one_trial(
     cond_name: str, seed: int, out_dir: Optional[Path] = None,
     is_lob_smoke: bool = False, q_const: Optional[int] = None,
+    mmfcn_order_volume: Optional[int] = None,
 ) -> SimResult:
     cond = CONDITIONS[cond_name]
     if cond.world == "agg":
         result = run_aggregate_trial(cond_name, seed)
     elif cond.world == "lob":
         if is_lob_smoke:
-            result = run_lob_trial_smoke(cond_name, seed, q_const=q_const)
+            result = run_lob_trial_smoke(
+                cond_name, seed, q_const=q_const,
+                mmfcn_order_volume=mmfcn_order_volume,
+            )
         else:
-            result = run_lob_trial(cond_name, seed, q_const=q_const)
+            result = run_lob_trial(
+                cond_name, seed, q_const=q_const,
+                mmfcn_order_volume=mmfcn_order_volume,
+            )
     else:
         raise ValueError(f"unknown world: {cond.world}")
 

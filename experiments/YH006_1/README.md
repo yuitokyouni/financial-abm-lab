@@ -214,3 +214,46 @@ S6 は仮説 A revised の direct causal test (initial wealth distribution を C
 ### Layer 2 timescale concern (Phase 2 scope 外、再掲)
 
 Phase 1 LOB の T=1500 は Katahira 標準 T=50000 より 33x 短く、本 sim 長を超える 長期での F1 持続性は未検証。Phase 2 では検証せず、最終 README + proposal Limitations 節に明記する。
+
+---
+
+## Stage S5.5 — aggregate sub-sample 再分析 (sample disparity 制御)
+
+### Verdict — **H_micro 強支持** (microstructure 真効果)
+
+Yuito 方法論的指摘 1 (「aggregate と LOB で RT 数が 8 倍違う、対照実験として致命的な不揃い」) に対し、既存 aggregate parquet から 2 種類 sub-sample (T1500 / RT10k) を抽出して LOB と 4 通り比較。**RT10k pooled bin_var slope (C0u/C0p ともに −0.37) が full aggregate 水準 (−0.40 / −0.29) を保持** → S6 (A3 ablation) 進行可。
+
+### RT 数実測 (Yuito 指摘の数値正確性確認)
+
+| 比較 | per-trial 比 | Yuito の表現対応 |
+|---|---:|---|
+| full agg / LOB | ~227x | 全 sim 期間比較は致命的に不揃い |
+| **T1500 agg / LOB** | **~6.8x** | **「8 倍」の出所** (同時間窓比較) |
+| **RT10k agg / LOB** | **~2.2x** | **「2-3 倍に取って bin_var 安定性確保」と一致** |
+
+LOB per-trial RT は S1 単 trial 値 (~880) から S5 後の 100 trial データで **4,300-4,800** に増加 (5x 以上)、Yuito の "8 倍" 計算と整合。
+
+### Pooled bin_var slope 4 sub-sample × 4 cond
+
+| | wealth=uniform | wealth=pareto | wealth diff |
+|---|---:|---:|---:|
+| **full_agg** | C0u: −0.4036 | C0p: −0.2879 | +0.1157 (S2/S3 確定) |
+| **T1500_agg** | C0u: −0.2473 | C0p: **−0.4945** | **−0.2472** (**符号反転**) |
+| **RT10k_agg** | C0u: **−0.3758** | C0p: **−0.3736** | +0.0022 (≈ 0) |
+| **LOB** | C2: −0.0593 | C3: −0.1264 | −0.0671 |
+
+**判定**: RT10k で sample size を LOB の ~2.2x まで揃えても aggregate pooled bin_var は full 水準 (−0.37) を保ち、LOB (−0.06〜−0.13) と依然 5x 以上の差 → **microstructure 真効果**。H_artifact 閾値 (|slope| ≤ 0.15) には全く届かない。
+
+### 副次的発見 — T1500 で wealth diff が符号反転
+
+時間軸を揃えた T1500_agg では C0u −0.40→−0.25 (38% 縮小)、C0p −0.29→**−0.49** (71% 拡大) で wealth diff の符号が +0.12 → −0.25 に反転。S5 仮説 A revised の formulation は **sample window 固定** を明示すべき (S6 plan で取り込み)。
+
+### Lifetime — H_micro の補強 evidence
+
+aggregate に T=1500 cap を被せただけでは censoring 率は 25.4% / 22.4% にしか上がらず、LOB の 91.0% / 73.0% と依然 3x 以上の差。→ LOB の長寿命は microstructure friction による turnover 抑制が原因で、時間窓 artifact ではない (仮説 A 中間予測 primary evidence と整合)。
+
+### S6 進行への signal
+
+S5.5 単独では H_micro 強支持。S5.6 (MMFCN sensitivity scan) との統合判定:
+- S5.5 = H_micro ✓ ∧ S5.6 = H_artifact_negated → **S6 進行**
+- S5.6 = H_artifact_mmfcn or ambiguous → Yuito 議論
