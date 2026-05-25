@@ -3,9 +3,9 @@
 ## Development Setup
 
 ```bash
-git clone https://github.com/your-org/PRISM.git
+git clone https://github.com/yuitokyouni/PRISM.git
 cd PRISM
-pip install -e ".[dev]"
+pip install -e ".[dev,viz]"
 ```
 
 ## Code Quality
@@ -16,8 +16,9 @@ All contributions must pass:
 # Tests
 pytest
 
-# Linting
+# Linting + formatting
 ruff check src/ tests/
+ruff format --check src/ tests/
 
 # Type checking
 mypy src/prism/
