@@ -110,9 +110,29 @@
 - NER の ground truth delta は external_claim タグ済み — 生データからの再算出は未実施
 - 実市場データ接続のテストは yfinance + network 依存 (CI では skip される可能性)
 
-## 次の目標 (Phase 7: ドキュメントと公開準備)
+## Phase 7: ドキュメントと公開準備 — IN PROGRESS
 
-1. API ドキュメント整備
-2. チュートリアル (Getting Started)
-3. README 拡充
-4. 論文ドラフト用の図表一括生成スクリプト
+### 今回のセッションで達成したこと
+
+#### Phase 7a: README, チュートリアル, 図表生成スクリプト — commit 26ccc13
+1. **README.md** 拡充: プロジェクト概要、アーキテクチャ図、インストール、Quick Start、
+   CLI リファレンス、adapter/NER/fact テーブル、Python API 例、
+   新 adapter/NER 追加ガイド、開発手順
+2. **docs/getting_started.md**: ステップバイステップ チュートリアル
+   - 単一セル実行、テンソル実行、可視化、Python API
+   - per-path fact estimation、実市場データ、因果手法比較
+   - カスタム adapter 統合ガイド
+3. **scripts/generate_paper_figures.py**: 論文用図表バッチ生成
+   - 5×4×6 フルテンソル PDF/PNG ヒートマップ + LaTeX テーブル
+   - tick-size サブセット PDF + LaTeX テーブル
+   - JSON 生の結果出力 (再現性用)
+4. **.gitignore**: output/ ディレクトリ追加
+
+### テスト状態
+- **286 tests**, all passing
+- ruff clean
+
+### 次の目標 (Phase 7b)
+1. API ドキュメント (モジュールレベル docstring 整備)
+2. pyproject.toml メタデータ拡充 (authors, URLs, classifiers)
+3. CONTRIBUTING.md
