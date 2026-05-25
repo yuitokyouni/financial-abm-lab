@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from prism.pipeline import compare_causal_methods, run_cell, run_tensor
-from prism.viz import render_heatmap
+from prism.viz import export_latex_table, render_heatmap, render_latex_heatmap
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -147,6 +147,51 @@ def build_parser() -> argparse.ArgumentParser:
         "--output", type=str, default="heatmap.png",
         help="Output image file path (default: heatmap.png)",
     )
+
+    latex_hm_parser = sub.add_parser(
+        "latex-heatmap", help="Render publication-quality heatmap (PDF/PGF) for LaTeX"
+    )
+    latex_hm_parser.add_argument(
+        "--adapters", required=True, help="Comma-separated adapter names"
+    )
+    latex_hm_parser.add_argument(
+        "--ners", required=True, help="Comma-separated NER ids or paths"
+    )
+    latex_hm_parser.add_argument(
+        "--facts", required=True, help="Comma-separated fact IDs"
+    )
+    latex_hm_parser.add_argument("--seed", type=int, default=42)
+    latex_hm_parser.add_argument("--n-paths", type=int, default=10)
+    latex_hm_parser.add_argument(
+        "--per-path-facts", action="store_true", default=False,
+    )
+    latex_hm_parser.add_argument(
+        "--output", type=str, default="heatmap.pdf",
+        help="Output file path (default: heatmap.pdf)",
+    )
+
+    latex_tbl_parser = sub.add_parser(
+        "latex-table", help="Export tensor results as LaTeX tabular"
+    )
+    latex_tbl_parser.add_argument(
+        "--adapters", required=True, help="Comma-separated adapter names"
+    )
+    latex_tbl_parser.add_argument(
+        "--ners", required=True, help="Comma-separated NER ids or paths"
+    )
+    latex_tbl_parser.add_argument(
+        "--facts", required=True, help="Comma-separated fact IDs"
+    )
+    latex_tbl_parser.add_argument("--seed", type=int, default=42)
+    latex_tbl_parser.add_argument("--n-paths", type=int, default=10)
+    latex_tbl_parser.add_argument(
+        "--per-path-facts", action="store_true", default=False,
+    )
+    latex_tbl_parser.add_argument(
+        "--output", type=str, default="table.tex",
+        help="Output .tex file path (default: table.tex)",
+    )
+
     return parser
 
 
@@ -277,6 +322,46 @@ def main(argv: list[str] | None = None) -> int:
         matplotlib.use("Agg")
         render_heatmap(hm_result, output_path=out_path)
         print(f"\nHeatmap written to: {out_path}")
+
+    elif args.command == "latex-heatmap":
+        adapter_names = [a.strip() for a in args.adapters.split(",")]
+        lh_ner_paths: list[str | Path] = [resolve_ner_path(n.strip()) for n in args.ners.split(",")]
+        fact_ids = resolve_fact_ids(args.facts)
+
+        lh_result = run_tensor(
+            adapter_names=adapter_names,
+            ner_paths=lh_ner_paths,
+            fact_ids=fact_ids,
+            seed=args.seed,
+            n_paths=args.n_paths,
+            per_path_facts=args.per_path_facts,
+        )
+
+        out_path = Path(args.output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        import matplotlib
+        matplotlib.use("Agg")
+        render_latex_heatmap(lh_result, output_path=out_path)
+        print(f"LaTeX heatmap written to: {out_path}")
+
+    elif args.command == "latex-table":
+        adapter_names = [a.strip() for a in args.adapters.split(",")]
+        lt_ner_paths: list[str | Path] = [resolve_ner_path(n.strip()) for n in args.ners.split(",")]
+        fact_ids = resolve_fact_ids(args.facts)
+
+        lt_result = run_tensor(
+            adapter_names=adapter_names,
+            ner_paths=lt_ner_paths,
+            fact_ids=fact_ids,
+            seed=args.seed,
+            n_paths=args.n_paths,
+            per_path_facts=args.per_path_facts,
+        )
+
+        out_path = Path(args.output)
+        table_tex = export_latex_table(lt_result, output_path=out_path)
+        print(table_tex)
+        print(f"\nLaTeX table written to: {out_path}")
 
     return 0
 
