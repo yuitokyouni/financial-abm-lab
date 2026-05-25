@@ -163,7 +163,45 @@
 - ruff check clean, ruff format clean
 - mypy strict: 0 errors (26 files)
 
-### 次の目標 (Phase 8 候補)
-1. テストカバレッジ閾値 CI 追加
-2. FW ラベル修正済みで generate_paper_figures.py 再実行 (出力の FW 表示確認)
-3. Sphinx/pdoc による API ドキュメント自動生成 (必要に応じて)
+## Phase 8: テスト充実とCI強化 — COMPLETE
+
+### 今回のセッションで達成したこと
+
+#### Phase 8a: CLI テスト + カバレッジ閾値 — commit 3ada3c3
+1. **CLI テスト** (`tests/unit/test_cli.py`): 28 tests
+   - `build_parser()` 全 7 サブコマンドのパース確認
+   - `resolve_fact_ids()` エイリアス解決 6 テスト
+   - `resolve_ner_path()` ファイル検索 3 テスト (mock 使用)
+   - `main()` 全 7 コマンドディスパッチ (pipeline mock)
+   - CLI module coverage: 0% → 99%
+2. **85% カバレッジ閾値**: CI + pyproject.toml に `--cov-fail-under=85` 追加
+
+#### Phase 8b: market_data テスト改善 — commit d2476f3
+3. **market_data モック テスト** 5 tests 追加
+   - ImportError (yfinance 未インストール), empty data, insufficient data, multi-ticker
+   - network 不要で CI 安定性向上
+   - market_data.py coverage: 83% → 94%+
+
+#### Phase 8c: CI 拡張 + コード品質 — commits fa06f38, f5486a2, 49203e2, debb914, 59c964c
+4. **Python 3.13** CI テストマトリクスに追加 + pyproject.toml classifier
+5. **dead code 除去**: `SimulatedMarketData.to_market_data()` (未使用メソッド)
+6. **警告抑制**: pytest / generate_paper_figures.py で scipy/protobuf 警告を非表示
+7. **.gitignore**: `.coverage`, `htmlcov/` 追加
+8. **CONTRIBUTING.md**: 85% カバレッジ要件の記載追加
+
+### テスト状態
+- **314 tests** (unit: 259, integration: 55), all passing
+- ruff check clean, ruff format clean
+- mypy strict: 0 errors (26 files)
+- coverage: ≥86% (unit only), ≥89% (full suite)
+- `pip install -e ".[dev,viz]"` OK
+- `prism --help`, `from prism import run_cell, run_tensor` OK
+
+### FW ラベル確認
+- `ADAPTER_LATEX_LABELS["fw"] = "FW"` 確認済み (commit 422a7e3)
+- `generate_paper_figures.py` 再実行中 — 出力 FW 表示確認予定
+
+### 次の目標 (Phase 9 候補)
+1. Sphinx/pdoc による API ドキュメント自動生成
+2. GitHub Release / PyPI パッケージ公開準備
+3. カバレッジ 90%+ へのさらなるテスト強化
