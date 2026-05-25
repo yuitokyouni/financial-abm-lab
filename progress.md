@@ -8,6 +8,15 @@ Scientific validation complete. 30/120 cells valid (JPX 2014 NER only).
 SG and FW adapters retain genuine discriminating power over ZI-C null.
 All adapter answer smuggling removed. See docs/FINAL_REPORT.md for details.
 
+## Verification Session (2026-05-25)
+
+Verified project completeness:
+- 306 unit tests pass (86s), 15 DiD tests pass (106s)
+- All 5 adapters: apply_intervention uses structural constraints only (tick_size, transaction_cost)
+- JPX 2014 NER: empirically-derived DiD deltas with CI95 and bootstrap
+- FINAL_REPORT.md: comprehensive, honest about limitations (CI95 crossing zero, 1/4 NERs valid)
+- Committed outstanding harness/meta changes (.gitignore, AGENT_PROMPT.md, harness.sh)
+
 ---
 
 ## Phase A: 1セル検証（J-Quants × JPX 2014） — COMPLETE
