@@ -88,4 +88,17 @@ ground_truth_delta:
       - "Colliard & Hoffmann 2017"
       - "external_claim"
 
+  - fact_id: "squared_return_acf"
+    delta_hat: 0.04
+    ci95: [0.00, 0.08]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover"
+    unit: "correlation"
+    references:
+      - "Colliard & Hoffmann 2017"
+      - "external_claim"
+
 data_hashes: {}

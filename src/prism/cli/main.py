@@ -146,6 +146,7 @@ FACT_ALIASES = {
     "gainloss": "gain_loss_asymmetry",
     "fattails": "fat_tails",
     "absacf": "abs_autocorrelation",
+    "sqacf": "squared_return_acf",
 }
 
 NER_SEARCH_DIRS = [

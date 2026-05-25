@@ -80,7 +80,7 @@ class FactResult:
     fact_id: str
     value: float
     ci95: tuple[float, float] | None = None
-    estimator_version: str = "0.1.0"
+    estimator_version: str = "0.2.0"
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

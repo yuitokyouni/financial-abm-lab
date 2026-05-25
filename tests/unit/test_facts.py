@@ -11,6 +11,7 @@ from prism.facts import (
     fat_tails,
     gain_loss_asymmetry,
     leverage_effect,
+    squared_return_acf,
     volatility_clustering,
 )
 from prism.types import FactResult
@@ -62,7 +63,7 @@ class TestVolatilityClustering:
 
     def test_version(self, garch_returns):
         result = volatility_clustering(garch_returns)
-        assert result.estimator_version == "0.1.0"
+        assert result.estimator_version == "0.2.0"
 
 
 class TestLeverageEffect:
@@ -165,9 +166,37 @@ class TestAbsAutocorrelation:
         assert np.isnan(result.value)
 
 
+class TestSquaredReturnAcf:
+    def test_returns_fact_result(self, iid_returns):
+        result = squared_return_acf(iid_returns)
+        assert isinstance(result, FactResult)
+        assert result.fact_id == "squared_return_acf"
+
+    def test_has_ci95(self, iid_returns):
+        result = squared_return_acf(iid_returns)
+        assert result.ci95 is not None
+        lo, hi = result.ci95
+        assert lo < hi
+
+    def test_iid_low_acf(self, iid_returns):
+        result = squared_return_acf(iid_returns)
+        assert abs(result.value) < 0.15, "IID returns should have near-zero squared ACF"
+
+    def test_garch_positive_acf(self, garch_returns):
+        result = squared_return_acf(garch_returns)
+        assert result.value > 0.0, "GARCH data should show positive squared ACF"
+
+    def test_short_series(self):
+        result = squared_return_acf(np.array([0.01, -0.02]))
+        assert np.isnan(result.value)
+
+
 class TestRegistry:
     def test_all_facts_registered(self):
-        expected = {"volatility_clustering", "leverage_effect", "gain_loss_asymmetry", "fat_tails", "abs_autocorrelation"}
+        expected = {
+            "volatility_clustering", "leverage_effect", "gain_loss_asymmetry",
+            "fat_tails", "abs_autocorrelation", "squared_return_acf",
+        }
         assert set(FACT_REGISTRY.keys()) == expected
 
     def test_compute_fact(self, iid_returns):

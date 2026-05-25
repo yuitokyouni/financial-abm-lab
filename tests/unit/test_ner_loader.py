@@ -31,12 +31,12 @@ class TestLoadNer:
 
     def test_ground_truth_count(self):
         ner = load_ner(NER_PATH)
-        assert len(ner.ground_truth_deltas) == 5
+        assert len(ner.ground_truth_deltas) == 6
 
     def test_ground_truth_fact_ids(self):
         ner = load_ner(NER_PATH)
         ids = {gt.fact_id for gt in ner.ground_truth_deltas}
-        assert ids == {"volatility_clustering", "leverage_effect", "gain_loss_asymmetry", "fat_tails", "abs_autocorrelation"}
+        assert ids == {"volatility_clustering", "leverage_effect", "gain_loss_asymmetry", "fat_tails", "abs_autocorrelation", "squared_return_acf"}
 
     def test_ci95_parsed(self):
         ner = load_ner(NER_PATH)
@@ -73,12 +73,12 @@ class TestLoadFttNer:
 
     def test_ground_truth_count(self):
         ner = load_ner(FTT_PATH)
-        assert len(ner.ground_truth_deltas) == 5
+        assert len(ner.ground_truth_deltas) == 6
 
     def test_ground_truth_fact_ids(self):
         ner = load_ner(FTT_PATH)
         ids = {gt.fact_id for gt in ner.ground_truth_deltas}
-        assert ids == {"volatility_clustering", "leverage_effect", "gain_loss_asymmetry", "fat_tails", "abs_autocorrelation"}
+        assert ids == {"volatility_clustering", "leverage_effect", "gain_loss_asymmetry", "fat_tails", "abs_autocorrelation", "squared_return_acf"}
 
     def test_assignment(self):
         ner = load_ner(FTT_PATH)

@@ -15,7 +15,7 @@ from scipy import optimize, stats
 
 from prism.types import FactResult
 
-ESTIMATOR_VERSION = "0.1.0"
+ESTIMATOR_VERSION = "0.2.0"
 
 FactEstimatorFn = Callable[[npt.NDArray[np.float64]], FactResult]
 
@@ -53,13 +53,16 @@ def volatility_clustering(returns: npt.NDArray[np.float64]) -> FactResult:
         ll = -0.5 * np.sum(np.log(sigma2) + r**2 / sigma2)
         return -ll
 
-    bounds = [(1e-10, 10 * variance), (1e-6, 0.5), (0.3, 0.9999)]
+    bounds = [(1e-10, 10 * variance), (1e-6, 0.7), (0.01, 0.9999)]
     constraints = {"type": "ineq", "fun": lambda p: 0.9999 - p[1] - p[2]}
 
     starting_points = [
         np.array([variance * 0.05, 0.05, 0.90]),
         np.array([variance * 0.10, 0.10, 0.85]),
         np.array([variance * 0.02, 0.03, 0.94]),
+        np.array([variance * 0.20, 0.15, 0.70]),
+        np.array([variance * 0.30, 0.25, 0.50]),
+        np.array([variance * 0.50, 0.40, 0.30]),
     ]
 
     best_nll = np.inf
@@ -214,6 +217,55 @@ def _abs_acf1_statistic(r: npt.NDArray[np.float64]) -> float:
     return float(np.sum(abs_r[:-1] * abs_r[1:]) / var)
 
 
+def squared_return_acf(returns: npt.NDArray[np.float64]) -> FactResult:
+    """Lag-1 autocorrelation of squared returns.
+
+    A simpler, optimization-free measure of volatility clustering that is
+    more sensitive to regime changes than GARCH(1,1) persistence.
+    Positive values indicate that large (small) squared returns tend to
+    follow large (small) squared returns.
+
+    Typical daily equity values: 0.05–0.40 (Cont 2001).
+    """
+    r = np.asarray(returns, dtype=np.float64).ravel()
+    if len(r) < 30:
+        return FactResult(
+            fact_id="squared_return_acf",
+            value=np.nan,
+            estimator_version=ESTIMATOR_VERSION,
+            metadata={"error": "insufficient data", "n": len(r)},
+        )
+
+    r2 = r**2
+    r2 = r2 - r2.mean()
+    var = np.sum(r2**2)
+    if var < 1e-15:
+        acf1 = 0.0
+    else:
+        acf1 = float(np.sum(r2[:-1] * r2[1:]) / var)
+
+    ci95 = _bootstrap_ci(
+        r, _sq_acf1_statistic, n_boot=1000
+    )
+
+    return FactResult(
+        fact_id="squared_return_acf",
+        value=acf1,
+        ci95=ci95,
+        estimator_version=ESTIMATOR_VERSION,
+        metadata={"n": len(r), "lag": 1},
+    )
+
+
+def _sq_acf1_statistic(r: npt.NDArray[np.float64]) -> float:
+    r2 = r**2
+    r2 = r2 - r2.mean()
+    var = np.sum(r2**2)
+    if var < 1e-15:
+        return 0.0
+    return float(np.sum(r2[:-1] * r2[1:]) / var)
+
+
 def fat_tails(returns: npt.NDArray[np.float64]) -> FactResult:
     """Fat tails via excess kurtosis (Fisher's definition).
 
@@ -283,4 +335,5 @@ FACT_REGISTRY: dict[str, FactEstimatorFn] = {
     "gain_loss_asymmetry": gain_loss_asymmetry,
     "fat_tails": fat_tails,
     "abs_autocorrelation": abs_autocorrelation,
+    "squared_return_acf": squared_return_acf,
 }
