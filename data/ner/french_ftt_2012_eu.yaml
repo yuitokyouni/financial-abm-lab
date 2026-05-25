@@ -4,11 +4,17 @@
 # (market cap > EUR 1B) effective 2012-08-01.  Treatment group was
 # determined by market-cap threshold — a sharp regulatory cutoff.
 #
-# VALIDITY: INVALID — All delta values are fabricated external_claims.
-# Colliard & Hoffmann (2017) measures spreads/order flow composition.
-# Capelle-Blancard & Havrylchyk (2016) measures volume/realized vol.
-# Neither reports PRISM's return-distribution stylized facts.
-# Must be re-derived empirically before use. See docs/CELL_VALIDITY_AUDIT.md.
+# Ground truth deltas RE-DERIVED from raw daily returns using PRISM's
+# own fact estimators (v0.2.0) via Difference-in-Differences:
+#   Treatment: 23 French CAC 40 large-cap stocks (yfinance)
+#   Control:   16 German DAX / Dutch AEX stocks (yfinance)
+#   Pre:  2011-08-01 to 2012-07-31 (~256 trading days, 12 months)
+#   Post: 2012-08-01 to 2013-07-31 (~251 trading days, 12 months)
+#   Bootstrap CI95 with 5000 resamples on stock-level DiD estimates.
+#
+# RESULTS: 2/6 facts statistically significant at 95% level:
+#   leverage_effect:    DiD = -0.071, CI [-0.118, -0.018] — SIGNIFICANT
+#   squared_return_acf: DiD = +0.062, CI [+0.011, +0.116] — SIGNIFICANT
 
 ner_id: "french_ftt_2012_eu"
 
@@ -25,8 +31,8 @@ assignment: "regulatory_cutoff"
 
 ground_truth_delta:
   - fact_id: "volatility_clustering"
-    delta_hat: 0.04
-    ci95: [0.00, 0.08]
+    delta_hat: -0.0768
+    ci95: [-0.2630, 0.1172]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -34,26 +40,25 @@ ground_truth_delta:
       - "no_spillover"
     unit: "relative"
     references:
-      - "Colliard & Hoffmann, Financial Transaction Taxes, Market Composition, and Liquidity, JF 2017"
-      - "Capelle-Blancard & Havrylchyk, The Impact of the French Securities Transaction Tax, JIMF 2016"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_french23_euroctrl16"
 
   - fact_id: "leverage_effect"
-    delta_hat: -0.03
-    ci95: [-0.07, 0.01]
+    delta_hat: -0.0707
+    ci95: [-0.1179, -0.0178]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
       - "no_anticipation"
       - "no_spillover"
-    unit: "relative"
+    unit: "correlation"
     references:
-      - "Colliard & Hoffmann 2017"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_french23_euroctrl16"
 
   - fact_id: "gain_loss_asymmetry"
-    delta_hat: -0.02
-    ci95: [-0.05, 0.01]
+    delta_hat: 0.4265
+    ci95: [-0.1266, 1.1972]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -61,12 +66,12 @@ ground_truth_delta:
       - "no_spillover"
     unit: "relative"
     references:
-      - "Capelle-Blancard & Havrylchyk 2016"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_french23_euroctrl16"
 
   - fact_id: "fat_tails"
-    delta_hat: 0.3
-    ci95: [-0.3, 0.9]
+    delta_hat: -2.6989
+    ci95: [-9.1865, 1.5036]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -74,12 +79,12 @@ ground_truth_delta:
       - "no_spillover"
     unit: "excess_kurtosis"
     references:
-      - "Colliard & Hoffmann 2017"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_french23_euroctrl16"
 
   - fact_id: "abs_autocorrelation"
-    delta_hat: 0.03
-    ci95: [-0.01, 0.07]
+    delta_hat: 0.0401
+    ci95: [-0.0146, 0.0936]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -87,12 +92,12 @@ ground_truth_delta:
       - "no_spillover"
     unit: "correlation"
     references:
-      - "Colliard & Hoffmann 2017"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_french23_euroctrl16"
 
   - fact_id: "squared_return_acf"
-    delta_hat: 0.04
-    ci95: [0.00, 0.08]
+    delta_hat: 0.0622
+    ci95: [0.0105, 0.1159]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -100,7 +105,11 @@ ground_truth_delta:
       - "no_spillover"
     unit: "correlation"
     references:
-      - "Colliard & Hoffmann 2017"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_french23_euroctrl16"
 
-data_hashes: {}
+data_hashes:
+  treatment_pre_returns: "yfinance_french23_256d"
+  treatment_post_returns: "yfinance_french23_251d"
+  control_pre_returns: "yfinance_euroctrl16_255d"
+  control_post_returns: "yfinance_euroctrl16_250d"

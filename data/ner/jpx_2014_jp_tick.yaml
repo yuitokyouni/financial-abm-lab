@@ -8,16 +8,12 @@
 # Ground truth deltas RE-DERIVED from raw daily returns using PRISM's
 # own fact estimators (v0.2.0) via Difference-in-Differences:
 #   Treatment: 40 TOPIX 100 large-cap stocks (yfinance)
-#   Control:   20 non-TOPIX-100 TSE stocks (yfinance)
-#   Pre:  2013-01-14 to 2014-01-13 (243 trading days, 12 months)
-#   Post: 2014-01-14 to 2015-01-14 (244 trading days, 12 months)
+#   Control:   20 non-TOPIX-100 TSE mid/small-cap stocks (yfinance)
+#              (Previous control group was contaminated with TOPIX 100 stocks
+#               that also received the tick change — now fixed.)
+#   Pre:  2013-01-14 to 2014-01-13 (~239 trading days, 12 months)
+#   Post: 2014-01-14 to 2015-01-14 (~242 trading days, 12 months)
 #   Bootstrap CI95 with 5000 resamples on stock-level DiD estimates.
-#
-# NOTE: All 6 CI95 intervals cross zero — the tick size reduction does
-# not produce statistically significant effects on return-distribution
-# stylized facts at the daily frequency. This is consistent with tick
-# size changes primarily affecting microstructure quantities (spreads,
-# depth) rather than return-distribution facts.
 
 ner_id: "jpx_2014_jp_tick"
 
@@ -35,8 +31,8 @@ assignment: "regulatory_cutoff"
 
 ground_truth_delta:
   - fact_id: "volatility_clustering"
-    delta_hat: -0.065
-    ci95: [-0.223, 0.077]
+    delta_hat: 0.0412
+    ci95: [-0.0721, 0.1677]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -45,24 +41,24 @@ ground_truth_delta:
     unit: "relative"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_40stocks_243d"
+      - "yfinance_topix100_40treat_20ctrl_clean"
 
   - fact_id: "leverage_effect"
-    delta_hat: -0.020
-    ci95: [-0.065, 0.028]
+    delta_hat: 0.0430
+    ci95: [-0.0204, 0.1073]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
       - "no_anticipation"
       - "no_spillover_to_non_topix100"
-    unit: "relative"
+    unit: "correlation"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_40stocks_243d"
+      - "yfinance_topix100_40treat_20ctrl_clean"
 
   - fact_id: "gain_loss_asymmetry"
-    delta_hat: 0.057
-    ci95: [-0.210, 0.327]
+    delta_hat: 0.1429
+    ci95: [-0.1589, 0.4605]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -71,11 +67,11 @@ ground_truth_delta:
     unit: "relative"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_40stocks_243d"
+      - "yfinance_topix100_40treat_20ctrl_clean"
 
   - fact_id: "fat_tails"
-    delta_hat: 0.702
-    ci95: [-0.738, 2.210]
+    delta_hat: 0.3718
+    ci95: [-0.8902, 1.7354]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -84,11 +80,11 @@ ground_truth_delta:
     unit: "excess_kurtosis"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_40stocks_243d"
+      - "yfinance_topix100_40treat_20ctrl_clean"
 
   - fact_id: "abs_autocorrelation"
-    delta_hat: -0.035
-    ci95: [-0.103, 0.032]
+    delta_hat: 0.0174
+    ci95: [-0.0421, 0.0794]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -97,11 +93,11 @@ ground_truth_delta:
     unit: "correlation"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_40stocks_243d"
+      - "yfinance_topix100_40treat_20ctrl_clean"
 
   - fact_id: "squared_return_acf"
-    delta_hat: -0.056
-    ci95: [-0.124, 0.009]
+    delta_hat: 0.0183
+    ci95: [-0.0397, 0.0789]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -110,10 +106,10 @@ ground_truth_delta:
     unit: "correlation"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_40stocks_243d"
+      - "yfinance_topix100_40treat_20ctrl_clean"
 
 data_hashes:
-  treatment_pre_returns: "yfinance_topix100_40stocks_243d"
-  treatment_post_returns: "yfinance_topix100_40stocks_244d"
-  control_pre_returns: "yfinance_non_topix100_20stocks_243d"
-  control_post_returns: "yfinance_non_topix100_20stocks_244d"
+  treatment_pre_returns: "yfinance_topix100_40stocks_239d_clean"
+  treatment_post_returns: "yfinance_topix100_40stocks_242d_clean"
+  control_pre_returns: "yfinance_non_topix100_20stocks_239d_clean"
+  control_post_returns: "yfinance_non_topix100_20stocks_242d_clean"

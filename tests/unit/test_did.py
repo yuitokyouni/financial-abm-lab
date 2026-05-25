@@ -128,7 +128,7 @@ class TestDidFacts:
             n_boot=2000,
         )
         r = results[0]
-        assert r.ci95[0] <= r.did_estimate <= r.ci95[1] or True
+        assert r.ci95[0] <= r.did_estimate <= r.ci95[1]
 
     def test_n_counts(self, synthetic_data):
         results = did_facts(
