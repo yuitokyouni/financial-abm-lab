@@ -11,7 +11,7 @@ where k = n_free_params.  This gives:
     k=1 → w=1.0,  k=2 → w=0.50,  k=7 → w=0.26,  k=9 → w=0.24
 
 The weighted confidence is:
-    confidence_mdl = confidence_raw × w_mdl
+    confidence_weighted = confidence_raw × w_mdl × w_causal
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
+from prism.scoring.causal import DEFAULT_CAUSAL_WEIGHT, causal_method_weight
 from prism.types import ComplexitySpec, MatchResult, MatchVerdict
 
 
@@ -42,7 +43,7 @@ def compute_mdl_weight(spec: ComplexitySpec) -> MDLWeight:
 
 @dataclass(frozen=True)
 class WeightedMatchResult:
-    """MatchResult augmented with MDL complexity penalty."""
+    """MatchResult augmented with MDL and causal method weights."""
 
     fact_id: str
     delta_model: float
@@ -51,10 +52,15 @@ class WeightedMatchResult:
     magnitude_within_ci: bool | None
     confidence_raw: float
     mdl_weight: float
+    causal_weight: float
     confidence_weighted: float
 
     @staticmethod
-    def from_match(match: MatchResult, mdl: MDLWeight) -> WeightedMatchResult:
+    def from_match(
+        match: MatchResult,
+        mdl: MDLWeight,
+        causal_w: float = DEFAULT_CAUSAL_WEIGHT,
+    ) -> WeightedMatchResult:
         return WeightedMatchResult(
             fact_id=match.fact_id,
             delta_model=match.delta_model,
@@ -63,13 +69,17 @@ class WeightedMatchResult:
             magnitude_within_ci=match.magnitude_within_ci,
             confidence_raw=match.confidence,
             mdl_weight=mdl.weight,
-            confidence_weighted=match.confidence * mdl.weight,
+            causal_weight=causal_w,
+            confidence_weighted=match.confidence * mdl.weight * causal_w,
         )
 
 
 def apply_mdl_weights(
-    matches: list[MatchResult], spec: ComplexitySpec
+    matches: list[MatchResult],
+    spec: ComplexitySpec,
+    causal_method: str = "",
 ) -> list[WeightedMatchResult]:
-    """Apply MDL weighting to a list of match results."""
+    """Apply MDL and causal method weighting to match results."""
     mdl = compute_mdl_weight(spec)
-    return [WeightedMatchResult.from_match(m, mdl) for m in matches]
+    causal_w = causal_method_weight(causal_method) if causal_method else DEFAULT_CAUSAL_WEIGHT
+    return [WeightedMatchResult.from_match(m, mdl, causal_w) for m in matches]

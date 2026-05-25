@@ -1,5 +1,9 @@
 """Scoring module — compare model predictions to empirical ground truth."""
 
+from prism.scoring.causal import (
+    CAUSAL_METHOD_WEIGHTS,
+    causal_method_weight,
+)
 from prism.scoring.eligibility import (
     EMPIRICAL_RANGES,
     EligibilityResult,
@@ -29,4 +33,6 @@ __all__ = [
     "EligibilityResult",
     "EligibilityVerdict",
     "EMPIRICAL_RANGES",
+    "causal_method_weight",
+    "CAUSAL_METHOD_WEIGHTS",
 ]

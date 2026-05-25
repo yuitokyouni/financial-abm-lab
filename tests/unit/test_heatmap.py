@@ -48,7 +48,8 @@ def _make_tensor() -> TensorOutput:
                     magnitude_within_ci=True,
                     confidence_raw=1.0,
                     mdl_weight=0.26,
-                    confidence_weighted=0.26,
+                    causal_weight=0.9,
+                    confidence_weighted=0.234,
                 ),
                 WeightedMatchResult(
                     fact_id="volatility_clustering",
@@ -58,6 +59,7 @@ def _make_tensor() -> TensorOutput:
                     magnitude_within_ci=None,
                     confidence_raw=0.0,
                     mdl_weight=0.26,
+                    causal_weight=0.9,
                     confidence_weighted=0.0,
                 ),
             ]

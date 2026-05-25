@@ -57,7 +57,7 @@ class TestComputeMDLWeight:
 
 
 class TestWeightedMatchResult:
-    def test_from_match_applies_weight(self):
+    def test_from_match_applies_mdl_and_causal_weight(self):
         match = MatchResult(
             fact_id="leverage_effect",
             delta_model=-0.05,
@@ -67,10 +67,24 @@ class TestWeightedMatchResult:
             confidence=1.0,
         )
         mdl = MDLWeight(n_free_params=7, description_length=7.0, weight=0.26)
-        wm = WeightedMatchResult.from_match(match, mdl)
+        wm = WeightedMatchResult.from_match(match, mdl, causal_w=0.9)
         assert wm.confidence_raw == 1.0
         assert wm.mdl_weight == 0.26
-        assert wm.confidence_weighted == pytest.approx(0.26)
+        assert wm.causal_weight == 0.9
+        assert wm.confidence_weighted == pytest.approx(1.0 * 0.26 * 0.9)
+
+    def test_default_causal_weight(self):
+        match = MatchResult(
+            fact_id="test",
+            delta_model=-0.05,
+            delta_empirical=-0.03,
+            sign_match=MatchVerdict.MATCH,
+            confidence=1.0,
+        )
+        mdl = MDLWeight(n_free_params=1, description_length=1.0, weight=1.0)
+        wm = WeightedMatchResult.from_match(match, mdl)
+        assert wm.causal_weight == 0.5
+        assert wm.confidence_weighted == pytest.approx(0.5)
 
     def test_zero_confidence_stays_zero(self):
         match = MatchResult(
@@ -81,12 +95,12 @@ class TestWeightedMatchResult:
             confidence=0.0,
         )
         mdl = MDLWeight(n_free_params=2, description_length=2.0, weight=0.5)
-        wm = WeightedMatchResult.from_match(match, mdl)
+        wm = WeightedMatchResult.from_match(match, mdl, causal_w=1.0)
         assert wm.confidence_weighted == 0.0
 
 
 class TestApplyMDLWeights:
-    def test_applies_to_all_matches(self):
+    def test_applies_to_all_matches_with_causal(self):
         matches = [
             MatchResult(
                 fact_id="f1",
@@ -104,10 +118,11 @@ class TestApplyMDLWeights:
             ),
         ]
         spec = ComplexitySpec(n_free_params=7, structural_description="SG")
-        weighted = apply_mdl_weights(matches, spec)
+        weighted = apply_mdl_weights(matches, spec, causal_method="did_firm_fe")
         assert len(weighted) == 2
-        expected_w = 1.0 / (1.0 + math.log2(7))
-        assert weighted[0].confidence_weighted == pytest.approx(0.5 * expected_w)
+        expected_mdl = 1.0 / (1.0 + math.log2(7))
+        assert weighted[0].confidence_weighted == pytest.approx(0.5 * expected_mdl * 0.9)
+        assert weighted[0].causal_weight == 0.9
         assert weighted[1].confidence_weighted == 0.0
 
     def test_empty_matches(self):

@@ -214,9 +214,10 @@ def run_cell(
     # --- Score against ground truth ---
     matches = compute_matches(model_deltas, ner.ground_truth_deltas)
 
-    # --- MDL weighting ---
+    # --- MDL + causal method weighting ---
     complexity = adapter.describe_complexity()
-    weighted = apply_mdl_weights(matches, complexity)
+    primary_causal = ner.ground_truth_deltas[0].causal_method if ner.ground_truth_deltas else ""
+    weighted = apply_mdl_weights(matches, complexity, causal_method=primary_causal)
     tracker.record_parameter("mdl_n_free_params", complexity.n_free_params)
 
     # --- Seal provenance ---
