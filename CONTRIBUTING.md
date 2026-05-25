@@ -13,8 +13,8 @@ pip install -e ".[dev,viz]"
 All contributions must pass:
 
 ```bash
-# Tests
-pytest
+# Tests (must maintain ≥85% coverage)
+pytest --cov=prism --cov-report=term-missing
 
 # Linting + formatting
 ruff check src/ tests/
