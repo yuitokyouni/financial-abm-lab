@@ -4,9 +4,11 @@
 # (market cap > EUR 1B) effective 2012-08-01.  Treatment group was
 # determined by market-cap threshold — a sharp regulatory cutoff.
 #
-# Ground truth deltas are from published DiD estimates (Colliard & Hoffmann 2017,
-# Capelle-Blancard & Havrylchyk 2016).
-# Tagged as "external_claim" until re-derived from raw data within PRISM.
+# VALIDITY: INVALID — All delta values are fabricated external_claims.
+# Colliard & Hoffmann (2017) measures spreads/order flow composition.
+# Capelle-Blancard & Havrylchyk (2016) measures volume/realized vol.
+# Neither reports PRISM's return-distribution stylized facts.
+# Must be re-derived empirically before use. See docs/CELL_VALIDITY_AUDIT.md.
 
 ner_id: "french_ftt_2012_eu"
 

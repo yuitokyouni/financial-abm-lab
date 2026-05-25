@@ -3,8 +3,10 @@
 # The SEC mandated wider tick sizes (from $0.01 to $0.05) for ~1200 small-cap
 # stocks in a randomized experiment.  Treatment groups were randomly assigned.
 #
-# Ground truth deltas are from published DiD estimates in the pilot literature.
-# Tagged as "external_claim" until re-derived from raw data within PRISM.
+# VALIDITY: INVALID — All delta values are fabricated external_claims.
+# The SEC DERA reports measure spreads/volume/depth, NOT return-distribution
+# stylized facts (GARCH persistence, leverage, skewness, kurtosis, ACF).
+# Must be re-derived empirically before use. See docs/CELL_VALIDITY_AUDIT.md.
 
 ner_id: "tspp_2016_us_equity"
 

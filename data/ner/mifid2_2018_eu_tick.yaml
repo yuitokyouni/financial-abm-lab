@@ -10,9 +10,11 @@
 # whose previous national tick table was finer than the new MiFID II table.
 # EU vs. non-EU comparison provides the identification strategy (DiD).
 #
-# Ground truth deltas from Aquilina, Budish & O'Neill (2022), and
-# Comerton-Forde, Gregoire & Zhong (2019).
-# Tagged as "external_claim" until re-derived from raw data within PRISM.
+# VALIDITY: INVALID — All delta values are fabricated external_claims.
+# Aquilina et al. (2022) measures latency arbitrage/sniping rates.
+# Comerton-Forde et al. (2019) measures spreads/depth/market share.
+# Neither reports PRISM's return-distribution stylized facts.
+# Must be re-derived empirically before use. See docs/CELL_VALIDITY_AUDIT.md.
 
 ner_id: "mifid2_2018_eu_tick"
 
