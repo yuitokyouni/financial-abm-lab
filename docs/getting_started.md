@@ -90,7 +90,7 @@ prism latex-table \
 For scripting and integration:
 
 ```python
-from prism.pipeline import run_cell, run_tensor
+from prism import run_cell, run_tensor
 from prism.viz import render_heatmap
 
 # Run one cell
