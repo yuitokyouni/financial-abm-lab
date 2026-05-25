@@ -1,47 +1,42 @@
 # Current Progress
-- プロジェクト初期化完了（ハーネス設定済み）。
-- PRISM要件定義書（v0.1）を `docs/PRISM_REQUIREMENTS.md` として配置完了。
-- **WP0 完了:**
-  - `docs/WP0_RESEARCH_REPORT.md` 作成・コミット済み。
-  - 文献レビュー: LOB-Bench, ABM-FTT文献, Collver (2017, SEC DERA) を最も近い先行研究として特定。新規性を確認。
-  - データ可用性: 無料 FINRA/SEC パイロットデータで日次頻度MVPファクト（vol clustering, leverage, gain/loss）計算可能。
-  - §12 オープン論点5項目に対する仮決定を記録。
-  - プロジェクト・スキャフォールディング完了 (`src/prism/`, `tests/`, `data/`, `scripts/`, `pyproject.toml`)。
 
-## 次の目標 (Mission 2: Phase 1 — 単一セル end-to-end)
+## Phase 1 MVP — COMPLETE
 
-要件定義書 §8 Phase 1 に従い、SG × Tick Size Pilot × {leverage, vol clustering, gain/loss} の単一セルを end-to-end で実装し、第三者が `prism run` で同一 Δ を再現できる状態にする。
+`prism run` が実行でき、SG × tick_size × 3 facts の 1 result cell を生成する。
+同一 seed で bit 再現可能。provenance 情報が result に含まれる。
 
-### 具体的なアクションアイテム
-1. **データ取得パイプライン**
-   - FINRA パイロット証券リスト（treatment/control 割当）をダウンロードするスクリプト作成
-   - SEC MIDAS または Yahoo Finance から日次価格データを取得するスクリプト作成
-   - `data/ner/tspp_2016_us_equity.yaml` として NER #1 を構築
+### 今回のセッションで達成したこと
+1. **Core types** (`src/prism/types.py`): MarketData, ModelAdapter Protocol, 全データ型 — commit 86bd538
+2. **Fact Estimator Library v0.1** (`src/prism/facts/estimators.py`): GARCH(1,1) vol clustering, leverage effect (Corr), gain/loss asymmetry (skewness) + bootstrap CI — commit 86bd538
+3. **Scorer v0.1** (`src/prism/scoring/scorer.py`): 符号一致 + magnitude within CI — commit 207fd6d
+4. **Provenance v0.1** (`src/prism/provenance/tracker.py`): data hash, git commit, RNG seed, W3C PROV-O type tags — commit 7ab8fc3
+5. **NER loader** (`src/prism/data/ner_loader.py`) + **NER #1** (`data/ner/tspp_2016_us_equity.yaml`) — commit 355d329
+6. **SG Adapter** (`src/prism/adapters/sg.py`): Katahira (2019) variant, ModelAdapter Protocol 準拠, tick_size → cognitive threshold 写像 — commit 355d329
+7. **Pipeline + CLI** (`src/prism/pipeline.py`, `src/prism/cli/main.py`): `prism run --adapter sg --ner tspp_2016_us_equity --facts leverage,volclust,gainloss` が動作 — commit 33c8330
+8. **pyproject.toml 修正**: hatch build target 追加, CLI entry point 追加
+9. **テスト**: 61 tests (56 unit + 5 integration), all passing
 
-2. **Fact Estimator Library v0.1** (`src/prism/facts/`)
-   - `volatility_clustering`: GARCH(1,1) persistence パラメータ (α+β)
-   - `leverage_effect`: EGARCH leverage パラメータ or Corr(r_t, |r_{t+τ}|²)
-   - `gain_loss_asymmetry`: return distribution skewness
-   - 実データ・模擬データに同一実装を適用する契約を enforced
+### Phase 1 終了条件の達成状況
+- [x] `prism run` が実行でき、1つの result cell (SG × tick_size × 3 facts) を生成
+- [x] 符号一致の可否が出力される (leverage: MATCH, volclust: INCONCLUSIVE, gainloss: MISMATCH)
+- [x] provenance 情報が result に含まれ、同一 seed で同一結果が再現される
+- [x] 61 tests passing
 
-3. **SG Adapter** (`src/prism/adapters/sg.py`)
-   - Katahira et al. (2019) の Speculation Game を ModelAdapter Protocol に準拠して実装
-   - `calibrate_baseline`, `apply_intervention` (tick size → cognitive threshold), `simulate`
+### 既知の課題・改善余地
+- NER の ground truth delta は外部引用値 (external_claim タグ済み)。生データからの再算出は未実施
+- GARCH estimator の bounds が tight — iid データでの boundary warning あり
+- SG adapter のキャリブレーションは簡易版 (noise_scale, price_impact のみ)
+- 静的適格ゲート (LOB-Bench 式 realism check) は未実装
+- causal_method の差し替え可能性テストは未実施
 
-4. **Scorer v0.1** (`src/prism/scoring/`)
-   - 符号一致 (sign consistency) チェック
-   - 大きさ (magnitude within ci95) を confidence 付き副指標として報告
+## 次の目標 (Phase 2 準備)
 
-5. **Provenance Layer v0.1** (`src/prism/provenance/`)
-   - データハッシュ、コードバージョン、RNG seed の記録
-   - W3C PROV 最小実装
-
-6. **CLI + End-to-end**
-   - `prism run --adapter sg --ner tspp_2016 --facts leverage,volclust,gainloss`
-   - 結果を再現可能アーティファクトとして出力
+### Phase 2: 診断介入 + 2機構目
+1. 取引税 (transaction_tax) を AIS の 2 クラス目に追加
+2. SG とは別の機構族 (例: Chiarella-Iori 型) を 2 体目の adapter に
+3. 位相図が 2×2 で埋まることを確認
+4. 「静的等価だが介入で割れる」事例を 1 つ実証
 
 ### 終了条件
-- `prism run` が実行でき、1つの result cell (SG × tick_size × 3 facts) を生成する。
-- 符号一致の可否が出力される。
-- provenance 情報が result に含まれ、同一 seed で同一結果が再現される。
-- 次の目標を Phase 2 準備に更新した上で `progress.md` を上書き保存。
+- 2 adapter × 2 intervention × 3 facts のテンソルが生成される
+- 少なくとも 1 ペアの adapter で「静的 facts 同等 but 介入応答で乖離」を示す
