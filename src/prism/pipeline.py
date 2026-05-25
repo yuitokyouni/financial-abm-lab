@@ -27,9 +27,11 @@ from prism.scoring.eligibility import (
 from prism.scoring.mdl import WeightedMatchResult, apply_mdl_weights
 from prism.types import (
     DeltaFact,
+    FactResult,
     MarketData,
     MatchResult,
     MatchVerdict,
+    SimulatedMarketData,
 )
 
 
@@ -145,20 +147,81 @@ class CellOutput:
         return result
 
 
+def _compute_per_path_facts(
+    adapter: object,
+    fact_ids: list[str],
+    seed: int,
+    n_paths: int,
+) -> tuple[dict[str, FactResult], SimulatedMarketData]:
+    """Compute facts on individual simulation paths and return median values.
+
+    Instead of averaging returns across paths (which destroys higher-order
+    distributional properties like kurtosis), this runs each path
+    independently and takes the median of per-path fact estimates.
+    """
+    all_facts: dict[str, list[FactResult]] = {fid: [] for fid in fact_ids}
+    first_sim: SimulatedMarketData | None = None
+
+    for p in range(n_paths):
+        sim = adapter.simulate(seed=seed + p, n_paths=1)  # type: ignore[union-attr]
+        if first_sim is None:
+            first_sim = sim
+        for fid in fact_ids:
+            fact = compute_fact(fid, sim.returns)
+            all_facts[fid].append(fact)
+
+    assert first_sim is not None
+
+    median_facts: dict[str, FactResult] = {}
+    for fid in fact_ids:
+        values = [f.value for f in all_facts[fid] if not np.isnan(f.value)]
+        if values:
+            median_val = float(np.median(values))
+            cis = [f.ci95 for f in all_facts[fid] if f.ci95 is not None]
+            ci95: tuple[float, float] | None = None
+            if cis:
+                ci95 = (
+                    float(np.median([c[0] for c in cis])),
+                    float(np.median([c[1] for c in cis])),
+                )
+            median_facts[fid] = FactResult(
+                fact_id=fid,
+                value=median_val,
+                ci95=ci95,
+                estimator_version=all_facts[fid][0].estimator_version,
+                metadata={
+                    "aggregation": "per_path_median",
+                    "n_paths": n_paths,
+                },
+            )
+        else:
+            median_facts[fid] = all_facts[fid][0]
+
+    return median_facts, first_sim
+
+
 def run_cell(
     adapter_name: str,
     ner_path: str | Path,
     fact_ids: list[str],
     seed: int = 42,
     n_paths: int = 10,
+    per_path_facts: bool = False,
 ) -> CellOutput:
-    """Execute one cell of the phase-diagram tensor."""
+    """Execute one cell of the phase-diagram tensor.
+
+    When per_path_facts=True, facts are computed on individual simulation
+    paths and aggregated via median.  This preserves higher-order
+    distributional properties (kurtosis, skewness) that path-averaging
+    destroys.
+    """
 
     # --- Setup ---
     tracker = ProvenanceTracker()
     tracker.record_seed("simulation", seed)
     tracker.record_parameter("adapter", adapter_name)
     tracker.record_parameter("n_paths", n_paths)
+    tracker.record_parameter("per_path_facts", per_path_facts)
 
     # --- Load NER ---
     ner = load_ner(ner_path)
@@ -180,34 +243,58 @@ def run_cell(
     # --- Calibrate baseline ---
     calib = adapter.calibrate_baseline(pre_data, {})
 
-    # --- Simulate PRE-intervention ---
-    sim_pre = adapter.simulate(seed=seed, n_paths=n_paths)
-    tracker.record_data_hash("sim_pre", sim_pre.content_hash())
-
     # --- Apply intervention ---
     post_adapter = adapter.apply_intervention(calib, ner.intervention)
 
-    # --- Simulate POST-intervention ---
-    sim_post = post_adapter.simulate(seed=seed, n_paths=n_paths)
-    tracker.record_data_hash("sim_post", sim_post.content_hash())
-
-    # --- Compute facts on both regimes ---
-    model_deltas = []
-    for fid in fact_ids:
-        pre_fact = compute_fact(fid, sim_pre.returns)
-        post_fact = compute_fact(fid, sim_post.returns)
-        tracker.record_estimator_version(fid, pre_fact.estimator_version)
-
-        delta = DeltaFact(
-            fact_id=fid,
-            delta=post_fact.value - pre_fact.value,
-            pre=pre_fact,
-            post=post_fact,
+    if per_path_facts:
+        # --- Per-path mode: preserve distributional properties ---
+        pre_facts, sim_pre = _compute_per_path_facts(
+            adapter, fact_ids, seed, n_paths,
         )
-        model_deltas.append(delta)
+        tracker.record_data_hash("sim_pre", sim_pre.content_hash())
+
+        post_facts, sim_post = _compute_per_path_facts(
+            post_adapter, fact_ids, seed, n_paths,
+        )
+        tracker.record_data_hash("sim_post", sim_post.content_hash())
+
+        model_deltas = []
+        for fid in fact_ids:
+            tracker.record_estimator_version(fid, pre_facts[fid].estimator_version)
+            delta = DeltaFact(
+                fact_id=fid,
+                delta=post_facts[fid].value - pre_facts[fid].value,
+                pre=pre_facts[fid],
+                post=post_facts[fid],
+            )
+            model_deltas.append(delta)
+
+        baseline_facts = list(pre_facts.values())
+    else:
+        # --- Classic mode: average returns across paths ---
+        sim_pre = adapter.simulate(seed=seed, n_paths=n_paths)
+        tracker.record_data_hash("sim_pre", sim_pre.content_hash())
+
+        sim_post = post_adapter.simulate(seed=seed, n_paths=n_paths)
+        tracker.record_data_hash("sim_post", sim_post.content_hash())
+
+        model_deltas = []
+        for fid in fact_ids:
+            pre_fact = compute_fact(fid, sim_pre.returns)
+            post_fact = compute_fact(fid, sim_post.returns)
+            tracker.record_estimator_version(fid, pre_fact.estimator_version)
+
+            delta = DeltaFact(
+                fact_id=fid,
+                delta=post_fact.value - pre_fact.value,
+                pre=pre_fact,
+                post=post_fact,
+            )
+            model_deltas.append(delta)
+
+        baseline_facts = [compute_fact(fid, sim_pre.returns) for fid in fact_ids]
 
     # --- Static eligibility gate ---
-    baseline_facts = [compute_fact(fid, sim_pre.returns) for fid in fact_ids]
     eligibility = check_eligibility(adapter_name, baseline_facts)
     tracker.record_parameter("eligibility", eligibility.verdict.value)
 
@@ -357,6 +444,7 @@ def compare_causal_methods(
     methods: list[str] | None = None,
     seed: int = 42,
     n_paths: int = 10,
+    per_path_facts: bool = False,
 ) -> MethodComparisonOutput:
     """Re-weight the same cell with different causal identification methods."""
     from prism.scoring.causal import CAUSAL_METHOD_WEIGHTS, causal_method_weight
@@ -364,7 +452,7 @@ def compare_causal_methods(
     if methods is None:
         methods = list(CAUSAL_METHOD_WEIGHTS.keys())
 
-    cell = run_cell(adapter_name, ner_path, fact_ids, seed, n_paths)
+    cell = run_cell(adapter_name, ner_path, fact_ids, seed, n_paths, per_path_facts=per_path_facts)
     complexity = ADAPTER_REGISTRY[adapter_name]().describe_complexity()
     mdl = apply_mdl_weights(cell.matches, complexity).pop() if cell.matches else None
     mdl_w = mdl.mdl_weight if mdl else 0.0
@@ -397,6 +485,7 @@ def run_tensor(
     fact_ids: list[str],
     seed: int = 42,
     n_paths: int = 10,
+    per_path_facts: bool = False,
 ) -> TensorOutput:
     """Execute the full phase-diagram tensor: adapters × NERs × facts."""
 
@@ -414,6 +503,7 @@ def run_tensor(
                 fact_ids=fact_ids,
                 seed=seed,
                 n_paths=n_paths,
+                per_path_facts=per_path_facts,
             )
             cells.append(cell)
 

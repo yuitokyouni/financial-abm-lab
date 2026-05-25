@@ -52,6 +52,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Output JSON file path (default: stdout summary)",
     )
+    run_parser.add_argument(
+        "--per-path-facts",
+        action="store_true",
+        default=False,
+        help="Compute facts per simulation path (preserves kurtosis/skewness)",
+    )
 
     tensor_parser = sub.add_parser(
         "tensor", help="Run the full phase-diagram tensor (adapters × NERs × facts)"
@@ -80,6 +86,10 @@ def build_parser() -> argparse.ArgumentParser:
     tensor_parser.add_argument(
         "--output", type=str, default=None, help="Output JSON file path"
     )
+    tensor_parser.add_argument(
+        "--per-path-facts", action="store_true", default=False,
+        help="Compute facts per simulation path (preserves kurtosis/skewness)",
+    )
 
     compare_parser = sub.add_parser(
         "compare", help="Compare causal method weightings for one cell"
@@ -100,6 +110,10 @@ def build_parser() -> argparse.ArgumentParser:
     compare_parser.add_argument("--seed", type=int, default=42)
     compare_parser.add_argument("--n-paths", type=int, default=10)
     compare_parser.add_argument("--output", type=str, default=None)
+    compare_parser.add_argument(
+        "--per-path-facts", action="store_true", default=False,
+        help="Compute facts per simulation path (preserves kurtosis/skewness)",
+    )
 
     heatmap_parser = sub.add_parser(
         "heatmap", help="Run tensor and render phase-diagram heatmap"
@@ -115,6 +129,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     heatmap_parser.add_argument("--seed", type=int, default=42)
     heatmap_parser.add_argument("--n-paths", type=int, default=10)
+    heatmap_parser.add_argument(
+        "--per-path-facts", action="store_true", default=False,
+        help="Compute facts per simulation path (preserves kurtosis/skewness)",
+    )
     heatmap_parser.add_argument(
         "--output", type=str, default="heatmap.png",
         help="Output image file path (default: heatmap.png)",
@@ -173,6 +191,7 @@ def main(argv: list[str] | None = None) -> int:
             fact_ids=fact_ids,
             seed=args.seed,
             n_paths=args.n_paths,
+            per_path_facts=args.per_path_facts,
         )
 
         print(result.summary())
@@ -195,6 +214,7 @@ def main(argv: list[str] | None = None) -> int:
             fact_ids=fact_ids,
             seed=args.seed,
             n_paths=args.n_paths,
+            per_path_facts=args.per_path_facts,
         )
 
         print(result.summary())
@@ -218,6 +238,7 @@ def main(argv: list[str] | None = None) -> int:
             methods=methods,
             seed=args.seed,
             n_paths=args.n_paths,
+            per_path_facts=args.per_path_facts,
         )
 
         print(result.summary())
@@ -240,6 +261,7 @@ def main(argv: list[str] | None = None) -> int:
             fact_ids=fact_ids,
             seed=args.seed,
             n_paths=args.n_paths,
+            per_path_facts=args.per_path_facts,
         )
 
         print(result.summary())

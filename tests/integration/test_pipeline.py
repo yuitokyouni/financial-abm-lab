@@ -353,6 +353,102 @@ class TestCausalMethodComparison:
         assert "Causal Method Comparison" in summary
 
 
+class TestPerPathFacts:
+    """Phase 5a: per-path fact estimation preserves distributional properties."""
+
+    def test_per_path_cell_runs(self):
+        result = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "fat_tails"],
+            seed=42,
+            n_paths=5,
+            per_path_facts=True,
+        )
+        assert result.adapter_id == "sg"
+        assert len(result.matches) == 2
+
+    def test_per_path_preserves_fat_tails(self):
+        classic = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["fat_tails"],
+            seed=42,
+            n_paths=5,
+            per_path_facts=False,
+        )
+        per_path = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["fat_tails"],
+            seed=42,
+            n_paths=5,
+            per_path_facts=True,
+        )
+        assert per_path.matches[0].fact_id == "fat_tails"
+        assert classic.matches[0].fact_id == "fat_tails"
+
+    def test_per_path_has_provenance(self):
+        result = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect"],
+            seed=42,
+            n_paths=3,
+            per_path_facts=True,
+        )
+        prov = result.provenance
+        assert "run_id" in prov
+        assert prov["parameters"]["per_path_facts"] is True
+
+    def test_per_path_reproducibility(self):
+        r1 = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "fat_tails"],
+            seed=99,
+            n_paths=5,
+            per_path_facts=True,
+        )
+        r2 = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "fat_tails"],
+            seed=99,
+            n_paths=5,
+            per_path_facts=True,
+        )
+        for m1, m2 in zip(r1.matches, r2.matches):
+            assert m1.delta_model == m2.delta_model
+
+    def test_per_path_all_adapters(self):
+        for adapter in ["sg", "ci", "zi"]:
+            result = run_cell(
+                adapter_name=adapter,
+                ner_path="data/ner/tspp_2016_us_equity.yaml",
+                fact_ids=["fat_tails", "leverage_effect"],
+                seed=42,
+                n_paths=3,
+                per_path_facts=True,
+            )
+            assert len(result.matches) == 2
+            assert result.eligibility is not None
+            assert len(result.weighted_matches) == 2
+
+    def test_per_path_tensor(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci"],
+            ner_paths=["data/ner/tspp_2016_us_equity.yaml"],
+            fact_ids=["fat_tails"],
+            seed=42,
+            n_paths=3,
+            per_path_facts=True,
+        )
+        assert len(result.cells) == 2
+        for cell in result.cells:
+            assert len(cell.matches) == 1
+
+
 class TestPhase3Integration:
     """Phase 3: MDL weighting, eligibility gate, causal method weighting."""
 
