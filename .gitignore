@@ -2,6 +2,8 @@
 # .gitignore
 agent_logs/
 .env
+CURRENT_PHASE
+MISSION_COMPLETE
 __pycache__/
 *.pyc
 *.pyo
