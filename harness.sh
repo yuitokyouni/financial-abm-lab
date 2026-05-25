@@ -11,6 +11,14 @@ mkdir -p agent_logs
 echo "Starting Autonomous Claude Harness..."
 
 while true; do
+    # ミッション完了フラグの検出
+    if [ -f MISSION_COMPLETE ]; then
+        echo "=== MISSION COMPLETE ==="
+        echo "Final report: docs/FINAL_REPORT.md"
+        echo "Harness stopped at $(date)."
+        break
+    fi
+
     COMMIT=$(git rev-parse --short HEAD)
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     LOGFILE="agent_logs/agent_${COMMIT}_${TIMESTAMP}.log"

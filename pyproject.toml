@@ -32,7 +32,8 @@ dependencies = [
 
 [project.urls]
 Repository = "https://github.com/yuitokyouni/PRISM"
-Documentation = "https://github.com/yuitokyouni/PRISM/blob/main/docs/getting_started.md"
+Documentation = "https://yuitokyouni.github.io/PRISM/"
+Changelog = "https://github.com/yuitokyouni/PRISM/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 viz = [

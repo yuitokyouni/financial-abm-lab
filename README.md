@@ -256,6 +256,20 @@ ground_truth_delta:
       - "Author et al. (2021)"
 ```
 
+## Documentation
+
+- [Getting Started Tutorial](docs/getting_started.md)
+- [API Reference](https://yuitokyouni.github.io/PRISM/) (GitHub Pages)
+- [CHANGELOG](CHANGELOG.md)
+- [CONTRIBUTING](CONTRIBUTING.md)
+
+To generate API docs locally:
+
+```bash
+pip install -e ".[docs]"
+python scripts/generate_api_docs.py --serve  # localhost:8080
+```
+
 ## Development
 
 ```bash
