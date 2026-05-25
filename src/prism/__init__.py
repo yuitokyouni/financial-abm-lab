@@ -2,7 +2,7 @@
 
 from prism.pipeline import CellOutput, TensorOutput, run_cell, run_tensor
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 __all__ = [
     "run_cell",

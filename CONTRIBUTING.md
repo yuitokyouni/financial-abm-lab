@@ -22,6 +22,10 @@ ruff format --check src/ tests/
 
 # Type checking
 mypy src/prism/
+
+# API documentation
+python scripts/generate_api_docs.py        # HTML → docs/api/
+python scripts/generate_api_docs.py --serve # Live at localhost:8080
 ```
 
 ## Adding a New Model Adapter

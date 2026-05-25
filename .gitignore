@@ -21,3 +21,4 @@ data/processed/*
 output/
 .coverage
 htmlcov/
+docs/api/

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "prism-abm"
-version = "0.0.1"
+version = "0.1.0"
 description = "Provenance-backed Reproducible Intervention-response Scoring of Mechanisms"
 requires-python = ">=3.11"
 license = "MIT"
@@ -41,11 +41,15 @@ viz = [
 real-data = [
     "yfinance>=0.2",
 ]
+docs = [
+    "pdoc>=14.0",
+]
 dev = [
     "pytest>=8.0",
     "pytest-cov>=4.1",
     "ruff>=0.3",
     "mypy>=1.8",
+    "pdoc>=14.0",
 ]
 
 [project.scripts]
