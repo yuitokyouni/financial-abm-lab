@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from prism.pipeline import run_cell, run_tensor
+from prism.viz import render_heatmap
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -78,6 +79,25 @@ def build_parser() -> argparse.ArgumentParser:
     )
     tensor_parser.add_argument(
         "--output", type=str, default=None, help="Output JSON file path"
+    )
+
+    heatmap_parser = sub.add_parser(
+        "heatmap", help="Run tensor and render phase-diagram heatmap"
+    )
+    heatmap_parser.add_argument(
+        "--adapters", required=True, help="Comma-separated adapter names"
+    )
+    heatmap_parser.add_argument(
+        "--ners", required=True, help="Comma-separated NER ids or paths"
+    )
+    heatmap_parser.add_argument(
+        "--facts", required=True, help="Comma-separated fact IDs"
+    )
+    heatmap_parser.add_argument("--seed", type=int, default=42)
+    heatmap_parser.add_argument("--n-paths", type=int, default=10)
+    heatmap_parser.add_argument(
+        "--output", type=str, default="heatmap.png",
+        help="Output image file path (default: heatmap.png)",
     )
     return parser
 
@@ -163,6 +183,28 @@ def main(argv: list[str] | None = None) -> int:
             with open(out_path, "w") as f:
                 json.dump(result.to_dict(), f, indent=2, default=str)
             print(f"\nFull result written to: {out_path}")
+
+    elif args.command == "heatmap":
+        adapter_names = [a.strip() for a in args.adapters.split(",")]
+        ner_paths = [resolve_ner_path(n.strip()) for n in args.ners.split(",")]
+        fact_ids = resolve_fact_ids(args.facts)
+
+        result = run_tensor(
+            adapter_names=adapter_names,
+            ner_paths=ner_paths,
+            fact_ids=fact_ids,
+            seed=args.seed,
+            n_paths=args.n_paths,
+        )
+
+        print(result.summary())
+
+        out_path = Path(args.output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        import matplotlib
+        matplotlib.use("Agg")
+        render_heatmap(result, output_path=out_path)
+        print(f"\nHeatmap written to: {out_path}")
 
     return 0
 
