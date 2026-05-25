@@ -219,7 +219,7 @@ def run_cell(
     fact_ids: list[str],
     seed: int = 42,
     n_paths: int = 10,
-    per_path_facts: bool = False,
+    per_path_facts: bool = True,
     pre_data: MarketData | None = None,
     use_real_data: bool = False,
 ) -> CellOutput:
@@ -536,7 +536,7 @@ def run_tensor(
     fact_ids: list[str],
     seed: int = 42,
     n_paths: int = 10,
-    per_path_facts: bool = False,
+    per_path_facts: bool = True,
     pre_data: MarketData | None = None,
     use_real_data: bool = False,
 ) -> TensorOutput:

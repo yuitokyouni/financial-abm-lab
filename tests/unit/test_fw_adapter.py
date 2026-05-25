@@ -67,7 +67,7 @@ class TestFWIntervention:
     def test_tick_size_increase_intervention(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_increase",
-            canonical_params={"min_tick_to": 0.05},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.05},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
         assert isinstance(post_adapter, FWAdapter)
@@ -76,7 +76,7 @@ class TestFWIntervention:
     def test_tick_increase_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_increase",
-            canonical_params={"min_tick_to": 0.05},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.05},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
         assert post_adapter.params.chi == adapter.params.chi
@@ -86,7 +86,7 @@ class TestFWIntervention:
     def test_tick_size_decrease_intervention(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_decrease",
-            canonical_params={"min_tick_to": 0.001},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.001},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
         assert isinstance(post_adapter, FWAdapter)
@@ -95,7 +95,7 @@ class TestFWIntervention:
     def test_tick_decrease_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_decrease",
-            canonical_params={"min_tick_to": 0.001},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.001},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
         assert post_adapter.params.chi == adapter.params.chi

@@ -108,9 +108,10 @@ class FWAdapter:
         )
 
         if intervention.intervention_class in ("tick_size_increase", "tick_size_decrease"):
-            new_params.tick_size = intervention.canonical_params.get(
-                "min_tick_to", self.params.tick_size
-            )
+            tick_from = intervention.canonical_params.get("min_tick_from", 1.0)
+            tick_to = intervention.canonical_params.get("min_tick_to", tick_from)
+            tick_ratio = tick_to / tick_from if tick_from != 0 else 1.0
+            new_params.tick_size = self.params.tick_size * tick_ratio
         elif intervention.intervention_class == "transaction_tax":
             tax_rate = intervention.canonical_params.get("rate", 0.001)
             new_params.transaction_cost = tax_rate

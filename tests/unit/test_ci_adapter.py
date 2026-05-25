@@ -55,7 +55,7 @@ class TestCIIntervention:
     def test_tick_size_intervention(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_increase",
-            canonical_params={"min_tick_to": 0.05},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.05},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
         assert isinstance(post_adapter, CIAdapter)
@@ -64,7 +64,7 @@ class TestCIIntervention:
     def test_tick_intervention_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_increase",
-            canonical_params={"min_tick_to": 0.05},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.05},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
         assert post_adapter.params.price_impact == adapter.params.price_impact
@@ -94,7 +94,7 @@ class TestCIIntervention:
     def test_tick_size_decrease_intervention(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_decrease",
-            canonical_params={"min_tick_to": 0.001},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.001},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
         assert isinstance(post_adapter, CIAdapter)
@@ -103,7 +103,7 @@ class TestCIIntervention:
     def test_tick_decrease_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_decrease",
-            canonical_params={"min_tick_to": 0.001},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.001},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
         assert post_adapter.params.price_impact == adapter.params.price_impact

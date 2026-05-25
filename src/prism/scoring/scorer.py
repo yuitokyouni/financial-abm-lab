@@ -11,12 +11,24 @@ import numpy as np
 from prism.types import DeltaFact, GroundTruthDelta, MatchResult, MatchVerdict
 
 
-def score_sign(delta_model: float, delta_empirical: float) -> MatchVerdict:
-    """Check whether model and empirical deltas have the same sign."""
+def score_sign(
+    delta_model: float,
+    delta_empirical: float,
+    ci95_empirical: tuple[float, float] | None = None,
+) -> MatchVerdict:
+    """Check whether model and empirical deltas have the same sign.
+
+    When ci95_empirical is provided and crosses zero, the true sign of
+    the empirical delta is statistically indeterminate — return INCONCLUSIVE.
+    """
     if np.isnan(delta_model) or np.isnan(delta_empirical):
         return MatchVerdict.INCONCLUSIVE
     if abs(delta_model) < 1e-12 or abs(delta_empirical) < 1e-12:
         return MatchVerdict.INCONCLUSIVE
+    if ci95_empirical is not None:
+        lo, hi = ci95_empirical
+        if lo <= 0 <= hi:
+            return MatchVerdict.INCONCLUSIVE
     if np.sign(delta_model) == np.sign(delta_empirical):
         return MatchVerdict.MATCH
     return MatchVerdict.MISMATCH
@@ -38,7 +50,7 @@ def compute_match(
     ground_truth: GroundTruthDelta,
 ) -> MatchResult:
     """Score one (model, empirical) delta pair."""
-    sign = score_sign(model_delta.delta, ground_truth.delta_hat)
+    sign = score_sign(model_delta.delta, ground_truth.delta_hat, ground_truth.ci95)
     mag = score_magnitude(model_delta.delta, ground_truth.ci95)
 
     confidence = 0.0
@@ -70,3 +82,19 @@ def compute_matches(
         if md.fact_id in gt_by_id:
             results.append(compute_match(md, gt_by_id[md.fact_id]))
     return results
+
+
+def binomial_sign_pvalue(n_match: int, n_total: int) -> float:
+    """One-sided binomial p-value: P(X >= n_match) under H0: p=0.5.
+
+    Tests whether n_match out of n_total sign matches is better than
+    chance (coin flip). Only counts non-INCONCLUSIVE results in n_total.
+    """
+    if n_total <= 0:
+        return 1.0
+    from math import comb
+
+    p = 0.0
+    for k in range(n_match, n_total + 1):
+        p += comb(n_total, k) * 0.5**n_total
+    return p

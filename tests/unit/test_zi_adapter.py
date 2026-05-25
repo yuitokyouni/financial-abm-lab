@@ -73,7 +73,7 @@ class TestZIStructuralIntervention:
     def test_tick_increase_only_changes_tick_size(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_increase",
-            canonical_params={"min_tick_to": 0.05},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.05},
         )
         post = adapter.apply_intervention(calibration, intervention)
         assert post.params.tick_size == 0.05
@@ -84,7 +84,7 @@ class TestZIStructuralIntervention:
     def test_tick_decrease_only_changes_tick_size(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_decrease",
-            canonical_params={"min_tick_to": 0.001},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.001},
         )
         post = adapter.apply_intervention(calibration, intervention)
         assert post.params.tick_size == 0.001
@@ -143,7 +143,7 @@ class TestZIAsSmuggleDetector:
 
         intervention = CanonicalIntervention(
             intervention_class="tick_size_decrease",
-            canonical_params={"min_tick_to": 0.001},
+            canonical_params={"min_tick_from": 0.01, "min_tick_to": 0.001},
         )
         calib = adapter.calibrate_baseline(market_data, {})
         post_adapter = adapter.apply_intervention(calib, intervention)
