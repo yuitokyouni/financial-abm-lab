@@ -1,0 +1,19 @@
+"""Fact Estimator Library — versioned functions applied identically to real and simulated data."""
+
+from prism.facts.estimators import (
+    FACT_REGISTRY,
+    compute_fact,
+    compute_facts,
+    gain_loss_asymmetry,
+    leverage_effect,
+    volatility_clustering,
+)
+
+__all__ = [
+    "volatility_clustering",
+    "leverage_effect",
+    "gain_loss_asymmetry",
+    "compute_fact",
+    "compute_facts",
+    "FACT_REGISTRY",
+]
