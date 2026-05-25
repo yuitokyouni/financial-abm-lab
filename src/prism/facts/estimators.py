@@ -187,7 +187,6 @@ def abs_autocorrelation(returns: npt.NDArray[np.float64]) -> FactResult:
 
     abs_r = np.abs(r)
     abs_r = abs_r - abs_r.mean()
-    n = len(abs_r)
     var = np.sum(abs_r**2)
     if var < 1e-15:
         acf1 = 0.0

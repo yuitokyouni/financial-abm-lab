@@ -1,7 +1,5 @@
 """Tests for static eligibility gate."""
 
-import numpy as np
-import pytest
 
 from prism.scoring.eligibility import (
     EMPIRICAL_RANGES,

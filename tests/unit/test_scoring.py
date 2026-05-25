@@ -1,7 +1,6 @@
 """Tests for scoring module."""
 
 import numpy as np
-import pytest
 
 from prism.scoring import compute_match, compute_matches, score_magnitude, score_sign
 from prism.types import DeltaFact, FactResult, GroundTruthDelta, MatchVerdict

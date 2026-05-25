@@ -1,6 +1,5 @@
 """Tests for causal method quality weighting."""
 
-import pytest
 
 from prism.scoring.causal import (
     CAUSAL_METHOD_WEIGHTS,

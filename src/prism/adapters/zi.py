@@ -24,7 +24,6 @@ from prism.types import (
     CanonicalIntervention,
     ComplexitySpec,
     MarketData,
-    ModelAdapter,
     SimulatedMarketData,
 )
 

@@ -13,12 +13,10 @@ The cell text shows the MDL-weighted confidence when available.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import ListedColormap
 from matplotlib.patches import FancyBboxPatch
 
 from prism.pipeline import TensorOutput

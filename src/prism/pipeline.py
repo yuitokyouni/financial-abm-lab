@@ -6,8 +6,7 @@ fact estimation → delta computation → scoring → provenance sealing.
 
 from __future__ import annotations
 
-import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +16,7 @@ from prism.adapters.ci import CIAdapter
 from prism.adapters.sg import SGAdapter
 from prism.adapters.zi import ZIAdapter
 from prism.data import load_ner
-from prism.facts import FACT_REGISTRY, compute_fact
+from prism.facts import compute_fact
 from prism.provenance import ProvenanceTracker
 from prism.scoring import compute_matches
 from prism.scoring.eligibility import (
@@ -31,7 +30,6 @@ from prism.types import (
     MarketData,
     MatchResult,
     MatchVerdict,
-    NaturalExperimentRecord,
 )
 
 

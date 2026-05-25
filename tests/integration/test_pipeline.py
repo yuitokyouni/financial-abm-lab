@@ -1,6 +1,5 @@
 """Integration test for the end-to-end pipeline."""
 
-import numpy as np
 
 from prism.pipeline import compare_causal_methods, run_cell, run_tensor
 from prism.scoring.eligibility import EligibilityVerdict
