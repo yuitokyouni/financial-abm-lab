@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 
 from prism.adapters.ci import CIAdapter
+from prism.adapters.lm import LMAdapter
 from prism.adapters.sg import SGAdapter
 from prism.adapters.zi import ZIAdapter
 from prism.data import load_ner
@@ -40,6 +41,7 @@ ADAPTER_REGISTRY: dict[str, type] = {
     "sg": SGAdapter,
     "ci": CIAdapter,
     "zi": ZIAdapter,
+    "lm": LMAdapter,
 }
 
 

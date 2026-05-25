@@ -10,6 +10,7 @@ from prism.types import NaturalExperimentRecord
 
 NER_PATH = Path("data/ner/tspp_2016_us_equity.yaml")
 FTT_PATH = Path("data/ner/french_ftt_2012_eu.yaml")
+MIFID2_PATH = Path("data/ner/mifid2_2018_eu_tick.yaml")
 
 
 class TestLoadNer:
@@ -83,3 +84,45 @@ class TestLoadFttNer:
     def test_assignment(self):
         ner = load_ner(FTT_PATH)
         assert ner.assignment == "regulatory_cutoff"
+
+
+class TestLoadMifid2Ner:
+    def test_loads_successfully(self):
+        ner = load_ner(MIFID2_PATH)
+        assert isinstance(ner, NaturalExperimentRecord)
+
+    def test_ner_id(self):
+        ner = load_ner(MIFID2_PATH)
+        assert ner.ner_id == "mifid2_2018_eu_tick"
+
+    def test_intervention_class(self):
+        ner = load_ner(MIFID2_PATH)
+        assert ner.intervention.intervention_class == "tick_size_increase"
+
+    def test_canonical_params(self):
+        ner = load_ner(MIFID2_PATH)
+        assert ner.intervention.canonical_params["min_tick_to"] == 0.01
+
+    def test_ground_truth_count(self):
+        ner = load_ner(MIFID2_PATH)
+        assert len(ner.ground_truth_deltas) == 6
+
+    def test_ground_truth_fact_ids(self):
+        ner = load_ner(MIFID2_PATH)
+        ids = {gt.fact_id for gt in ner.ground_truth_deltas}
+        assert ids == {
+            "volatility_clustering", "leverage_effect", "gain_loss_asymmetry",
+            "fat_tails", "abs_autocorrelation", "squared_return_acf",
+        }
+
+    def test_assignment(self):
+        ner = load_ner(MIFID2_PATH)
+        assert ner.assignment == "regulatory_cutoff"
+
+    def test_venue(self):
+        ner = load_ner(MIFID2_PATH)
+        assert ner.venue == "EU_equity_largecap"
+
+    def test_date_effective(self):
+        ner = load_ner(MIFID2_PATH)
+        assert ner.date_effective == "2018-01-03"

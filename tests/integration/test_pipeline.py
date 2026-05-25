@@ -239,6 +239,88 @@ class TestZIEndToEnd:
         assert zi.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
 
 
+class TestLMEndToEnd:
+    def test_lm_tick_size_cell(self):
+        result = run_cell(
+            adapter_name="lm",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.adapter_id == "lm"
+        assert result.ner_id == "tspp_2016_us_equity"
+        assert len(result.matches) == 3
+
+    def test_lm_transaction_tax_cell(self):
+        result = run_cell(
+            adapter_name="lm",
+            ner_path="data/ner/french_ftt_2012_eu.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.adapter_id == "lm"
+        assert result.ner_id == "french_ftt_2012_eu"
+        assert len(result.matches) == 3
+
+    def test_lm_has_eligibility(self):
+        result = run_cell(
+            adapter_name="lm",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.eligibility is not None
+
+    def test_lm_mdl_weight_between_zi_and_ci(self):
+        lm = run_cell("lm", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        zi = run_cell("zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        ci = run_cell("ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        assert zi.weighted_matches[0].mdl_weight > lm.weighted_matches[0].mdl_weight
+        assert lm.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
+
+
+class TestMifid2Ner:
+    def test_mifid2_with_sg(self):
+        result = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/mifid2_2018_eu_tick.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
+            seed=42,
+            n_paths=5,
+        )
+        assert result.ner_id == "mifid2_2018_eu_tick"
+        assert len(result.matches) == 3
+
+    def test_mifid2_with_lm(self):
+        result = run_cell(
+            adapter_name="lm",
+            ner_path="data/ner/mifid2_2018_eu_tick.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
+            seed=42,
+            n_paths=5,
+        )
+        assert result.ner_id == "mifid2_2018_eu_tick"
+        assert len(result.matches) == 3
+
+    def test_mifid2_in_tensor(self):
+        result = run_tensor(
+            adapter_names=["sg", "lm"],
+            ner_paths=[
+                "data/ner/mifid2_2018_eu_tick.yaml",
+                "data/ner/tspp_2016_us_equity.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=3,
+        )
+        assert len(result.cells) == 4  # 2 adapters × 2 NERs
+        ner_ids = {c.ner_id for c in result.cells}
+        assert "mifid2_2018_eu_tick" in ner_ids
+
+
 class TestFatTailsFact:
     def test_fat_tails_in_cell(self):
         result = run_cell(
@@ -252,7 +334,7 @@ class TestFatTailsFact:
         assert result.matches[0].fact_id == "fat_tails"
 
     def test_fat_tails_all_adapters(self):
-        for adapter in ["sg", "ci", "zi"]:
+        for adapter in ["sg", "ci", "zi", "lm"]:
             result = run_cell(
                 adapter_name=adapter,
                 ner_path="data/ner/tspp_2016_us_equity.yaml",
@@ -293,6 +375,41 @@ class TestTensor3x2:
         for cell in result.cells:
             assert len(cell.matches) == 5
             assert len(cell.weighted_matches) == 5
+            assert cell.eligibility is not None
+
+
+class TestTensor4x3:
+    def test_4x3_tensor_runs(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci", "zi", "lm"],
+            ner_paths=[
+                "data/ner/tspp_2016_us_equity.yaml",
+                "data/ner/french_ftt_2012_eu.yaml",
+                "data/ner/mifid2_2018_eu_tick.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
+            seed=42,
+            n_paths=3,
+        )
+        assert len(result.cells) == 12  # 4 adapters × 3 NERs
+        assert set(result.adapter_ids) == {"sg", "ci", "zi", "lm"}
+        assert len(result.ner_ids) == 3
+
+    def test_4x3_all_cells_scored(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci", "zi", "lm"],
+            ner_paths=[
+                "data/ner/tspp_2016_us_equity.yaml",
+                "data/ner/french_ftt_2012_eu.yaml",
+                "data/ner/mifid2_2018_eu_tick.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=3,
+        )
+        for cell in result.cells:
+            assert len(cell.matches) == 2
+            assert len(cell.weighted_matches) == 2
             assert cell.eligibility is not None
 
 
