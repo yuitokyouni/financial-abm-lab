@@ -1,4 +1,8 @@
-"""Tests for Zero-Intelligence Constrained adapter."""
+"""Tests for Zero-Intelligence Constrained adapter.
+
+ZI-C interventions are purely structural: only tick_size changes.
+Effects on return-distribution facts must emerge from dynamics.
+"""
 
 import numpy as np
 import pytest
@@ -37,7 +41,7 @@ class TestZIProtocolCompliance:
     def test_calibrate_returns_artifact(self, adapter, market_data):
         calib = adapter.calibrate_baseline(market_data, {})
         assert isinstance(calib, CalibrationArtifact)
-        assert calib.model_id == "zi_v0.1"
+        assert calib.model_id == "zi_v0.2"
 
     def test_simulate_returns_data(self, adapter, market_data):
         adapter.calibrate_baseline(market_data, {})
@@ -48,7 +52,7 @@ class TestZIProtocolCompliance:
 
     def test_describe_complexity(self, adapter):
         spec = adapter.describe_complexity()
-        assert spec.n_free_params == 4
+        assert spec.n_free_params == 3
 
     def test_simpler_than_sg_and_ci(self, adapter):
         from prism.adapters import CIAdapter, SGAdapter
@@ -63,49 +67,42 @@ class TestZIProtocolCompliance:
         )
 
 
-class TestZIIntervention:
-    def test_tick_size_intervention(self, adapter, calibration):
+class TestZIStructuralIntervention:
+    """Verify that ZI-C interventions ONLY change tick_size."""
+
+    def test_tick_increase_only_changes_tick_size(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_increase",
             canonical_params={"min_tick_to": 0.05},
         )
-        post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert isinstance(post_adapter, ZIAdapter)
-        assert post_adapter.params.tick_size == 0.05
+        post = adapter.apply_intervention(calibration, intervention)
+        assert post.params.tick_size == 0.05
+        assert post.params.noise_scale == adapter.params.noise_scale
+        assert post.params.price_impact == adapter.params.price_impact
+        assert post.params.n_agents == adapter.params.n_agents
 
-    def test_tick_size_widens_spread(self, adapter, calibration):
+    def test_tick_decrease_only_changes_tick_size(self, adapter, calibration):
         intervention = CanonicalIntervention(
-            intervention_class="tick_size_increase",
-            canonical_params={"min_tick_to": 0.05},
+            intervention_class="tick_size_decrease",
+            canonical_params={"min_tick_to": 0.001},
         )
-        post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert post_adapter.params.bid_ask_spread > adapter.params.bid_ask_spread
+        post = adapter.apply_intervention(calibration, intervention)
+        assert post.params.tick_size == 0.001
+        assert post.params.noise_scale == adapter.params.noise_scale
+        assert post.params.price_impact == adapter.params.price_impact
 
-    def test_transaction_tax_intervention(self, adapter, calibration):
+    def test_transaction_tax_maps_to_effective_tick(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="transaction_tax",
             canonical_params={"rate": 0.002},
         )
-        post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert isinstance(post_adapter, ZIAdapter)
-        assert post_adapter.params.bid_ask_spread > adapter.params.bid_ask_spread
+        post = adapter.apply_intervention(calibration, intervention)
+        expected_cost = 0.002 * adapter.params.fundamental_value
+        assert post.params.tick_size == max(adapter.params.tick_size, expected_cost)
+        assert post.params.noise_scale == adapter.params.noise_scale
 
-    def test_tick_size_decrease_intervention(self, adapter, calibration):
-        intervention = CanonicalIntervention(
-            intervention_class="tick_size_decrease",
-            canonical_params={"min_tick_to": 0.001},
-        )
-        post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert isinstance(post_adapter, ZIAdapter)
-        assert post_adapter.params.tick_size == 0.001
-
-    def test_tick_size_decrease_narrows_spread(self, adapter, calibration):
-        intervention = CanonicalIntervention(
-            intervention_class="tick_size_decrease",
-            canonical_params={"min_tick_to": 0.001},
-        )
-        post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert post_adapter.params.bid_ask_spread < adapter.params.bid_ask_spread
+    def test_no_bid_ask_spread_param(self, adapter):
+        assert not hasattr(adapter.params, "bid_ask_spread")
 
     def test_unknown_intervention_raises(self, adapter, calibration):
         intervention = CanonicalIntervention(
@@ -133,3 +130,23 @@ class TestZIReproducibility:
         adapter.calibrate_baseline(market_data, {})
         sim = adapter.simulate(seed=42, n_paths=3)
         assert np.all(np.isfinite(sim.returns))
+
+
+class TestZIAsSmuggleDetector:
+    """ZI-C should serve as a baseline: if a behavioral adapter can't
+    beat ZI-C's emergent structural response, the behavioral model
+    adds nothing."""
+
+    def test_tick_change_produces_different_returns(self, adapter, market_data):
+        adapter.calibrate_baseline(market_data, {})
+        sim_pre = adapter.simulate(seed=42, n_paths=5)
+
+        intervention = CanonicalIntervention(
+            intervention_class="tick_size_decrease",
+            canonical_params={"min_tick_to": 0.001},
+        )
+        calib = adapter.calibrate_baseline(market_data, {})
+        post_adapter = adapter.apply_intervention(calib, intervention)
+        sim_post = post_adapter.simulate(seed=42, n_paths=5)
+
+        assert not np.array_equal(sim_pre.returns, sim_post.returns)

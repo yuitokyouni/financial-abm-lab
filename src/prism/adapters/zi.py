@@ -6,9 +6,9 @@ emerge purely from random order flow against a budget constraint.
 
 This model serves as a structural falsification benchmark: any ABM that
 fails to outperform ZI-C on intervention-response scoring provides no
-value beyond random noise.  ZI-C is expected to:
-  - Fail the eligibility gate (no volatility clustering, no leverage)
-  - Produce INCONCLUSIVE or MISMATCH verdicts on intervention response
+value beyond random noise.  Interventions enter ONLY as exogenous
+structural constraints (tick_size grid width); effects on return-
+distribution facts must emerge from the simulation dynamics alone.
 """
 
 from __future__ import annotations
@@ -39,12 +39,17 @@ class ZIParams:
     noise_scale: float = 0.01
     tick_size: float = 0.01
     price_impact: float = 0.01
-    bid_ask_spread: float = 0.005
 
 
 @dataclass
 class ZIAdapter:
-    """ModelAdapter implementation for the ZI-C null model."""
+    """ModelAdapter implementation for the ZI-C null model.
+
+    Interventions are purely structural: only tick_size changes, and any
+    effect on return-distribution facts emerges from the price
+    discretization dynamics.  No parameter besides tick_size is modified
+    by apply_intervention.
+    """
 
     params: ZIParams = field(default_factory=ZIParams)
 
@@ -58,13 +63,12 @@ class ZIAdapter:
         self.params.n_steps = pre_data.n_days
 
         return CalibrationArtifact(
-            model_id="zi_v0.1",
+            model_id="zi_v0.2",
             calibrated_params={
                 "noise_scale": self.params.noise_scale,
                 "price_impact": self.params.price_impact,
                 "n_steps": self.params.n_steps,
                 "tick_size": self.params.tick_size,
-                "bid_ask_spread": self.params.bid_ask_spread,
             },
             pre_data_hash=pre_data.content_hash(),
             seed=0,
@@ -81,22 +85,16 @@ class ZIAdapter:
             noise_scale=self.params.noise_scale,
             tick_size=self.params.tick_size,
             price_impact=self.params.price_impact,
-            bid_ask_spread=self.params.bid_ask_spread,
         )
 
-        if intervention.intervention_class == "tick_size_increase":
-            new_tick = intervention.canonical_params.get("min_tick_to", 0.05)
-            new_params.tick_size = new_tick
-            tick_ratio = new_tick / self.params.tick_size
-            new_params.bid_ask_spread *= tick_ratio
-        elif intervention.intervention_class == "tick_size_decrease":
-            new_tick = intervention.canonical_params.get("min_tick_to", 0.001)
-            new_params.tick_size = new_tick
-            tick_ratio = self.params.tick_size / new_tick
-            new_params.bid_ask_spread /= tick_ratio
+        if intervention.intervention_class in ("tick_size_increase", "tick_size_decrease"):
+            new_params.tick_size = intervention.canonical_params.get(
+                "min_tick_to", self.params.tick_size
+            )
         elif intervention.intervention_class == "transaction_tax":
             tax_rate = intervention.canonical_params.get("rate", 0.001)
-            new_params.bid_ask_spread *= 1 + tax_rate * 5
+            effective_cost = tax_rate * self.params.fundamental_value
+            new_params.tick_size = max(self.params.tick_size, effective_cost)
         else:
             raise ValueError(f"Unknown intervention class: {intervention.intervention_class}")
 
@@ -116,7 +114,7 @@ class ZIAdapter:
             returns=avg_returns,
             seed=seed,
             n_paths=n_paths,
-            model_id="zi_v0.1",
+            model_id="zi_v0.2",
             metadata={
                 "n_agents": self.params.n_agents,
                 "tick_size": self.params.tick_size,
@@ -125,12 +123,13 @@ class ZIAdapter:
 
     def describe_complexity(self) -> ComplexitySpec:
         return ComplexitySpec(
-            n_free_params=4,
+            n_free_params=3,
             structural_description=(
                 "Zero-Intelligence Constrained model with random limit orders "
-                "and no learning or strategy switching (Gode & Sunder 1993)"
+                "and no learning or strategy switching (Gode & Sunder 1993). "
+                "Interventions enter only through tick_size grid width."
             ),
-            description_length=4.0,
+            description_length=3.0,
         )
 
     def _simulate_one_path(self, rng: np.random.Generator) -> npt.NDArray[np.float64]:
