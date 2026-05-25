@@ -19,6 +19,12 @@ from prism.data import load_ner
 from prism.facts import FACT_REGISTRY, compute_fact
 from prism.provenance import ProvenanceTracker
 from prism.scoring import compute_matches
+from prism.scoring.eligibility import (
+    EligibilityResult,
+    EligibilityVerdict,
+    check_eligibility,
+)
+from prism.scoring.mdl import WeightedMatchResult, apply_mdl_weights
 from prism.types import (
     DeltaFact,
     MarketData,
@@ -42,21 +48,49 @@ class CellOutput:
     ner_id: str
     matches: list[MatchResult]
     provenance: dict[str, Any]
+    weighted_matches: list[WeightedMatchResult] = field(default_factory=list)
+    eligibility: EligibilityResult | None = None
 
     def summary(self) -> str:
         lines = [
             f"=== PRISM Cell: {self.adapter_id} × {self.ner_id} ===",
             "",
         ]
-        for m in self.matches:
-            sign_str = m.sign_match.value.upper()
-            mag_str = "yes" if m.magnitude_within_ci else ("no" if m.magnitude_within_ci is False else "n/a")
-            lines.append(
-                f"  {m.fact_id:30s}  sign={sign_str:14s}  "
-                f"mag_in_ci={mag_str:4s}  "
-                f"Δ_model={m.delta_model:+.6f}  Δ_empirical={m.delta_empirical:+.6f}  "
-                f"confidence={m.confidence:.2f}"
-            )
+
+        if self.eligibility:
+            lines.append(f"  Eligibility: {self.eligibility.verdict.value}")
+            for c in self.eligibility.checks:
+                status = "PASS" if c.in_range else "FAIL"
+                lines.append(
+                    f"    {c.fact_id:28s} value={c.value:+.6f}  "
+                    f"range=[{c.expected_range[0]:.3f}, {c.expected_range[1]:.3f}]  {status}"
+                )
+            lines.append("")
+
+        use_weighted = bool(self.weighted_matches)
+        display = self.weighted_matches if use_weighted else self.matches
+
+        for item in display:
+            if isinstance(item, WeightedMatchResult):
+                sign_str = item.sign_match.value.upper()
+                mag_str = "yes" if item.magnitude_within_ci else ("no" if item.magnitude_within_ci is False else "n/a")
+                lines.append(
+                    f"  {item.fact_id:30s}  sign={sign_str:14s}  "
+                    f"mag_in_ci={mag_str:4s}  "
+                    f"Δ_model={item.delta_model:+.6f}  Δ_empirical={item.delta_empirical:+.6f}  "
+                    f"conf_raw={item.confidence_raw:.2f}  "
+                    f"mdl_w={item.mdl_weight:.3f}  "
+                    f"conf_weighted={item.confidence_weighted:.3f}"
+                )
+            else:
+                sign_str = item.sign_match.value.upper()
+                mag_str = "yes" if item.magnitude_within_ci else ("no" if item.magnitude_within_ci is False else "n/a")
+                lines.append(
+                    f"  {item.fact_id:30s}  sign={sign_str:14s}  "
+                    f"mag_in_ci={mag_str:4s}  "
+                    f"Δ_model={item.delta_model:+.6f}  Δ_empirical={item.delta_empirical:+.6f}  "
+                    f"confidence={item.confidence:.2f}"
+                )
         lines.append("")
 
         sign_matches = sum(1 for m in self.matches if m.sign_match == MatchVerdict.MATCH)
@@ -67,7 +101,7 @@ class CellOutput:
         return "\n".join(lines)
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result: dict[str, Any] = {
             "adapter_id": self.adapter_id,
             "ner_id": self.ner_id,
             "matches": [
@@ -83,6 +117,32 @@ class CellOutput:
             ],
             "provenance": self.provenance,
         }
+        if self.weighted_matches:
+            result["weighted_matches"] = [
+                {
+                    "fact_id": wm.fact_id,
+                    "confidence_raw": wm.confidence_raw,
+                    "mdl_weight": wm.mdl_weight,
+                    "confidence_weighted": wm.confidence_weighted,
+                }
+                for wm in self.weighted_matches
+            ]
+        if self.eligibility:
+            result["eligibility"] = {
+                "verdict": self.eligibility.verdict.value,
+                "n_pass": self.eligibility.n_pass,
+                "n_fail": self.eligibility.n_fail,
+                "checks": [
+                    {
+                        "fact_id": c.fact_id,
+                        "value": c.value,
+                        "expected_range": list(c.expected_range),
+                        "in_range": c.in_range,
+                    }
+                    for c in self.eligibility.checks
+                ],
+            }
+        return result
 
 
 def run_cell(
@@ -146,8 +206,18 @@ def run_cell(
         )
         model_deltas.append(delta)
 
+    # --- Static eligibility gate ---
+    baseline_facts = [compute_fact(fid, sim_pre.returns) for fid in fact_ids]
+    eligibility = check_eligibility(adapter_name, baseline_facts)
+    tracker.record_parameter("eligibility", eligibility.verdict.value)
+
     # --- Score against ground truth ---
     matches = compute_matches(model_deltas, ner.ground_truth_deltas)
+
+    # --- MDL weighting ---
+    complexity = adapter.describe_complexity()
+    weighted = apply_mdl_weights(matches, complexity)
+    tracker.record_parameter("mdl_n_free_params", complexity.n_free_params)
 
     # --- Seal provenance ---
     prov = tracker.seal()
@@ -157,6 +227,8 @@ def run_cell(
         ner_id=ner.ner_id,
         matches=matches,
         provenance=prov.to_dict(),
+        weighted_matches=weighted,
+        eligibility=eligibility,
     )
 
 
@@ -171,6 +243,17 @@ class TensorOutput:
 
     def summary(self) -> str:
         lines = ["=" * 72, "  PRISM Phase-Diagram Tensor", "=" * 72, ""]
+
+        ineligible = [
+            c for c in self.cells
+            if c.eligibility and c.eligibility.verdict == EligibilityVerdict.INELIGIBLE
+        ]
+        if ineligible:
+            lines.append("  *** Ineligible adapters (baseline outside empirical range):")
+            for c in ineligible:
+                lines.append(f"      {c.adapter_id} × {c.ner_id}")
+            lines.append("")
+
         for cell in self.cells:
             lines.append(cell.summary())
             lines.append("")
