@@ -59,11 +59,14 @@ class SGAdapter:
     def calibrate_baseline(
         self, pre_data: MarketData, ais_context: dict[str, Any]
     ) -> CalibrationArtifact:
-        variance = float(np.var(pre_data.returns))
         target_vol = float(np.std(pre_data.returns))
 
-        noise_scale = target_vol * 0.8
-        price_impact = target_vol * 0.5
+        # Scale noise so that typical price changes span many ticks.
+        # noise demand ≈ N(0, noise_scale * P).  We want
+        # price_impact * noise_scale * P ≈ target_vol * P  (in price space).
+        # With price_impact fixed, set noise_scale = target_vol / price_impact.
+        price_impact = 1.0  # unit price impact simplifies scaling
+        noise_scale = target_vol  # so dp/P ≈ N(0, target_vol)
 
         self.params.noise_scale = noise_scale
         self.params.price_impact = price_impact
@@ -81,7 +84,7 @@ class SGAdapter:
             },
             pre_data_hash=pre_data.content_hash(),
             seed=0,
-            metadata={"target_vol": target_vol, "data_var": variance},
+            metadata={"target_vol": target_vol},
         )
 
     def apply_intervention(

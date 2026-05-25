@@ -24,6 +24,9 @@ dev = [
     "mypy>=1.8",
 ]
 
+[project.scripts]
+prism = "prism.cli.main:main"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/prism"]
 
