@@ -12,37 +12,50 @@ All six are computed from daily log-return time series using `estimators.py` v0.
 
 | Fact ID | Quantity | Definition |
 |---------|----------|------------|
-| volatility_clustering | GARCH(1,1) persistence | α + β from σ²_t = ω + α·r²_{t-1} + β·σ²_{t-1} |
-| leverage_effect | Return-vol correlation | Corr(r_t, r²_{t+1}) |
+| volatility_clustering | GARCH(1,1) persistence | alpha + beta from sigma^2_t = omega + alpha*r^2_{t-1} + beta*sigma^2_{t-1} |
+| leverage_effect | Return-vol correlation | Corr(r_t, r^2_{t+1}) |
 | gain_loss_asymmetry | Skewness | Adjusted Fisher-Pearson skewness of returns |
-| fat_tails | Excess kurtosis | Fisher's kurtosis (κ - 3) of returns |
+| fat_tails | Excess kurtosis | Fisher's kurtosis (kappa - 3) of returns |
 | abs_autocorrelation | ACF of |r_t| at lag 1 | Autocorrelation of absolute returns |
-| squared_return_acf | ACF of r²_t at lag 1 | Autocorrelation of squared returns |
+| squared_return_acf | ACF of r^2_t at lag 1 | Autocorrelation of squared returns |
 
 ## NER-by-NER Audit
 
-### 1. JPX 2014 (`jpx_2014_jp_tick`) — VALID
+### 1. JPX 2014 (`jpx_2014_jp_tick`) — VALID, INCONCLUSIVE
 
-**Event:** JPX tick size decrease (JPY 1.0 → 0.1) for TOPIX 100 stocks, 2014-01-14.
+**Event:** JPX tick size decrease (JPY 1.0 to 0.1) for TOPIX 100 stocks, 2014-01-14.
 
 **Ground truth source:** Empirically re-derived using PRISM's own estimators + DiD
-on real daily returns (yfinance, 15 treatment + 10 control stocks, 6-month pre/post).
+on real daily returns (yfinance, 40 treatment + 20 control stocks, 12-month pre/post,
+5000 bootstrap resamples).
 
-**Cited references:** `empirical_prism_estimator_v0.2.0`, `yfinance_topix100_2013-2014`
+**Cited references:** `empirical_prism_estimator_v0.2.0`, `yfinance_topix100_40stocks_243d`
 
-**Validity:** All 6 fact-deltas are valid. Same quantity measured by same code on
-real data. Bootstrap CI95 with 2000 resamples.
+**Validity:** Process is scientifically sound — same quantity measured by same code
+on real data. However, all 6 CI95 intervals cross zero.
 
-**Valid cells:** 6 facts × 5 adapters = **30 cells valid**
+| Fact | delta_hat | CI95 | Crosses 0? |
+|------|-----------|------|-----------|
+| volatility_clustering | -0.065 | [-0.223, +0.077] | YES |
+| leverage_effect | -0.020 | [-0.065, +0.028] | YES |
+| gain_loss_asymmetry | +0.057 | [-0.210, +0.327] | YES |
+| fat_tails | +0.702 | [-0.738, +2.210] | YES |
+| abs_autocorrelation | -0.035 | [-0.103, +0.032] | YES |
+| squared_return_acf | -0.056 | [-0.124, +0.009] | YES |
+
+**Simulation results (5 seeds x 20 paths each):**
+- ZI-C: 0/6 conclusive, model deltas ~10^-4
+- SG: 0/6 conclusive, model deltas ~10^-4 to 10^-2
+
+**Valid cells:** 6 facts x 5 adapters = **30 cells valid but INCONCLUSIVE**
 
 ---
 
 ### 2. TSPP 2016 (`tspp_2016_us_equity`) — INVALID (external_claim)
 
-**Event:** SEC Tick Size Pilot, US small-caps, tick $0.01 → $0.05, 2016-10-03.
+**Event:** SEC Tick Size Pilot, US small-caps, tick $0.01 to $0.05, 2016-10-03.
 
-**Cited references:**
-- "SEC DERA, Tick Size Pilot Assessment Reports, 2018"
+**Cited references:** SEC DERA, Tick Size Pilot Assessment Reports, 2018
 
 **What the SEC DERA reports actually measure:**
 - Quoted and effective bid-ask spreads
@@ -52,17 +65,10 @@ real data. Bootstrap CI95 with 2000 resamples.
 - Market maker participation
 - Limit order book depth
 
-**What PRISM needs:** GARCH persistence, leverage correlation, skewness, kurtosis, ACF.
-
 **Category error:** The SEC DERA reports contain NO measurement of return-distribution
-stylized facts. The delta values in this NER (e.g., vol_clustering δ=0.03, fat_tails
-δ=0.5) cannot have come from the cited source — they are fabricated external claims.
+stylized facts. The delta values in this NER are fabricated external claims.
 
 **Status:** All 6 fact-deltas are **invalid**. 0/30 cells valid.
-
-**Recovery path:** Re-derive empirically using yfinance daily returns for TSPP
-treatment/control stocks (data is publicly available, ~1200 treatment stocks with
-known CUSIP lists from SEC).
 
 ---
 
@@ -71,87 +77,52 @@ known CUSIP lists from SEC).
 **Event:** French transaction tax (0.2% on buy side), large-caps > EUR 1B, 2012-08-01.
 
 **Cited references:**
-- Colliard & Hoffmann, "Financial Transaction Taxes, Market Composition, and
-  Liquidity," Journal of Finance, 2017
-- Capelle-Blancard & Havrylchyk, "The Impact of the French Securities Transaction
-  Tax on Market Liquidity and Volatility," JIMF, 2016
-
-**What Colliard & Hoffmann (2017) actually measure:**
-- Bid-ask spreads (quoted, effective, realized)
-- Order flow composition (informed vs. uninformed)
-- Adverse selection component of spread
-- Trading volume
-- Market maker inventory risk
-
-**What Capelle-Blancard & Havrylchyk (2016) actually measure:**
-- Trading volume and turnover
-- Price volatility (realized volatility = stdev of returns, NOT GARCH persistence)
-- Tax revenue
+- Colliard & Hoffmann (2017) — measures spreads, order flow composition, adverse selection
+- Capelle-Blancard & Havrylchyk (2016) — measures volume, realized volatility (simple stdev, not GARCH)
 
 **Category error:** Neither paper measures GARCH persistence, leverage correlation,
-return skewness, excess kurtosis, or return ACF. Capelle-Blancard reports "volatility"
-but this is simple realized vol — a different quantity from GARCH(1,1) α+β.
+return skewness, excess kurtosis, or return ACF.
 
 **Status:** All 6 fact-deltas are **invalid**. 0/30 cells valid.
-
-**Recovery path:** Re-derive using yfinance daily returns for French large-caps
-(treated) vs. comparable European stocks (control). Data is available; the treatment
-list is the ~100 stocks on the Euronext Paris SBF 120 with market cap > EUR 1B at
-the time.
 
 ---
 
 ### 4. MiFID II 2018 (`mifid2_2018_eu_tick`) — INVALID (external_claim)
 
-**Event:** MiFID II tick size harmonization, EU large-caps, tick ~EUR 0.005 → 0.01,
-2018-01-03.
+**Event:** MiFID II tick size harmonization, EU large-caps, 2018-01-03.
 
 **Cited references:**
-- Aquilina, Budish & O'Neill, "Quantifying the High-Frequency Trading Arms Race,"
-  QJE, 2022
-- Comerton-Forde, Gregoire & Zhong, "Inverted Fee Venues and Market Quality,"
-  JFE, 2019
+- Aquilina, Budish & O'Neill (2022) — measures latency arbitrage and sniping rates
+- Comerton-Forde, Gregoire & Zhong (2019) — measures spreads, depth, market share
 
-**What Aquilina, Budish & O'Neill (2022) actually measure:**
-- Latency arbitrage and sniping rates
-- Speed technology investment
-- Trading costs attributable to speed races
-- Tick size is analyzed only as a moderator of latency arbitrage
-
-**What Comerton-Forde, Gregoire & Zhong (2019) actually measure:**
-- Bid-ask spreads and depth
-- Market share across venues
-- Maker/taker fee effects on order routing
-- Inverted vs. standard fee venue quality
-
-**Category error:** Neither paper reports GARCH persistence, leverage correlation,
-return skewness, kurtosis, or return ACF. The delta values in this NER are fabricated.
+**Category error:** Neither paper reports return-distribution stylized facts.
 
 **Status:** All 6 fact-deltas are **invalid**. 0/30 cells valid.
-
-**Recovery path:** Re-derive using daily return data for EU stocks affected by MiFID II
-tick changes vs. control group (Swiss or UK stocks). Identification is more complex here
-due to the broad scope of MiFID II changes (not tick-only).
 
 ---
 
 ## Summary
 
-| NER | Valid Facts | Invalid Facts | Total Valid Cells | Status |
-|-----|-----------|---------------|-------------------|--------|
-| jpx_2014_jp_tick | 6/6 | 0/6 | 30 | VALID (empirically derived) |
-| tspp_2016_us_equity | 0/6 | 6/6 | 0 | INVALID (external_claim) |
-| french_ftt_2012_eu | 0/6 | 6/6 | 0 | INVALID (external_claim) |
-| mifid2_2018_eu_tick | 0/6 | 6/6 | 0 | INVALID (external_claim) |
-| **Total** | **6/24** | **18/24** | **30/120** | |
+| NER | Valid Facts | Status | Conclusive? |
+|-----|-----------|--------|------------|
+| jpx_2014_jp_tick | 6/6 | VALID | NO (all CI95 cross zero) |
+| tspp_2016_us_equity | 0/6 | INVALID | N/A |
+| french_ftt_2012_eu | 0/6 | INVALID | N/A |
+| mifid2_2018_eu_tick | 0/6 | INVALID | N/A |
+| **Total** | **6/24** | — | **0 conclusive** |
 
-## Conclusion
+## Root Cause
 
-Only 30 out of 120 cells (25%) are scientifically valid — all from the JPX 2014 NER.
-The other 90 cells use fabricated delta values attributed to papers that measure
-different quantities (spreads/volume/depth vs. return-distribution stylized facts).
+The fundamental issue is a **category mismatch**: PRISM measures return-distribution
+stylized facts (kurtosis, GARCH persistence, leverage effect, skewness, ACF), but the
+available natural experiments involve microstructure interventions (tick size changes,
+transaction taxes) whose effects are primarily on microstructure quantities (spreads,
+depth, price impact, execution quality).
 
-The 3 invalid NERs could be rescued by applying the same empirical re-derivation
-pipeline used for JPX 2014 (fetch daily returns → DiD with PRISM estimators →
-replace external_claim). This requires identifying appropriate treatment/control
-stock lists and pre/post periods for each event.
+At the daily frequency, these microstructure effects are too small relative to noise
+to produce statistically significant changes in return-distribution facts. The CI95
+intervals are wide because the signal-to-noise ratio is inherently low for this
+intervention-measurement combination.
+
+This is not a bug — it is a valid scientific finding about the relationship between
+microstructure interventions and return-distribution properties.
