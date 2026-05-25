@@ -3,6 +3,7 @@
 import numpy as np
 
 from prism.scoring import compute_match, compute_matches, score_magnitude, score_sign
+from prism.scoring.scorer import binomial_sign_pvalue
 from prism.types import DeltaFact, FactResult, GroundTruthDelta, MatchVerdict
 
 
@@ -31,6 +32,15 @@ class TestScoreSign:
 
     def test_nan(self):
         assert score_sign(np.nan, 0.2) == MatchVerdict.INCONCLUSIVE
+
+    def test_ci95_crosses_zero(self):
+        assert score_sign(0.1, 0.2, ci95_empirical=(-0.1, 0.5)) == MatchVerdict.INCONCLUSIVE
+
+    def test_ci95_does_not_cross_zero(self):
+        assert score_sign(0.1, 0.2, ci95_empirical=(0.05, 0.4)) == MatchVerdict.MATCH
+
+    def test_ci95_negative_no_crossing(self):
+        assert score_sign(-0.1, -0.3, ci95_empirical=(-0.5, -0.1)) == MatchVerdict.MATCH
 
 
 class TestScoreMagnitude:
@@ -93,3 +103,27 @@ class TestComputeMatches:
         gts = [_make_gt("gain_loss_asymmetry", -0.10)]
         results = compute_matches(deltas, gts)
         assert len(results) == 0
+
+    def test_ci95_zero_crossing_makes_inconclusive(self):
+        md = _make_delta("fat_tails", 0.5)
+        gt = _make_gt("fat_tails", 0.559, ci95=(-1.718, 3.435))
+        result = compute_match(md, gt)
+        assert result.sign_match == MatchVerdict.INCONCLUSIVE
+
+
+class TestBinomialSignPvalue:
+    def test_zero_matches(self):
+        assert binomial_sign_pvalue(0, 6) == 1.0
+
+    def test_all_matches(self):
+        assert abs(binomial_sign_pvalue(6, 6) - 0.015625) < 1e-6
+
+    def test_five_of_six(self):
+        assert abs(binomial_sign_pvalue(5, 6) - 7 / 64) < 1e-6
+
+    def test_three_of_six(self):
+        p = binomial_sign_pvalue(3, 6)
+        assert abs(p - 0.65625) < 1e-4
+
+    def test_empty(self):
+        assert binomial_sign_pvalue(0, 0) == 1.0
