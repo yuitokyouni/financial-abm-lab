@@ -450,6 +450,98 @@ class TestTensor4x4:
             assert cell.eligibility is not None
 
 
+class TestTensor5x4:
+    def test_5x4_tensor_runs(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci", "zi", "lm", "fw"],
+            ner_paths=[
+                "data/ner/tspp_2016_us_equity.yaml",
+                "data/ner/french_ftt_2012_eu.yaml",
+                "data/ner/mifid2_2018_eu_tick.yaml",
+                "data/ner/jpx_2014_jp_tick.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=3,
+        )
+        assert len(result.cells) == 20  # 5 adapters × 4 NERs
+        assert set(result.adapter_ids) == {"sg", "ci", "zi", "lm", "fw"}
+        assert len(result.ner_ids) == 4
+
+    def test_5x4_all_cells_scored(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci", "zi", "lm", "fw"],
+            ner_paths=[
+                "data/ner/tspp_2016_us_equity.yaml",
+                "data/ner/french_ftt_2012_eu.yaml",
+                "data/ner/mifid2_2018_eu_tick.yaml",
+                "data/ner/jpx_2014_jp_tick.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=3,
+        )
+        for cell in result.cells:
+            assert len(cell.matches) == 2
+            assert len(cell.weighted_matches) == 2
+            assert cell.eligibility is not None
+
+
+class TestFWEndToEnd:
+    def test_fw_tick_size_cell(self):
+        result = run_cell(
+            adapter_name="fw",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.adapter_id == "fw"
+        assert result.ner_id == "tspp_2016_us_equity"
+        assert len(result.matches) == 3
+
+    def test_fw_transaction_tax_cell(self):
+        result = run_cell(
+            adapter_name="fw",
+            ner_path="data/ner/french_ftt_2012_eu.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.adapter_id == "fw"
+        assert result.ner_id == "french_ftt_2012_eu"
+        assert len(result.matches) == 3
+
+    def test_fw_tick_size_decrease_cell(self):
+        result = run_cell(
+            adapter_name="fw",
+            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
+            seed=42,
+            n_paths=5,
+        )
+        assert result.adapter_id == "fw"
+        assert result.ner_id == "jpx_2014_jp_tick"
+        assert len(result.matches) == 3
+
+    def test_fw_has_eligibility(self):
+        result = run_cell(
+            adapter_name="fw",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.eligibility is not None
+
+    def test_fw_mdl_weight_between_zi_and_sg(self):
+        fw = run_cell("fw", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        zi = run_cell("zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        sg = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        assert zi.weighted_matches[0].mdl_weight > fw.weighted_matches[0].mdl_weight
+        assert fw.weighted_matches[0].mdl_weight > sg.weighted_matches[0].mdl_weight
+
+
 class TestJpxNer:
     def test_jpx_with_sg(self):
         result = run_cell(

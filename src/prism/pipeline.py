@@ -13,6 +13,7 @@ from typing import Any
 import numpy as np
 
 from prism.adapters.ci import CIAdapter
+from prism.adapters.fw import FWAdapter
 from prism.adapters.lm import LMAdapter
 from prism.adapters.sg import SGAdapter
 from prism.adapters.zi import ZIAdapter
@@ -42,6 +43,7 @@ ADAPTER_REGISTRY: dict[str, type] = {
     "ci": CIAdapter,
     "zi": ZIAdapter,
     "lm": LMAdapter,
+    "fw": FWAdapter,
 }
 
 
