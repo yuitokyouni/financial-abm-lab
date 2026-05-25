@@ -197,20 +197,51 @@
 - `pip install -e ".[dev,viz]"` OK
 - `prism --help`, `from prism import run_cell, run_tensor` OK
 
-### 追加確認
-- `ADAPTER_LATEX_LABELS["fw"] = "FW"` コード確認済み (commit 422a7e3)
-- `__version__` を公開 API `__all__` に追加 (commit 93a931e)
-- `python -m build` で wheel + sdist ビルド成功確認
-- `generate_paper_figures.py` 再実行中 (バックグラウンド) — FW 表示確認は次回
+## Phase 9: テスト強化 + API ドキュメント + v0.1.0 — COMPLETE
+
+### 今回のセッションで達成したこと
+
+#### Phase 9a: pipeline.py ユニットテスト — commit fc0088a
+1. **pipeline ユニットテスト** (`tests/unit/test_pipeline.py`): 32 tests
+   - `CellOutput.summary()`: eligibility/weighted/unweighted/magnitude 表示 9 tests
+   - `CellOutput.to_dict()`: serialization 各分岐 6 tests
+   - `TensorOutput.summary()`: ineligible/divergence 検出 3 tests
+   - `TensorOutput.to_dict()`: 構造確認 1 test
+   - `MethodComparisonOutput.summary()` + `to_dict()`: 2 tests
+   - `run_cell()`: mock adapter, per_path, pre_data, error 4 tests
+   - `_compute_per_path_facts()`: basic + NaN 2 tests
+   - `run_tensor()` + `compare_causal_methods()`: mock 3 tests
+   - `ADAPTER_REGISTRY`: 全 adapter 存在 + instantiate 2 tests
+   - **coverage**: pipeline.py 25% → 99%, 全体 86% → 97%
+
+#### Phase 9b: v0.1.0 + pdoc API ドキュメント — commit 27b4005
+2. **Version bump**: 0.0.1 → 0.1.0 (pyproject.toml + `__init__.py`)
+3. **pdoc API docs**: `scripts/generate_api_docs.py` (HTML生成 + ライブサーバ)
+4. **`[docs]` optional dependency**: pdoc>=14.0
+5. **CONTRIBUTING.md**: ドキュメント生成手順追加
+6. **.gitignore**: `docs/api/` 追加
+
+#### Phase 8 handoff 確認
+- `generate_paper_figures.py` 出力で "FW" ラベル確認済み (LaTeX テーブル 4行)
+- Phase 8 → COMPLETE
+
+### テスト状態
+- **351 tests** (unit: 291, integration: 55+), all passing
+- ruff check clean, ruff format clean
+- mypy strict: 0 errors (26 files)
+- coverage: ≥97% (unit only), ≥97% (full suite)
+- `pip install -e ".[dev,viz]"` OK
+- `prism --help`, `from prism import run_cell, run_tensor` OK
+- `python scripts/generate_api_docs.py` OK
 
 ### ブロッカー
 - なし
 
 ### 次回セッションで最初に実行すべきこと
-1. `generate_paper_figures.py` の出力確認 (output/tab_full_tensor.tex で "FW" 表示を確認)
-2. FW ラベル確認後、Phase 8 を COMPLETE に更新
+1. フルテストスイート実行確認 (`pytest --cov=prism --cov-fail-under=85`)
 
-### 次の目標 (Phase 9 候補)
-1. Sphinx/pdoc による API ドキュメント自動生成
-2. GitHub Release / PyPI パッケージ公開準備
-3. カバレッジ 90%+ へのさらなるテスト強化
+### 次の目標 (Phase 10 候補)
+1. GitHub Release v0.1.0 作成 (タグ + リリースノート)
+2. CI に API ドキュメント生成ステップ追加
+3. GitHub Pages でのドキュメント公開
+4. PyPI テスト公開 (test.pypi.org)
