@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from prism.pipeline import run_cell
+from prism.pipeline import run_cell, run_tensor
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -50,6 +50,34 @@ def build_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help="Output JSON file path (default: stdout summary)",
+    )
+
+    tensor_parser = sub.add_parser(
+        "tensor", help="Run the full phase-diagram tensor (adapters × NERs × facts)"
+    )
+    tensor_parser.add_argument(
+        "--adapters",
+        required=True,
+        help="Comma-separated adapter names (e.g., sg,ci)",
+    )
+    tensor_parser.add_argument(
+        "--ners",
+        required=True,
+        help="Comma-separated NER ids or paths",
+    )
+    tensor_parser.add_argument(
+        "--facts",
+        required=True,
+        help="Comma-separated fact IDs (e.g., leverage,volclust,gainloss)",
+    )
+    tensor_parser.add_argument(
+        "--seed", type=int, default=42, help="RNG seed (default: 42)"
+    )
+    tensor_parser.add_argument(
+        "--n-paths", type=int, default=10, help="Simulation paths (default: 10)"
+    )
+    tensor_parser.add_argument(
+        "--output", type=str, default=None, help="Output JSON file path"
     )
     return parser
 
@@ -100,6 +128,28 @@ def main(argv: list[str] | None = None) -> int:
         result = run_cell(
             adapter_name=args.adapter,
             ner_path=ner_path,
+            fact_ids=fact_ids,
+            seed=args.seed,
+            n_paths=args.n_paths,
+        )
+
+        print(result.summary())
+
+        if args.output:
+            out_path = Path(args.output)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(out_path, "w") as f:
+                json.dump(result.to_dict(), f, indent=2, default=str)
+            print(f"\nFull result written to: {out_path}")
+
+    elif args.command == "tensor":
+        adapter_names = [a.strip() for a in args.adapters.split(",")]
+        ner_paths = [resolve_ner_path(n.strip()) for n in args.ners.split(",")]
+        fact_ids = resolve_fact_ids(args.facts)
+
+        result = run_tensor(
+            adapter_names=adapter_names,
+            ner_paths=ner_paths,
             fact_ids=fact_ids,
             seed=args.seed,
             n_paths=args.n_paths,

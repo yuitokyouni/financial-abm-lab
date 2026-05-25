@@ -9,6 +9,7 @@ from prism.types import NaturalExperimentRecord
 
 
 NER_PATH = Path("data/ner/tspp_2016_us_equity.yaml")
+FTT_PATH = Path("data/ner/french_ftt_2012_eu.yaml")
 
 
 class TestLoadNer:
@@ -51,3 +52,34 @@ class TestLoadNer:
     def test_file_not_found(self):
         with pytest.raises(FileNotFoundError):
             load_ner("nonexistent.yaml")
+
+
+class TestLoadFttNer:
+    def test_loads_successfully(self):
+        ner = load_ner(FTT_PATH)
+        assert isinstance(ner, NaturalExperimentRecord)
+
+    def test_ner_id(self):
+        ner = load_ner(FTT_PATH)
+        assert ner.ner_id == "french_ftt_2012_eu"
+
+    def test_intervention_class(self):
+        ner = load_ner(FTT_PATH)
+        assert ner.intervention.intervention_class == "transaction_tax"
+
+    def test_canonical_params(self):
+        ner = load_ner(FTT_PATH)
+        assert ner.intervention.canonical_params["rate"] == 0.002
+
+    def test_ground_truth_count(self):
+        ner = load_ner(FTT_PATH)
+        assert len(ner.ground_truth_deltas) == 3
+
+    def test_ground_truth_fact_ids(self):
+        ner = load_ner(FTT_PATH)
+        ids = {gt.fact_id for gt in ner.ground_truth_deltas}
+        assert ids == {"volatility_clustering", "leverage_effect", "gain_loss_asymmetry"}
+
+    def test_assignment(self):
+        ner = load_ner(FTT_PATH)
+        assert ner.assignment == "regulatory_cutoff"

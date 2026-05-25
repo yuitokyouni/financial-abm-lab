@@ -1,0 +1,65 @@
+# Natural Experiment Record #2: French Financial Transaction Tax (2012)
+#
+# France introduced a 0.2% tax on purchases of French large-cap stocks
+# (market cap > EUR 1B) effective 2012-08-01.  Treatment group was
+# determined by market-cap threshold — a sharp regulatory cutoff.
+#
+# Ground truth deltas are from published DiD estimates (Colliard & Hoffmann 2017,
+# Capelle-Blancard & Havrylchyk 2016).
+# Tagged as "external_claim" until re-derived from raw data within PRISM.
+
+ner_id: "french_ftt_2012_eu"
+
+intervention:
+  class: "transaction_tax"
+  canonical_params:
+    rate: 0.002
+    unit: "fraction_of_notional"
+    applies_to: "buy_side"
+
+venue: "EU_equity_largecap"
+date_effective: "2012-08-01"
+assignment: "regulatory_cutoff"
+
+ground_truth_delta:
+  - fact_id: "volatility_clustering"
+    delta_hat: 0.04
+    ci95: [0.00, 0.08]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover"
+    unit: "relative"
+    references:
+      - "Colliard & Hoffmann, Financial Transaction Taxes, Market Composition, and Liquidity, JF 2017"
+      - "Capelle-Blancard & Havrylchyk, The Impact of the French Securities Transaction Tax, JIMF 2016"
+      - "external_claim"
+
+  - fact_id: "leverage_effect"
+    delta_hat: -0.03
+    ci95: [-0.07, 0.01]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover"
+    unit: "relative"
+    references:
+      - "Colliard & Hoffmann 2017"
+      - "external_claim"
+
+  - fact_id: "gain_loss_asymmetry"
+    delta_hat: -0.02
+    ci95: [-0.05, 0.01]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover"
+    unit: "relative"
+    references:
+      - "Capelle-Blancard & Havrylchyk 2016"
+      - "external_claim"
+
+data_hashes: {}

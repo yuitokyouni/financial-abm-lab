@@ -13,6 +13,7 @@ from typing import Any
 
 import numpy as np
 
+from prism.adapters.ci import CIAdapter
 from prism.adapters.sg import SGAdapter
 from prism.data import load_ner
 from prism.facts import FACT_REGISTRY, compute_fact
@@ -29,6 +30,7 @@ from prism.types import (
 
 ADAPTER_REGISTRY: dict[str, type] = {
     "sg": SGAdapter,
+    "ci": CIAdapter,
 }
 
 
@@ -155,4 +157,94 @@ def run_cell(
         ner_id=ner.ner_id,
         matches=matches,
         provenance=prov.to_dict(),
+    )
+
+
+@dataclass
+class TensorOutput:
+    """Full phase-diagram tensor: adapter × intervention × fact → match."""
+
+    cells: list[CellOutput]
+    adapter_ids: list[str]
+    ner_ids: list[str]
+    fact_ids: list[str]
+
+    def summary(self) -> str:
+        lines = ["=" * 72, "  PRISM Phase-Diagram Tensor", "=" * 72, ""]
+        for cell in self.cells:
+            lines.append(cell.summary())
+            lines.append("")
+
+        lines.append("-" * 72)
+        lines.append("  Divergence Analysis")
+        lines.append("-" * 72)
+
+        for ner_id in self.ner_ids:
+            ner_cells = [c for c in self.cells if c.ner_id == ner_id]
+            for fid in self.fact_ids:
+                scores = {}
+                for cell in ner_cells:
+                    for m in cell.matches:
+                        if m.fact_id == fid:
+                            scores[cell.adapter_id] = m
+                if len(scores) >= 2:
+                    ids = list(scores.keys())
+                    for i in range(len(ids)):
+                        for j in range(i + 1, len(ids)):
+                            a, b = ids[i], ids[j]
+                            ma, mb = scores[a], scores[b]
+                            if ma.sign_match != mb.sign_match:
+                                lines.append(
+                                    f"  DIVERGENCE [{ner_id}/{fid}]: "
+                                    f"{a}={ma.sign_match.value} vs "
+                                    f"{b}={mb.sign_match.value}"
+                                )
+        lines.append("")
+        return "\n".join(lines)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "adapter_ids": self.adapter_ids,
+            "ner_ids": self.ner_ids,
+            "fact_ids": self.fact_ids,
+            "cells": [c.to_dict() for c in self.cells],
+        }
+
+
+def run_tensor(
+    adapter_names: list[str],
+    ner_paths: list[str | Path],
+    fact_ids: list[str],
+    seed: int = 42,
+    n_paths: int = 10,
+) -> TensorOutput:
+    """Execute the full phase-diagram tensor: adapters × NERs × facts."""
+
+    cells = []
+    ner_ids = []
+    for ner_path in ner_paths:
+        ner = load_ner(ner_path)
+        ner_ids.append(ner.ner_id)
+
+    for adapter_name in adapter_names:
+        for ner_path in ner_paths:
+            cell = run_cell(
+                adapter_name=adapter_name,
+                ner_path=ner_path,
+                fact_ids=fact_ids,
+                seed=seed,
+                n_paths=n_paths,
+            )
+            cells.append(cell)
+
+    seen = []
+    for nid in ner_ids:
+        if nid not in seen:
+            seen.append(nid)
+
+    return TensorOutput(
+        cells=cells,
+        adapter_ids=adapter_names,
+        ner_ids=seen,
+        fact_ids=fact_ids,
     )
