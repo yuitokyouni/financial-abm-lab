@@ -115,7 +115,7 @@ class SGAdapter:
             new_params.beta = self.params.beta * np.sqrt(tick_ratio)
         elif intervention.intervention_class == "transaction_tax":
             tax_rate = intervention.canonical_params.get("rate", 0.001)
-            new_params.noise_scale *= (1 - tax_rate * 10)
+            new_params.noise_scale *= 1 - tax_rate * 10
         else:
             raise ValueError(f"Unknown intervention class: {intervention.intervention_class}")
 
@@ -153,9 +153,7 @@ class SGAdapter:
             description_length=7.0,
         )
 
-    def _simulate_one_path(
-        self, rng: np.random.Generator
-    ) -> npt.NDArray[np.float64]:
+    def _simulate_one_path(self, rng: np.random.Generator) -> npt.NDArray[np.float64]:
         p = self.params
         T = p.n_steps
         prices = np.full(T, p.fundamental_value)

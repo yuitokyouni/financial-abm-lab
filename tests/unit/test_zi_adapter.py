@@ -52,8 +52,15 @@ class TestZIProtocolCompliance:
 
     def test_simpler_than_sg_and_ci(self, adapter):
         from prism.adapters import CIAdapter, SGAdapter
-        assert adapter.describe_complexity().n_free_params < SGAdapter().describe_complexity().n_free_params
-        assert adapter.describe_complexity().n_free_params < CIAdapter().describe_complexity().n_free_params
+
+        assert (
+            adapter.describe_complexity().n_free_params
+            < SGAdapter().describe_complexity().n_free_params
+        )
+        assert (
+            adapter.describe_complexity().n_free_params
+            < CIAdapter().describe_complexity().n_free_params
+        )
 
 
 class TestZIIntervention:

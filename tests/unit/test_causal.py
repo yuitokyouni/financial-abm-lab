@@ -1,6 +1,5 @@
 """Tests for causal method quality weighting."""
 
-
 from prism.scoring.causal import (
     CAUSAL_METHOD_WEIGHTS,
     DEFAULT_CAUSAL_WEIGHT,

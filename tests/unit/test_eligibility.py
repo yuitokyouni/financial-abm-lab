@@ -1,6 +1,5 @@
 """Tests for static eligibility gate."""
 
-
 from prism.scoring.eligibility import (
     EMPIRICAL_RANGES,
     EligibilityVerdict,

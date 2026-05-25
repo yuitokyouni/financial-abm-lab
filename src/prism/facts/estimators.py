@@ -196,9 +196,7 @@ def abs_autocorrelation(returns: npt.NDArray[np.float64]) -> FactResult:
     else:
         acf1 = float(np.sum(abs_r[:-1] * abs_r[1:]) / var)
 
-    ci95 = _bootstrap_ci(
-        r, _abs_acf1_statistic, n_boot=1000
-    )
+    ci95 = _bootstrap_ci(r, _abs_acf1_statistic, n_boot=1000)
 
     return FactResult(
         fact_id="abs_autocorrelation",
@@ -244,9 +242,7 @@ def squared_return_acf(returns: npt.NDArray[np.float64]) -> FactResult:
     else:
         acf1 = float(np.sum(r2[:-1] * r2[1:]) / var)
 
-    ci95 = _bootstrap_ci(
-        r, _sq_acf1_statistic, n_boot=1000
-    )
+    ci95 = _bootstrap_ci(r, _sq_acf1_statistic, n_boot=1000)
 
     return FactResult(
         fact_id="squared_return_acf",
@@ -323,9 +319,7 @@ def compute_fact(fact_id: str, returns: npt.NDArray[np.float64]) -> FactResult:
     return FACT_REGISTRY[fact_id](returns)
 
 
-def compute_facts(
-    fact_ids: list[str], returns: npt.NDArray[np.float64]
-) -> dict[str, FactResult]:
+def compute_facts(fact_ids: list[str], returns: npt.NDArray[np.float64]) -> dict[str, FactResult]:
     return {fid: compute_fact(fid, returns) for fid in fact_ids}
 
 

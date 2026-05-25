@@ -52,7 +52,11 @@ class TestLMProtocolCompliance:
 
     def test_more_complex_than_zi(self, adapter):
         from prism.adapters import ZIAdapter
-        assert adapter.describe_complexity().n_free_params > ZIAdapter().describe_complexity().n_free_params
+
+        assert (
+            adapter.describe_complexity().n_free_params
+            > ZIAdapter().describe_complexity().n_free_params
+        )
 
 
 class TestLMIntervention:

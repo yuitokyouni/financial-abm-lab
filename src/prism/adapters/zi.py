@@ -96,11 +96,9 @@ class ZIAdapter:
             new_params.bid_ask_spread /= tick_ratio
         elif intervention.intervention_class == "transaction_tax":
             tax_rate = intervention.canonical_params.get("rate", 0.001)
-            new_params.bid_ask_spread *= (1 + tax_rate * 5)
+            new_params.bid_ask_spread *= 1 + tax_rate * 5
         else:
-            raise ValueError(
-                f"Unknown intervention class: {intervention.intervention_class}"
-            )
+            raise ValueError(f"Unknown intervention class: {intervention.intervention_class}")
 
         return ZIAdapter(params=new_params)
 
@@ -135,9 +133,7 @@ class ZIAdapter:
             description_length=4.0,
         )
 
-    def _simulate_one_path(
-        self, rng: np.random.Generator
-    ) -> npt.NDArray[np.float64]:
+    def _simulate_one_path(self, rng: np.random.Generator) -> npt.NDArray[np.float64]:
         p = self.params
         T = p.n_steps
         prices = np.full(T, p.fundamental_value)

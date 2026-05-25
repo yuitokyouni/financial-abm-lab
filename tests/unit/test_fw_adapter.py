@@ -52,8 +52,15 @@ class TestFWProtocolCompliance:
 
     def test_complexity_between_zi_and_sg(self, adapter):
         from prism.adapters import SGAdapter, ZIAdapter
-        assert adapter.describe_complexity().n_free_params > ZIAdapter().describe_complexity().n_free_params
-        assert adapter.describe_complexity().n_free_params < SGAdapter().describe_complexity().n_free_params
+
+        assert (
+            adapter.describe_complexity().n_free_params
+            > ZIAdapter().describe_complexity().n_free_params
+        )
+        assert (
+            adapter.describe_complexity().n_free_params
+            < SGAdapter().describe_complexity().n_free_params
+        )
 
 
 class TestFWIntervention:

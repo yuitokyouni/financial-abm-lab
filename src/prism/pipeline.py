@@ -82,7 +82,11 @@ class CellOutput:
         for item in display:
             if isinstance(item, WeightedMatchResult):
                 sign_str = item.sign_match.value.upper()
-                mag_str = "yes" if item.magnitude_within_ci else ("no" if item.magnitude_within_ci is False else "n/a")
+                mag_str = (
+                    "yes"
+                    if item.magnitude_within_ci
+                    else ("no" if item.magnitude_within_ci is False else "n/a")
+                )
                 lines.append(
                     f"  {item.fact_id:30s}  sign={sign_str:14s}  "
                     f"mag_in_ci={mag_str:4s}  "
@@ -93,7 +97,11 @@ class CellOutput:
                 )
             else:
                 sign_str = item.sign_match.value.upper()
-                mag_str = "yes" if item.magnitude_within_ci else ("no" if item.magnitude_within_ci is False else "n/a")
+                mag_str = (
+                    "yes"
+                    if item.magnitude_within_ci
+                    else ("no" if item.magnitude_within_ci is False else "n/a")
+                )
                 lines.append(
                     f"  {item.fact_id:30s}  sign={sign_str:14s}  "
                     f"mag_in_ci={mag_str:4s}  "
@@ -103,9 +111,7 @@ class CellOutput:
         lines.append("")
 
         sign_matches = sum(1 for m in self.matches if m.sign_match == MatchVerdict.MATCH)
-        lines.append(
-            f"  Sign consistency: {sign_matches}/{len(self.matches)}"
-        )
+        lines.append(f"  Sign consistency: {sign_matches}/{len(self.matches)}")
         lines.append(f"  Run ID: {self.provenance.get('run_id', 'unknown')}")
         return "\n".join(lines)
 
@@ -255,6 +261,7 @@ def run_cell(
         tracker.record_parameter("pre_data_source", "real")
     elif use_real_data:
         from prism.data.market_data import fetch_pre_intervention_data
+
         pre_data = fetch_pre_intervention_data(ner.venue, ner.date_effective)
         tracker.record_parameter("pre_data_source", "real")
     else:
@@ -273,12 +280,18 @@ def run_cell(
     if per_path_facts:
         # --- Per-path mode: preserve distributional properties ---
         pre_facts, sim_pre = _compute_per_path_facts(
-            adapter, fact_ids, seed, n_paths,
+            adapter,
+            fact_ids,
+            seed,
+            n_paths,
         )
         tracker.record_data_hash("sim_pre", sim_pre.content_hash())
 
         post_facts, sim_post = _compute_per_path_facts(
-            post_adapter, fact_ids, seed, n_paths,
+            post_adapter,
+            fact_ids,
+            seed,
+            n_paths,
         )
         tracker.record_data_hash("sim_post", sim_post.content_hash())
 
@@ -357,7 +370,8 @@ class TensorOutput:
         lines = ["=" * 72, "  PRISM Phase-Diagram Tensor", "=" * 72, ""]
 
         ineligible = [
-            c for c in self.cells
+            c
+            for c in self.cells
             if c.eligibility and c.eligibility.verdict == EligibilityVerdict.INELIGIBLE
         ]
         if ineligible:
@@ -479,8 +493,13 @@ def compare_causal_methods(
         methods = list(CAUSAL_METHOD_WEIGHTS.keys())
 
     cell = run_cell(
-        adapter_name, ner_path, fact_ids, seed, n_paths,
-        per_path_facts=per_path_facts, pre_data=pre_data,
+        adapter_name,
+        ner_path,
+        fact_ids,
+        seed,
+        n_paths,
+        per_path_facts=per_path_facts,
+        pre_data=pre_data,
         use_real_data=use_real_data,
     )
     complexity = ADAPTER_REGISTRY[adapter_name]().describe_complexity()
@@ -491,14 +510,16 @@ def compare_causal_methods(
     for method in methods:
         cw = causal_method_weight(method)
         for m in cell.matches:
-            rows.append(MethodComparisonRow(
-                causal_method=method,
-                causal_weight=cw,
-                fact_id=m.fact_id,
-                confidence_raw=m.confidence,
-                mdl_weight=mdl_w,
-                confidence_weighted=m.confidence * mdl_w * cw,
-            ))
+            rows.append(
+                MethodComparisonRow(
+                    causal_method=method,
+                    causal_weight=cw,
+                    fact_id=m.fact_id,
+                    confidence_raw=m.confidence,
+                    mdl_weight=mdl_w,
+                    confidence_weighted=m.confidence * mdl_w * cw,
+                )
+            )
 
     ner = load_ner(ner_path)
     return MethodComparisonOutput(

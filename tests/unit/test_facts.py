@@ -194,8 +194,12 @@ class TestSquaredReturnAcf:
 class TestRegistry:
     def test_all_facts_registered(self):
         expected = {
-            "volatility_clustering", "leverage_effect", "gain_loss_asymmetry",
-            "fat_tails", "abs_autocorrelation", "squared_return_acf",
+            "volatility_clustering",
+            "leverage_effect",
+            "gain_loss_asymmetry",
+            "fat_tails",
+            "abs_autocorrelation",
+            "squared_return_acf",
         }
         assert set(FACT_REGISTRY.keys()) == expected
 

@@ -1,6 +1,7 @@
 """Tests for LaTeX-compatible figure and table generation."""
 
 import matplotlib
+
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt

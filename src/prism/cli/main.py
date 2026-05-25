@@ -83,112 +83,98 @@ def build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Comma-separated fact IDs (e.g., leverage,volclust,gainloss)",
     )
-    tensor_parser.add_argument(
-        "--seed", type=int, default=42, help="RNG seed (default: 42)"
-    )
+    tensor_parser.add_argument("--seed", type=int, default=42, help="RNG seed (default: 42)")
     tensor_parser.add_argument(
         "--n-paths", type=int, default=10, help="Simulation paths (default: 10)"
     )
+    tensor_parser.add_argument("--output", type=str, default=None, help="Output JSON file path")
     tensor_parser.add_argument(
-        "--output", type=str, default=None, help="Output JSON file path"
-    )
-    tensor_parser.add_argument(
-        "--per-path-facts", action="store_true", default=False,
+        "--per-path-facts",
+        action="store_true",
+        default=False,
         help="Compute facts per simulation path (preserves kurtosis/skewness)",
     )
     tensor_parser.add_argument(
-        "--real-data", action="store_true", default=False,
+        "--real-data",
+        action="store_true",
+        default=False,
         help="Use real market data for calibration (requires yfinance + internet)",
     )
 
-    compare_parser = sub.add_parser(
-        "compare", help="Compare causal method weightings for one cell"
-    )
+    compare_parser = sub.add_parser("compare", help="Compare causal method weightings for one cell")
+    compare_parser.add_argument("--adapter", required=True, help="Model adapter name")
+    compare_parser.add_argument("--ner", required=True, help="NER id or path")
+    compare_parser.add_argument("--facts", required=True, help="Comma-separated fact IDs")
     compare_parser.add_argument(
-        "--adapter", required=True, help="Model adapter name"
-    )
-    compare_parser.add_argument(
-        "--ner", required=True, help="NER id or path"
-    )
-    compare_parser.add_argument(
-        "--facts", required=True, help="Comma-separated fact IDs"
-    )
-    compare_parser.add_argument(
-        "--methods", type=str, default=None,
+        "--methods",
+        type=str,
+        default=None,
         help="Comma-separated causal methods (default: all known methods)",
     )
     compare_parser.add_argument("--seed", type=int, default=42)
     compare_parser.add_argument("--n-paths", type=int, default=10)
     compare_parser.add_argument("--output", type=str, default=None)
     compare_parser.add_argument(
-        "--per-path-facts", action="store_true", default=False,
+        "--per-path-facts",
+        action="store_true",
+        default=False,
         help="Compute facts per simulation path (preserves kurtosis/skewness)",
     )
 
-    heatmap_parser = sub.add_parser(
-        "heatmap", help="Run tensor and render phase-diagram heatmap"
-    )
-    heatmap_parser.add_argument(
-        "--adapters", required=True, help="Comma-separated adapter names"
-    )
-    heatmap_parser.add_argument(
-        "--ners", required=True, help="Comma-separated NER ids or paths"
-    )
-    heatmap_parser.add_argument(
-        "--facts", required=True, help="Comma-separated fact IDs"
-    )
+    heatmap_parser = sub.add_parser("heatmap", help="Run tensor and render phase-diagram heatmap")
+    heatmap_parser.add_argument("--adapters", required=True, help="Comma-separated adapter names")
+    heatmap_parser.add_argument("--ners", required=True, help="Comma-separated NER ids or paths")
+    heatmap_parser.add_argument("--facts", required=True, help="Comma-separated fact IDs")
     heatmap_parser.add_argument("--seed", type=int, default=42)
     heatmap_parser.add_argument("--n-paths", type=int, default=10)
     heatmap_parser.add_argument(
-        "--per-path-facts", action="store_true", default=False,
+        "--per-path-facts",
+        action="store_true",
+        default=False,
         help="Compute facts per simulation path (preserves kurtosis/skewness)",
     )
     heatmap_parser.add_argument(
-        "--output", type=str, default="heatmap.png",
+        "--output",
+        type=str,
+        default="heatmap.png",
         help="Output image file path (default: heatmap.png)",
     )
 
     latex_hm_parser = sub.add_parser(
         "latex-heatmap", help="Render publication-quality heatmap (PDF/PGF) for LaTeX"
     )
-    latex_hm_parser.add_argument(
-        "--adapters", required=True, help="Comma-separated adapter names"
-    )
-    latex_hm_parser.add_argument(
-        "--ners", required=True, help="Comma-separated NER ids or paths"
-    )
-    latex_hm_parser.add_argument(
-        "--facts", required=True, help="Comma-separated fact IDs"
-    )
+    latex_hm_parser.add_argument("--adapters", required=True, help="Comma-separated adapter names")
+    latex_hm_parser.add_argument("--ners", required=True, help="Comma-separated NER ids or paths")
+    latex_hm_parser.add_argument("--facts", required=True, help="Comma-separated fact IDs")
     latex_hm_parser.add_argument("--seed", type=int, default=42)
     latex_hm_parser.add_argument("--n-paths", type=int, default=10)
     latex_hm_parser.add_argument(
-        "--per-path-facts", action="store_true", default=False,
+        "--per-path-facts",
+        action="store_true",
+        default=False,
     )
     latex_hm_parser.add_argument(
-        "--output", type=str, default="heatmap.pdf",
+        "--output",
+        type=str,
+        default="heatmap.pdf",
         help="Output file path (default: heatmap.pdf)",
     )
 
-    latex_tbl_parser = sub.add_parser(
-        "latex-table", help="Export tensor results as LaTeX tabular"
-    )
-    latex_tbl_parser.add_argument(
-        "--adapters", required=True, help="Comma-separated adapter names"
-    )
-    latex_tbl_parser.add_argument(
-        "--ners", required=True, help="Comma-separated NER ids or paths"
-    )
-    latex_tbl_parser.add_argument(
-        "--facts", required=True, help="Comma-separated fact IDs"
-    )
+    latex_tbl_parser = sub.add_parser("latex-table", help="Export tensor results as LaTeX tabular")
+    latex_tbl_parser.add_argument("--adapters", required=True, help="Comma-separated adapter names")
+    latex_tbl_parser.add_argument("--ners", required=True, help="Comma-separated NER ids or paths")
+    latex_tbl_parser.add_argument("--facts", required=True, help="Comma-separated fact IDs")
     latex_tbl_parser.add_argument("--seed", type=int, default=42)
     latex_tbl_parser.add_argument("--n-paths", type=int, default=10)
     latex_tbl_parser.add_argument(
-        "--per-path-facts", action="store_true", default=False,
+        "--per-path-facts",
+        action="store_true",
+        default=False,
     )
     latex_tbl_parser.add_argument(
-        "--output", type=str, default="table.tex",
+        "--output",
+        type=str,
+        default="table.tex",
         help="Output .tex file path (default: table.tex)",
     )
 
@@ -220,7 +206,7 @@ def resolve_ner_path(ner_arg: str) -> Path:
             return candidate
     raise FileNotFoundError(
         f"NER not found: {ner_arg}. Searched: {ner_arg}, "
-        + ", ".join(str(d / f'{ner_arg}.yaml') for d in NER_SEARCH_DIRS)
+        + ", ".join(str(d / f"{ner_arg}.yaml") for d in NER_SEARCH_DIRS)
     )
 
 
@@ -319,6 +305,7 @@ def main(argv: list[str] | None = None) -> int:
         out_path = Path(args.output)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         import matplotlib
+
         matplotlib.use("Agg")
         render_heatmap(hm_result, output_path=out_path)
         print(f"\nHeatmap written to: {out_path}")
@@ -340,6 +327,7 @@ def main(argv: list[str] | None = None) -> int:
         out_path = Path(args.output)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         import matplotlib
+
         matplotlib.use("Agg")
         render_latex_heatmap(lh_result, output_path=out_path)
         print(f"LaTeX heatmap written to: {out_path}")

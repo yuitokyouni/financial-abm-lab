@@ -40,6 +40,7 @@ class TestFetchReturns:
     def can_fetch(self):
         try:
             import yfinance  # noqa: F401
+
             return True
         except ImportError:
             return False
@@ -48,6 +49,7 @@ class TestFetchReturns:
         if not can_fetch:
             pytest.skip("yfinance not available")
         from prism.data.market_data import fetch_returns
+
         try:
             md = fetch_returns(["SPY"], start="2020-01-01", end="2020-06-01")
             assert isinstance(md, MarketData)
@@ -60,6 +62,7 @@ class TestFetchReturns:
         if not can_fetch:
             pytest.skip("yfinance not available")
         from prism.data.market_data import fetch_pre_intervention_data
+
         try:
             md = fetch_pre_intervention_data("US_equity_smallcap", "2016-10-03")
             assert isinstance(md, MarketData)

@@ -1,6 +1,5 @@
 """Integration test for the end-to-end pipeline."""
 
-
 from prism.pipeline import compare_causal_methods, run_cell, run_tensor
 from prism.scoring.eligibility import EligibilityVerdict
 from prism.types import MatchVerdict
@@ -232,9 +231,15 @@ class TestZIEndToEnd:
         assert result.eligibility is not None
 
     def test_zi_simpler_mdl_weight(self):
-        zi = run_cell("zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
-        sg = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
-        ci = run_cell("ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        zi = run_cell(
+            "zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
+        sg = run_cell(
+            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
+        ci = run_cell(
+            "ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
         assert zi.weighted_matches[0].mdl_weight > sg.weighted_matches[0].mdl_weight
         assert zi.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
 
@@ -275,9 +280,15 @@ class TestLMEndToEnd:
         assert result.eligibility is not None
 
     def test_lm_mdl_weight_between_zi_and_ci(self):
-        lm = run_cell("lm", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
-        zi = run_cell("zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
-        ci = run_cell("ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        lm = run_cell(
+            "lm", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
+        zi = run_cell(
+            "zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
+        ci = run_cell(
+            "ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
         assert zi.weighted_matches[0].mdl_weight > lm.weighted_matches[0].mdl_weight
         assert lm.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
 
@@ -353,7 +364,13 @@ class TestTensor3x2:
                 "data/ner/tspp_2016_us_equity.yaml",
                 "data/ner/french_ftt_2012_eu.yaml",
             ],
-            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry", "fat_tails", "abs_autocorrelation"],
+            fact_ids=[
+                "leverage_effect",
+                "volatility_clustering",
+                "gain_loss_asymmetry",
+                "fat_tails",
+                "abs_autocorrelation",
+            ],
             seed=42,
             n_paths=5,
         )
@@ -368,7 +385,13 @@ class TestTensor3x2:
                 "data/ner/tspp_2016_us_equity.yaml",
                 "data/ner/french_ftt_2012_eu.yaml",
             ],
-            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry", "fat_tails", "abs_autocorrelation"],
+            fact_ids=[
+                "leverage_effect",
+                "volatility_clustering",
+                "gain_loss_asymmetry",
+                "fat_tails",
+                "abs_autocorrelation",
+            ],
             seed=42,
             n_paths=5,
         )
@@ -535,9 +558,15 @@ class TestFWEndToEnd:
         assert result.eligibility is not None
 
     def test_fw_mdl_weight_between_zi_and_sg(self):
-        fw = run_cell("fw", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
-        zi = run_cell("zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
-        sg = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        fw = run_cell(
+            "fw", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
+        zi = run_cell(
+            "zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
+        sg = run_cell(
+            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
         assert zi.weighted_matches[0].mdl_weight > fw.weighted_matches[0].mdl_weight
         assert fw.weighted_matches[0].mdl_weight > sg.weighted_matches[0].mdl_weight
 
@@ -774,8 +803,12 @@ class TestPhase3Integration:
         assert wm.confidence_weighted == wm.confidence_raw * wm.mdl_weight * wm.causal_weight
 
     def test_sg_simpler_than_ci_by_mdl(self):
-        sg = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
-        ci = run_cell("ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        sg = run_cell(
+            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
+        ci = run_cell(
+            "ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
         assert sg.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
 
     def test_cell_has_eligibility(self):
@@ -794,7 +827,9 @@ class TestPhase3Integration:
         assert len(result.eligibility.checks) > 0
 
     def test_eligibility_in_provenance(self):
-        result = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        result = run_cell(
+            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
         assert "eligibility" in result.provenance.get("parameters", {})
 
     def test_causal_weight_from_ner(self):
@@ -809,7 +844,9 @@ class TestPhase3Integration:
         assert wm.causal_weight == 0.9  # tspp uses did_firm_fe
 
     def test_to_dict_includes_phase3_fields(self):
-        result = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        result = run_cell(
+            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
+        )
         d = result.to_dict()
         assert "weighted_matches" in d
         assert "eligibility" in d

@@ -51,23 +51,27 @@ VERDICT_SYMBOLS: dict[MatchVerdict, str] = {
 def _try_latex_backend() -> bool:
     """Enable LaTeX rendering if available, otherwise use mathtext."""
     try:
-        plt.rcParams.update({
-            "text.usetex": True,
-            "font.family": "serif",
-            "font.serif": ["Computer Modern Roman"],
-            "font.size": 10,
-        })
+        plt.rcParams.update(
+            {
+                "text.usetex": True,
+                "font.family": "serif",
+                "font.serif": ["Computer Modern Roman"],
+                "font.size": 10,
+            }
+        )
         fig_test = plt.figure(figsize=(1, 1))
         fig_test.text(0.5, 0.5, r"$\alpha$")
         fig_test.savefig("/dev/null", format="png")
         plt.close(fig_test)
         return True
     except Exception:
-        plt.rcParams.update({
-            "text.usetex": False,
-            "font.family": "serif",
-            "font.size": 10,
-        })
+        plt.rcParams.update(
+            {
+                "text.usetex": False,
+                "font.family": "serif",
+                "font.size": 10,
+            }
+        )
         return False
 
 
@@ -98,7 +102,9 @@ def render_latex_heatmap(
         ax = axes[0, ner_idx]
         ax.set_title(
             _ner_label(ner_id),
-            fontsize=9, fontweight="bold", pad=8,
+            fontsize=9,
+            fontweight="bold",
+            pad=8,
         )
 
         ner_cells = [c for c in tensor.cells if c.ner_id == ner_id]
@@ -114,9 +120,7 @@ def render_latex_heatmap(
             )
 
             for fi, fact_id in enumerate(tensor.fact_ids):
-                match = next(
-                    (m for m in cell.matches if m.fact_id == fact_id), None
-                )
+                match = next((m for m in cell.matches if m.fact_id == fact_id), None)
                 if match is None:
                     continue
 
@@ -124,7 +128,9 @@ def render_latex_heatmap(
                 alpha = 0.45 if is_ineligible else 0.8
 
                 rect = FancyBboxPatch(
-                    (fi + 0.05, ai + 0.05), 0.9, 0.9,
+                    (fi + 0.05, ai + 0.05),
+                    0.9,
+                    0.9,
                     boxstyle="round,pad=0.03",
                     facecolor=color,
                     edgecolor="white",
@@ -138,7 +144,9 @@ def render_latex_heatmap(
                         ax.plot(
                             [fi + offset - 0.04, fi + offset + 0.04],
                             [ai + 0.15, ai + 0.85],
-                            color="black", alpha=0.25, linewidth=0.6,
+                            color="black",
+                            alpha=0.25,
+                            linewidth=0.6,
                         )
 
                 wm = next(
@@ -149,16 +157,25 @@ def render_latex_heatmap(
                 mdl_w = wm.mdl_weight if wm else None
 
                 ax.text(
-                    fi + 0.5, ai + 0.42, f"{conf_val:.2f}",
-                    ha="center", va="center",
-                    fontsize=9, fontweight="bold", color="white",
+                    fi + 0.5,
+                    ai + 0.42,
+                    f"{conf_val:.2f}",
+                    ha="center",
+                    va="center",
+                    fontsize=9,
+                    fontweight="bold",
+                    color="white",
                 )
                 if mdl_w is not None:
                     ax.text(
-                        fi + 0.5, ai + 0.72,
+                        fi + 0.5,
+                        ai + 0.72,
                         f"$w={mdl_w:.2f}$",
-                        ha="center", va="center",
-                        fontsize=6, color="white", alpha=0.85,
+                        ha="center",
+                        va="center",
+                        fontsize=6,
+                        color="white",
+                        alpha=0.85,
                     )
 
         ax.set_xlim(0, n_facts)
@@ -166,7 +183,9 @@ def render_latex_heatmap(
         ax.set_xticks([i + 0.5 for i in range(n_facts)])
         ax.set_xticklabels(
             [FACT_LATEX_LABELS.get(f, f) for f in tensor.fact_ids],
-            fontsize=7, rotation=35, ha="right",
+            fontsize=7,
+            rotation=35,
+            ha="right",
         )
         ax.set_yticks([i + 0.5 for i in range(n_adapters)])
         ax.set_yticklabels(
@@ -193,7 +212,7 @@ def render_latex_heatmap(
         bbox_to_anchor=(0.5, -0.02),
     )
 
-    fig.tight_layout(rect=[0, 0.03, 1, 0.97])
+    fig.tight_layout(rect=(0, 0.03, 1, 0.97))
 
     if output_path is not None:
         out = Path(output_path)
@@ -231,9 +250,7 @@ def export_latex_table(
     lines.append(r"\begin{tabular}{" + col_spec + "}")
     lines.append(r"\toprule")
 
-    header_facts = " & ".join(
-        FACT_LATEX_LABELS.get(f, f.replace("_", r"\_")) for f in facts
-    )
+    header_facts = " & ".join(FACT_LATEX_LABELS.get(f, f.replace("_", r"\_")) for f in facts)
     lines.append(r"NER & Model & " + header_facts + r" \\")
     lines.append(r"\midrule")
 
@@ -257,9 +274,7 @@ def export_latex_table(
             parts = [ner_col, adapter_label]
 
             for fact_id in facts:
-                match = next(
-                    (m for m in cell.matches if m.fact_id == fact_id), None
-                )
+                match = next((m for m in cell.matches if m.fact_id == fact_id), None)
                 if match is None:
                     parts.append("---")
                     continue

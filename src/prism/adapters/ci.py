@@ -128,16 +128,14 @@ class CIAdapter:
         elif intervention.intervention_class == "transaction_tax":
             tax_rate = intervention.canonical_params.get("rate", 0.001)
             new_params.transaction_cost = tax_rate
-            new_params.noise_scale *= (1 + tax_rate * 5)
-            new_params.alpha_noise *= (1 - tax_rate * 3)
+            new_params.noise_scale *= 1 + tax_rate * 5
+            new_params.alpha_noise *= 1 - tax_rate * 3
             s = new_params.alpha_fund + new_params.alpha_chart + new_params.alpha_noise
             new_params.alpha_fund /= s
             new_params.alpha_chart /= s
             new_params.alpha_noise /= s
         else:
-            raise ValueError(
-                f"Unknown intervention class: {intervention.intervention_class}"
-            )
+            raise ValueError(f"Unknown intervention class: {intervention.intervention_class}")
 
         return CIAdapter(params=new_params)
 
@@ -174,9 +172,7 @@ class CIAdapter:
             description_length=9.0,
         )
 
-    def _simulate_one_path(
-        self, rng: np.random.Generator
-    ) -> npt.NDArray[np.float64]:
+    def _simulate_one_path(self, rng: np.random.Generator) -> npt.NDArray[np.float64]:
         p = self.params
         T = p.n_steps
         prices = np.full(T, p.fundamental_value)
@@ -213,11 +209,7 @@ class CIAdapter:
 
             noise_order = rng.normal(0, p.noise_scale * mid)
 
-            net_order = (
-                a_fund * fund_order
-                + a_chart * chart_order
-                + a_noise * noise_order
-            )
+            net_order = a_fund * fund_order + a_chart * chart_order + a_noise * noise_order
 
             cost = abs(net_order) * p.transaction_cost
             if abs(net_order) > 0:

@@ -45,7 +45,10 @@ def render_heatmap(
         figsize = (max(6, n_facts * 2.5 * n_ners), max(3, n_adapters * 1.5))
 
     fig, axes = plt.subplots(
-        1, n_ners, figsize=figsize, squeeze=False,
+        1,
+        n_ners,
+        figsize=figsize,
+        squeeze=False,
     )
 
     for ner_idx, ner_id in enumerate(tensor.ner_ids):
@@ -65,16 +68,16 @@ def render_heatmap(
             )
 
             for fi, fact_id in enumerate(tensor.fact_ids):
-                match = next(
-                    (m for m in cell.matches if m.fact_id == fact_id), None
-                )
+                match = next((m for m in cell.matches if m.fact_id == fact_id), None)
                 if match is None:
                     continue
 
                 color = VERDICT_COLORS.get(match.sign_match, "#95a5a6")
 
                 rect = FancyBboxPatch(
-                    (fi, ai), 1, 1,
+                    (fi, ai),
+                    1,
+                    1,
                     boxstyle="round,pad=0.05",
                     facecolor=color,
                     edgecolor="white",
@@ -88,7 +91,9 @@ def render_heatmap(
                         ax.plot(
                             [fi + offset - 0.05, fi + offset + 0.05],
                             [ai + 0.2, ai + 0.8],
-                            color="black", alpha=0.3, linewidth=0.8,
+                            color="black",
+                            alpha=0.3,
+                            linewidth=0.8,
                         )
 
                 wm = next(
@@ -103,15 +108,25 @@ def render_heatmap(
                     sub_label = ""
 
                 ax.text(
-                    fi + 0.5, ai + 0.45, label,
-                    ha="center", va="center",
-                    fontsize=11, fontweight="bold", color="white",
+                    fi + 0.5,
+                    ai + 0.45,
+                    label,
+                    ha="center",
+                    va="center",
+                    fontsize=11,
+                    fontweight="bold",
+                    color="white",
                 )
                 if sub_label:
                     ax.text(
-                        fi + 0.5, ai + 0.72, sub_label,
-                        ha="center", va="center",
-                        fontsize=7, color="white", alpha=0.8,
+                        fi + 0.5,
+                        ai + 0.72,
+                        sub_label,
+                        ha="center",
+                        va="center",
+                        fontsize=7,
+                        color="white",
+                        alpha=0.8,
                     )
 
         ax.set_xlim(0, n_facts)
@@ -119,7 +134,9 @@ def render_heatmap(
         ax.set_xticks([i + 0.5 for i in range(n_facts)])
         ax.set_xticklabels(
             [_short_fact(f) for f in tensor.fact_ids],
-            fontsize=8, rotation=30, ha="right",
+            fontsize=8,
+            rotation=30,
+            ha="right",
         )
         ax.set_yticks([i + 0.5 for i in range(n_adapters)])
         ax.set_yticklabels(tensor.adapter_ids, fontsize=9)
@@ -131,7 +148,9 @@ def render_heatmap(
 
     fig.suptitle(
         "PRISM Phase-Diagram Tensor",
-        fontsize=13, fontweight="bold", y=1.02,
+        fontsize=13,
+        fontweight="bold",
+        y=1.02,
     )
 
     _add_legend(fig)

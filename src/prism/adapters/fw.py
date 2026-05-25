@@ -112,22 +112,20 @@ class FWAdapter:
             tick_ratio = new_tick / self.params.tick_size
             new_params.tick_size = new_tick
             new_params.chi /= np.sqrt(tick_ratio)
-            new_params.alpha_w /= (1 + 0.1 * np.log(tick_ratio))
+            new_params.alpha_w /= 1 + 0.1 * np.log(tick_ratio)
         elif intervention.intervention_class == "tick_size_decrease":
             new_tick = intervention.canonical_params.get("min_tick_to", 0.001)
             tick_ratio = self.params.tick_size / new_tick
             new_params.tick_size = new_tick
             new_params.chi *= np.sqrt(tick_ratio)
-            new_params.alpha_w *= (1 + 0.1 * np.log(tick_ratio))
+            new_params.alpha_w *= 1 + 0.1 * np.log(tick_ratio)
         elif intervention.intervention_class == "transaction_tax":
             tax_rate = intervention.canonical_params.get("rate", 0.001)
             new_params.transaction_cost = tax_rate
-            new_params.chi *= (1 - tax_rate * 8)
-            new_params.sigma_c *= (1 + tax_rate * 5)
+            new_params.chi *= 1 - tax_rate * 8
+            new_params.sigma_c *= 1 + tax_rate * 5
         else:
-            raise ValueError(
-                f"Unknown intervention class: {intervention.intervention_class}"
-            )
+            raise ValueError(f"Unknown intervention class: {intervention.intervention_class}")
 
         return FWAdapter(params=new_params)
 
@@ -165,9 +163,7 @@ class FWAdapter:
             description_length=6.0,
         )
 
-    def _simulate_one_path(
-        self, rng: np.random.Generator
-    ) -> npt.NDArray[np.float64]:
+    def _simulate_one_path(self, rng: np.random.Generator) -> npt.NDArray[np.float64]:
         p = self.params
         T = p.n_steps
         prices = np.full(T, p.fundamental_value)

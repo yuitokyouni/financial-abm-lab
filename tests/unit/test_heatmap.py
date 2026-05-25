@@ -1,6 +1,7 @@
 """Tests for heatmap visualization."""
 
 import matplotlib
+
 matplotlib.use("Agg")
 
 import pytest
