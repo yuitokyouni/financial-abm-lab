@@ -198,6 +198,105 @@ class TestTensorPipeline:
         assert "adapter_ids" in d
 
 
+class TestZIEndToEnd:
+    def test_zi_tick_size_cell(self):
+        result = run_cell(
+            adapter_name="zi",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.adapter_id == "zi"
+        assert result.ner_id == "tspp_2016_us_equity"
+        assert len(result.matches) == 3
+
+    def test_zi_transaction_tax_cell(self):
+        result = run_cell(
+            adapter_name="zi",
+            ner_path="data/ner/french_ftt_2012_eu.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.adapter_id == "zi"
+        assert len(result.matches) == 3
+
+    def test_zi_has_eligibility(self):
+        result = run_cell(
+            adapter_name="zi",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.eligibility is not None
+
+    def test_zi_simpler_mdl_weight(self):
+        zi = run_cell("zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        sg = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        ci = run_cell("ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        assert zi.weighted_matches[0].mdl_weight > sg.weighted_matches[0].mdl_weight
+        assert zi.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
+
+
+class TestFatTailsFact:
+    def test_fat_tails_in_cell(self):
+        result = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["fat_tails"],
+            seed=42,
+            n_paths=5,
+        )
+        assert len(result.matches) == 1
+        assert result.matches[0].fact_id == "fat_tails"
+
+    def test_fat_tails_all_adapters(self):
+        for adapter in ["sg", "ci", "zi"]:
+            result = run_cell(
+                adapter_name=adapter,
+                ner_path="data/ner/tspp_2016_us_equity.yaml",
+                fact_ids=["fat_tails"],
+                seed=42,
+                n_paths=5,
+            )
+            assert len(result.matches) == 1
+
+
+class TestTensor3x2:
+    def test_3x2_tensor_runs(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci", "zi"],
+            ner_paths=[
+                "data/ner/tspp_2016_us_equity.yaml",
+                "data/ner/french_ftt_2012_eu.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry", "fat_tails"],
+            seed=42,
+            n_paths=5,
+        )
+        assert len(result.cells) == 6  # 3 adapters x 2 NERs
+        assert set(result.adapter_ids) == {"sg", "ci", "zi"}
+        assert len(result.ner_ids) == 2
+
+    def test_3x2_all_cells_have_4_facts(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci", "zi"],
+            ner_paths=[
+                "data/ner/tspp_2016_us_equity.yaml",
+                "data/ner/french_ftt_2012_eu.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry", "fat_tails"],
+            seed=42,
+            n_paths=5,
+        )
+        for cell in result.cells:
+            assert len(cell.matches) == 4
+            assert len(cell.weighted_matches) == 4
+            assert cell.eligibility is not None
+
+
 class TestPhase3Integration:
     """Phase 3: MDL weighting, eligibility gate, causal method weighting."""
 

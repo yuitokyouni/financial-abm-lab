@@ -165,6 +165,39 @@ def gain_loss_asymmetry(returns: npt.NDArray[np.float64]) -> FactResult:
     )
 
 
+def fat_tails(returns: npt.NDArray[np.float64]) -> FactResult:
+    """Fat tails via excess kurtosis (Fisher's definition).
+
+    Financial returns are leptokurtic: the distribution has heavier tails
+    than a Gaussian.  Excess kurtosis > 0 indicates fat tails;  typical
+    values for daily equity returns are 3-50 (Cont 2001).
+
+    Uses scipy.stats.kurtosis with Fisher=True (excess kurtosis = kurt - 3).
+    """
+    r = np.asarray(returns, dtype=np.float64).ravel()
+    if len(r) < 30:
+        return FactResult(
+            fact_id="fat_tails",
+            value=np.nan,
+            estimator_version=ESTIMATOR_VERSION,
+            metadata={"error": "insufficient data", "n": len(r)},
+        )
+
+    kurt_val = float(stats.kurtosis(r, fisher=True, bias=False))
+
+    ci95 = _bootstrap_ci(
+        r, lambda x: float(stats.kurtosis(x, fisher=True, bias=False)), n_boot=1000
+    )
+
+    return FactResult(
+        fact_id="fat_tails",
+        value=kurt_val,
+        ci95=ci95,
+        estimator_version=ESTIMATOR_VERSION,
+        metadata={"n": len(r)},
+    )
+
+
 def _bootstrap_ci(
     data: npt.NDArray[np.float64],
     stat_fn: Callable[[npt.NDArray[np.float64]], float],
@@ -199,4 +232,5 @@ FACT_REGISTRY: dict[str, FactEstimatorFn] = {
     "volatility_clustering": volatility_clustering,
     "leverage_effect": leverage_effect,
     "gain_loss_asymmetry": gain_loss_asymmetry,
+    "fat_tails": fat_tails,
 }

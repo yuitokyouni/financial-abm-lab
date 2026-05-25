@@ -2,5 +2,6 @@
 
 from prism.adapters.ci import CIAdapter
 from prism.adapters.sg import SGAdapter
+from prism.adapters.zi import ZIAdapter
 
-__all__ = ["SGAdapter", "CIAdapter"]
+__all__ = ["SGAdapter", "CIAdapter", "ZIAdapter"]

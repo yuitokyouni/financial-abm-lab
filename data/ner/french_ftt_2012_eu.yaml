@@ -62,4 +62,17 @@ ground_truth_delta:
       - "Capelle-Blancard & Havrylchyk 2016"
       - "external_claim"
 
+  - fact_id: "fat_tails"
+    delta_hat: 0.3
+    ci95: [-0.3, 0.9]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover"
+    unit: "excess_kurtosis"
+    references:
+      - "Colliard & Hoffmann 2017"
+      - "external_claim"
+
 data_hashes: {}

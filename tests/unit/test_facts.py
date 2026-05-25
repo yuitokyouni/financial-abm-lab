@@ -7,6 +7,7 @@ from prism.facts import (
     FACT_REGISTRY,
     compute_fact,
     compute_facts,
+    fat_tails,
     gain_loss_asymmetry,
     leverage_effect,
     volatility_clustering,
@@ -108,9 +109,39 @@ class TestGainLossAsymmetry:
         assert np.isnan(result.value)
 
 
+class TestFatTails:
+    def test_returns_fact_result(self, iid_returns):
+        result = fat_tails(iid_returns)
+        assert isinstance(result, FactResult)
+        assert result.fact_id == "fat_tails"
+
+    def test_has_ci95(self, iid_returns):
+        result = fat_tails(iid_returns)
+        assert result.ci95 is not None
+        lo, hi = result.ci95
+        assert lo < hi
+
+    def test_normal_near_zero(self, iid_returns):
+        result = fat_tails(iid_returns)
+        assert abs(result.value) < 3.0, "IID normal should have low excess kurtosis"
+
+    def test_leptokurtic_data(self, rng):
+        heavy = rng.standard_t(df=3, size=2000)
+        result = fat_tails(heavy)
+        assert result.value > 3.0, "t(3) data should have high excess kurtosis"
+
+    def test_short_series(self):
+        result = fat_tails(np.array([0.01, -0.02]))
+        assert np.isnan(result.value)
+
+    def test_garch_has_fat_tails(self, garch_returns):
+        result = fat_tails(garch_returns)
+        assert not np.isnan(result.value)
+
+
 class TestRegistry:
     def test_all_facts_registered(self):
-        expected = {"volatility_clustering", "leverage_effect", "gain_loss_asymmetry"}
+        expected = {"volatility_clustering", "leverage_effect", "gain_loss_asymmetry", "fat_tails"}
         assert set(FACT_REGISTRY.keys()) == expected
 
     def test_compute_fact(self, iid_returns):

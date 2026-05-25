@@ -39,6 +39,7 @@ EMPIRICAL_RANGES: dict[str, FactRange] = {
     "volatility_clustering": FactRange("volatility_clustering", 0.5, 0.999),
     "leverage_effect": FactRange("leverage_effect", -0.5, 0.0),
     "gain_loss_asymmetry": FactRange("gain_loss_asymmetry", -3.0, 0.5),
+    "fat_tails": FactRange("fat_tails", 1.0, 50.0),
 }
 
 

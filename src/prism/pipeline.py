@@ -15,6 +15,7 @@ import numpy as np
 
 from prism.adapters.ci import CIAdapter
 from prism.adapters.sg import SGAdapter
+from prism.adapters.zi import ZIAdapter
 from prism.data import load_ner
 from prism.facts import FACT_REGISTRY, compute_fact
 from prism.provenance import ProvenanceTracker
@@ -37,6 +38,7 @@ from prism.types import (
 ADAPTER_REGISTRY: dict[str, type] = {
     "sg": SGAdapter,
     "ci": CIAdapter,
+    "zi": ZIAdapter,
 }
 
 

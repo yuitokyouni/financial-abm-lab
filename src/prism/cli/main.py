@@ -106,6 +106,7 @@ FACT_ALIASES = {
     "leverage": "leverage_effect",
     "volclust": "volatility_clustering",
     "gainloss": "gain_loss_asymmetry",
+    "fattails": "fat_tails",
 }
 
 NER_SEARCH_DIRS = [

@@ -56,4 +56,16 @@ ground_truth_delta:
       - "SEC DERA, Tick Size Pilot Assessment Reports, 2018"
       - "external_claim"
 
+  - fact_id: "fat_tails"
+    delta_hat: 0.5
+    ci95: [-0.5, 1.5]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+    unit: "excess_kurtosis"
+    references:
+      - "SEC DERA, Tick Size Pilot Assessment Reports, 2018"
+      - "external_claim"
+
 data_hashes: {}
