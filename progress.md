@@ -74,25 +74,44 @@
    - booktabs スタイル
 8. **CLI**: `prism latex-heatmap` + `prism latex-table` サブコマンド
 
+#### Phase 6d: JPX 2014 tick size decrease NER — commit 789b0c0
+9. **NER #4** (`data/ner/jpx_2014_jp_tick.yaml`): JPX tick size reduction for TOPIX 100 stocks
+   - tick_size_decrease 介入クラス (JPY 1.0 → 0.1)
+   - Comerton-Forde, Putniņš & Tang (2022) + Yao & Ye (2018) からの ground truth
+   - 6 facts の delta + CI95 付き
+10. **tick_size_decrease** 介入クラス: 全 4 adapters に追加
+    - SG: finer ticks → β増加 (switching amplification)
+    - CI: finer ticks → spread_ticks 増加, price_impact 減少
+    - ZI: finer ticks → bid_ask_spread 縮小
+    - LM: finer ticks → herd_strength 増加, opinion_decay 抑制
+11. **JP_equity_largecap venue**: yfinance 用 EWJ マッピング追加
+12. **Unit tests**: 全 adapter に tick_size_decrease テスト追加
+13. **Integration tests**: JPX × 全 adapter + 4×4 tensor テスト追加
+
+#### Phase 6e: Franke-Westerhoff adapter — commit b51f360
+14. **FW Adapter** (`src/prism/adapters/fw.py`): Franke & Westerhoff (2012) 構造的確率モデル
+    - fundamentalist/chartist の sentiment-driven switching via transition probabilities
+    - tick_size_increase/decrease + transaction_tax 全 3 介入対応
+    - k=6 free params, ModelAdapter Protocol 準拠
+    - 16 unit tests (protocol, intervention × 3, reproducibility)
+15. **Pipeline 拡張**: ADAPTER_REGISTRY に "fw" 追加
+16. **Integration tests**: FW × 3 NER + 5×4 tensor テスト追加
+
 ### Phase 6 テンソル状態
-- **Tensor サイズ**: 4 adapters × 3 NERs × 6 facts = 72 cells
-- **Adapters**: SG (k=7), CI (k=9), ZI (k=4), LM (k=8)
-- **NERs**: tspp_2016_us_equity, french_ftt_2012_eu, mifid2_2018_eu_tick
+- **Tensor サイズ**: 5 adapters × 4 NERs × 6 facts = 120 cells
+- **Adapters**: SG (k=7), CI (k=9), ZI (k=4), LM (k=8), FW (k=6)
+- **NERs**: tspp_2016_us_equity, french_ftt_2012_eu, mifid2_2018_eu_tick, jpx_2014_jp_tick
+- **Intervention classes**: tick_size_increase, tick_size_decrease, transaction_tax
 - **Facts**: volatility_clustering, leverage_effect, gain_loss_asymmetry, fat_tails, abs_autocorrelation, squared_return_acf
-- **テスト**: 238 tests, all passing
-- **品質**: ruff clean
+- **テスト**: ~285 tests, all passing
+- **品質**: ruff clean, mypy strict (adapter/pipeline modules)
 
 ### 既知の課題・改善余地
 - NER の ground truth delta は external_claim タグ済み — 生データからの再算出は未実施
 - 実市場データ接続のテストは yfinance + network 依存 (CI では skip される可能性)
 
-## 次の目標 (Phase 6 残タスク + Phase 7 準備)
+## 次の目標 (Phase 7: ドキュメントと公開準備)
 
-### Phase 6 残り
-1. NER ground truth の生データからの再算出 (external_claim → derived)
-2. 追加 NER (例: Japanese tick size 2014)
-
-### Phase 7: ドキュメントと公開準備
 1. API ドキュメント整備
 2. チュートリアル (Getting Started)
 3. README 拡充
