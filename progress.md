@@ -197,9 +197,18 @@
 - `pip install -e ".[dev,viz]"` OK
 - `prism --help`, `from prism import run_cell, run_tensor` OK
 
-### FW ラベル確認
-- `ADAPTER_LATEX_LABELS["fw"] = "FW"` 確認済み (commit 422a7e3)
-- `generate_paper_figures.py` 再実行中 — 出力 FW 表示確認予定
+### 追加確認
+- `ADAPTER_LATEX_LABELS["fw"] = "FW"` コード確認済み (commit 422a7e3)
+- `__version__` を公開 API `__all__` に追加 (commit 93a931e)
+- `python -m build` で wheel + sdist ビルド成功確認
+- `generate_paper_figures.py` 再実行中 (バックグラウンド) — FW 表示確認は次回
+
+### ブロッカー
+- なし
+
+### 次回セッションで最初に実行すべきこと
+1. `generate_paper_figures.py` の出力確認 (output/tab_full_tensor.tex で "FW" 表示を確認)
+2. FW ラベル確認後、Phase 8 を COMPLETE に更新
 
 ### 次の目標 (Phase 9 候補)
 1. Sphinx/pdoc による API ドキュメント自動生成
