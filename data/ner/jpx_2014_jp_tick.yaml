@@ -14,9 +14,18 @@
 # narrow spreads, improve price discovery, but may increase quote
 # flickering and reduce displayed depth.
 #
-# Ground truth deltas from Comerton-Forde, Putniņš & Tang (2022),
-# Yao & Ye (2018), and the JPX Working Papers series.
-# Tagged as "external_claim" until re-derived from raw data within PRISM.
+# Ground truth deltas RE-DERIVED from raw daily returns using PRISM's
+# own fact estimators (v0.2.0) via Difference-in-Differences:
+#   Treatment: 15 TOPIX 100 large-cap stocks (yfinance)
+#   Control:   10 non-TOPIX-100 TSE stocks (yfinance)
+#   Pre:  2013-07-19 to 2014-01-13 (117 trading days)
+#   Post: 2014-01-14 to 2014-07-14 (123 trading days)
+#   Bootstrap CI95 with 2000 resamples on stock-level estimates.
+#
+# NOTE: Prior external_claim values from Comerton-Forde et al. and
+# Yao & Ye measured spread/liquidity/price-efficiency — different
+# quantities from PRISM's return-distribution facts.  Those values
+# have been replaced by this empirical re-derivation.
 
 ner_id: "jpx_2014_jp_tick"
 
@@ -34,8 +43,8 @@ assignment: "regulatory_cutoff"
 
 ground_truth_delta:
   - fact_id: "volatility_clustering"
-    delta_hat: -0.02
-    ci95: [-0.06, 0.02]
+    delta_hat: -0.073
+    ci95: [-0.299, 0.145]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -43,13 +52,12 @@ ground_truth_delta:
       - "no_spillover_to_non_topix100"
     unit: "relative"
     references:
-      - "Comerton-Forde, Putniņš & Tang, Inverted Fee Structures and Tick Sizes, JFE 2022"
-      - "Yao & Ye, Why Trading Speed Matters, JFE 2018"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_2013-2014"
 
   - fact_id: "leverage_effect"
-    delta_hat: 0.01
-    ci95: [-0.02, 0.04]
+    delta_hat: -0.013
+    ci95: [-0.112, 0.083]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -57,12 +65,12 @@ ground_truth_delta:
       - "no_spillover_to_non_topix100"
     unit: "relative"
     references:
-      - "Comerton-Forde, Putniņš & Tang 2022"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_2013-2014"
 
   - fact_id: "gain_loss_asymmetry"
-    delta_hat: 0.01
-    ci95: [-0.01, 0.03]
+    delta_hat: 0.373
+    ci95: [-0.091, 0.868]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -70,12 +78,12 @@ ground_truth_delta:
       - "no_spillover_to_non_topix100"
     unit: "relative"
     references:
-      - "Yao & Ye 2018"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_2013-2014"
 
   - fact_id: "fat_tails"
-    delta_hat: -0.3
-    ci95: [-0.9, 0.3]
+    delta_hat: 0.559
+    ci95: [-1.718, 3.435]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -83,12 +91,12 @@ ground_truth_delta:
       - "no_spillover_to_non_topix100"
     unit: "excess_kurtosis"
     references:
-      - "Comerton-Forde, Putniņš & Tang 2022"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_2013-2014"
 
   - fact_id: "abs_autocorrelation"
-    delta_hat: -0.02
-    ci95: [-0.05, 0.01]
+    delta_hat: 0.029
+    ci95: [-0.101, 0.153]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -96,12 +104,12 @@ ground_truth_delta:
       - "no_spillover_to_non_topix100"
     unit: "correlation"
     references:
-      - "Yao & Ye 2018"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_2013-2014"
 
   - fact_id: "squared_return_acf"
-    delta_hat: -0.02
-    ci95: [-0.05, 0.01]
+    delta_hat: 0.037
+    ci95: [-0.094, 0.176]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -109,7 +117,11 @@ ground_truth_delta:
       - "no_spillover_to_non_topix100"
     unit: "correlation"
     references:
-      - "Comerton-Forde, Putniņš & Tang 2022"
-      - "external_claim"
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_2013-2014"
 
-data_hashes: {}
+data_hashes:
+  treatment_pre_returns: "yfinance_topix100_15stocks_117d"
+  treatment_post_returns: "yfinance_topix100_15stocks_123d"
+  control_pre_returns: "yfinance_non_topix100_10stocks_117d"
+  control_post_returns: "yfinance_non_topix100_10stocks_123d"

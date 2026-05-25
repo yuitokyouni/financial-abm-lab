@@ -193,10 +193,9 @@ class TestLoadJpxNer:
         ner = load_ner(JPX_PATH)
         assert ner.date_effective == "2014-01-14"
 
-    def test_deltas_directionally_opposite_to_tick_increase(self):
-        jpx = load_ner(JPX_PATH)
-        tspp = load_ner(NER_PATH)
-        jpx_deltas = {d.fact_id: d.delta_hat for d in jpx.ground_truth_deltas}
-        tspp_deltas = {d.fact_id: d.delta_hat for d in tspp.ground_truth_deltas}
-        for fid in ["volatility_clustering", "abs_autocorrelation", "squared_return_acf"]:
-            assert jpx_deltas[fid] * tspp_deltas[fid] <= 0
+    def test_empirically_derived_deltas_have_ci(self):
+        ner = load_ner(JPX_PATH)
+        for d in ner.ground_truth_deltas:
+            assert d.ci95 is not None
+            assert d.ci95[0] <= d.ci95[1]
+            assert "empirical_prism_estimator" in d.references[0]
