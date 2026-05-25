@@ -86,6 +86,23 @@ class TestCIIntervention:
         post_adapter = adapter.apply_intervention(calibration, intervention)
         assert post_adapter.params.alpha_noise < adapter.params.alpha_noise
 
+    def test_tick_size_decrease_intervention(self, adapter, calibration):
+        intervention = CanonicalIntervention(
+            intervention_class="tick_size_decrease",
+            canonical_params={"min_tick_to": 0.001},
+        )
+        post_adapter = adapter.apply_intervention(calibration, intervention)
+        assert isinstance(post_adapter, CIAdapter)
+        assert post_adapter.params.tick_size == 0.001
+
+    def test_tick_size_decrease_reduces_price_impact(self, adapter, calibration):
+        intervention = CanonicalIntervention(
+            intervention_class="tick_size_decrease",
+            canonical_params={"min_tick_to": 0.001},
+        )
+        post_adapter = adapter.apply_intervention(calibration, intervention)
+        assert post_adapter.params.price_impact < adapter.params.price_impact
+
     def test_unknown_intervention_raises(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="unknown_thing",

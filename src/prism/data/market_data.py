@@ -92,6 +92,7 @@ def fetch_pre_intervention_data(
         "US_equity_smallcap": ["IWM"],
         "US_equity_largecap": ["SPY"],
         "EU_equity_largecap": ["EZU"],
+        "JP_equity_largecap": ["EWJ"],
     }
 
     tickers = venue_tickers.get(ner_venue, ["SPY"])

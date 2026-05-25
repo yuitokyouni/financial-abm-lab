@@ -83,6 +83,23 @@ class TestZIIntervention:
         assert isinstance(post_adapter, ZIAdapter)
         assert post_adapter.params.bid_ask_spread > adapter.params.bid_ask_spread
 
+    def test_tick_size_decrease_intervention(self, adapter, calibration):
+        intervention = CanonicalIntervention(
+            intervention_class="tick_size_decrease",
+            canonical_params={"min_tick_to": 0.001},
+        )
+        post_adapter = adapter.apply_intervention(calibration, intervention)
+        assert isinstance(post_adapter, ZIAdapter)
+        assert post_adapter.params.tick_size == 0.001
+
+    def test_tick_size_decrease_narrows_spread(self, adapter, calibration):
+        intervention = CanonicalIntervention(
+            intervention_class="tick_size_decrease",
+            canonical_params={"min_tick_to": 0.001},
+        )
+        post_adapter = adapter.apply_intervention(calibration, intervention)
+        assert post_adapter.params.bid_ask_spread < adapter.params.bid_ask_spread
+
     def test_unknown_intervention_raises(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="unknown_thing",

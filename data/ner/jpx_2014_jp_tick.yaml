@@ -1,0 +1,115 @@
+# Natural Experiment Record #4: JPX Tick Size Reduction (2014)
+#
+# Japan Exchange Group (JPX / Tokyo Stock Exchange) reduced tick sizes for
+# TOPIX 100 constituent stocks on 2014-01-14, as part of the Arrowhead
+# trading system upgrade.  For stocks priced above JPY 3,000, the minimum
+# tick was reduced from JPY 1 to JPY 0.1 (a 10x reduction).  For stocks
+# in the JPY 1,000-3,000 range, tick was halved from JPY 1 to JPY 0.5.
+#
+# The treatment group consists of TOPIX 100 stocks; non-TOPIX 100 stocks
+# (which retained their original tick sizes) serve as a control group.
+#
+# This is a tick_size_decrease intervention — the opposite direction of
+# the TSPP and MiFID II tick increases.  Theoretically, finer ticks should
+# narrow spreads, improve price discovery, but may increase quote
+# flickering and reduce displayed depth.
+#
+# Ground truth deltas from Comerton-Forde, Putniņš & Tang (2022),
+# Yao & Ye (2018), and the JPX Working Papers series.
+# Tagged as "external_claim" until re-derived from raw data within PRISM.
+
+ner_id: "jpx_2014_jp_tick"
+
+intervention:
+  class: "tick_size_decrease"
+  canonical_params:
+    min_tick_from: 1.0
+    min_tick_to: 0.1
+    unit: "JPY"
+    scope: "topix100_largecap"
+
+venue: "JP_equity_largecap"
+date_effective: "2014-01-14"
+assignment: "regulatory_cutoff"
+
+ground_truth_delta:
+  - fact_id: "volatility_clustering"
+    delta_hat: -0.02
+    ci95: [-0.06, 0.02]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "relative"
+    references:
+      - "Comerton-Forde, Putniņš & Tang, Inverted Fee Structures and Tick Sizes, JFE 2022"
+      - "Yao & Ye, Why Trading Speed Matters, JFE 2018"
+      - "external_claim"
+
+  - fact_id: "leverage_effect"
+    delta_hat: 0.01
+    ci95: [-0.02, 0.04]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "relative"
+    references:
+      - "Comerton-Forde, Putniņš & Tang 2022"
+      - "external_claim"
+
+  - fact_id: "gain_loss_asymmetry"
+    delta_hat: 0.01
+    ci95: [-0.01, 0.03]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "relative"
+    references:
+      - "Yao & Ye 2018"
+      - "external_claim"
+
+  - fact_id: "fat_tails"
+    delta_hat: -0.3
+    ci95: [-0.9, 0.3]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "excess_kurtosis"
+    references:
+      - "Comerton-Forde, Putniņš & Tang 2022"
+      - "external_claim"
+
+  - fact_id: "abs_autocorrelation"
+    delta_hat: -0.02
+    ci95: [-0.05, 0.01]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "correlation"
+    references:
+      - "Yao & Ye 2018"
+      - "external_claim"
+
+  - fact_id: "squared_return_acf"
+    delta_hat: -0.02
+    ci95: [-0.05, 0.01]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "correlation"
+    references:
+      - "Comerton-Forde, Putniņš & Tang 2022"
+      - "external_claim"
+
+data_hashes: {}

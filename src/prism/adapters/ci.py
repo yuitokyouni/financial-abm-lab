@@ -119,6 +119,12 @@ class CIAdapter:
             new_params.tick_size = new_tick
             new_params.spread_ticks = max(1, int(self.params.spread_ticks / tick_ratio))
             new_params.price_impact *= np.sqrt(tick_ratio)
+        elif intervention.intervention_class == "tick_size_decrease":
+            new_tick = intervention.canonical_params.get("min_tick_to", 0.001)
+            tick_ratio = self.params.tick_size / new_tick
+            new_params.tick_size = new_tick
+            new_params.spread_ticks = max(1, int(self.params.spread_ticks * tick_ratio))
+            new_params.price_impact /= np.sqrt(tick_ratio)
         elif intervention.intervention_class == "transaction_tax":
             tax_rate = intervention.canonical_params.get("rate", 0.001)
             new_params.transaction_cost = tax_rate

@@ -89,6 +89,11 @@ class ZIAdapter:
             new_params.tick_size = new_tick
             tick_ratio = new_tick / self.params.tick_size
             new_params.bid_ask_spread *= tick_ratio
+        elif intervention.intervention_class == "tick_size_decrease":
+            new_tick = intervention.canonical_params.get("min_tick_to", 0.001)
+            new_params.tick_size = new_tick
+            tick_ratio = self.params.tick_size / new_tick
+            new_params.bid_ask_spread /= tick_ratio
         elif intervention.intervention_class == "transaction_tax":
             tax_rate = intervention.canonical_params.get("rate", 0.001)
             new_params.bid_ask_spread *= (1 + tax_rate * 5)

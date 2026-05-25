@@ -413,6 +413,104 @@ class TestTensor4x3:
             assert cell.eligibility is not None
 
 
+class TestTensor4x4:
+    def test_4x4_tensor_runs(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci", "zi", "lm"],
+            ner_paths=[
+                "data/ner/tspp_2016_us_equity.yaml",
+                "data/ner/french_ftt_2012_eu.yaml",
+                "data/ner/mifid2_2018_eu_tick.yaml",
+                "data/ner/jpx_2014_jp_tick.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=3,
+        )
+        assert len(result.cells) == 16  # 4 adapters × 4 NERs
+        assert set(result.adapter_ids) == {"sg", "ci", "zi", "lm"}
+        assert len(result.ner_ids) == 4
+
+    def test_4x4_all_cells_scored(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci", "zi", "lm"],
+            ner_paths=[
+                "data/ner/tspp_2016_us_equity.yaml",
+                "data/ner/french_ftt_2012_eu.yaml",
+                "data/ner/mifid2_2018_eu_tick.yaml",
+                "data/ner/jpx_2014_jp_tick.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=3,
+        )
+        for cell in result.cells:
+            assert len(cell.matches) == 2
+            assert len(cell.weighted_matches) == 2
+            assert cell.eligibility is not None
+
+
+class TestJpxNer:
+    def test_jpx_with_sg(self):
+        result = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
+            seed=42,
+            n_paths=5,
+        )
+        assert result.ner_id == "jpx_2014_jp_tick"
+        assert len(result.matches) == 3
+
+    def test_jpx_with_ci(self):
+        result = run_cell(
+            adapter_name="ci",
+            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
+            seed=42,
+            n_paths=5,
+        )
+        assert result.ner_id == "jpx_2014_jp_tick"
+        assert len(result.matches) == 3
+
+    def test_jpx_with_zi(self):
+        result = run_cell(
+            adapter_name="zi",
+            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=5,
+        )
+        assert result.ner_id == "jpx_2014_jp_tick"
+        assert len(result.matches) == 2
+
+    def test_jpx_with_lm(self):
+        result = run_cell(
+            adapter_name="lm",
+            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
+            seed=42,
+            n_paths=5,
+        )
+        assert result.ner_id == "jpx_2014_jp_tick"
+        assert len(result.matches) == 3
+
+    def test_jpx_in_tensor(self):
+        result = run_tensor(
+            adapter_names=["sg", "lm"],
+            ner_paths=[
+                "data/ner/jpx_2014_jp_tick.yaml",
+                "data/ner/tspp_2016_us_equity.yaml",
+            ],
+            fact_ids=["leverage_effect", "volatility_clustering"],
+            seed=42,
+            n_paths=3,
+        )
+        assert len(result.cells) == 4
+        ner_ids = {c.ner_id for c in result.cells}
+        assert "jpx_2014_jp_tick" in ner_ids
+
+
 class TestCausalMethodComparison:
     def test_compare_runs(self):
         result = compare_causal_methods(
