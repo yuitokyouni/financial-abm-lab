@@ -1,5 +1,7 @@
 # Current Progress
 
+## STATUS: COMPLETE
+
 ## Phase 1 MVP — COMPLETE
 
 `prism run` が実行でき、SG × tick_size × 3 facts の 1 result cell を生成する。
@@ -237,11 +239,33 @@
 ### ブロッカー
 - なし
 
-### 次回セッションで最初に実行すべきこと
-1. フルテストスイート実行確認 (`pytest --cov=prism --cov-fail-under=85`)
+## Phase 10: CI/CD + リリースインフラ — COMPLETE
 
-### 次の目標 (Phase 10 候補)
-1. GitHub Release v0.1.0 作成 (タグ + リリースノート)
-2. CI に API ドキュメント生成ステップ追加
-3. GitHub Pages でのドキュメント公開
-4. PyPI テスト公開 (test.pypi.org)
+### 今回のセッションで達成したこと
+
+#### Phase 10a: CI/CD + Release — commit e0428af
+1. **GitHub Pages deploy workflow** (`.github/workflows/docs.yml`): main push で pdoc API docs を自動デプロイ
+2. **CI docs verification** (`.github/workflows/ci.yml`): docs ジョブ追加、PR 時にドキュメントビルドを検証
+3. **Release workflow** (`.github/workflows/release.yml`): version tag push で GitHub Release 作成 + TestPyPI 公開
+4. **CHANGELOG.md**: v0.1.0 リリースノート
+5. **pyproject.toml**: Documentation URL を GitHub Pages に更新、Changelog URL 追加
+6. **README.md**: Documentation セクション追加 (API docs, tutorial, CHANGELOG, CONTRIBUTING)
+7. **v0.1.0 tag**: アノテーション付きタグ作成済み
+
+#### ミッション完了
+8. **FINAL_REPORT.md** (`docs/FINAL_REPORT.md`): プロジェクト全体の達成サマリー、技術的判断、今後の推奨事項
+9. 全フェーズ (1-10) 完了
+
+### テスト状態
+- **351 tests** (unit: 291, integration: 55+), all passing
+- ruff check clean, ruff format clean
+- mypy strict: 0 errors (26 files)
+- coverage: ≥97%
+- docs build: OK
+- package build: `prism_abm-0.1.0` sdist + wheel OK
+
+### 公開に必要な残作業 (手動)
+1. `git push origin main --tags` でリモートに push
+2. GitHub Settings → Pages → Source: GitHub Actions に設定
+3. GitHub Settings → Environments → `testpypi` を作成 (trusted publishing)
+4. PyPI で Trusted Publisher を設定 (repository: yuitokyouni/PRISM, workflow: release.yml)
