@@ -25,8 +25,16 @@ def _parse_ner(raw: dict[str, Any]) -> NaturalExperimentRecord:
         canonical_params=intervention_raw.get("canonical_params", {}),
     )
 
+    ner_id = raw.get("ner_id", "<unknown>")
     deltas = []
     for d in raw.get("ground_truth_delta", []):
+        refs = d.get("references", [])
+        if "external_claim" in refs:
+            raise ValueError(
+                f"NER '{ner_id}' fact '{d.get('fact_id')}' contains an "
+                f"'external_claim' reference — ground truth must be empirically "
+                f"re-derived before use in PRISM."
+            )
         ci_raw = d.get("ci95")
         ci95 = tuple(ci_raw) if ci_raw else None
         deltas.append(

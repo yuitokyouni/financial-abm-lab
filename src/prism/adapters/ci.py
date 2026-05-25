@@ -31,7 +31,6 @@ from prism.types import (
 class CIParams:
     """Parameters for the Chiarella-Iori model."""
 
-    n_agents: int = 200
     n_steps: int = 1000
     fundamental_value: float = 100.0
 
@@ -95,7 +94,6 @@ class CIAdapter:
         self, calib: CalibrationArtifact, intervention: CanonicalIntervention
     ) -> CIAdapter:
         new_params = CIParams(
-            n_agents=self.params.n_agents,
             n_steps=self.params.n_steps,
             fundamental_value=self.params.fundamental_value,
             alpha_fund=self.params.alpha_fund,
@@ -127,11 +125,11 @@ class CIAdapter:
         return CIAdapter(params=new_params)
 
     def simulate(self, seed: int, n_paths: int) -> SimulatedMarketData:
-        rng = np.random.default_rng(seed)
         all_returns = []
 
-        for _ in range(n_paths):
-            returns = self._simulate_one_path(rng)
+        for i in range(n_paths):
+            rng_i = np.random.default_rng(seed + i)
+            returns = self._simulate_one_path(rng_i)
             all_returns.append(returns)
 
         avg_returns = np.mean(all_returns, axis=0)
@@ -142,7 +140,6 @@ class CIAdapter:
             n_paths=n_paths,
             model_id="ci_v0.1",
             metadata={
-                "n_agents": self.params.n_agents,
                 "tick_size": self.params.tick_size,
                 "transaction_cost": self.params.transaction_cost,
             },

@@ -21,6 +21,7 @@ from prism.data import load_ner
 from prism.facts import compute_fact
 from prism.provenance import ProvenanceTracker
 from prism.scoring import compute_matches
+from prism.scoring.scorer import binomial_sign_pvalue
 from prism.scoring.eligibility import (
     EligibilityResult,
     EligibilityVerdict,
@@ -110,8 +111,14 @@ class CellOutput:
                 )
         lines.append("")
 
-        sign_matches = sum(1 for m in self.matches if m.sign_match == MatchVerdict.MATCH)
-        lines.append(f"  Sign consistency: {sign_matches}/{len(self.matches)}")
+        conclusive = [m for m in self.matches if m.sign_match != MatchVerdict.INCONCLUSIVE]
+        sign_matches = sum(1 for m in conclusive if m.sign_match == MatchVerdict.MATCH)
+        total_conclusive = len(conclusive)
+        p_value = binomial_sign_pvalue(sign_matches, total_conclusive)
+        lines.append(
+            f"  Sign consistency: {sign_matches}/{total_conclusive}"
+            f"  (binomial p={p_value:.3f})"
+        )
         lines.append(f"  Run ID: {self.provenance.get('run_id', 'unknown')}")
         return "\n".join(lines)
 
@@ -482,7 +489,7 @@ def compare_causal_methods(
     methods: list[str] | None = None,
     seed: int = 42,
     n_paths: int = 10,
-    per_path_facts: bool = False,
+    per_path_facts: bool = True,
     pre_data: MarketData | None = None,
     use_real_data: bool = False,
 ) -> MethodComparisonOutput:

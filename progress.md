@@ -1,72 +1,44 @@
-## STATUS: COMPLETE
-
 # Current Progress — Scientific Validation Mode
 
 ## Summary
 
-Scientific validation complete. 30/120 cells valid (JPX 2014 NER only).
-SG and FW adapters retain genuine discriminating power over ZI-C null.
-All adapter answer smuggling removed. See docs/FINAL_REPORT.md for details.
+Measurement infrastructure repaired. **0 scientifically conclusive cells** —
+all 6 JPX 2014 CI95 intervals cross zero, making sign matching statistically
+indeterminate. Prior claims of SG/FW discriminating power (5/6 sign matches)
+are withdrawn: p=0.109 (not significant at α=0.05), tick_size was inverted,
+and path-averaging destroyed the measured quantities.
 
-## Verification Session (2026-05-25)
+## Session 2026-05-26: Measurement Infrastructure Repair
 
-Verified project completeness:
-- 306 unit tests pass (86s), 15 DiD tests pass (106s)
-- All 5 adapters: apply_intervention uses structural constraints only (tick_size, transaction_cost)
-- JPX 2014 NER: empirically-derived DiD deltas with CI95 and bootstrap
-- FINAL_REPORT.md: comprehensive, honest about limitations (CI95 crossing zero, 1/4 NERs valid)
-- Committed outstanding harness/meta changes (.gitignore, AGENT_PROMPT.md, harness.sh)
+### Committed changes:
+1. **docs/AUDIT_REPORT.md** — Critical audit identifying 5 FATAL, 3 SERIOUS, 4 MODERATE issues
+2. **FATAL-2 fix:** `per_path_facts=True` default in `run_cell()` and `run_tensor()` —
+   prevents CLT from destroying fat_tails/kurtosis when averaging across paths
+3. **FATAL-4 fix:** Tick size intervention now ratio-based (`baseline × tick_to/tick_from`)
+   across all 5 adapters — JPX 2014 was applying 10x INCREASE instead of 10x DECREASE
+4. **FATAL-5 fix:** `score_sign()` returns INCONCLUSIVE when empirical CI95 crosses zero;
+   `binomial_sign_pvalue()` added for formal testing
+5. **FINAL_REPORT.md updated** — prior discriminating power claims retracted, honest
+   assessment of 0 conclusive cells
 
----
+### Tests: 306 unit tests pass. Integration tests running.
 
-## Phase A: 1セル検証（J-Quants × JPX 2014） — COMPLETE
+### Current blockers:
+- All 6 JPX 2014 ground truth CI95 intervals cross zero → 0 conclusive cells
+- Need narrower CI95 (more stocks, longer windows, or higher-freq data)
+- 4 ABMs structurally near-identical (FATAL-3 from audit, not yet addressed)
 
-- SG adapter answer smuggling 除去（beta 操作を完全に削除）
-- DiD + CI95 を PRISM estimator で経験側から再導出
-- ZI-C ベースライン記録済み
-- 1セルの符号照合: SG 5/6, ZI-C 3/6（構造制約のみ）
-- 全 366 テスト合格
+### Next steps:
+- Verify integration tests pass with new defaults
+- Consider multi-seed stability analysis
+- FATAL-3 (ABM structural differentiation) is the largest remaining issue
+  but requires significant model rewriting
 
-## Phase B: 有効セル選別 — COMPLETE
+## 科学的妥当性の自己評価
 
-- 全 4 NER の引用文献を精査
-- JPX 2014 のみ有効（DiD 再導出済み）
-- TSPP/French FTT/MiFID II は全て無効（external_claim、参照論文が異なる量を測定）
-- 有効: 30/120 セル、無効: 90/120 セル
-
-## Phase C: 密輸監査 + adapter 修正 — COMPLETE
-
-- SG, CI, LM, FW の全 4 adapter で answer smuggling を除去
-- 介入は構造制約のみ（tick_size, transaction_cost）
-- 判別力: SG 5/6, FW 5/6 > ZI-C 3/6 > CI 2/6
-- LM は ZI-C と同等（3/6）、CI は ZI-C 以下（2/6）
-
-## Phase D: 工学資産の再接続 — COMPLETE
-
-- `prism run --real-data` で有効セルが正しく動作することを確認
-- `prism tensor` で複数 adapter 比較が正常動作
-- FINAL_REPORT.md 作成済み
-- CELL_VALIDITY_AUDIT.md, SMUGGLING_AUDIT.md 文書化済み
-- 無効セルの NER YAML にバリデーション警告を追加
-
-## 科学的妥当性の最終自己評価
-
-**科学的前進あり。** このプロジェクトの価値は以下の3点に集約される:
-
-1. **カテゴリエラーの検出と修正**: 引用文献が測っている量（spread/volume/depth）と
-   PRISM の 6 facts（return-distribution stylized facts）の不一致を特定し、
-   経験側からの再導出パイプラインで解決した（JPX 2014）。
-
-2. **答え密輸の除去**: 全 4 behavioral adapter から行動パラメータ操作を除去し、
-   構造制約のみでシミュレーションを実行。これにより「符号一致」の意味が変わった —
-   コードが教えた答えではなく、モデル機構からの創発応答。
-
-3. **正直な判別力評価**: SG と FW は構造介入のみで ZI-C を上回る（5/6 vs 3/6）。
-   CI と LM は上回れない。これは正直な結果であり、
-   「全モデルが正しい」と主張するより遥かに科学的に価値がある。
-
-- **[NOTE] 05/25_23:03** Harness flagged consecutive stalls — false positive on completed project. No work was reverted (working tree was already clean). All phases complete, MISSION_COMPLETE marker present.
-
-- **[SYSTEM ALERT] 05/25_23:21** 連続停滞(3回)により自動ロールバックが発動しました。直前のアプローチは手詰まりと判定され破棄されました。同じ手段を繰り返さず、別のアプローチ（リサーチ、ログ出力の追加など）を検討してください。
-
-- **[SYSTEM ALERT] 05/25_23:28** 連続停滞(3回)により自動ロールバックが発動しました。直前のアプローチは手詰まりと判定され破棄されました。同じ手段を繰り返さず、別のアプローチ（リサーチ、ログ出力の追加など）を検討してください。
+**科学的前進あり — ただし否定的方向。** 今回のセッションは「結果が科学的に有効だったか」ではなく
+「計測器が壊れていた」ことを発見・修正した。これは地味だが本質的な前進:
+1. 壊れた計測器で出した結果を主張するより、計測器を修正して「まだ結論が出せない」と
+   正直に報告する方が科学的に価値がある
+2. 0 conclusive cells は失敗ではなく、正直な現状認識
+3. 修正方針（CI95を狭める、seed安定性テスト）が明確になった

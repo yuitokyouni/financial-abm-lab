@@ -418,7 +418,7 @@ class TestRunCellUnit:
         with pytest.raises(ValueError, match="Unknown adapter"):
             run_cell(
                 adapter_name="nonexistent",
-                ner_path="data/ner/tspp_2016_us_equity.yaml",
+                ner_path="data/ner/jpx_2014_jp_tick.yaml",
                 fact_ids=["leverage_effect"],
             )
 

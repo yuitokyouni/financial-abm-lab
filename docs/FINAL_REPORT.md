@@ -2,12 +2,22 @@
 
 ## Executive Summary
 
-PRISM has 120 cells (5 adapters × 4 NERs × 6 facts). After scientific validation:
-- **30 cells are scientifically valid** (JPX 2014 NER, all 5 adapters × 6 facts)
+PRISM has 120 cells (5 adapters × 4 NERs × 6 facts). After scientific validation
+and measurement infrastructure repair:
+- **0 cells are scientifically conclusive** — all 6 JPX 2014 CI95 intervals cross
+  zero, making sign matching statistically indeterminate
 - **90 cells are scientifically invalid** (3 NERs with fabricated external_claim deltas)
-- **2 adapters (SG, FW) demonstrate genuine discriminating power** over the ZI-C null
-- **2 adapters (CI, LM) show no discriminating power** after smuggling removal
+- **30 cells are INCONCLUSIVE** (JPX 2014 NER — ground truth too noisy for directional claims)
 - **All 4 behavioral adapters had answer smuggling**, now removed
+- **3 critical measurement bugs fixed**: path-averaging destroying kurtosis (FATAL-2),
+  tick_size direction inverted for JPX 2014 (FATAL-4), no statistical tests (FATAL-5)
+
+**Prior claim retracted:** The earlier report claimed SG/FW had "genuine discriminating
+power" (5/6 sign matches vs ZI-C 3/6). This claim is withdrawn because:
+1. All 6 empirical CI95 cross zero — the "correct sign" is itself indeterminate
+2. 5/6 on Bernoulli(0.5) has p=0.109 — not significant at α=0.05
+3. The tick_size intervention was inverted (10x increase instead of 10x decrease)
+4. Path-averaging destroyed the very distributional properties being measured
 
 ## Scientifically Valid Cells
 
@@ -103,24 +113,48 @@ Behavioral parameters remain unchanged. Effects must emerge from simulation dyna
    This doesn't mean the models are useless — it means their behavioral mechanisms
    don't generate meaningful responses to *this specific* structural intervention.
 
+## Measurement Infrastructure Fixes (v2, 2026-05-26)
+
+Three critical measurement bugs were identified and fixed:
+
+| Bug | Severity | Fix | Impact |
+|-----|----------|-----|--------|
+| Path-averaging destroys kurtosis (CLT) | FATAL | `per_path_facts=True` default | fat_tails/vol_clustering now measured correctly |
+| tick_size assigned as physical units | FATAL | Ratio-based: `baseline × (tick_to/tick_from)` | JPX 2014 was inverted (10x increase, not decrease) |
+| No CI95 zero-crossing check | FATAL | `score_sign()` returns INCONCLUSIVE when CI95 ∋ 0 | All 6 JPX 2014 facts → INCONCLUSIVE |
+| No binomial p-value | FATAL | `binomial_sign_pvalue()` added | 5/6 match has p=0.109, not significant |
+
 ## Known Constraints
 
 - Only 1 of 4 NERs has been empirically validated (JPX 2014)
+- **ALL 6 JPX 2014 CI95 intervals cross zero** — no fact delta is individually significant
+- Even 5/6 sign matches has binomial p=0.109 (not significant at α=0.05)
 - Results are specific to tick_size_decrease interventions; other intervention types
   (tick_size_increase, transaction_tax) are untested with empirical data
 - Simulation results are stochastic; sign consistency varies with n_paths
 - yfinance data used (not J-Quants API); sufficient for daily return stylized facts
-- Most CI95 intervals cross zero — individual fact deltas are not individually significant
+- The 4 behavioral ABMs share nearly identical core structure (FATAL-3 from audit)
+- `n_agents` parameter in SG/CI is unused — simulation uses aggregate fractions
 
 ## Engineering Statistics
 
 | Metric | Value |
 |--------|-------|
 | Total cells | 120 |
-| Valid cells | 30 (JPX 2014 only) |
+| Conclusive cells | 0 (all CI95 cross zero) |
+| Inconclusive cells | 30 (JPX 2014 — ground truth too noisy) |
 | Invalid cells | 90 (external_claim) |
-| Tests | 366 |
-| Coverage | 97% |
-| Adapters with discriminating power | 2/4 (SG, FW) |
-| Adapters without discriminating power | 2/4 (CI, LM) |
+| Tests | 306+ |
+| Measurement bugs fixed | 3 (FATAL-2, FATAL-4, FATAL-5) |
 | Smuggling instances removed | 12 (across 4 adapters × 3 intervention types) |
+| Best sign match (any adapter) | p=0.109 at 5/6 — not significant |
+
+## Path Forward
+
+To produce scientifically valid cells, PRISM needs:
+1. **Narrower CI95** — more treatment/control stocks, longer windows, or
+   higher-frequency data to push CI95 below zero-crossing
+2. **Multiple seeds** — seed stability testing (same cell, 10+ seeds) to
+   measure sign match robustness
+3. **ABM structural differentiation** — the 4 behavioral models share nearly
+   identical core equations; they are not independent evidence sources

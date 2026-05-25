@@ -30,7 +30,6 @@ from prism.types import (
 class SGParams:
     """Parameters for the Speculation Game model."""
 
-    n_agents: int = 500
     n_steps: int = 1000
     fundamental_value: float = 100.0
 
@@ -90,7 +89,6 @@ class SGAdapter:
         self, calib: CalibrationArtifact, intervention: CanonicalIntervention
     ) -> SGAdapter:
         new_params = SGParams(
-            n_agents=self.params.n_agents,
             n_steps=self.params.n_steps,
             fundamental_value=self.params.fundamental_value,
             beta=self.params.beta,
@@ -118,11 +116,11 @@ class SGAdapter:
         return SGAdapter(params=new_params)
 
     def simulate(self, seed: int, n_paths: int) -> SimulatedMarketData:
-        rng = np.random.default_rng(seed)
         all_returns = []
 
-        for _ in range(n_paths):
-            returns = self._simulate_one_path(rng)
+        for i in range(n_paths):
+            rng_i = np.random.default_rng(seed + i)
+            returns = self._simulate_one_path(rng_i)
             all_returns.append(returns)
 
         avg_returns = np.mean(all_returns, axis=0)
@@ -133,7 +131,6 @@ class SGAdapter:
             n_paths=n_paths,
             model_id="sg_v0.1",
             metadata={
-                "n_agents": self.params.n_agents,
                 "tick_size": self.params.tick_size,
                 "beta": self.params.beta,
             },

@@ -1,34 +1,41 @@
-"""Integration test for the end-to-end pipeline."""
+"""Integration test for the end-to-end pipeline.
+
+All tests use jpx_2014_jp_tick.yaml — the only NER whose ground-truth
+deltas are empirically re-derived.  The three other NERs (tspp, french_ftt,
+mifid2) contain external_claim references and will raise ValueError on load.
+"""
 
 from prism.pipeline import compare_causal_methods, run_cell, run_tensor
 from prism.scoring.eligibility import EligibilityVerdict
 from prism.types import MatchVerdict
+
+JPX = "data/ner/jpx_2014_jp_tick.yaml"
 
 
 class TestEndToEnd:
     def test_single_cell_runs(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=10,
         )
         assert result.adapter_id == "sg"
-        assert result.ner_id == "tspp_2016_us_equity"
+        assert result.ner_id == "jpx_2014_jp_tick"
         assert len(result.matches) == 3
 
     def test_reproducibility(self):
         r1 = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "gain_loss_asymmetry"],
             seed=99,
             n_paths=5,
         )
         r2 = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "gain_loss_asymmetry"],
             seed=99,
             n_paths=5,
@@ -40,7 +47,7 @@ class TestEndToEnd:
     def test_provenance_present(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=3,
@@ -56,7 +63,7 @@ class TestEndToEnd:
     def test_to_dict(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=3,
@@ -70,14 +77,14 @@ class TestEndToEnd:
     def test_different_seeds_different_results(self):
         r1 = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             seed=1,
             n_paths=5,
         )
         r2 = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             seed=2,
             n_paths=5,
@@ -89,63 +96,45 @@ class TestCIEndToEnd:
     def test_ci_tick_size_cell(self):
         result = run_cell(
             adapter_name="ci",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=10,
         )
         assert result.adapter_id == "ci"
-        assert result.ner_id == "tspp_2016_us_equity"
+        assert result.ner_id == "jpx_2014_jp_tick"
         assert len(result.matches) == 3
 
-    def test_ci_transaction_tax_cell(self):
-        result = run_cell(
-            adapter_name="ci",
-            ner_path="data/ner/french_ftt_2012_eu.yaml",
-            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
-            seed=42,
-            n_paths=10,
-        )
-        assert result.adapter_id == "ci"
-        assert result.ner_id == "french_ftt_2012_eu"
-        assert len(result.matches) == 3
-
-    def test_sg_transaction_tax_cell(self):
+    def test_sg_jpx_cell(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/french_ftt_2012_eu.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=10,
         )
         assert result.adapter_id == "sg"
-        assert result.ner_id == "french_ftt_2012_eu"
+        assert result.ner_id == "jpx_2014_jp_tick"
         assert len(result.matches) == 3
 
 
 class TestTensorPipeline:
-    def test_2x2_tensor_runs(self):
+    def test_2x1_tensor_runs(self):
         result = run_tensor(
             adapter_names=["sg", "ci"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-            ],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=5,
         )
-        assert len(result.cells) == 4  # 2 adapters × 2 NERs
+        assert len(result.cells) == 2  # 2 adapters × 1 NER
         assert set(result.adapter_ids) == {"sg", "ci"}
-        assert len(result.ner_ids) == 2
+        assert len(result.ner_ids) == 1
 
     def test_tensor_all_cells_have_matches(self):
         result = run_tensor(
             adapter_names=["sg", "ci"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-            ],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=5,
@@ -162,14 +151,14 @@ class TestTensorPipeline:
     def test_tensor_reproducibility(self):
         r1 = run_tensor(
             adapter_names=["sg", "ci"],
-            ner_paths=["data/ner/tspp_2016_us_equity.yaml"],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=5,
         )
         r2 = run_tensor(
             adapter_names=["sg", "ci"],
-            ner_paths=["data/ner/tspp_2016_us_equity.yaml"],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=5,
@@ -181,7 +170,7 @@ class TestTensorPipeline:
     def test_tensor_summary_and_dict(self):
         result = run_tensor(
             adapter_names=["sg", "ci"],
-            ner_paths=["data/ner/tspp_2016_us_equity.yaml"],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=3,
@@ -197,33 +186,22 @@ class TestTensorPipeline:
 
 
 class TestZIEndToEnd:
-    def test_zi_tick_size_cell(self):
+    def test_zi_jpx_cell(self):
         result = run_cell(
             adapter_name="zi",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=10,
         )
         assert result.adapter_id == "zi"
-        assert result.ner_id == "tspp_2016_us_equity"
-        assert len(result.matches) == 3
-
-    def test_zi_transaction_tax_cell(self):
-        result = run_cell(
-            adapter_name="zi",
-            ner_path="data/ner/french_ftt_2012_eu.yaml",
-            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
-            seed=42,
-            n_paths=10,
-        )
-        assert result.adapter_id == "zi"
+        assert result.ner_id == "jpx_2014_jp_tick"
         assert len(result.matches) == 3
 
     def test_zi_has_eligibility(self):
         result = run_cell(
             adapter_name="zi",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=10,
@@ -231,48 +209,30 @@ class TestZIEndToEnd:
         assert result.eligibility is not None
 
     def test_zi_simpler_mdl_weight(self):
-        zi = run_cell(
-            "zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
-        sg = run_cell(
-            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
-        ci = run_cell(
-            "ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
+        zi = run_cell("zi", JPX, ["leverage_effect"], seed=42, n_paths=5)
+        sg = run_cell("sg", JPX, ["leverage_effect"], seed=42, n_paths=5)
+        ci = run_cell("ci", JPX, ["leverage_effect"], seed=42, n_paths=5)
         assert zi.weighted_matches[0].mdl_weight > sg.weighted_matches[0].mdl_weight
         assert zi.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
 
 
 class TestLMEndToEnd:
-    def test_lm_tick_size_cell(self):
+    def test_lm_jpx_cell(self):
         result = run_cell(
             adapter_name="lm",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=10,
         )
         assert result.adapter_id == "lm"
-        assert result.ner_id == "tspp_2016_us_equity"
-        assert len(result.matches) == 3
-
-    def test_lm_transaction_tax_cell(self):
-        result = run_cell(
-            adapter_name="lm",
-            ner_path="data/ner/french_ftt_2012_eu.yaml",
-            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
-            seed=42,
-            n_paths=10,
-        )
-        assert result.adapter_id == "lm"
-        assert result.ner_id == "french_ftt_2012_eu"
+        assert result.ner_id == "jpx_2014_jp_tick"
         assert len(result.matches) == 3
 
     def test_lm_has_eligibility(self):
         result = run_cell(
             adapter_name="lm",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering"],
             seed=42,
             n_paths=10,
@@ -280,63 +240,18 @@ class TestLMEndToEnd:
         assert result.eligibility is not None
 
     def test_lm_mdl_weight_between_zi_and_ci(self):
-        lm = run_cell(
-            "lm", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
-        zi = run_cell(
-            "zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
-        ci = run_cell(
-            "ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
+        lm = run_cell("lm", JPX, ["leverage_effect"], seed=42, n_paths=5)
+        zi = run_cell("zi", JPX, ["leverage_effect"], seed=42, n_paths=5)
+        ci = run_cell("ci", JPX, ["leverage_effect"], seed=42, n_paths=5)
         assert zi.weighted_matches[0].mdl_weight > lm.weighted_matches[0].mdl_weight
         assert lm.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
-
-
-class TestMifid2Ner:
-    def test_mifid2_with_sg(self):
-        result = run_cell(
-            adapter_name="sg",
-            ner_path="data/ner/mifid2_2018_eu_tick.yaml",
-            fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
-            seed=42,
-            n_paths=5,
-        )
-        assert result.ner_id == "mifid2_2018_eu_tick"
-        assert len(result.matches) == 3
-
-    def test_mifid2_with_lm(self):
-        result = run_cell(
-            adapter_name="lm",
-            ner_path="data/ner/mifid2_2018_eu_tick.yaml",
-            fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
-            seed=42,
-            n_paths=5,
-        )
-        assert result.ner_id == "mifid2_2018_eu_tick"
-        assert len(result.matches) == 3
-
-    def test_mifid2_in_tensor(self):
-        result = run_tensor(
-            adapter_names=["sg", "lm"],
-            ner_paths=[
-                "data/ner/mifid2_2018_eu_tick.yaml",
-                "data/ner/tspp_2016_us_equity.yaml",
-            ],
-            fact_ids=["leverage_effect", "volatility_clustering"],
-            seed=42,
-            n_paths=3,
-        )
-        assert len(result.cells) == 4  # 2 adapters × 2 NERs
-        ner_ids = {c.ner_id for c in result.cells}
-        assert "mifid2_2018_eu_tick" in ner_ids
 
 
 class TestFatTailsFact:
     def test_fat_tails_in_cell(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["fat_tails"],
             seed=42,
             n_paths=5,
@@ -348,7 +263,7 @@ class TestFatTailsFact:
         for adapter in ["sg", "ci", "zi", "lm"]:
             result = run_cell(
                 adapter_name=adapter,
-                ner_path="data/ner/tspp_2016_us_equity.yaml",
+                ner_path=JPX,
                 fact_ids=["fat_tails"],
                 seed=42,
                 n_paths=5,
@@ -356,14 +271,11 @@ class TestFatTailsFact:
             assert len(result.matches) == 1
 
 
-class TestTensor3x2:
-    def test_3x2_tensor_runs(self):
+class TestTensor3x1:
+    def test_3x1_tensor_runs(self):
         result = run_tensor(
             adapter_names=["sg", "ci", "zi"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-            ],
+            ner_paths=[JPX],
             fact_ids=[
                 "leverage_effect",
                 "volatility_clustering",
@@ -374,17 +286,14 @@ class TestTensor3x2:
             seed=42,
             n_paths=5,
         )
-        assert len(result.cells) == 6  # 3 adapters x 2 NERs
+        assert len(result.cells) == 3  # 3 adapters × 1 NER
         assert set(result.adapter_ids) == {"sg", "ci", "zi"}
-        assert len(result.ner_ids) == 2
+        assert len(result.ner_ids) == 1
 
-    def test_3x2_all_cells_have_5_facts(self):
+    def test_3x1_all_cells_have_5_facts(self):
         result = run_tensor(
             adapter_names=["sg", "ci", "zi"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-            ],
+            ner_paths=[JPX],
             fact_ids=[
                 "leverage_effect",
                 "volatility_clustering",
@@ -401,31 +310,23 @@ class TestTensor3x2:
             assert cell.eligibility is not None
 
 
-class TestTensor4x3:
-    def test_4x3_tensor_runs(self):
+class TestTensor4x1:
+    def test_4x1_tensor_runs(self):
         result = run_tensor(
             adapter_names=["sg", "ci", "zi", "lm"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-                "data/ner/mifid2_2018_eu_tick.yaml",
-            ],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=3,
         )
-        assert len(result.cells) == 12  # 4 adapters × 3 NERs
+        assert len(result.cells) == 4  # 4 adapters × 1 NER
         assert set(result.adapter_ids) == {"sg", "ci", "zi", "lm"}
-        assert len(result.ner_ids) == 3
+        assert len(result.ner_ids) == 1
 
-    def test_4x3_all_cells_scored(self):
+    def test_4x1_all_cells_scored(self):
         result = run_tensor(
             adapter_names=["sg", "ci", "zi", "lm"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-                "data/ner/mifid2_2018_eu_tick.yaml",
-            ],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect", "volatility_clustering"],
             seed=42,
             n_paths=3,
@@ -436,70 +337,23 @@ class TestTensor4x3:
             assert cell.eligibility is not None
 
 
-class TestTensor4x4:
-    def test_4x4_tensor_runs(self):
-        result = run_tensor(
-            adapter_names=["sg", "ci", "zi", "lm"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-                "data/ner/mifid2_2018_eu_tick.yaml",
-                "data/ner/jpx_2014_jp_tick.yaml",
-            ],
-            fact_ids=["leverage_effect", "volatility_clustering"],
-            seed=42,
-            n_paths=3,
-        )
-        assert len(result.cells) == 16  # 4 adapters × 4 NERs
-        assert set(result.adapter_ids) == {"sg", "ci", "zi", "lm"}
-        assert len(result.ner_ids) == 4
-
-    def test_4x4_all_cells_scored(self):
-        result = run_tensor(
-            adapter_names=["sg", "ci", "zi", "lm"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-                "data/ner/mifid2_2018_eu_tick.yaml",
-                "data/ner/jpx_2014_jp_tick.yaml",
-            ],
-            fact_ids=["leverage_effect", "volatility_clustering"],
-            seed=42,
-            n_paths=3,
-        )
-        for cell in result.cells:
-            assert len(cell.matches) == 2
-            assert len(cell.weighted_matches) == 2
-            assert cell.eligibility is not None
-
-
-class TestTensor5x4:
-    def test_5x4_tensor_runs(self):
+class TestTensor5x1:
+    def test_5x1_tensor_runs(self):
         result = run_tensor(
             adapter_names=["sg", "ci", "zi", "lm", "fw"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-                "data/ner/mifid2_2018_eu_tick.yaml",
-                "data/ner/jpx_2014_jp_tick.yaml",
-            ],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect", "volatility_clustering"],
             seed=42,
             n_paths=3,
         )
-        assert len(result.cells) == 20  # 5 adapters × 4 NERs
+        assert len(result.cells) == 5  # 5 adapters × 1 NER
         assert set(result.adapter_ids) == {"sg", "ci", "zi", "lm", "fw"}
-        assert len(result.ner_ids) == 4
+        assert len(result.ner_ids) == 1
 
-    def test_5x4_all_cells_scored(self):
+    def test_5x1_all_cells_scored(self):
         result = run_tensor(
             adapter_names=["sg", "ci", "zi", "lm", "fw"],
-            ner_paths=[
-                "data/ner/tspp_2016_us_equity.yaml",
-                "data/ner/french_ftt_2012_eu.yaml",
-                "data/ner/mifid2_2018_eu_tick.yaml",
-                "data/ner/jpx_2014_jp_tick.yaml",
-            ],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect", "volatility_clustering"],
             seed=42,
             n_paths=3,
@@ -511,34 +365,22 @@ class TestTensor5x4:
 
 
 class TestFWEndToEnd:
-    def test_fw_tick_size_cell(self):
+    def test_fw_jpx_cell(self):
         result = run_cell(
             adapter_name="fw",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=10,
         )
         assert result.adapter_id == "fw"
-        assert result.ner_id == "tspp_2016_us_equity"
-        assert len(result.matches) == 3
-
-    def test_fw_transaction_tax_cell(self):
-        result = run_cell(
-            adapter_name="fw",
-            ner_path="data/ner/french_ftt_2012_eu.yaml",
-            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
-            seed=42,
-            n_paths=10,
-        )
-        assert result.adapter_id == "fw"
-        assert result.ner_id == "french_ftt_2012_eu"
+        assert result.ner_id == "jpx_2014_jp_tick"
         assert len(result.matches) == 3
 
     def test_fw_tick_size_decrease_cell(self):
         result = run_cell(
             adapter_name="fw",
-            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
             seed=42,
             n_paths=5,
@@ -550,7 +392,7 @@ class TestFWEndToEnd:
     def test_fw_has_eligibility(self):
         result = run_cell(
             adapter_name="fw",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering"],
             seed=42,
             n_paths=10,
@@ -558,15 +400,9 @@ class TestFWEndToEnd:
         assert result.eligibility is not None
 
     def test_fw_mdl_weight_between_zi_and_sg(self):
-        fw = run_cell(
-            "fw", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
-        zi = run_cell(
-            "zi", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
-        sg = run_cell(
-            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
+        fw = run_cell("fw", JPX, ["leverage_effect"], seed=42, n_paths=5)
+        zi = run_cell("zi", JPX, ["leverage_effect"], seed=42, n_paths=5)
+        sg = run_cell("sg", JPX, ["leverage_effect"], seed=42, n_paths=5)
         assert zi.weighted_matches[0].mdl_weight > fw.weighted_matches[0].mdl_weight
         assert fw.weighted_matches[0].mdl_weight > sg.weighted_matches[0].mdl_weight
 
@@ -575,7 +411,7 @@ class TestJpxNer:
     def test_jpx_with_sg(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
             seed=42,
             n_paths=5,
@@ -586,7 +422,7 @@ class TestJpxNer:
     def test_jpx_with_ci(self):
         result = run_cell(
             adapter_name="ci",
-            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
             seed=42,
             n_paths=5,
@@ -597,7 +433,7 @@ class TestJpxNer:
     def test_jpx_with_zi(self):
         result = run_cell(
             adapter_name="zi",
-            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering"],
             seed=42,
             n_paths=5,
@@ -608,7 +444,7 @@ class TestJpxNer:
     def test_jpx_with_lm(self):
         result = run_cell(
             adapter_name="lm",
-            ner_path="data/ner/jpx_2014_jp_tick.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "fat_tails"],
             seed=42,
             n_paths=5,
@@ -619,15 +455,12 @@ class TestJpxNer:
     def test_jpx_in_tensor(self):
         result = run_tensor(
             adapter_names=["sg", "lm"],
-            ner_paths=[
-                "data/ner/jpx_2014_jp_tick.yaml",
-                "data/ner/tspp_2016_us_equity.yaml",
-            ],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect", "volatility_clustering"],
             seed=42,
             n_paths=3,
         )
-        assert len(result.cells) == 4
+        assert len(result.cells) == 2
         ner_ids = {c.ner_id for c in result.cells}
         assert "jpx_2014_jp_tick" in ner_ids
 
@@ -636,20 +469,20 @@ class TestCausalMethodComparison:
     def test_compare_runs(self):
         result = compare_causal_methods(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=5,
         )
         assert result.adapter_id == "sg"
-        assert result.ner_id == "tspp_2016_us_equity"
+        assert result.ner_id == "jpx_2014_jp_tick"
         assert len(result.methods) == 6  # all known methods
         assert len(result.rows) == 6  # 6 methods × 1 fact
 
     def test_rct_highest_weight(self):
         result = compare_causal_methods(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             methods=["rct", "ols"],
             seed=42,
@@ -663,7 +496,7 @@ class TestCausalMethodComparison:
     def test_compare_to_dict(self):
         result = compare_causal_methods(
             adapter_name="ci",
-            ner_path="data/ner/french_ftt_2012_eu.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             methods=["did_firm_fe", "iv"],
             seed=42,
@@ -677,7 +510,7 @@ class TestCausalMethodComparison:
     def test_compare_summary(self):
         result = compare_causal_methods(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             methods=["rct", "ols"],
             seed=42,
@@ -695,7 +528,7 @@ class TestPerPathFacts:
     def test_per_path_cell_runs(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "fat_tails"],
             seed=42,
             n_paths=5,
@@ -707,7 +540,7 @@ class TestPerPathFacts:
     def test_per_path_preserves_fat_tails(self):
         classic = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["fat_tails"],
             seed=42,
             n_paths=5,
@@ -715,7 +548,7 @@ class TestPerPathFacts:
         )
         per_path = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["fat_tails"],
             seed=42,
             n_paths=5,
@@ -727,7 +560,7 @@ class TestPerPathFacts:
     def test_per_path_has_provenance(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=3,
@@ -740,7 +573,7 @@ class TestPerPathFacts:
     def test_per_path_reproducibility(self):
         r1 = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "fat_tails"],
             seed=99,
             n_paths=5,
@@ -748,7 +581,7 @@ class TestPerPathFacts:
         )
         r2 = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "fat_tails"],
             seed=99,
             n_paths=5,
@@ -761,7 +594,7 @@ class TestPerPathFacts:
         for adapter in ["sg", "ci", "zi"]:
             result = run_cell(
                 adapter_name=adapter,
-                ner_path="data/ner/tspp_2016_us_equity.yaml",
+                ner_path=JPX,
                 fact_ids=["fat_tails", "leverage_effect"],
                 seed=42,
                 n_paths=3,
@@ -774,7 +607,7 @@ class TestPerPathFacts:
     def test_per_path_tensor(self):
         result = run_tensor(
             adapter_names=["sg", "ci"],
-            ner_paths=["data/ner/tspp_2016_us_equity.yaml"],
+            ner_paths=[JPX],
             fact_ids=["fat_tails"],
             seed=42,
             n_paths=3,
@@ -791,7 +624,7 @@ class TestPhase3Integration:
     def test_cell_has_weighted_matches(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=5,
@@ -803,18 +636,14 @@ class TestPhase3Integration:
         assert wm.confidence_weighted == wm.confidence_raw * wm.mdl_weight * wm.causal_weight
 
     def test_sg_simpler_than_ci_by_mdl(self):
-        sg = run_cell(
-            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
-        ci = run_cell(
-            "ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
+        sg = run_cell("sg", JPX, ["leverage_effect"], seed=42, n_paths=5)
+        ci = run_cell("ci", JPX, ["leverage_effect"], seed=42, n_paths=5)
         assert sg.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
 
     def test_cell_has_eligibility(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
             seed=42,
             n_paths=10,
@@ -827,26 +656,22 @@ class TestPhase3Integration:
         assert len(result.eligibility.checks) > 0
 
     def test_eligibility_in_provenance(self):
-        result = run_cell(
-            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
+        result = run_cell("sg", JPX, ["leverage_effect"], seed=42, n_paths=5)
         assert "eligibility" in result.provenance.get("parameters", {})
 
     def test_causal_weight_from_ner(self):
         result = run_cell(
             adapter_name="sg",
-            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            ner_path=JPX,
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=5,
         )
         wm = result.weighted_matches[0]
-        assert wm.causal_weight == 0.9  # tspp uses did_firm_fe
+        assert wm.causal_weight == 0.9  # jpx uses did_firm_fe
 
     def test_to_dict_includes_phase3_fields(self):
-        result = run_cell(
-            "sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5
-        )
+        result = run_cell("sg", JPX, ["leverage_effect"], seed=42, n_paths=5)
         d = result.to_dict()
         assert "weighted_matches" in d
         assert "eligibility" in d
@@ -855,7 +680,7 @@ class TestPhase3Integration:
     def test_tensor_with_phase3(self):
         result = run_tensor(
             adapter_names=["sg", "ci"],
-            ner_paths=["data/ner/tspp_2016_us_equity.yaml"],
+            ner_paths=[JPX],
             fact_ids=["leverage_effect"],
             seed=42,
             n_paths=5,

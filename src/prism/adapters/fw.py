@@ -121,11 +121,11 @@ class FWAdapter:
         return FWAdapter(params=new_params)
 
     def simulate(self, seed: int, n_paths: int) -> SimulatedMarketData:
-        rng = np.random.default_rng(seed)
         all_returns = []
 
-        for _ in range(n_paths):
-            returns = self._simulate_one_path(rng)
+        for i in range(n_paths):
+            rng_i = np.random.default_rng(seed + i)
+            returns = self._simulate_one_path(rng_i)
             all_returns.append(returns)
 
         avg_returns = np.mean(all_returns, axis=0)
