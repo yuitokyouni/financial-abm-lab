@@ -16,19 +16,11 @@
 
 ## Phase 2: 診断介入 + 2機構目 — COMPLETE
 
-### 今回のセッションで達成したこと
+### Phase 2 成果物
 1. **NER #2** (`data/ner/french_ftt_2012_eu.yaml`): French FTT 2012, transaction_tax 介入クラス — commit a64d6d1
-2. **CI Adapter** (`src/prism/adapters/ci.py`): Chiarella-Iori 型 order-book モデル, ModelAdapter Protocol 準拠, tick_size_increase + transaction_tax 両対応 — commit a64d6d1
+2. **CI Adapter** (`src/prism/adapters/ci.py`): Chiarella-Iori 型 order-book モデル — commit a64d6d1
 3. **`run_tensor()`** (`src/prism/pipeline.py`): adapter × NER × fact の完全テンソル実行 + divergence analysis — commit a64d6d1
-4. **`prism tensor` CLI** (`src/prism/cli/main.py`): `prism tensor --adapters sg,ci --ners ... --facts ...` が動作 — commit a64d6d1
-5. **テスト**: 88 tests (68 unit + 20 integration), all passing
-
-### Phase 2 終了条件の達成状況
-- [x] 2 adapter (SG, CI) × 2 intervention (tick_size_increase, transaction_tax) × 3 facts のテンソルが生成される
-- [x] `prism tensor` CLI で 2×2 位相図が出力される
-- [x] 少なくとも 1 ペアの adapter で「静的 facts 同等 but 介入応答で乖離」を実証
-  - leverage_effect: SG=MATCH vs CI=MISMATCH (両介入で一貫)
-  - → SG は leverage effect の符号を正しく再現するが、CI は再現しない = 機構の違いが介入応答で表出
+4. **`prism tensor` CLI** — commit a64d6d1
 
 ### 介入応答ダイバージェンス (実行結果)
 ```
@@ -36,17 +28,40 @@ DIVERGENCE [tspp_2016_us_equity/leverage_effect]: sg=match vs ci=mismatch
 DIVERGENCE [french_ftt_2012_eu/leverage_effect]: sg=match vs ci=mismatch
 ```
 
+## Phase 3: MDL 重み + 静的適格ゲート — COMPLETE
+
+### 今回のセッションで達成したこと
+1. **MDL weighting** (`src/prism/scoring/mdl.py`): 自由パラメータ数に基づく複雑度ペナルティ。w_mdl = 1/(1+log2(k)) — commit 70728e2
+   - SG (k=7): w=0.263,  CI (k=9): w=0.240 → 単純モデルが有利
+2. **Static eligibility gate** (`src/prism/scoring/eligibility.py`): baseline facts の empirical range チェック — commit 70728e2
+   - volatility_clustering: [0.5, 0.999], leverage_effect: [-0.5, 0.0], gain_loss_asymmetry: [-3.0, 0.5]
+   - 不適格モデルは tensor 出力でハッチング表示
+3. **Causal method weighting** (`src/prism/scoring/causal.py`): 因果推定手法の品質階層 — commit a55dc82
+   - RCT=1.0 > DiD_FE=0.9 > DiD=0.85 > SC=0.8 > IV=0.7 > OLS=0.5
+   - combined confidence = raw × mdl_weight × causal_weight
+4. **Phase-diagram heatmap** (`src/prism/viz/heatmap.py`): matplotlib 可視化 — commit 4031c91
+   - `prism heatmap` CLI コマンド: 色分け (green=MATCH, red=MISMATCH, gray=INCONCLUSIVE)
+   - MDL 重み付き confidence 表示、不適格アダプタのハッチング
+5. **テスト**: 139 tests (99 unit + 40 integration), all passing
+
+### Phase 3 終了条件の達成状況
+- [x] MDL ベースのモデル複雑度ペナルティが confidence に乗算される
+- [x] 静的適格ゲート: baseline facts が empirical range 内かチェック
+- [x] causal_method の品質重みが scoring に統合されている
+- [x] 位相図のビジュアライゼーション (matplotlib heatmap)
+
 ### 既知の課題・改善余地
 - NER の ground truth delta は外部引用値 (external_claim タグ済み)。生データからの再算出は未実施
 - GARCH estimator の bounds が tight — iid データでの boundary warning あり
 - CI adapter のキャリブレーションは簡易版 (noise_scale, price_impact のみ)
-- 静的適格ゲート (LOB-Bench 式 realism check) は未実装
 - volatility_clustering の delta が両 adapter で INCONCLUSIVE (0.0) — GARCH fit が安定しすぎている可能性
+- MDL の description_length は現在 n_free_params と同値 — 構造記述の情報量を反映した計算は未実装
 
-## 次の目標 (Phase 3 準備)
+## 次の目標 (Phase 4 準備)
 
-### Phase 3: MDL 重み + 静的適格ゲート
-1. Minimum Description Length (MDL) ベースのモデル複雑度ペナルティ
-2. 静的適格ゲート: baseline facts が empirical range 内かチェック → 不適格モデルを tensor から除外
-3. causal_method の差し替え可能性テスト (DiD → SC 等)
-4. 位相図のビジュアライゼーション (matplotlib heatmap)
+### Phase 4: 拡張性と実用性
+1. 新 adapter 追加 (e.g., LUX model, ZI model) で N>2 の位相図
+2. 実市場データの接続 (Yahoo Finance / WRDS)
+3. causal_method の差し替え可能性テスト (DiD → SC 等) — 同一 NER で複数推定法を比較
+4. LOB-Bench 式 realism check の精緻化 (autocorrelation, fat tails)
+5. CI/CD パイプラインの構築
