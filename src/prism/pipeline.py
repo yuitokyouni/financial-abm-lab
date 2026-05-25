@@ -31,6 +31,7 @@ from prism.types import (
     MarketData,
     MatchResult,
     MatchVerdict,
+    ModelAdapter,
     SimulatedMarketData,
 )
 
@@ -70,7 +71,9 @@ class CellOutput:
             lines.append("")
 
         use_weighted = bool(self.weighted_matches)
-        display = self.weighted_matches if use_weighted else self.matches
+        display: list[WeightedMatchResult] | list[MatchResult] = (
+            self.weighted_matches if use_weighted else self.matches
+        )
 
         for item in display:
             if isinstance(item, WeightedMatchResult):
@@ -148,7 +151,7 @@ class CellOutput:
 
 
 def _compute_per_path_facts(
-    adapter: object,
+    adapter: ModelAdapter,
     fact_ids: list[str],
     seed: int,
     n_paths: int,
@@ -163,7 +166,7 @@ def _compute_per_path_facts(
     first_sim: SimulatedMarketData | None = None
 
     for p in range(n_paths):
-        sim = adapter.simulate(seed=seed + p, n_paths=1)  # type: ignore[union-attr]
+        sim = adapter.simulate(seed=seed + p, n_paths=1)
         if first_sim is None:
             first_sim = sim
         for fid in fact_ids:
@@ -504,7 +507,7 @@ def compare_causal_methods(
 
 def run_tensor(
     adapter_names: list[str],
-    ner_paths: list[str | Path],
+    ner_paths: list[str | Path] | list[Path],
     fact_ids: list[str],
     seed: int = 42,
     n_paths: int = 10,
@@ -514,17 +517,17 @@ def run_tensor(
 ) -> TensorOutput:
     """Execute the full phase-diagram tensor: adapters × NERs × facts."""
 
-    cells = []
-    ner_ids = []
-    for ner_path in ner_paths:
-        ner = load_ner(ner_path)
+    cells: list[CellOutput] = []
+    ner_ids: list[str] = []
+    for np_ in ner_paths:
+        ner = load_ner(np_)
         ner_ids.append(ner.ner_id)
 
     for adapter_name in adapter_names:
-        for ner_path in ner_paths:
+        for np_ in ner_paths:
             cell = run_cell(
                 adapter_name=adapter_name,
-                ner_path=ner_path,
+                ner_path=np_,
                 fact_ids=fact_ids,
                 seed=seed,
                 n_paths=n_paths,

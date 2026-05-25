@@ -184,6 +184,15 @@ def resolve_fact_ids(facts_str: str) -> list[str]:
     return [FACT_ALIASES.get(f, f) for f in raw]
 
 
+def _write_json(output_arg: str | None, data: dict[str, object]) -> None:
+    if output_arg:
+        out_path = Path(output_arg)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_path, "w") as f:
+            json.dump(data, f, indent=2, default=str)
+        print(f"\nFull result written to: {out_path}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -196,7 +205,7 @@ def main(argv: list[str] | None = None) -> int:
         ner_path = resolve_ner_path(args.ner)
         fact_ids = resolve_fact_ids(args.facts)
 
-        result = run_cell(
+        cell_result = run_cell(
             adapter_name=args.adapter,
             ner_path=ner_path,
             fact_ids=fact_ids,
@@ -206,21 +215,15 @@ def main(argv: list[str] | None = None) -> int:
             use_real_data=args.real_data,
         )
 
-        print(result.summary())
-
-        if args.output:
-            out_path = Path(args.output)
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(out_path, "w") as f:
-                json.dump(result.to_dict(), f, indent=2, default=str)
-            print(f"\nFull result written to: {out_path}")
+        print(cell_result.summary())
+        _write_json(args.output, cell_result.to_dict())
 
     elif args.command == "tensor":
         adapter_names = [a.strip() for a in args.adapters.split(",")]
-        ner_paths = [resolve_ner_path(n.strip()) for n in args.ners.split(",")]
+        ner_paths: list[str | Path] = [resolve_ner_path(n.strip()) for n in args.ners.split(",")]
         fact_ids = resolve_fact_ids(args.facts)
 
-        result = run_tensor(
+        tensor_result = run_tensor(
             adapter_names=adapter_names,
             ner_paths=ner_paths,
             fact_ids=fact_ids,
@@ -230,21 +233,15 @@ def main(argv: list[str] | None = None) -> int:
             use_real_data=args.real_data,
         )
 
-        print(result.summary())
-
-        if args.output:
-            out_path = Path(args.output)
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(out_path, "w") as f:
-                json.dump(result.to_dict(), f, indent=2, default=str)
-            print(f"\nFull result written to: {out_path}")
+        print(tensor_result.summary())
+        _write_json(args.output, tensor_result.to_dict())
 
     elif args.command == "compare":
         ner_path = resolve_ner_path(args.ner)
         fact_ids = resolve_fact_ids(args.facts)
         methods = [m.strip() for m in args.methods.split(",")] if args.methods else None
 
-        result = compare_causal_methods(
+        cmp_result = compare_causal_methods(
             adapter_name=args.adapter,
             ner_path=ner_path,
             fact_ids=fact_ids,
@@ -254,23 +251,17 @@ def main(argv: list[str] | None = None) -> int:
             per_path_facts=args.per_path_facts,
         )
 
-        print(result.summary())
-
-        if args.output:
-            out_path = Path(args.output)
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(out_path, "w") as f:
-                json.dump(result.to_dict(), f, indent=2, default=str)
-            print(f"\nFull result written to: {out_path}")
+        print(cmp_result.summary())
+        _write_json(args.output, cmp_result.to_dict())
 
     elif args.command == "heatmap":
         adapter_names = [a.strip() for a in args.adapters.split(",")]
-        ner_paths = [resolve_ner_path(n.strip()) for n in args.ners.split(",")]
+        hm_ner_paths: list[str | Path] = [resolve_ner_path(n.strip()) for n in args.ners.split(",")]
         fact_ids = resolve_fact_ids(args.facts)
 
-        result = run_tensor(
+        hm_result = run_tensor(
             adapter_names=adapter_names,
-            ner_paths=ner_paths,
+            ner_paths=hm_ner_paths,
             fact_ids=fact_ids,
             seed=args.seed,
             n_paths=args.n_paths,
@@ -278,13 +269,13 @@ def main(argv: list[str] | None = None) -> int:
             use_real_data=getattr(args, "real_data", False),
         )
 
-        print(result.summary())
+        print(hm_result.summary())
 
         out_path = Path(args.output)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         import matplotlib
         matplotlib.use("Agg")
-        render_heatmap(result, output_path=out_path)
+        render_heatmap(hm_result, output_path=out_path)
         print(f"\nHeatmap written to: {out_path}")
 
     return 0

@@ -51,7 +51,7 @@ def volatility_clustering(returns: npt.NDArray[np.float64]) -> FactResult:
             if sigma2[t] < 1e-12:
                 sigma2[t] = 1e-12
         ll = -0.5 * np.sum(np.log(sigma2) + r**2 / sigma2)
-        return -ll
+        return float(-ll)
 
     bounds = [(1e-10, 10 * variance), (1e-6, 0.7), (0.01, 0.9999)]
     constraints = {"type": "ineq", "fun": lambda p: 0.9999 - p[1] - p[2]}
@@ -86,7 +86,7 @@ def volatility_clustering(returns: npt.NDArray[np.float64]) -> FactResult:
 
         _, alpha_hat, beta_hat = best_params
         persistence = float(alpha_hat + beta_hat)
-        meta = {
+        meta: dict[str, object] = {
             "converged": best_converged,
             "omega": float(best_params[0]),
             "alpha": float(alpha_hat),
