@@ -110,7 +110,7 @@
 - NER の ground truth delta は external_claim タグ済み — 生データからの再算出は未実施
 - 実市場データ接続のテストは yfinance + network 依存 (CI では skip される可能性)
 
-## Phase 7: ドキュメントと公開準備 — IN PROGRESS
+## Phase 7: ドキュメントと公開準備 — COMPLETE
 
 ### 今回のセッションで達成したこと
 
@@ -149,11 +149,21 @@
 - mypy strict: 0 errors (26 files)
 - pip install -e ".[dev]" OK
 
-### 現在のブロッカー
-- `generate_paper_figures.py` 実行中 (5×4×6 + 5×3×6 = 210 cells × 20 paths の GARCH 最適化)
-  — 完了確認後に Phase 7 を COMPLETE にする
+#### Phase 7c 追加: LICENSE ファイル — commit 71ca7ad
+15. **LICENSE**: MIT ライセンスファイル追加
+
+### generate_paper_figures.py 動作確認 — OK
+- 全 6 ステップ完了 (exit code 0)
+- 出力: `fig_heatmap_full.pdf` (308K), `.png` (559K), `fig_heatmap_ticksize.pdf` (303K),
+  `tab_full_tensor.tex` (4.9K), `tab_ticksize.tex` (3.8K), `tensor_full.json` (102K)
+- cells = adapter×NER ペア (5×4=20)、各 cell 内に 6 fact matches
+
+### テスト状態
+- **286 tests**, all passing
+- ruff check clean, ruff format clean
+- mypy strict: 0 errors (26 files)
 
 ### 次の目標 (Phase 8 候補)
-1. generate_paper_figures.py 出力確認 + FW ラベル反映の再実行
-2. テストカバレッジレポート (CI に coverage 閾値追加)
-3. LICENSE ファイル追加 (MIT)
+1. テストカバレッジ閾値 CI 追加
+2. FW ラベル修正済みで generate_paper_figures.py 再実行 (出力の FW 表示確認)
+3. Sphinx/pdoc による API ドキュメント自動生成 (必要に応じて)
