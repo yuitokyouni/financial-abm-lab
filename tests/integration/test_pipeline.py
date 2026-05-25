@@ -272,7 +272,7 @@ class TestTensor3x2:
                 "data/ner/tspp_2016_us_equity.yaml",
                 "data/ner/french_ftt_2012_eu.yaml",
             ],
-            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry", "fat_tails"],
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry", "fat_tails", "abs_autocorrelation"],
             seed=42,
             n_paths=5,
         )
@@ -280,20 +280,20 @@ class TestTensor3x2:
         assert set(result.adapter_ids) == {"sg", "ci", "zi"}
         assert len(result.ner_ids) == 2
 
-    def test_3x2_all_cells_have_4_facts(self):
+    def test_3x2_all_cells_have_5_facts(self):
         result = run_tensor(
             adapter_names=["sg", "ci", "zi"],
             ner_paths=[
                 "data/ner/tspp_2016_us_equity.yaml",
                 "data/ner/french_ftt_2012_eu.yaml",
             ],
-            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry", "fat_tails"],
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry", "fat_tails", "abs_autocorrelation"],
             seed=42,
             n_paths=5,
         )
         for cell in result.cells:
-            assert len(cell.matches) == 4
-            assert len(cell.weighted_matches) == 4
+            assert len(cell.matches) == 5
+            assert len(cell.weighted_matches) == 5
             assert cell.eligibility is not None
 
 

@@ -2,6 +2,7 @@
 
 from prism.facts.estimators import (
     FACT_REGISTRY,
+    abs_autocorrelation,
     compute_fact,
     compute_facts,
     fat_tails,
@@ -15,6 +16,7 @@ __all__ = [
     "leverage_effect",
     "gain_loss_asymmetry",
     "fat_tails",
+    "abs_autocorrelation",
     "compute_fact",
     "compute_facts",
     "FACT_REGISTRY",

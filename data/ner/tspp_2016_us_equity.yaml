@@ -68,4 +68,16 @@ ground_truth_delta:
       - "SEC DERA, Tick Size Pilot Assessment Reports, 2018"
       - "external_claim"
 
+  - fact_id: "abs_autocorrelation"
+    delta_hat: 0.02
+    ci95: [-0.02, 0.06]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+    unit: "correlation"
+    references:
+      - "SEC DERA, Tick Size Pilot Assessment Reports, 2018"
+      - "external_claim"
+
 data_hashes: {}

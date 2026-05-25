@@ -165,6 +165,56 @@ def gain_loss_asymmetry(returns: npt.NDArray[np.float64]) -> FactResult:
     )
 
 
+def abs_autocorrelation(returns: npt.NDArray[np.float64]) -> FactResult:
+    """Autocorrelation of absolute returns at lag 1.
+
+    Financial returns are approximately uncorrelated, but their absolute
+    values exhibit significant positive autocorrelation that decays
+    slowly (long memory in volatility).  This is distinct from
+    volatility_clustering (GARCH persistence) — it measures serial
+    dependence directly.
+
+    Typical lag-1 values for daily equity: 0.05–0.4 (Cont 2001).
+    """
+    r = np.asarray(returns, dtype=np.float64).ravel()
+    if len(r) < 30:
+        return FactResult(
+            fact_id="abs_autocorrelation",
+            value=np.nan,
+            estimator_version=ESTIMATOR_VERSION,
+            metadata={"error": "insufficient data", "n": len(r)},
+        )
+
+    abs_r = np.abs(r)
+    abs_r = abs_r - abs_r.mean()
+    n = len(abs_r)
+    var = np.sum(abs_r**2)
+    if var < 1e-15:
+        acf1 = 0.0
+    else:
+        acf1 = float(np.sum(abs_r[:-1] * abs_r[1:]) / var)
+
+    ci95 = _bootstrap_ci(
+        r, _abs_acf1_statistic, n_boot=1000
+    )
+
+    return FactResult(
+        fact_id="abs_autocorrelation",
+        value=acf1,
+        ci95=ci95,
+        estimator_version=ESTIMATOR_VERSION,
+        metadata={"n": len(r), "lag": 1},
+    )
+
+
+def _abs_acf1_statistic(r: npt.NDArray[np.float64]) -> float:
+    abs_r = np.abs(r) - np.abs(r).mean()
+    var = np.sum(abs_r**2)
+    if var < 1e-15:
+        return 0.0
+    return float(np.sum(abs_r[:-1] * abs_r[1:]) / var)
+
+
 def fat_tails(returns: npt.NDArray[np.float64]) -> FactResult:
     """Fat tails via excess kurtosis (Fisher's definition).
 
@@ -233,4 +283,5 @@ FACT_REGISTRY: dict[str, FactEstimatorFn] = {
     "leverage_effect": leverage_effect,
     "gain_loss_asymmetry": gain_loss_asymmetry,
     "fat_tails": fat_tails,
+    "abs_autocorrelation": abs_autocorrelation,
 }

@@ -107,6 +107,7 @@ FACT_ALIASES = {
     "volclust": "volatility_clustering",
     "gainloss": "gain_loss_asymmetry",
     "fattails": "fat_tails",
+    "absacf": "abs_autocorrelation",
 }
 
 NER_SEARCH_DIRS = [
