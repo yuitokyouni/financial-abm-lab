@@ -66,3 +66,5 @@ Verified project completeness:
    「全モデルが正しい」と主張するより遥かに科学的に価値がある。
 
 - **[NOTE] 05/25_23:03** Harness flagged consecutive stalls — false positive on completed project. No work was reverted (working tree was already clean). All phases complete, MISSION_COMPLETE marker present.
+
+- **[SYSTEM ALERT] 05/25_23:21** 連続停滞(3回)により自動ロールバックが発動しました。直前のアプローチは手詰まりと判定され破棄されました。同じ手段を繰り返さず、別のアプローチ（リサーチ、ログ出力の追加など）を検討してください。
