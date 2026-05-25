@@ -297,6 +297,102 @@ class TensorOutput:
         }
 
 
+@dataclass
+class MethodComparisonRow:
+    """One row in a causal method comparison: same match, different weighting."""
+
+    causal_method: str
+    causal_weight: float
+    fact_id: str
+    confidence_raw: float
+    mdl_weight: float
+    confidence_weighted: float
+
+
+@dataclass
+class MethodComparisonOutput:
+    """Comparison of causal methods for a single adapter × NER cell."""
+
+    adapter_id: str
+    ner_id: str
+    methods: list[str]
+    rows: list[MethodComparisonRow]
+
+    def summary(self) -> str:
+        lines = [
+            f"=== Causal Method Comparison: {self.adapter_id} × {self.ner_id} ===",
+            "",
+            f"  {'Method':<20s}  {'Fact':<25s}  {'w_causal':>8s}  {'conf_raw':>8s}  {'mdl_w':>6s}  {'conf_wtd':>8s}",
+            "  " + "-" * 85,
+        ]
+        for row in self.rows:
+            lines.append(
+                f"  {row.causal_method:<20s}  {row.fact_id:<25s}  "
+                f"{row.causal_weight:>8.3f}  {row.confidence_raw:>8.3f}  "
+                f"{row.mdl_weight:>6.3f}  {row.confidence_weighted:>8.3f}"
+            )
+        return "\n".join(lines)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "adapter_id": self.adapter_id,
+            "ner_id": self.ner_id,
+            "methods": self.methods,
+            "rows": [
+                {
+                    "causal_method": r.causal_method,
+                    "causal_weight": r.causal_weight,
+                    "fact_id": r.fact_id,
+                    "confidence_raw": r.confidence_raw,
+                    "mdl_weight": r.mdl_weight,
+                    "confidence_weighted": r.confidence_weighted,
+                }
+                for r in self.rows
+            ],
+        }
+
+
+def compare_causal_methods(
+    adapter_name: str,
+    ner_path: str | Path,
+    fact_ids: list[str],
+    methods: list[str] | None = None,
+    seed: int = 42,
+    n_paths: int = 10,
+) -> MethodComparisonOutput:
+    """Re-weight the same cell with different causal identification methods."""
+    from prism.scoring.causal import CAUSAL_METHOD_WEIGHTS, causal_method_weight
+
+    if methods is None:
+        methods = list(CAUSAL_METHOD_WEIGHTS.keys())
+
+    cell = run_cell(adapter_name, ner_path, fact_ids, seed, n_paths)
+    complexity = ADAPTER_REGISTRY[adapter_name]().describe_complexity()
+    mdl = apply_mdl_weights(cell.matches, complexity).pop() if cell.matches else None
+    mdl_w = mdl.mdl_weight if mdl else 0.0
+
+    rows = []
+    for method in methods:
+        cw = causal_method_weight(method)
+        for m in cell.matches:
+            rows.append(MethodComparisonRow(
+                causal_method=method,
+                causal_weight=cw,
+                fact_id=m.fact_id,
+                confidence_raw=m.confidence,
+                mdl_weight=mdl_w,
+                confidence_weighted=m.confidence * mdl_w * cw,
+            ))
+
+    ner = load_ner(ner_path)
+    return MethodComparisonOutput(
+        adapter_id=adapter_name,
+        ner_id=ner.ner_id,
+        methods=methods,
+        rows=rows,
+    )
+
+
 def run_tensor(
     adapter_names: list[str],
     ner_paths: list[str | Path],

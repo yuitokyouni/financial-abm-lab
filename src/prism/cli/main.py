@@ -7,7 +7,7 @@ import json
 import sys
 from pathlib import Path
 
-from prism.pipeline import run_cell, run_tensor
+from prism.pipeline import compare_causal_methods, run_cell, run_tensor
 from prism.viz import render_heatmap
 
 
@@ -80,6 +80,26 @@ def build_parser() -> argparse.ArgumentParser:
     tensor_parser.add_argument(
         "--output", type=str, default=None, help="Output JSON file path"
     )
+
+    compare_parser = sub.add_parser(
+        "compare", help="Compare causal method weightings for one cell"
+    )
+    compare_parser.add_argument(
+        "--adapter", required=True, help="Model adapter name"
+    )
+    compare_parser.add_argument(
+        "--ner", required=True, help="NER id or path"
+    )
+    compare_parser.add_argument(
+        "--facts", required=True, help="Comma-separated fact IDs"
+    )
+    compare_parser.add_argument(
+        "--methods", type=str, default=None,
+        help="Comma-separated causal methods (default: all known methods)",
+    )
+    compare_parser.add_argument("--seed", type=int, default=42)
+    compare_parser.add_argument("--n-paths", type=int, default=10)
+    compare_parser.add_argument("--output", type=str, default=None)
 
     heatmap_parser = sub.add_parser(
         "heatmap", help="Run tensor and render phase-diagram heatmap"
@@ -173,6 +193,29 @@ def main(argv: list[str] | None = None) -> int:
             adapter_names=adapter_names,
             ner_paths=ner_paths,
             fact_ids=fact_ids,
+            seed=args.seed,
+            n_paths=args.n_paths,
+        )
+
+        print(result.summary())
+
+        if args.output:
+            out_path = Path(args.output)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(out_path, "w") as f:
+                json.dump(result.to_dict(), f, indent=2, default=str)
+            print(f"\nFull result written to: {out_path}")
+
+    elif args.command == "compare":
+        ner_path = resolve_ner_path(args.ner)
+        fact_ids = resolve_fact_ids(args.facts)
+        methods = [m.strip() for m in args.methods.split(",")] if args.methods else None
+
+        result = compare_causal_methods(
+            adapter_name=args.adapter,
+            ner_path=ner_path,
+            fact_ids=fact_ids,
+            methods=methods,
             seed=args.seed,
             n_paths=args.n_paths,
         )
