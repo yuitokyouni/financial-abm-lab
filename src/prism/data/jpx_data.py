@@ -36,11 +36,36 @@ TOPIX_100_TICKERS = [
     "4503.T",  # Astellas Pharma
     "6752.T",  # Panasonic
     "7751.T",  # Canon
+    "8316.T",  # SMFG
+    "8411.T",  # Mizuho
+    "6861.T",  # Keyence
+    "6954.T",  # FANUC
+    "6971.T",  # Kyocera
+    "4901.T",  # Fujifilm
+    "8766.T",  # Tokio Marine
+    "8001.T",  # ITOCHU
+    "6702.T",  # Fujitsu
+    "5401.T",  # Nippon Steel
+    "2502.T",  # Asahi Group
+    "6503.T",  # Mitsubishi Electric
+    "3382.T",  # Seven & i
+    "4452.T",  # Kao
+    "8802.T",  # Mitsubishi Estate
+    "9020.T",  # JR East
+    "9022.T",  # JR Central
+    "7269.T",  # Suzuki Motor
+    "8035.T",  # Tokyo Electron
+    "6762.T",  # TDK
+    "7741.T",  # HOYA
+    "4507.T",  # Shionogi
+    "8591.T",  # ORIX
+    "4578.T",  # Otsuka Holdings
+    "6326.T",  # Kubota
 ]
 
 CONTROL_TICKERS = [
-    "2914.T",  # Japan Tobacco (mid-cap, not in TOPIX 100 treatment)
-    "9433.T",  # KDDI (was large but different tick tier)
+    "2914.T",  # Japan Tobacco
+    "9433.T",  # KDDI
     "4661.T",  # Oriental Land
     "6367.T",  # Daikin Industries
     "4568.T",  # Daiichi Sankyo
@@ -49,10 +74,20 @@ CONTROL_TICKERS = [
     "6273.T",  # SMC Corp
     "7974.T",  # Nintendo
     "9983.T",  # Fast Retailing
+    "6645.T",  # Omron
+    "6479.T",  # Minebea Mitsumi
+    "7272.T",  # Yamaha Motor
+    "6869.T",  # Sysmex
+    "4519.T",  # Chugai Pharma
+    "9735.T",  # Secom
+    "2413.T",  # M3
+    "4911.T",  # Shiseido
+    "6506.T",  # Yaskawa
+    "7733.T",  # Olympus
 ]
 
-PRE_MONTHS = 6
-POST_MONTHS = 6
+PRE_MONTHS = 12
+POST_MONTHS = 12
 
 
 @dataclass(frozen=True)

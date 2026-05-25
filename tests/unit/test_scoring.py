@@ -106,7 +106,7 @@ class TestComputeMatches:
 
     def test_ci95_zero_crossing_makes_inconclusive(self):
         md = _make_delta("fat_tails", 0.5)
-        gt = _make_gt("fat_tails", 0.559, ci95=(-1.718, 3.435))
+        gt = _make_gt("fat_tails", 0.702, ci95=(-0.738, 2.210))
         result = compute_match(md, gt)
         assert result.sign_match == MatchVerdict.INCONCLUSIVE
 

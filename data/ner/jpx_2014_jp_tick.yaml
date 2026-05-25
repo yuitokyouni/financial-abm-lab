@@ -3,29 +3,21 @@
 # Japan Exchange Group (JPX / Tokyo Stock Exchange) reduced tick sizes for
 # TOPIX 100 constituent stocks on 2014-01-14, as part of the Arrowhead
 # trading system upgrade.  For stocks priced above JPY 3,000, the minimum
-# tick was reduced from JPY 1 to JPY 0.1 (a 10x reduction).  For stocks
-# in the JPY 1,000-3,000 range, tick was halved from JPY 1 to JPY 0.5.
-#
-# The treatment group consists of TOPIX 100 stocks; non-TOPIX 100 stocks
-# (which retained their original tick sizes) serve as a control group.
-#
-# This is a tick_size_decrease intervention — the opposite direction of
-# the TSPP and MiFID II tick increases.  Theoretically, finer ticks should
-# narrow spreads, improve price discovery, but may increase quote
-# flickering and reduce displayed depth.
+# tick was reduced from JPY 1 to JPY 0.1 (a 10x reduction).
 #
 # Ground truth deltas RE-DERIVED from raw daily returns using PRISM's
 # own fact estimators (v0.2.0) via Difference-in-Differences:
-#   Treatment: 15 TOPIX 100 large-cap stocks (yfinance)
-#   Control:   10 non-TOPIX-100 TSE stocks (yfinance)
-#   Pre:  2013-07-19 to 2014-01-13 (117 trading days)
-#   Post: 2014-01-14 to 2014-07-14 (123 trading days)
-#   Bootstrap CI95 with 2000 resamples on stock-level estimates.
+#   Treatment: 40 TOPIX 100 large-cap stocks (yfinance)
+#   Control:   20 non-TOPIX-100 TSE stocks (yfinance)
+#   Pre:  2013-01-14 to 2014-01-13 (243 trading days, 12 months)
+#   Post: 2014-01-14 to 2015-01-14 (244 trading days, 12 months)
+#   Bootstrap CI95 with 5000 resamples on stock-level DiD estimates.
 #
-# NOTE: Prior external_claim values from Comerton-Forde et al. and
-# Yao & Ye measured spread/liquidity/price-efficiency — different
-# quantities from PRISM's return-distribution facts.  Those values
-# have been replaced by this empirical re-derivation.
+# NOTE: All 6 CI95 intervals cross zero — the tick size reduction does
+# not produce statistically significant effects on return-distribution
+# stylized facts at the daily frequency. This is consistent with tick
+# size changes primarily affecting microstructure quantities (spreads,
+# depth) rather than return-distribution facts.
 
 ner_id: "jpx_2014_jp_tick"
 
@@ -43,8 +35,8 @@ assignment: "regulatory_cutoff"
 
 ground_truth_delta:
   - fact_id: "volatility_clustering"
-    delta_hat: -0.093
-    ci95: [-0.319, 0.137]
+    delta_hat: -0.065
+    ci95: [-0.223, 0.077]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -53,11 +45,11 @@ ground_truth_delta:
     unit: "relative"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_2013-2014"
+      - "yfinance_topix100_40stocks_243d"
 
   - fact_id: "leverage_effect"
-    delta_hat: -0.013
-    ci95: [-0.112, 0.083]
+    delta_hat: -0.020
+    ci95: [-0.065, 0.028]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -66,11 +58,11 @@ ground_truth_delta:
     unit: "relative"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_2013-2014"
+      - "yfinance_topix100_40stocks_243d"
 
   - fact_id: "gain_loss_asymmetry"
-    delta_hat: 0.373
-    ci95: [-0.091, 0.868]
+    delta_hat: 0.057
+    ci95: [-0.210, 0.327]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -79,11 +71,11 @@ ground_truth_delta:
     unit: "relative"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_2013-2014"
+      - "yfinance_topix100_40stocks_243d"
 
   - fact_id: "fat_tails"
-    delta_hat: 0.559
-    ci95: [-1.718, 3.435]
+    delta_hat: 0.702
+    ci95: [-0.738, 2.210]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -92,11 +84,11 @@ ground_truth_delta:
     unit: "excess_kurtosis"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_2013-2014"
+      - "yfinance_topix100_40stocks_243d"
 
   - fact_id: "abs_autocorrelation"
-    delta_hat: 0.029
-    ci95: [-0.101, 0.153]
+    delta_hat: -0.035
+    ci95: [-0.103, 0.032]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -105,11 +97,11 @@ ground_truth_delta:
     unit: "correlation"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_2013-2014"
+      - "yfinance_topix100_40stocks_243d"
 
   - fact_id: "squared_return_acf"
-    delta_hat: 0.037
-    ci95: [-0.094, 0.176]
+    delta_hat: -0.056
+    ci95: [-0.124, 0.009]
     causal_method: "did_firm_fe"
     causal_assumptions:
       - "parallel_trends"
@@ -118,10 +110,10 @@ ground_truth_delta:
     unit: "correlation"
     references:
       - "empirical_prism_estimator_v0.2.0"
-      - "yfinance_topix100_2013-2014"
+      - "yfinance_topix100_40stocks_243d"
 
 data_hashes:
-  treatment_pre_returns: "yfinance_topix100_15stocks_117d"
-  treatment_post_returns: "yfinance_topix100_15stocks_123d"
-  control_pre_returns: "yfinance_non_topix100_10stocks_117d"
-  control_post_returns: "yfinance_non_topix100_10stocks_123d"
+  treatment_pre_returns: "yfinance_topix100_40stocks_243d"
+  treatment_post_returns: "yfinance_topix100_40stocks_244d"
+  control_pre_returns: "yfinance_non_topix100_20stocks_243d"
+  control_post_returns: "yfinance_non_topix100_20stocks_244d"
