@@ -66,9 +66,6 @@ class SimulatedMarketData:
     model_id: str
     metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_market_data(self) -> MarketData:
-        return MarketData(returns=self.returns)
-
     def content_hash(self) -> str:
         return hashlib.sha256(self.returns.tobytes()).hexdigest()[:16]
 
