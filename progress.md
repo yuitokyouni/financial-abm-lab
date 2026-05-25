@@ -32,60 +32,62 @@
 
 ## Phase 4: 拡張性と実用性 — COMPLETE
 
+### Phase 4 成果物
+1. **ZI-C Adapter** (`src/prism/adapters/zi.py`): null model ベンチマーク — commit 6990734
+2. **Fat tails (excess kurtosis)** + **abs_autocorrelation** — commits 6990734, b9e1e96
+3. **Causal method comparison** (`compare_causal_methods()`, `prism compare`) — commit dc0683d
+4. **GitHub Actions CI** (`.github/workflows/ci.yml`) — commit 89b31f8
+
+## Phase 5: データ接続と精緻化 — COMPLETE
+
 ### 今回のセッションで達成したこと
 
-#### Phase 4a: ZI-C null adapter + fat tails fact — commit 6990734
-1. **ZI-C Adapter** (`src/prism/adapters/zi.py`): Gode & Sunder (1993) Zero-Intelligence Constrained model
-   - 4 free parameters (最小) → MDL weight 0.333 (最高)
-   - 学習・戦略切替なし — 構造的偽陽性ベンチマーク
-   - ZI は eligibility gate で 3/4 facts FAIL → 正しく null model を検出
-   - ZI は sign consistency 0/4 on both NERs → 介入応答を再現不能
-2. **Fat tails (excess kurtosis)** (`estimators.py`): 4th stylized fact
-   - scipy.stats.kurtosis (Fisher=True) + bootstrap CI
-   - Eligibility range: [1.0, 50.0] — 全 adapter が FAIL (path 平均化による尖度低下)
+#### Phase 5a: Per-path fact estimation — commit 60a9546
+1. **`per_path_facts` モード** (`pipeline.py`): 個別パスで fact を計算し median で集約
+   - path 平均化による尖度・歪度の消失を回避 (CLT 効果の排除)
+   - `run_cell()`, `run_tensor()`, `compare_causal_methods()` に `per_path_facts` パラメータ追加
+   - `--per-path-facts` CLI フラグを全サブコマンドに追加
+   - 6 integration tests 追加
 
-#### Phase 4b: Autocorrelation of absolute returns — commit b9e1e96
-3. **abs_autocorrelation** (`estimators.py`): 5th stylized fact
-   - Lag-1 ACF of |r_t| — volatility long memory の直接測定
-   - Eligibility range: [0.05, 0.5] (Cont 2001)
+#### Phase 5b: GARCH optimizer + squared_return_acf — commit 222746e
+2. **GARCH(1,1) 最適化改善**: beta 下限 0.3→0.01, alpha 上限 0.5→0.7, 6 starting points (低持続性含む)
+3. **`squared_return_acf`** (`estimators.py`): 6th stylized fact — r² の lag-1 ACF
+   - 最適化不要、GARCH persistence より感度の高いボラティリティクラスタリング指標
+   - 両 NER に ground truth delta 追加、eligibility range [0.05, 0.5]
+4. **Estimator version** 0.1.0 → 0.2.0
 
-#### Phase 4c: Causal method comparison — commit dc0683d
-4. **`compare_causal_methods()`** (`pipeline.py`): 同一 cell を異なる因果推定法で再重み付け
-   - `prism compare` CLI コマンド追加
-   - RCT (w=1.0) vs OLS (w=0.5) で 2x の confidence 差を実証
-   - 6 methods × N facts のテーブル出力
+#### Phase 5c: Real market data via yfinance — commit 4d1a2ab
+5. **`fetch_returns()`** (`data/market_data.py`): Yahoo Finance からの日次対数リターン取得
+6. **`fetch_pre_intervention_data()`**: NER の venue/date に基づく自動データ取得
+   - US_equity_smallcap → IWM, EU_equity_largecap → EZU
+7. **`use_real_data`** パラメータ + `--real-data` CLI フラグ
+   - synthetic N(0,0.02) → 実データでのキャリブレーション
+8. **Optional dependency**: `pip install prism-abm[real-data]`
 
-#### Phase 4d: CI/CD + lint cleanup — commit 89b31f8
-5. **GitHub Actions** (`.github/workflows/ci.yml`): Python 3.11/3.12 matrix
-   - ruff lint → pytest --cov → mypy type check
-6. **Ruff lint cleanup**: 16 issues fixed (unused imports/variables)
+#### Phase 5d: mypy strict compliance — commit 949e7d6
+9. **mypy --strict 完全パス** (0 errors, 23 source files)
+   - ModelAdapter protocol 型注釈、FactResult metadata dict 型修正
+   - CLI 変数名分離 (型衝突解消)、`_write_json` ヘルパー抽出
+   - types-PyYAML stubs 導入
 
-### Phase 4 テンソル状態
-- **Tensor サイズ**: 3 adapters × 2 NERs × 5 facts = 30 cells
+### Phase 5 テンソル状態
+- **Tensor サイズ**: 3 adapters × 2 NERs × 6 facts = 36 cells
 - **Adapters**: SG (k=7, w_mdl=0.263), CI (k=9, w_mdl=0.240), ZI (k=4, w_mdl=0.333)
-- **NERs**: tspp_2016_us_equity (tick_size_increase), french_ftt_2012_eu (transaction_tax)
-- **Facts**: volatility_clustering, leverage_effect, gain_loss_asymmetry, fat_tails, abs_autocorrelation
-- **テスト**: 174 tests, all passing, ruff clean
-
-### ZI ベンチマーク結果 (structural falsification)
-```
-ZI × tspp: eligibility FAIL (leverage+/volclust>0.999/fat_tails<1.0), sign 0/4
-ZI × ftt:  eligibility FAIL (leverage+/volclust>0.999/fat_tails<1.0), sign 0/4
-```
-→ PRISM は null model を正しく棄却。SG/CI は leverage_effect で ZI を上回る。
+- **NERs**: tspp_2016_us_equity, french_ftt_2012_eu
+- **Facts**: volatility_clustering, leverage_effect, gain_loss_asymmetry, fat_tails, abs_autocorrelation, squared_return_acf
+- **テスト**: 192 tests, all passing
+- **品質**: ruff clean, mypy strict clean
 
 ### 既知の課題・改善余地
-- 全 adapter が fat_tails eligibility FAIL — path 平均化が尖度を減衰。single-path モードの検討
-- volatility_clustering の delta が全 adapter で INCONCLUSIVE (0.0) — GARCH fit が安定しすぎ
 - NER の ground truth delta は external_claim タグ済み — 生データからの再算出は未実施
-- mypy strict mode は continue-on-error (型注釈の完全化は未完)
-- 実市場データ接続 (Yahoo Finance / WRDS) は Phase 5 に持越し
+- 実市場データ接続のテストは yfinance + network 依存 (CI では skip される可能性)
+- GARCH delta が引き続き小さい可能性 — squared_return_acf が補完的指標として機能
 
-## 次の目標 (Phase 5 準備)
+## 次の目標 (Phase 6 準備)
 
-### Phase 5: データ接続と精緻化
-1. 実市場データの接続 (Yahoo Finance yfinance, WRDS) — pre_data を synthetic → real に
-2. Single-path simulation mode — fat tails の eligibility 改善
-3. GARCH fit の安定性改善 (volatility_clustering delta が常に 0.0 の問題)
-4. mypy strict 完全対応
-5. NER ground truth の生データからの再算出 (external_claim → derived)
+### Phase 6: 高度な分析と文書化
+1. NER ground truth の生データからの再算出 (external_claim → derived)
+2. 追加 NER (例: MiFID II 2018, Japanese tick size 2014)
+3. 追加 adapter (例: LLSm, Farmer-Joshi)
+4. 論文用の図表生成 (LaTeX 対応)
+5. ドキュメント整備 (API docs, チュートリアル)
