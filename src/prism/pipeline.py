@@ -207,13 +207,22 @@ def run_cell(
     seed: int = 42,
     n_paths: int = 10,
     per_path_facts: bool = False,
+    pre_data: MarketData | None = None,
+    use_real_data: bool = False,
 ) -> CellOutput:
     """Execute one cell of the phase-diagram tensor.
 
-    When per_path_facts=True, facts are computed on individual simulation
-    paths and aggregated via median.  This preserves higher-order
-    distributional properties (kurtosis, skewness) that path-averaging
-    destroys.
+    Args:
+        pre_data: Optional real market data for calibration.  When None
+            (default), synthetic N(0, 0.02) data is generated.  Pass a
+            MarketData from ``fetch_pre_intervention_data()`` to calibrate
+            against real equity returns.
+        use_real_data: When True, automatically fetch real market data for
+            the NER's venue and date (requires yfinance + internet).
+            Ignored if pre_data is already provided.
+        per_path_facts: When True, facts are computed on individual simulation
+            paths and aggregated via median, preserving higher-order
+            distributional properties (kurtosis, skewness).
     """
 
     # --- Setup ---
@@ -234,11 +243,19 @@ def run_cell(
         )
     adapter = ADAPTER_REGISTRY[adapter_name]()
 
-    # --- Generate synthetic pre-intervention data for calibration ---
-    rng = np.random.default_rng(seed)
-    pre_returns = rng.normal(0, 0.02, (500, 1))
-    pre_data = MarketData(returns=pre_returns)
-    tracker.record_data_hash("pre_synthetic", pre_data.content_hash())
+    # --- Pre-intervention data for calibration ---
+    if pre_data is not None:
+        tracker.record_parameter("pre_data_source", "real")
+    elif use_real_data:
+        from prism.data.market_data import fetch_pre_intervention_data
+        pre_data = fetch_pre_intervention_data(ner.venue, ner.date_effective)
+        tracker.record_parameter("pre_data_source", "real")
+    else:
+        rng = np.random.default_rng(seed)
+        pre_returns = rng.normal(0, 0.02, (500, 1))
+        pre_data = MarketData(returns=pre_returns)
+        tracker.record_parameter("pre_data_source", "synthetic")
+    tracker.record_data_hash("pre_calibration", pre_data.content_hash())
 
     # --- Calibrate baseline ---
     calib = adapter.calibrate_baseline(pre_data, {})
@@ -445,6 +462,8 @@ def compare_causal_methods(
     seed: int = 42,
     n_paths: int = 10,
     per_path_facts: bool = False,
+    pre_data: MarketData | None = None,
+    use_real_data: bool = False,
 ) -> MethodComparisonOutput:
     """Re-weight the same cell with different causal identification methods."""
     from prism.scoring.causal import CAUSAL_METHOD_WEIGHTS, causal_method_weight
@@ -452,7 +471,11 @@ def compare_causal_methods(
     if methods is None:
         methods = list(CAUSAL_METHOD_WEIGHTS.keys())
 
-    cell = run_cell(adapter_name, ner_path, fact_ids, seed, n_paths, per_path_facts=per_path_facts)
+    cell = run_cell(
+        adapter_name, ner_path, fact_ids, seed, n_paths,
+        per_path_facts=per_path_facts, pre_data=pre_data,
+        use_real_data=use_real_data,
+    )
     complexity = ADAPTER_REGISTRY[adapter_name]().describe_complexity()
     mdl = apply_mdl_weights(cell.matches, complexity).pop() if cell.matches else None
     mdl_w = mdl.mdl_weight if mdl else 0.0
@@ -486,6 +509,8 @@ def run_tensor(
     seed: int = 42,
     n_paths: int = 10,
     per_path_facts: bool = False,
+    pre_data: MarketData | None = None,
+    use_real_data: bool = False,
 ) -> TensorOutput:
     """Execute the full phase-diagram tensor: adapters × NERs × facts."""
 
@@ -504,6 +529,8 @@ def run_tensor(
                 seed=seed,
                 n_paths=n_paths,
                 per_path_facts=per_path_facts,
+                pre_data=pre_data,
+                use_real_data=use_real_data,
             )
             cells.append(cell)
 

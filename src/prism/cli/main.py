@@ -58,6 +58,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=False,
         help="Compute facts per simulation path (preserves kurtosis/skewness)",
     )
+    run_parser.add_argument(
+        "--real-data",
+        action="store_true",
+        default=False,
+        help="Use real market data for calibration (requires yfinance + internet)",
+    )
 
     tensor_parser = sub.add_parser(
         "tensor", help="Run the full phase-diagram tensor (adapters × NERs × facts)"
@@ -89,6 +95,10 @@ def build_parser() -> argparse.ArgumentParser:
     tensor_parser.add_argument(
         "--per-path-facts", action="store_true", default=False,
         help="Compute facts per simulation path (preserves kurtosis/skewness)",
+    )
+    tensor_parser.add_argument(
+        "--real-data", action="store_true", default=False,
+        help="Use real market data for calibration (requires yfinance + internet)",
     )
 
     compare_parser = sub.add_parser(
@@ -193,6 +203,7 @@ def main(argv: list[str] | None = None) -> int:
             seed=args.seed,
             n_paths=args.n_paths,
             per_path_facts=args.per_path_facts,
+            use_real_data=args.real_data,
         )
 
         print(result.summary())
@@ -216,6 +227,7 @@ def main(argv: list[str] | None = None) -> int:
             seed=args.seed,
             n_paths=args.n_paths,
             per_path_facts=args.per_path_facts,
+            use_real_data=args.real_data,
         )
 
         print(result.summary())
@@ -263,6 +275,7 @@ def main(argv: list[str] | None = None) -> int:
             seed=args.seed,
             n_paths=args.n_paths,
             per_path_facts=args.per_path_facts,
+            use_real_data=getattr(args, "real_data", False),
         )
 
         print(result.summary())
