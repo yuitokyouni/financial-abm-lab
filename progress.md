@@ -128,11 +128,16 @@
    - JSON 生の結果出力 (再現性用)
 4. **.gitignore**: output/ ディレクトリ追加
 
+#### Phase 7b: pyproject.toml メタデータ + CONTRIBUTING.md — commit 1680b06
+5. **pyproject.toml**: readme, classifiers (Science/Research, Financial), keywords, project URLs
+6. **CONTRIBUTING.md**: 開発セットアップ、コード品質チェック、adapter/NER/fact 追加ガイド
+
 ### テスト状態
 - **286 tests**, all passing
 - ruff clean
+- pip install -e ".[dev]" OK
 
-### 次の目標 (Phase 7b)
-1. API ドキュメント (モジュールレベル docstring 整備)
-2. pyproject.toml メタデータ拡充 (authors, URLs, classifiers)
-3. CONTRIBUTING.md
+### 次の目標 (Phase 7c)
+1. API ドキュメント (モジュールレベル docstring 整備 — 必要に応じて)
+2. CI/CD 拡充 (mypy を GitHub Actions に追加)
+3. 論文ドラフト用の generate_paper_figures.py 動作確認
