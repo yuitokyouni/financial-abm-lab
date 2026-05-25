@@ -33,15 +33,15 @@ NER Corpus (YAML)          Model Adapters (Python)
 ## Installation
 
 ```bash
-git clone https://github.com/your-org/PRISM.git
+git clone https://github.com/yuitokyouni/PRISM.git
 cd PRISM
 pip install -e ".[dev]"
 ```
 
-For real market data calibration (optional):
+For visualization and real market data calibration (optional):
 
 ```bash
-pip install -e ".[dev,real-data]"
+pip install -e ".[dev,viz,real-data]"
 ```
 
 Requires Python >= 3.11.
@@ -175,7 +175,7 @@ Short aliases are supported for convenience:
 ## Python API
 
 ```python
-from prism.pipeline import run_cell, run_tensor
+from prism import run_cell, run_tensor
 
 # Single cell
 result = run_cell(
@@ -265,11 +265,15 @@ pytest
 # Run tests with coverage
 pytest --cov=prism --cov-report=term-missing
 
-# Lint
+# Lint + format check
 ruff check src/ tests/
+ruff format --check src/ tests/
 
 # Type check
 mypy src/prism/
+
+# Generate paper figures (output/)
+python scripts/generate_paper_figures.py
 ```
 
 ## Project Structure
