@@ -1,0 +1,59 @@
+# Natural Experiment Record #1: SEC Tick Size Pilot Program (2016-2018)
+#
+# The SEC mandated wider tick sizes (from $0.01 to $0.05) for ~1200 small-cap
+# stocks in a randomized experiment.  Treatment groups were randomly assigned.
+#
+# Ground truth deltas are from published DiD estimates in the pilot literature.
+# Tagged as "external_claim" until re-derived from raw data within PRISM.
+
+ner_id: "tspp_2016_us_equity"
+
+intervention:
+  class: "tick_size_increase"
+  canonical_params:
+    min_tick_from: 0.01
+    min_tick_to: 0.05
+    unit: "USD"
+
+venue: "US_equity_smallcap"
+date_effective: "2016-10-03"
+assignment: "randomized"
+
+ground_truth_delta:
+  - fact_id: "volatility_clustering"
+    delta_hat: 0.03
+    ci95: [-0.01, 0.07]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+    unit: "relative"
+    references:
+      - "SEC DERA, Tick Size Pilot Assessment Reports, 2018"
+      - "external_claim"
+
+  - fact_id: "leverage_effect"
+    delta_hat: -0.02
+    ci95: [-0.06, 0.02]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+    unit: "relative"
+    references:
+      - "SEC DERA, Tick Size Pilot Assessment Reports, 2018"
+      - "external_claim"
+
+  - fact_id: "gain_loss_asymmetry"
+    delta_hat: -0.01
+    ci95: [-0.04, 0.02]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+    unit: "relative"
+    references:
+      - "SEC DERA, Tick Size Pilot Assessment Reports, 2018"
+      - "external_claim"
+
+data_hashes: {}
