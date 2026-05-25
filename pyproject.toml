@@ -30,10 +30,13 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/your-org/PRISM"
-Documentation = "https://github.com/your-org/PRISM/blob/main/docs/getting_started.md"
+Repository = "https://github.com/yuitokyouni/PRISM"
+Documentation = "https://github.com/yuitokyouni/PRISM/blob/main/docs/getting_started.md"
 
 [project.optional-dependencies]
+viz = [
+    "matplotlib>=3.8",
+]
 real-data = [
     "yfinance>=0.2",
 ]
