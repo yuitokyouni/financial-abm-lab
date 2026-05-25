@@ -132,12 +132,28 @@
 5. **pyproject.toml**: readme, classifiers (Science/Research, Financial), keywords, project URLs
 6. **CONTRIBUTING.md**: 開発セットアップ、コード品質チェック、adapter/NER/fact 追加ガイド
 
+#### Phase 7c: CI/CD strict化, コード整備, ドキュメント修正 — commits 3e98f9c..48d7467
+7. **mypy strict CI**: `viz/latex.py` の型エラー修正 (list→tuple)、`continue-on-error` 削除
+8. **CI/CD 分離**: lint (ruff check + ruff format + mypy) と test を別ジョブに分離
+9. **ruff format**: 全 22 ファイルにフォーマッタ適用
+10. **PEP 561 `py.typed`** マーカー追加
+11. **Public API**: `from prism import run_cell, run_tensor` トップレベルエクスポート
+12. **FW adapter ラベル**: `ADAPTER_LATEX_LABELS` に "fw" → "FW" 追加
+13. **pyproject.toml**: `[viz]` optional dependency (matplotlib), URL を yuitokyouni に修正
+14. **ドキュメント修正**: README, getting_started, CONTRIBUTING のプレースホルダー URL 修正、
+    format check 手順追加、top-level import 使用
+
 ### テスト状態
 - **286 tests**, all passing
-- ruff clean
+- ruff check clean, ruff format clean
+- mypy strict: 0 errors (26 files)
 - pip install -e ".[dev]" OK
 
-### 次の目標 (Phase 7c)
-1. API ドキュメント (モジュールレベル docstring 整備 — 必要に応じて)
-2. CI/CD 拡充 (mypy を GitHub Actions に追加)
-3. 論文ドラフト用の generate_paper_figures.py 動作確認
+### 現在のブロッカー
+- `generate_paper_figures.py` 実行中 (5×4×6 + 5×3×6 = 210 cells × 20 paths の GARCH 最適化)
+  — 完了確認後に Phase 7 を COMPLETE にする
+
+### 次の目標 (Phase 8 候補)
+1. generate_paper_figures.py 出力確認 + FW ラベル反映の再実行
+2. テストカバレッジレポート (CI に coverage 閾値追加)
+3. LICENSE ファイル追加 (MIT)
