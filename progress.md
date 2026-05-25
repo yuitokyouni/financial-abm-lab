@@ -40,54 +40,60 @@
 
 ## Phase 5: データ接続と精緻化 — COMPLETE
 
+### Phase 5 成果物
+1. **Per-path fact estimation** — commit 60a9546
+2. **GARCH optimizer improvement + squared_return_acf** — commit 222746e
+3. **Real market data via yfinance** — commit 4d1a2ab
+4. **mypy strict compliance** — commit 949e7d6
+
+## Phase 6: 高度な分析と文書化 — IN PROGRESS
+
 ### 今回のセッションで達成したこと
 
-#### Phase 5a: Per-path fact estimation — commit 60a9546
-1. **`per_path_facts` モード** (`pipeline.py`): 個別パスで fact を計算し median で集約
-   - path 平均化による尖度・歪度の消失を回避 (CLT 効果の排除)
-   - `run_cell()`, `run_tensor()`, `compare_causal_methods()` に `per_path_facts` パラメータ追加
-   - `--per-path-facts` CLI フラグを全サブコマンドに追加
-   - 6 integration tests 追加
+#### Phase 6a+6b: MiFID II NER + Lux-Marchesi adapter — commit 0936e33
+1. **NER #3** (`data/ner/mifid2_2018_eu_tick.yaml`): MiFID II 2018 EU tick size regime
+   - tick_size_increase 介入クラス (EUR 0.005 → 0.01)
+   - Aquilina, Budish & O'Neill (2022) + Comerton-Forde et al. (2019) からの ground truth
+   - 6 facts の delta + CI95 付き
+2. **LM Adapter** (`src/prism/adapters/lm.py`): Lux-Marchesi (1999, 2000) herding model
+   - fundamentalist/chartist 2群 + 意見動学 (herding)
+   - tick_size_increase: 粗いグリッドが herding cascade を抑制
+   - transaction_tax: chartist の trend-following を減衰
+   - k=8 free params, ModelAdapter Protocol 準拠
+   - 14 unit tests (protocol, intervention, reproducibility)
+3. **Pipeline 拡張**: ADAPTER_REGISTRY に "lm" 追加、全既存テスト互換
+4. **Integration tests**: LM × 3 NER + MiFID II × 全 adapter テスト追加
+5. **Tensor**: 4 adapters × 3 NERs × 6 facts = 72 cells
 
-#### Phase 5b: GARCH optimizer + squared_return_acf — commit 222746e
-2. **GARCH(1,1) 最適化改善**: beta 下限 0.3→0.01, alpha 上限 0.5→0.7, 6 starting points (低持続性含む)
-3. **`squared_return_acf`** (`estimators.py`): 6th stylized fact — r² の lag-1 ACF
-   - 最適化不要、GARCH persistence より感度の高いボラティリティクラスタリング指標
-   - 両 NER に ground truth delta 追加、eligibility range [0.05, 0.5]
-4. **Estimator version** 0.1.0 → 0.2.0
+#### Phase 6c: LaTeX 図表生成 — commit 09ae07a
+6. **`render_latex_heatmap()`** (`src/prism/viz/latex.py`): 論文品質 PDF/PGF ヒートマップ
+   - LaTeX テキスト対応 (Computer Modern, 数式ラベル)
+   - LaTeX 未インストール環境では mathtext にフォールバック
+7. **`export_latex_table()`**: 完全な `\begin{table}` 環境の LaTeX ソース生成
+   - checkmark/times 符号、MDL重み付き信頼度、gray 表示 (ineligible)
+   - booktabs スタイル
+8. **CLI**: `prism latex-heatmap` + `prism latex-table` サブコマンド
 
-#### Phase 5c: Real market data via yfinance — commit 4d1a2ab
-5. **`fetch_returns()`** (`data/market_data.py`): Yahoo Finance からの日次対数リターン取得
-6. **`fetch_pre_intervention_data()`**: NER の venue/date に基づく自動データ取得
-   - US_equity_smallcap → IWM, EU_equity_largecap → EZU
-7. **`use_real_data`** パラメータ + `--real-data` CLI フラグ
-   - synthetic N(0,0.02) → 実データでのキャリブレーション
-8. **Optional dependency**: `pip install prism-abm[real-data]`
-
-#### Phase 5d: mypy strict compliance — commit 949e7d6
-9. **mypy --strict 完全パス** (0 errors, 23 source files)
-   - ModelAdapter protocol 型注釈、FactResult metadata dict 型修正
-   - CLI 変数名分離 (型衝突解消)、`_write_json` ヘルパー抽出
-   - types-PyYAML stubs 導入
-
-### Phase 5 テンソル状態
-- **Tensor サイズ**: 3 adapters × 2 NERs × 6 facts = 36 cells
-- **Adapters**: SG (k=7, w_mdl=0.263), CI (k=9, w_mdl=0.240), ZI (k=4, w_mdl=0.333)
-- **NERs**: tspp_2016_us_equity, french_ftt_2012_eu
+### Phase 6 テンソル状態
+- **Tensor サイズ**: 4 adapters × 3 NERs × 6 facts = 72 cells
+- **Adapters**: SG (k=7), CI (k=9), ZI (k=4), LM (k=8)
+- **NERs**: tspp_2016_us_equity, french_ftt_2012_eu, mifid2_2018_eu_tick
 - **Facts**: volatility_clustering, leverage_effect, gain_loss_asymmetry, fat_tails, abs_autocorrelation, squared_return_acf
-- **テスト**: 192 tests, all passing
-- **品質**: ruff clean, mypy strict clean
+- **テスト**: 238 tests, all passing
+- **品質**: ruff clean
 
 ### 既知の課題・改善余地
 - NER の ground truth delta は external_claim タグ済み — 生データからの再算出は未実施
 - 実市場データ接続のテストは yfinance + network 依存 (CI では skip される可能性)
-- GARCH delta が引き続き小さい可能性 — squared_return_acf が補完的指標として機能
 
-## 次の目標 (Phase 6 準備)
+## 次の目標 (Phase 6 残タスク + Phase 7 準備)
 
-### Phase 6: 高度な分析と文書化
+### Phase 6 残り
 1. NER ground truth の生データからの再算出 (external_claim → derived)
-2. 追加 NER (例: MiFID II 2018, Japanese tick size 2014)
-3. 追加 adapter (例: LLSm, Farmer-Joshi)
-4. 論文用の図表生成 (LaTeX 対応)
-5. ドキュメント整備 (API docs, チュートリアル)
+2. 追加 NER (例: Japanese tick size 2014)
+
+### Phase 7: ドキュメントと公開準備
+1. API ドキュメント整備
+2. チュートリアル (Getting Started)
+3. README 拡充
+4. 論文ドラフト用の図表一括生成スクリプト
