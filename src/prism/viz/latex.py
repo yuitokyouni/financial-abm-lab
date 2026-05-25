@@ -39,6 +39,7 @@ ADAPTER_LATEX_LABELS: dict[str, str] = {
     "ci": "CI",
     "zi": "ZI-C",
     "lm": "LM",
+    "fw": "FW",
 }
 
 VERDICT_SYMBOLS: dict[MatchVerdict, str] = {
