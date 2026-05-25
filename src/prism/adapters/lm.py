@@ -114,23 +114,13 @@ class LMAdapter:
             transaction_cost=self.params.transaction_cost,
         )
 
-        if intervention.intervention_class == "tick_size_increase":
-            new_tick = intervention.canonical_params.get("min_tick_to", 0.05)
-            tick_ratio = new_tick / self.params.tick_size
-            new_params.tick_size = new_tick
-            new_params.herd_strength /= np.sqrt(tick_ratio)
-            new_params.opinion_decay *= 1 + 0.1 * np.log(tick_ratio)
-        elif intervention.intervention_class == "tick_size_decrease":
-            new_tick = intervention.canonical_params.get("min_tick_to", 0.001)
-            tick_ratio = self.params.tick_size / new_tick
-            new_params.tick_size = new_tick
-            new_params.herd_strength *= np.sqrt(tick_ratio)
-            new_params.opinion_decay *= max(0.01, 1 - 0.1 * np.log(tick_ratio))
+        if intervention.intervention_class in ("tick_size_increase", "tick_size_decrease"):
+            new_params.tick_size = intervention.canonical_params.get(
+                "min_tick_to", self.params.tick_size
+            )
         elif intervention.intervention_class == "transaction_tax":
             tax_rate = intervention.canonical_params.get("rate", 0.001)
             new_params.transaction_cost = tax_rate
-            new_params.chart_trend_weight *= 1 - tax_rate * 8
-            new_params.noise_scale *= 1 + tax_rate * 3
         else:
             raise ValueError(f"Unknown intervention class: {intervention.intervention_class}")
 

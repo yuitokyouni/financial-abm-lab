@@ -73,13 +73,15 @@ class TestFWIntervention:
         assert isinstance(post_adapter, FWAdapter)
         assert post_adapter.params.tick_size == 0.05
 
-    def test_tick_size_increase_reduces_chartist_strength(self, adapter, calibration):
+    def test_tick_increase_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_increase",
             canonical_params={"min_tick_to": 0.05},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert post_adapter.params.chi < adapter.params.chi
+        assert post_adapter.params.chi == adapter.params.chi
+        assert post_adapter.params.alpha_w == adapter.params.alpha_w
+        assert post_adapter.params.noise_scale == adapter.params.noise_scale
 
     def test_tick_size_decrease_intervention(self, adapter, calibration):
         intervention = CanonicalIntervention(
@@ -90,13 +92,14 @@ class TestFWIntervention:
         assert isinstance(post_adapter, FWAdapter)
         assert post_adapter.params.tick_size == 0.001
 
-    def test_tick_size_decrease_amplifies_chartist_strength(self, adapter, calibration):
+    def test_tick_decrease_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_decrease",
             canonical_params={"min_tick_to": 0.001},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert post_adapter.params.chi > adapter.params.chi
+        assert post_adapter.params.chi == adapter.params.chi
+        assert post_adapter.params.alpha_w == adapter.params.alpha_w
 
     def test_transaction_tax_intervention(self, adapter, calibration):
         intervention = CanonicalIntervention(
@@ -107,13 +110,14 @@ class TestFWIntervention:
         assert isinstance(post_adapter, FWAdapter)
         assert post_adapter.params.transaction_cost == 0.002
 
-    def test_transaction_tax_reduces_chartist_strength(self, adapter, calibration):
+    def test_transaction_tax_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="transaction_tax",
             canonical_params={"rate": 0.002},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert post_adapter.params.chi < adapter.params.chi
+        assert post_adapter.params.chi == adapter.params.chi
+        assert post_adapter.params.sigma_c == adapter.params.sigma_c
 
     def test_unknown_intervention_raises(self, adapter, calibration):
         intervention = CanonicalIntervention(

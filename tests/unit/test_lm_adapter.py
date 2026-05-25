@@ -69,13 +69,16 @@ class TestLMIntervention:
         assert isinstance(post_adapter, LMAdapter)
         assert post_adapter.params.tick_size == 0.05
 
-    def test_tick_size_reduces_herding(self, adapter, calibration):
+    def test_tick_intervention_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_increase",
             canonical_params={"min_tick_to": 0.05},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert post_adapter.params.herd_strength < adapter.params.herd_strength
+        assert post_adapter.params.herd_strength == adapter.params.herd_strength
+        assert post_adapter.params.opinion_decay == adapter.params.opinion_decay
+        assert post_adapter.params.chart_trend_weight == adapter.params.chart_trend_weight
+        assert post_adapter.params.noise_scale == adapter.params.noise_scale
 
     def test_transaction_tax_intervention(self, adapter, calibration):
         intervention = CanonicalIntervention(
@@ -86,13 +89,15 @@ class TestLMIntervention:
         assert isinstance(post_adapter, LMAdapter)
         assert post_adapter.params.transaction_cost == 0.002
 
-    def test_transaction_tax_reduces_chartist_weight(self, adapter, calibration):
+    def test_transaction_tax_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="transaction_tax",
             canonical_params={"rate": 0.002},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert post_adapter.params.chart_trend_weight < adapter.params.chart_trend_weight
+        assert post_adapter.params.chart_trend_weight == adapter.params.chart_trend_weight
+        assert post_adapter.params.noise_scale == adapter.params.noise_scale
+        assert post_adapter.params.herd_strength == adapter.params.herd_strength
 
     def test_tick_size_decrease_intervention(self, adapter, calibration):
         intervention = CanonicalIntervention(
@@ -103,13 +108,14 @@ class TestLMIntervention:
         assert isinstance(post_adapter, LMAdapter)
         assert post_adapter.params.tick_size == 0.001
 
-    def test_tick_size_decrease_amplifies_herding(self, adapter, calibration):
+    def test_tick_decrease_preserves_behavioral_params(self, adapter, calibration):
         intervention = CanonicalIntervention(
             intervention_class="tick_size_decrease",
             canonical_params={"min_tick_to": 0.001},
         )
         post_adapter = adapter.apply_intervention(calibration, intervention)
-        assert post_adapter.params.herd_strength > adapter.params.herd_strength
+        assert post_adapter.params.herd_strength == adapter.params.herd_strength
+        assert post_adapter.params.opinion_decay == adapter.params.opinion_decay
 
     def test_unknown_intervention_raises(self, adapter, calibration):
         intervention = CanonicalIntervention(
