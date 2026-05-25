@@ -3,6 +3,7 @@
 import numpy as np
 
 from prism.pipeline import run_cell, run_tensor
+from prism.scoring.eligibility import EligibilityVerdict
 from prism.types import MatchVerdict
 
 
@@ -195,3 +196,77 @@ class TestTensorPipeline:
         d = result.to_dict()
         assert len(d["cells"]) == 2
         assert "adapter_ids" in d
+
+
+class TestPhase3Integration:
+    """Phase 3: MDL weighting, eligibility gate, causal method weighting."""
+
+    def test_cell_has_weighted_matches(self):
+        result = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect"],
+            seed=42,
+            n_paths=5,
+        )
+        assert len(result.weighted_matches) == 1
+        wm = result.weighted_matches[0]
+        assert wm.mdl_weight > 0
+        assert wm.causal_weight > 0
+        assert wm.confidence_weighted == wm.confidence_raw * wm.mdl_weight * wm.causal_weight
+
+    def test_sg_simpler_than_ci_by_mdl(self):
+        sg = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        ci = run_cell("ci", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        assert sg.weighted_matches[0].mdl_weight > ci.weighted_matches[0].mdl_weight
+
+    def test_cell_has_eligibility(self):
+        result = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect", "volatility_clustering", "gain_loss_asymmetry"],
+            seed=42,
+            n_paths=10,
+        )
+        assert result.eligibility is not None
+        assert result.eligibility.verdict in (
+            EligibilityVerdict.ELIGIBLE,
+            EligibilityVerdict.INELIGIBLE,
+        )
+        assert len(result.eligibility.checks) > 0
+
+    def test_eligibility_in_provenance(self):
+        result = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        assert "eligibility" in result.provenance.get("parameters", {})
+
+    def test_causal_weight_from_ner(self):
+        result = run_cell(
+            adapter_name="sg",
+            ner_path="data/ner/tspp_2016_us_equity.yaml",
+            fact_ids=["leverage_effect"],
+            seed=42,
+            n_paths=5,
+        )
+        wm = result.weighted_matches[0]
+        assert wm.causal_weight == 0.9  # tspp uses did_firm_fe
+
+    def test_to_dict_includes_phase3_fields(self):
+        result = run_cell("sg", "data/ner/tspp_2016_us_equity.yaml", ["leverage_effect"], seed=42, n_paths=5)
+        d = result.to_dict()
+        assert "weighted_matches" in d
+        assert "eligibility" in d
+        assert d["eligibility"]["verdict"] in ("eligible", "ineligible", "untested")
+
+    def test_tensor_with_phase3(self):
+        result = run_tensor(
+            adapter_names=["sg", "ci"],
+            ner_paths=["data/ner/tspp_2016_us_equity.yaml"],
+            fact_ids=["leverage_effect"],
+            seed=42,
+            n_paths=5,
+        )
+        for cell in result.cells:
+            assert len(cell.weighted_matches) > 0
+            assert cell.eligibility is not None
+        summary = result.summary()
+        assert "Eligibility" in summary
