@@ -83,7 +83,7 @@ def check_baseline_consistency(
 
     parquet bit-一致 (sha256) を check、不一致なら semantic 一致 (n_rt, 列値) を check。
     """
-    new_trial = SWEEP_DIR / f"mmfcn_1x_{seed:04d}" / "trial.parquet"
+    new_trial = SWEEP_DIR / f"mmfcn_1x_{seed:04d}" / f"trial_{seed:04d}.parquet"
     ref_trial = DATA_DIR / "C3" / f"trial_{seed:04d}.parquet"
     if not new_trial.exists():
         return {"verdict": "missing_new",
@@ -125,13 +125,15 @@ def collect_trial_stats(
 ) -> Optional[Dict[str, float]]:
     """1 (setting, seed) の 4 parquet から stats を抽出.
 
-    Returns: dict with n_rt, forced_retire_rate, lifetime_p25, conditional_median,
-             censoring_rate, n_lifetime_samples, n_censored
+    Returns: dict with n_rt, forced_retire_rate, lifetime stats, plus
+             proxy fill-ease metrics (rt_rate_per_agent_step, n_substitutions,
+             agent_lifetime_mean) from existing parquet — true fill_rate
+             requires Mac-side instrumentation 追加 (本 version では未測定)。
     """
     base = SWEEP_DIR / f"{setting}_{seed:04d}"
-    trial_p = base / "trial.parquet"
-    agents_p = base / "agents.parquet"
-    lt_p = base / "lifetimes.parquet"
+    trial_p = base / f"trial_{seed:04d}.parquet"
+    agents_p = base / f"agents_{seed:04d}.parquet"
+    lt_p = base / f"lifetimes_{seed:04d}.parquet"
     if not (trial_p.exists() and agents_p.exists() and lt_p.exists()):
         return None
     trial = pd.read_parquet(trial_p)
@@ -140,7 +142,17 @@ def collect_trial_stats(
     n_rt = int(len(trial))
     # forced_retire_rate = forced_retired 数 / N_sg (= 100)
     forced_retire_rate = float(agents["forced_retired"].mean()) if "forced_retired" in agents.columns else float("nan")
-    # lifetime stats
+    # n_substitutions (lifetime samples 数 - 100 = 中途交代回数の合計に近似)
+    n_substitutions = max(0, int(len(lt)) - int(len(agents)))
+    # SG fill 困難度 proxy: per agent-step RT rate
+    # = n_rt / (N_sg × main_steps)、main_steps は LOB_PARAMS から
+    from config import LOB_PARAMS  # noqa: E402
+    n_sg = int(len(agents))
+    main_steps = int(LOB_PARAMS["main_steps"])
+    rt_rate_per_agent_step = n_rt / (n_sg * main_steps) if (n_sg * main_steps) else float("nan")
+    # agent lifetime distribution (final lifetime per agent)
+    agent_lifetime_mean = float(agents["lifetime"].mean()) if "lifetime" in agents.columns else float("nan")
+    # lifetime sample stats
     if len(lt):
         lifetimes = lt["lifetime"].astype(float).to_numpy()
         censored = lt["censored"].astype(bool).to_numpy() if "censored" in lt.columns else np.zeros(len(lt), dtype=bool)
@@ -158,6 +170,9 @@ def collect_trial_stats(
         "order_volume": SETTING_ORDER_VOLUME.get(setting, -1),
         "seed": seed,
         "n_rt": n_rt,
+        "rt_rate_per_agent_step": rt_rate_per_agent_step,
+        "n_substitutions": n_substitutions,
+        "agent_lifetime_mean": agent_lifetime_mean,
         "forced_retire_rate": forced_retire_rate,
         "lifetime_p25": p25,
         "conditional_median": cond_median,
@@ -181,6 +196,9 @@ def aggregate_by_setting(per_trial_df: pd.DataFrame) -> pd.DataFrame:
             "n_rt_mean": float(sub["n_rt"].mean()),
             "n_rt_min": int(sub["n_rt"].min()),
             "n_rt_max": int(sub["n_rt"].max()),
+            "rt_rate_per_agent_step_mean": float(sub["rt_rate_per_agent_step"].mean()),
+            "n_substitutions_mean": float(sub["n_substitutions"].mean()),
+            "agent_lifetime_mean": float(sub["agent_lifetime_mean"].mean()),
             "forced_retire_rate_mean": float(sub["forced_retire_rate"].mean()),
             "lifetime_p25_mean": float(sub["lifetime_p25"].mean()),
             "conditional_median_mean": float(sub["conditional_median"].mean()),
@@ -194,41 +212,76 @@ def aggregate_by_setting(per_trial_df: pd.DataFrame) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 
 def classify_mmfcn_artifact(agg_df: pd.DataFrame) -> Tuple[str, str, Dict[str, float]]:
-    """mmfcn_2x / mmfcn_1x の n_rt 比で 3 区分判定."""
+    """弾力性 (ε = d log(n_rt) / d log(orderVolume)) ベースの判定 (Yuito 2026-05-19).
+
+    旧式 (ratio_2x / ratio_4x 閾値) は H_artifact_negated の 1.2 閾値が厳しく、
+    実測 ratio_2x ≈ 1.24 で簡単に ambiguous に落ちる。経済学の elasticity 概念
+    (ε=0 完全独立、ε=1 線形供給依存) で連続的に判定する方が頑健。
+
+    判定基準 (Yuito 提示、本 version):
+      ε ≤ 0.3  → MMFCN は副次的供給源 (独立性高)、Phase 2 finding 頑健
+      ε ≥ 0.7  → MMFCN 強依存 (bottleneck)、Phase 2 結論 refactor
+      0.3 < ε < 0.7 → 中間、Yuito 議論
+    補助: SG fill_rate proper は parquet になく、代わりに `rt_rate_per_agent_step`
+    の 4x/1x 比を proxy として併記 (理想は MMFCN saver 拡張、本 version では未実装)。
+    """
     def n_rt(setting: str) -> float:
         sub = agg_df[agg_df["setting"] == setting]
         return float(sub["n_rt_mean"].iloc[0]) if len(sub) else float("nan")
 
+    def rt_rate(setting: str) -> float:
+        sub = agg_df[agg_df["setting"] == setting]
+        return float(sub["rt_rate_per_agent_step_mean"].iloc[0]) if len(sub) else float("nan")
+
     rt_05x = n_rt("mmfcn_05x"); rt_1x = n_rt("mmfcn_1x")
     rt_2x = n_rt("mmfcn_2x"); rt_4x = n_rt("mmfcn_4x")
+    rt_rate_1x = rt_rate("mmfcn_1x"); rt_rate_4x = rt_rate("mmfcn_4x")
 
     ratio_2x = rt_2x / rt_1x if rt_1x else float("nan")
     ratio_4x = rt_4x / rt_1x if rt_1x else float("nan")
     ratio_05x = rt_05x / rt_1x if rt_1x else float("nan")
+    # 弾力性: 4x → 線形なら 4倍 → ε=1。1.42 倍なら ε = log(1.42)/log(4) ≈ 0.25
+    elasticity_4x = float(np.log(ratio_4x) / np.log(4.0)) if ratio_4x and ratio_4x > 0 else float("nan")
+    elasticity_2x = float(np.log(ratio_2x) / np.log(2.0)) if ratio_2x and ratio_2x > 0 else float("nan")
+    # rt_rate proxy ratio (Yuito mandate: SG fill ease 代替)
+    rt_rate_ratio_4x = (rt_rate_4x / rt_rate_1x
+                        if rt_rate_1x and not np.isnan(rt_rate_1x) else float("nan"))
 
     ratios = {
         "n_rt_ratio_05x_over_1x": ratio_05x,
         "n_rt_ratio_2x_over_1x": ratio_2x,
         "n_rt_ratio_4x_over_1x": ratio_4x,
+        "elasticity_4x": elasticity_4x,
+        "elasticity_2x": elasticity_2x,
+        "rt_rate_ratio_4x_over_1x_proxy": rt_rate_ratio_4x,
         "n_rt_baseline_1x": rt_1x,
+        "rt_rate_per_agent_step_1x": rt_rate_1x,
     }
 
-    if any(np.isnan(v) for v in [ratio_2x, ratio_4x]):
+    if np.isnan(elasticity_4x):
         return ("inconclusive",
-                f"baseline mmfcn_1x or 2x/4x missing — cannot classify", ratios)
+                "baseline mmfcn_1x or 4x missing — cannot compute elasticity",
+                ratios)
 
-    if ratio_2x >= 1.8 or ratio_4x >= 2.5:
-        return ("H_artifact_mmfcn",
-                f"n_rt(2x)/(1x)={ratio_2x:.2f} or n_rt(4x)/(1x)={ratio_4x:.2f} "
-                f"が閾値超え → MMFCN bottleneck 確定、Phase 2 結論 refactor 検討", ratios)
-    if ratio_2x <= 1.2 and ratio_4x <= 1.5 and ratio_05x >= 0.8:
-        return ("H_artifact_negated",
-                f"n_rt(2x)/(1x)={ratio_2x:.2f}, (4x)/(1x)={ratio_4x:.2f}, "
-                f"(0.5x)/(1x)={ratio_05x:.2f} 全て flat → MMFCN は bottleneck でない、"
-                f"S6 進行可", ratios)
+    if elasticity_4x <= 0.3:
+        verdict_msg = (
+            f"elasticity ε(4x)={elasticity_4x:.3f} ≤ 0.3、"
+            f"n_rt(4x)/(1x)={ratio_4x:.2f} (期待 4.0、線形供給依存ならば)、"
+            f"rt_rate proxy ratio={rt_rate_ratio_4x:.2f} → "
+            f"**MMFCN は副次的供給源 (独立性高)**、Phase 2 finding 頑健、S6 進行可"
+        )
+        return ("H_artifact_negated_strong", verdict_msg, ratios)
+    if elasticity_4x >= 0.7:
+        verdict_msg = (
+            f"elasticity ε(4x)={elasticity_4x:.3f} ≥ 0.7、"
+            f"n_rt(4x)/(1x)={ratio_4x:.2f} → "
+            f"**MMFCN 強依存 (bottleneck)**、Phase 2 結論 refactor"
+        )
+        return ("H_artifact_mmfcn", verdict_msg, ratios)
     return ("ambiguous",
-            f"n_rt(2x)/(1x)={ratio_2x:.2f}, (4x)/(1x)={ratio_4x:.2f}, "
-            f"(0.5x)/(1x)={ratio_05x:.2f} が中間 → Yuito 議論", ratios)
+            f"elasticity ε(4x)={elasticity_4x:.3f} ∈ (0.3, 0.7)、"
+            f"n_rt(4x)/(1x)={ratio_4x:.2f}、"
+            f"rt_rate proxy={rt_rate_ratio_4x:.2f} → 中間、Yuito 議論", ratios)
 
 
 # ---------------------------------------------------------------------------

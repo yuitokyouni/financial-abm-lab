@@ -257,3 +257,41 @@ aggregate に T=1500 cap を被せただけでは censoring 率は 25.4% / 22.4%
 S5.5 単独では H_micro 強支持。S5.6 (MMFCN sensitivity scan) との統合判定:
 - S5.5 = H_micro ✓ ∧ S5.6 = H_artifact_negated → **S6 進行**
 - S5.6 = H_artifact_mmfcn or ambiguous → Yuito 議論
+
+---
+
+## Stage S5.6 — MMFCN sensitivity scan (約定 artifact 検出)
+
+### Verdict — **H_artifact_negated_strong** (MMFCN は副次的供給源)
+
+Yuito 方法論的指摘 2 (「PAMS / MMFCN 設定で約定をしづらくさせる artifact」) に対し、LOB C3 setup で MMFCN の `orderVolume` を {15, 30, 60, 120} の 4 設定 × 2 trial (seed=1000, 1001) で scan。弾力性 ε(4x) = log(1.42)/log(4) = **0.254 ≤ 0.3** → MMFCN は独立、Phase 2 finding 頑健、S6 進行可。
+
+### 設定別 mean (`tab_S5.6_mmfcn_sensitivity.csv`)
+
+| metric | mmfcn_05x | **mmfcn_1x** | mmfcn_2x | mmfcn_4x |
+|---|---:|---:|---:|---:|
+| n_rt_mean | 4679.5 | **4398.0** | 5464.0 | 6251.0 |
+| n_rt ratio vs 1x | 1.06 | 1.00 | 1.24 | **1.42** |
+| rt_rate/agent_step (SG fill ease proxy) | 0.0312 | 0.0293 | 0.0364 | 0.0417 |
+| forced_retire_rate | 0.435 | 0.390 | 0.405 | 0.355 |
+| censoring_rate | 67.4% | 71.0% | 69.2% | 71.0% |
+
+### 判定 — 弾力性ベース (Yuito 2026-05-19 提示)
+
+- ε(4x) = 0.254 → MMFCN は副次的供給源 (独立性高)
+- 4 倍にしても n_rt は 1.42x のみ (線形供給依存なら 4.0x の期待)、0.5x でもほぼ変化なし → 現状設定は既に余裕供給
+- forced_retire / censoring が setting に対し flat → SG 内在 dynamics が dominant
+
+### baseline bit-一致 PASS
+
+`mmfcn_1x` (= orderVolume 30) を `mmfcn_order_volume=None` 経路で実行 → `data/C3/trial_1000/1001.parquet` と sha256 完全一致 → Phase 1 後方互換 hook の non-regression 確認。
+
+### SG fill_rate proper の限界
+
+plan §2.4 の SG / MMFCN fill_rate proper は OrderTrackingSaver の log を追加 export する必要があり、本 version では未測定。代わりに `rt_rate_per_agent_step` (= n_rt / (N_sg × main_steps)) を proxy として併記、4x/1x 比 = 1.42 で MMFCN 独立性を支持。
+
+### S5.5 + S5.6 統合判定 — **S6 (A3 ablation) 進行 GO**
+
+- S5.5 = H_micro 強支持 (RT10k pooled bin_var が full 水準保持) ✓
+- S5.6 = H_artifact_negated_strong (ε(4x) = 0.25) ✓
+- → Phase 2 主要 finding (仮説 A 単純版反証 + 仮説 A revised + lifetime persistence) は方法論的に頑健、S6 で仮説 A revised の direct causal test を実施
