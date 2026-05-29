@@ -25,9 +25,12 @@ YH008 は古典 ABM 再現の続編ではなく、**LLM-as-agent + mechanistic i
 experiments/YH008/
 ├── README.md                            # 本ファイル
 ├── design_v0.3.pdf                      # 設計根拠 (LLM_ABM_internal_representation_design v0.3)
-├── stage1-3_implementation_brief.md     # 実装ブリーフ (5固定判断 + Gate 1-3 + flag-don't-guess)
-└── ABS_of_financial_market_with_LLM.pdf # FCLAgent 原論文 [TODO: 追加]
+├── stage13_implementation_brief.md      # 実装ブリーフ (5固定判断 + Gate 1-3 + flag-don't-guess)
+├── addendum_v0.3.2.md                   # Stage 0 + ハードニング addendum (最新・正本、ブリーフ §7・§8 を置換)
+└── ABS_of_financial_market_with_LLM.pdf # FCLAgent 原論文
 ```
+
+**重要:** `addendum_v0.3.2.md` は実装ブリーフ本体の §7・§8 を置き換え、Stage 1 の前に Stage 0（smoke test + threshold pilot）を挿入する**最新・正本**。実装セッションにはブリーフ本体と **必ず一緒に渡す**。
 
 **YH001-007 の流儀 (PDF + README) から一段足してある**理由: YH008 では実装判断が研究判断と直結する。CoT 汚染回避 / 単一資産 disposition 定義 / logit vs sampling / 活性抽出位置 など、設計 PDF に書ききれていない 5 固定判断が**実装ブリーフ側**にある。これを落とすと、別セッションで実装するときに素朴な実装で研究妥当性が壊れる。
 
@@ -62,10 +65,15 @@ experiments/YH008/
 
 ## 実装着手前にやること
 
-1. **FCLAgent 原論文 PDF** (`ABS_of_financial_market_with_LLM.pdf`) を YH008/ 直下に追加する
-2. 実装は **GPU 環境の別 CC セッション**で行う。本リポジトリの CPU 環境では走らない
-3. 実装セッションへの引き渡し時、`stage1-3_implementation_brief.md` を入力として渡す。ブリーフ §9 "flag, don't guess" が効くよう、CC に研究判断と工学判断の区別を明示すること
-4. §7 のしきい値 (ATH 近傍判定 / 含み益損ビン境界 / α grid / 探索層集合 / gate 合格しきい値 / アンサンブルサイズ) は実装着手前に確定するか、§9 ルールで CC に flag させる
+1. ~~**FCLAgent 原論文 PDF** (`ABS_of_financial_market_with_LLM.pdf`) を YH008/ 直下に追加する~~ → **済**
+2. 実装は **GPU 環境の別 CC セッション**で行う（RunPod 4090 spot を想定）。本リポジトリの CPU 環境では走らない
+3. 実装セッションへの引き渡し時は **以下4点をまとめて渡す**:
+   - `design_v0.3.pdf`
+   - `stage13_implementation_brief.md`
+   - `addendum_v0.3.2.md`（**ブリーフ §7・§8 を置換、Stage 0 を前置**）
+   - `ABS_of_financial_market_with_LLM.pdf`
+   ブリーフ §9 "flag, don't guess" が効くよう、CC に研究判断と工学判断の区別を明示する
+4. ブリーフ §7 のしきい値群は **addendum v0.3.2 に従い Stage 0 が実測して凍結**する設計に変更済（事前推測の定数にしない）。HF gated access token（meta-llama）を実装セッション側に準備しておくこと
 
 ---
 
