@@ -1,0 +1,122 @@
+{
+  "run_id": "20260529-131847_7de0bb4_P0_5",
+  "supersedes": null,
+  "extends": "20260529-120955_7de0bb4_P0",
+  "git_HEAD": "7de0bb49b5fb77e381c0d838ecf2764510ad3f7b",
+  "config": {
+    "paths": {
+      "hf_home": "/workspace/.hf",
+      "outputs_root": "/root/yh008_work/outputs"
+    },
+    "model": {
+      "name": "meta-llama/Llama-3.1-8B-Instruct",
+      "revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "dtype": "float32",
+      "backend": "transformer_lens",
+      "n_layers": 32,
+      "d_model": 4096
+    },
+    "seeds": {
+      "global": 20250529,
+      "split": 1000,
+      "ensemble": 2001
+    },
+    "probe": {
+      "true_group_seed": [
+        "True",
+        " True",
+        "true",
+        " true"
+      ],
+      "false_group_seed": [
+        "False",
+        " False",
+        "false",
+        " false"
+      ],
+      "extra_candidates": [
+        "Yes",
+        " Yes",
+        "yes",
+        " yes",
+        "1",
+        " 1",
+        "No",
+        " No",
+        "no",
+        " no",
+        "0",
+        " 0"
+      ],
+      "out_of_group_mass_flag": 0.1,
+      "assistant_prefix": "{\"0\": {\"is_buy\": \"",
+      "canonical_wording": "sec1_faithful"
+    },
+    "states": {
+      "current_price": {
+        "center": 300.0,
+        "low": 250.0,
+        "high": 350.0
+      },
+      "position": {
+        "low": 1,
+        "high": 300
+      },
+      "cash": {
+        "low": 0.0,
+        "high": 100000.0,
+        "center": 30000.0
+      },
+      "ofi": {
+        "low": -1.0,
+        "high": 1.0
+      },
+      "total_time": 100,
+      "remaining_time": {
+        "low": 5,
+        "high": 95
+      },
+      "tick": 0.01,
+      "gain_loss": {
+        "gain_mult": {
+          "low": 0.85,
+          "high": 0.98
+        },
+        "loss_mult": {
+          "low": 1.02,
+          "high": 1.15
+        },
+        "deadband_gain_abs": 1.0
+      },
+      "ath": {
+        "no_drop_nearness": 1.0,
+        "dropped_near_nearness": {
+          "low": 0.95,
+          "high": 0.99
+        },
+        "far_nearness": {
+          "low": 0.7,
+          "high": 0.85
+        },
+        "atl_frac": {
+          "low": 0.8,
+          "high": 0.99
+        }
+      }
+    },
+    "ensemble": {
+      "n_random": 800,
+      "n_paired_ath": 200,
+      "holdout_frac": 0.4,
+      "bootstrap_resamples": 1000
+    },
+    "faithfulness": {
+      "n_behavioral": 100,
+      "max_new_tokens": 200
+    },
+    "stage0_5_gate": {
+      "disposition_proxy_min": 0.0,
+      "ath_asymmetry_min": 0.0
+    }
+  }
+}
