@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual env
+.venv/
+venv/
+
+# Tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+
+# Project artifacts (caches, trained models, generated HTML)
+artifacts/
+*.parquet
+
+# IDE
+.idea/
+.vscode/
+
+# Claude Code (project-local, personal overrides — not for team sharing)
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db

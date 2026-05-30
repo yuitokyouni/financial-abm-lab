@@ -1,0 +1,68 @@
+[project]
+name = "state-atlas"
+version = "0.1.0"
+description = "Market State Atlas: causal embedding of multi-asset market state + free energy landscape F(z) = -log rho(z) with 3D animation."
+requires-python = ">=3.11"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Yuito Hasegawa" }]
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "pandas>=2.1",
+  "scikit-learn>=1.4",
+  "matplotlib>=3.8",       # used by dynamics/market_dynamics.py (existing _demo)
+  "pyyaml>=6.0",
+  "pydantic>=2.5",
+  "typer>=0.12",
+  "pyarrow>=14.0",
+]
+
+# Heavy / phase-specific deps live in extras and get pulled in as phases land.
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+data = ["yfinance>=0.2.40"]
+embed = ["torch>=2.2"]
+viz = ["plotly>=5.20"]
+ibkr = ["ib_async>=1.0"]
+
+[project.scripts]
+atlas = "state_atlas.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["state_atlas"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.format]
+# Pre-existing research engine kept verbatim per SPEC §1.
+exclude = ["state_atlas/dynamics/market_dynamics.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B"]
+# typer.Option in defaults is the idiomatic way to declare CLI args.
+"state_atlas/cli.py" = ["B008"]
+# Pre-existing research engine: kept as-is per SPEC §1 ("not rewritten").
+# Allow its compact research-script style + import layout it shipped with.
+"state_atlas/dynamics/market_dynamics.py" = ["E701", "E702", "F841", "F401", "I001", "UP035"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -m 'not network'"
+markers = [
+  "network: tests that hit the real yfinance/IBKR network (opt-in)",
+  "slow: tests that take more than ~5s (e.g. real VAE training)",
+]
+filterwarnings = [
+  "ignore::DeprecationWarning",
+]
