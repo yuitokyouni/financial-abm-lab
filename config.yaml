@@ -54,6 +54,11 @@ experiments:
     equity_sectors:     [SPY, QQQ, IWM, XLF, XLE]
     cross_asset:        [SPY, TLT, GLD, DBC, "^VIX", HYG, UUP]
     fx_macro:           [UUP, FXE, FXY, FXA, GLD]
+    # Vol complex (Step 2) — primary use is the direct-topography atlas on
+    # (log VIX, term_slope=log(VIX3M/VIX)), not the VAE pipeline. SVXY has
+    # a structural change in 2018-02 (-1x → -0.5x); the run script masks
+    # SVXY before 2018-03-01.
+    vol_complex:        ["^VIX", "^VIX3M", "SVXY"]
   d_eff_tau: 0.1        # KL-per-dim threshold for effective latent dim
   d_eff_tau_sensitivity: [0.05, 0.1, 0.2]
 

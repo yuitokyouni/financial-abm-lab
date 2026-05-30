@@ -122,3 +122,103 @@ SPEC §2-6 「優位性なしも正当な結論」原則の延長として、ユ
 3. ネットワーク叩く統合テストは `pytest -m network` でオプトイン、デフォルト mock のみ。
 
 **適用範囲**: `state_atlas/data/`、`tests/test_data.py`、`pyproject.toml` の pytest markers。
+
+---
+
+## 2026-05-31 — Step 2 方針転換: 直接地形 (order parameters) を主役、VAE atlas を cross-check に降格
+
+**決定**: 秩序変数 (order parameter) が事前に分かっているドメインでは、
+**VAE atlas は cross-check に降格し、直接 2D 地形 F(秩序変数1, 秩序変数2) = -log ρ を主役**
+にする。ボラ複合体 (^VIX, ^VIX3M, SVXY) では:
+- x 軸 = `log_vix` (= log(^VIX))
+- y 軸 = `term_slope = log(VIX3M / VIX)` (>0 contango / <0 backwardation, scale-free)
+
+**根拠**:
+1. macro 5 資産で `recon_mse ≈ 0.74` ＝ VAE は分散の 74% を捨てる lossy 圧縮。レジームを
+   定義する軸が圧縮で潰れると、二峰でも単一盆地に見える **偽陰性** リスク。
+2. macro では秩序変数が未知だったから VAE に学習させる必要があった。ボラでは
+   `term_slope` が contango/backwardation を直接定義する教科書的 order parameter。
+3. 軸に **直接の経済的意味** がある (解釈可能性 +1)。
+4. 密度を `term_slope` 軸に沿って bimodal/unimodal で直接検査できる ＝ 「真の問い」を
+   1 次元 marginal で直接検定できる。
+
+**Cross-check (副役)**: 同期間で VAE atlas も回し、latent z(t) と (log_vix, term_slope) の
+相関を取る。VAE が秩序変数方向を保持していれば cross-check が成立、保持していなければ
+「VAE は秩序変数を捨てた」という診断的事実 (それ自体が知見)。
+
+**Null 対照**: macro `aw` を同じ 2014-01 起点で再 fit して apples-to-apples 比較。
+n_effective_basins と F 分布形 (p50/p95/p99) を並べて報告。1e までの 2007-start aw 結果
+は保持し、別の baseline として残す。
+
+**期待値調整**: backwardation の dwell は macro 危機より長い (数週間〜数ヶ月) → 第二盆地
+形成の可能性が macro より高い。だが backwardation は時間の ~15%、深い反転はもっと稀 →
+**「単一 contango 盆地 + ストレス遠足」に潰れる可能性も十分**。事前期待は「最有力候補」
+だが「保証」ではない。dwell ≥21d の effective_basin_mask で厳密に問う。
+
+**判定基準**:
+- 直接 2D 地形が dwell-加重で 2 effective basins → 本物の二レジーム
+- 単峰右歪み → macro と同じ「単一連結アトラクタ + 遠足」が粒度を問わず頑健化
+- `term_slope` の 1D marginal が bimodal か unimodal かは独立の判定証拠
+
+**適用範囲**: `state_atlas/features/term_structure.py` (新規)、
+`config.yaml` の `experiments.universes.vol_complex`、`artifacts/step2_vol_complex.py`、
+将来 Phase 8 (IBKR モニタ) の出力候補。
+
+---
+
+## 2026-05-31 — 離散レジーム探索終了 / F-stress 指標の実用化 (Phase 8) へ
+
+**決定**: macro 5資産 (2010-, 2007-)、vol複合体 (2014-)、vol複合体 GFC込み (2007-) の
+**4 つすべての設定で n_effective_basins = 1**。離散レジームは実データでは支持されない、を
+**確定** として扱う。当初 SPEC §1 の「レジーム分類」言い回しは捨て、残った検証済み概念
+「**F = 連続クロスアセット・ストレス指標 (coincident, NOT predictor)**」を Phase 8 実装で
+活用する。
+
+**Phase 8 構成**:
+
+1. **Online causal F monitor** (`state_atlas/online/monitor.py`):
+   - 直接地形 (log_VIX, term_slope) を train 窓で KDE fit
+   - 新バーは causal projection (F = bilinear interp on train grid)
+   - F の p50 / p90 / p99 percentile を train 窓で固定 → OOS で適用
+   - leakage canary 必須 (テストで「未来を腐らせても train fit は変わらない」)
+
+2. **State machine** (`state_atlas/online/state_machine.py`):
+   - CALM (F<p50 ∧ contango) / ELEVATED (p50≤F<p90) / STRESS (F≥p90 ∨ backwardation)
+   - `persistent_stress` flag: backwardation ≥10d 連続 ∨ F≥p99 が ≥5d 連続
+
+3. **Strategy** (`state_atlas/online/strategy.py`, 2 モード):
+   - **risk_overlay (主)**: `target = base × g(F)` で単調 de-risk、予測不要の反応的縮小
+   - **vol_carry_meanrev (副、demo限定)**: CALM/ELEVATED+contango で SVXY long、
+     STRESS で VXX/cash、persistent_stress で **kill-switch flat**
+
+4. **Walk-forward backtest 関門 (MANDATORY before IBKR)**:
+   - train 252d → test 252d → roll 63d
+   - tcost + slippage 込み
+   - **null 比較**: SVXY buy-and-hold, naive-always-carry (F無視のフル SVXY)
+   - 報告: Sharpe / max DD / テール挙動 (2018-02, 2020-03) / turnover
+   - **F overlay が null を超えなければ正直に報告**
+
+**SVXY 2018-02 レバ変更の扱い (重大データ caveat)**:
+- 選択肢: (1) VXX 空売り、(2) term-structure から合成ロールイールドをシミュレート、
+  (3) SVXY 系列を 2018-02 で分割
+- **採用**: **(3) を採用**。`start=2018-03-01` 以降の post-leverage-change SVXY (-0.5x) と
+  VXX Series B (post-2018-01-30) で統一。期間 2018-03 〜 2026-05 = 8 年。warm-up 後で
+  ~7 年の OOS バックテスト。COVID (2020-03) を含むのでテール検定可能。
+- pre-2018 期間 (Volmageddon 含む) はストラテジー検定範囲外。F monitor の地形構築には
+  使える (price level でなく log_VIX/term_slope はレバ変更で不変) が、保守的に分離する。
+
+**IBKR ペーパー統合 (関門通過後のみ)**:
+- ペーパー口座のみ。接続後に accountType assert (本番なら即停止)。
+- clientId は本番 All Weather と必ず分離 (別番号)。
+- 認証情報はコードに持たない (ローカル TWS/Gateway に接続するだけ)。
+- 既定は dry-run (発注せずログ)。`--arm` フラグで初めてペーパー発注を有効化。
+- ポジション上限・1日最大注文数・kill-switch・構造化ログを必須。
+- EOD 日次スケジュール (分析が日次なので)。
+
+**禁止事項**:
+- 本番口座への接続。
+- バックテスト関門未通過のストラテジーをペーパーですら走らせない (= 未検証戦略を紙にすら流さない)。
+- F を predictor として宣伝すること (F は coincident、これは Step 1f baseline 比較で確定済み)。
+
+**適用範囲**: `state_atlas/online/`、`artifacts/step3_phase8_backtest.py`、
+将来 `state_atlas/data/ib_source.py` (関門通過後)、`state_atlas/online/dashboard.py` (項目6)。
