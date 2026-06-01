@@ -14,6 +14,10 @@
 - **Kyle λ**: 注文サイズ→価格変化の price impact 係数。実験A の anchor battery の impact 層（GM=スプレッド層、Budish=sniping 層、clearing=batch 層と並ぶ）。
 - **participation margin**: `f·(noise 約定量) − sniping 損 − 機会コスト c`。competitive MM は利益ゼロなので、流動性存続は PnL 符号でなくこの margin の符号（退出判定）で測る。連続 vs batch が退出を反転させるか＝US3。AMM の「fee が LVR を補償→LP 残留か」と同型。
 - **anchor battery（実験A）**: GM break-even ＋ Kyle λ ＋ Budish rent ＋ uniform-price clearing 単体テストの4層。sim と独立実装し、形再現＋dt→0 収束＋tight SE で判定。**LVR は含まない**。
+- **batch×抽出クロスオーバー（finding 0001）**: batch が速度ベース抽出を減らすか増やすかは spread の広さ h に依存。h≪J で減・h~J で増（net 変位の凸性）。検証済（独立アンカー＋sim）。
+- **Green-Porter チャネル**: batch（離散・透明・反復）が監視/懲罰を容易にし collusion を**促進**する力（実験B）。
+- **arbitrageur-predation チャネル**: 高 h（collusive な広い spread）で batch が広い気配を sniping に晒し collusion を**破壊**する力（finding 0001 由来、実験B）。B はこの二力の対決。
+- **committed-quote / revisable-quote**: MM がバッチ内で気配を更新しない（committed＝遅い MM、predation が生きる）か、更新できる（revisable＝純 Budish FBA、sniping 消失）か。design lever の定義に関わる機構選択。
 - **collusion index**: markup ＋ 逸脱に対する懲罰（reward-punishment 構造）の検出。
 - **deviation + punishment test / impulse-response**: 強制 1 期逸脱後に協調が懲罰経由で再確立するかを見る検査。「本物の collusion」と「探索不足の高止まり」を区別する第一級の妥当性検査。
 - **連続マッチング (continuous matching)**: 価格優先・時間優先の continuous LOB matching、または continuous CFMM swap。ベースライン機構。

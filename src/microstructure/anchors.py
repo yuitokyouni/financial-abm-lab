@@ -27,23 +27,46 @@ def gm_break_even(lambda_jump: float, jump_size: float, alpha: float,
     return alpha * lambda_jump * jump_size / denom
 
 
-def budish_sniping_rent(sigma: float, lambda_jump: float, jump_size: float,
-                        alpha: float, noise_rate: float,
-                        batch_interval: int = 1) -> float:
-    """連続マッチング(N=1)の単位時間あたり期待 sniping 抽出量（連続時間極限）。
+def _expected_net_snipe(lambda_jump: float, jump_size: float, dt: float,
+                        half_spread: float, batch_interval: int) -> float:
+    """バッチ1回あたりの期待 sniping 額 E[(|S_N|*? - h)+]（committed-quote モデル）。
 
-    rent = alpha * lambda * (J - h*),  h* = gm_break_even(...)
-         = alpha*lambda*J * noise_rate / (noise_rate + alpha*lambda)
-    batch_interval N>1 では intra-batch のジャンプが net され picking-off 機会が減るため
-    rent は N とともに減少する（厳密な閉形式は与えず、sim で単調性/スケーリングを検証＝SC-003）。
-    ここでは N=1 の連続時間値のみを厳密アンカーとして返す（N>1 は近似 1/N を参考値）。
+    バッチ N ステップで各ステップ確率 q=lambda*dt で ±J ジャンプ。net 変位の
+    ジャンプ数 K~Binom(N,q)、上方ジャンプ u~Binom(K,1/2)、net=(2u-K)*J。
+    arbitrageur は clear で stale quote の net 変位を 1 回 picking-off:
+      E[(|net| - h)+] = sum_K P(K) sum_u C(K,u) 0.5^K max(|2u-K|*J - h, 0)
+    厳密（有限和）。N=1 で q*(J-h)+ に帰着＝連続の per-step snipe。
     """
-    h_star = gm_break_even(lambda_jump, jump_size, alpha, noise_rate)
-    rent_continuous = alpha * lambda_jump * (jump_size - h_star)
-    if batch_interval <= 1:
-        return rent_continuous
-    # 参考: 粗い縮小スケール（厳密検証は sim 側の単調性で行う）
-    return rent_continuous / batch_interval
+    q = lambda_jump * dt
+    N, J, h = batch_interval, jump_size, half_spread
+    total = 0.0
+    for K in range(N + 1):
+        pK = math.comb(N, K) * (q ** K) * ((1.0 - q) ** (N - K))
+        if pK == 0.0:
+            continue
+        inner = 0.0
+        for u in range(K + 1):
+            net = abs(2 * u - K) * J
+            payoff = net - h
+            if payoff > 0.0:
+                inner += math.comb(K, u) * (0.5 ** K) * payoff
+        total += pK * inner
+    return total
+
+
+def budish_sniping_rent(lambda_jump: float, jump_size: float, alpha: float,
+                        dt: float, half_spread: float,
+                        batch_interval: int = 1) -> float:
+    """単位時間あたり期待 sniping 抽出量（committed-quote モデルの厳密値）。
+
+    rate = alpha * E[(|net 変位| - h)+] / (N * dt)。
+    N=1 で alpha*q*(J-h)+/dt = alpha*lambda*(J-h)（連続）。
+    N>1 では net 変位の凸性により、h≪J で減少・h~J で増加しうる（クロスオーバー）。
+    この厳密アンカーが sim 抽出量と一致することで「クロスオーバーは coding artifact でなく
+    モデルの抽出曲面の性質」であることを確定する（finding 0001 の検証）。
+    """
+    e = _expected_net_snipe(lambda_jump, jump_size, dt, half_spread, batch_interval)
+    return alpha * e / (batch_interval * dt)
 
 
 def kyle_lambda(jump_size: float, alpha: float | None = None) -> float:
