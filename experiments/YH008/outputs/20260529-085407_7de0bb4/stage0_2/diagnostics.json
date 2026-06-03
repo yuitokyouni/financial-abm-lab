@@ -1,0 +1,131 @@
+{
+  "frozen_groups": {
+    "true_spellings": {
+      "True": 2575,
+      " True": 3082,
+      "true": 1904,
+      " true": 837,
+      "TRUE": 21260,
+      " TRUE": 8378
+    },
+    "false_spellings": {
+      "False": 4139,
+      " False": 3641,
+      "false": 3934,
+      " false": 905,
+      "FALSE": 31451,
+      " FALSE": 7989
+    },
+    "semantic_excluded": {
+      "Yes": 9642,
+      " Yes": 7566,
+      "yes": 9891,
+      " yes": 10035,
+      "1": 16,
+      " 1": null,
+      "No": 2822,
+      " No": 2360,
+      "no": 2201,
+      " no": 912,
+      "0": 15,
+      " 0": null
+    },
+    "rule": "single-token case/whitespace variants of true/false only; Yes/No/1/0 excluded (semantic alias, ~0 mass)",
+    "overlap_ids": [],
+    "true_ids": [
+      837,
+      1904,
+      2575,
+      3082,
+      8378,
+      21260
+    ],
+    "false_ids": [
+      905,
+      3641,
+      3934,
+      4139,
+      7989,
+      31451
+    ]
+  },
+  "diagnostic_states": {
+    "smoke_loss(sec1)": {
+      "p_sell": 0.6865890952424553,
+      "in_group_mass": 0.999980669593131,
+      "out_group_mass": 1.933040686896703e-05,
+      "flagged": false,
+      "state": {
+        "cash": 30000,
+        "position": 10,
+        "unrealized_gain": -63.0,
+        "price": 293.7,
+        "ath": 300.0,
+        "atl": 287.5,
+        "remaining_time": 70,
+        "total_time": 100,
+        "buy_price": 300.0,
+        "buy_volume": 10,
+        "ofi": 0.01
+      }
+    },
+    "smoke_gain_mirror": {
+      "p_sell": 0.7488464617860543,
+      "in_group_mass": 0.9999788612191298,
+      "out_group_mass": 2.1138780870177953e-05,
+      "flagged": false,
+      "state": {
+        "cash": 30000,
+        "position": 10,
+        "unrealized_gain": 63.0,
+        "price": 293.7,
+        "ath": 293.7,
+        "atl": 287.5,
+        "remaining_time": 70,
+        "total_time": 100,
+        "buy_price": 287.4,
+        "buy_volume": 10,
+        "ofi": 0.01
+      }
+    }
+  },
+  "candidate_mass_mean": {
+    "True": 0.28143414855003357,
+    " True": 6.869084359095723e-07,
+    "true": 0.000835721381008625,
+    " true": 1.968982199507252e-09,
+    "TRUE": 5.978596846034634e-06,
+    " TRUE": 1.1385876685920948e-08,
+    "False": 0.715715765953064,
+    " False": 8.405639164266177e-06,
+    "false": 0.001970249868463725,
+    " false": 2.0330676697710715e-08,
+    "FALSE": 8.730510216992116e-06,
+    " FALSE": 7.017298386813309e-08,
+    "Yes": 1.3614043581355872e-07,
+    " Yes": 2.6846270161345193e-13,
+    "yes": 1.243815006546356e-08,
+    " yes": 1.8884153680891191e-13,
+    "1": 2.626129003147071e-07,
+    " 1": NaN,
+    "No": 2.0626509389387593e-08,
+    " No": 2.1362876614077636e-15,
+    "no": 1.0378724546455942e-08,
+    " no": 4.197962916879195e-16,
+    "0": 5.775968361376727e-07,
+    " 0": NaN
+  },
+  "batch_equivalence": {
+    "single": [
+      0.6865890952424553,
+      0.7488464617860543
+    ],
+    "batched": [
+      0.6865935971495655,
+      0.7488367928909964
+    ],
+    "max_abs_dev": 9.66889505793489e-06,
+    "ok": true
+  },
+  "note": "smoke_loss(sec1) should reproduce ~0.896 if wording matches sec1"
+}

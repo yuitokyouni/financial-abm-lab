@@ -1,0 +1,117 @@
+{
+  "rule": "PROCEED iff disposition_proxy>0 (CI lo>0) AND ATH_asymmetry>0 (CI lo>0, VALID gain-context); else Yee-Sharma section-4 fallback (STOP before Stage 2).",
+  "decision": "YEE_SHARMA_FALLBACK",
+  "fallback_subbranch": "MODEL-BASELINE branch: neither clean-probe nor behavioral-framing shows a positive gain-context ATH asymmetry => baseline attenuation in the model. Yee-Sharma section-4 route: (a) profile prompting to induce investor bias, (b) Gemma-2-9B, (c) prompt review. (Free-gen faithfulness is qualitative only.)",
+  "clean_probe": {
+    "disposition_proxy_paired": {
+      "mean": 0.01724409469100792,
+      "lo": 0.010234458018481753,
+      "hi": 0.024867169305815593,
+      "boot_mean": 0.017415527789084843,
+      "boot_sd": 0.003818057437155591,
+      "n": 240,
+      "frac_positive": 0.6208333333333333
+    },
+    "disposition_proxy_marginal": {
+      "mean": 0.014472114966958993,
+      "lo": 0.005032713371407927,
+      "hi": 0.023992312950978756,
+      "boot_sd": 0.004884964842600535,
+      "frac_positive": 1.0,
+      "n_gain": 228,
+      "n_loss": 252
+    },
+    "ath_asymmetry_gain_context_VALID": {
+      "mean": -0.0013809834305502757,
+      "lo": -0.004260534459099933,
+      "hi": 0.001459490702767565,
+      "boot_mean": -0.001372079314178399,
+      "boot_sd": 0.0014382435621067041,
+      "n": 127,
+      "frac_positive": 0.41732283464566927
+    },
+    "ath_asymmetry_overall_CONFOUNDED": {
+      "mean": -0.008304755903377713,
+      "lo": -0.010949252091211654,
+      "hi": -0.005557167499715306,
+      "boot_mean": -0.008287465390420762,
+      "boot_sd": 0.0013833847318619065,
+      "n": 240,
+      "frac_positive": 0.3375
+    },
+    "ath_asymmetry_loss_context_ILLPOSED": {
+      "mean": -0.016086340894962532,
+      "lo": -0.02045684469861669,
+      "hi": -0.011695492548974309,
+      "boot_mean": -0.016086631504111763,
+      "boot_sd": 0.0021563601401493548,
+      "n": 113,
+      "frac_positive": 0.24778761061946902
+    }
+  },
+  "behavioral_framing_logit": {
+    "disposition_proxy_paired": {
+      "mean": 0.2598750025108576,
+      "lo": 0.24353085906873756,
+      "hi": 0.27775973141341387,
+      "boot_mean": 0.2601518380547175,
+      "boot_sd": 0.00853590298182376,
+      "n": 240,
+      "frac_positive": 0.9833333333333333
+    },
+    "ath_asymmetry_gain_context_VALID": {
+      "mean": 0.003933266222370109,
+      "lo": -0.001987391350194613,
+      "hi": 0.00954703140849177,
+      "boot_mean": 0.003668791339025563,
+      "boot_sd": 0.0029108472663588823,
+      "n": 127,
+      "frac_positive": 0.5039370078740157
+    },
+    "ath_asymmetry_overall_CONFOUNDED": {
+      "mean": -0.009627326542302287,
+      "lo": -0.015084057173928732,
+      "hi": -0.004381798621494922,
+      "boot_mean": -0.009631425217900681,
+      "boot_sd": 0.0029243550047065043,
+      "n": 240,
+      "frac_positive": 0.4375
+    },
+    "out_of_group_mass_max": 6.96851550511246e-05,
+    "note": "P(sell) read at is_buy slot of the FCLAgent reason-requesting answer format (order_price pre-filled). Directly comparable to clean-probe on same states."
+  },
+  "behavioral_freegen_qualitative": {
+    "n": 6,
+    "parse_rate": 0.0,
+    "reason_text_rate": 0.5,
+    "cot_rate": 0.5,
+    "note": "qualitative only (fp32 free-gen is slow); the model emits CoT-style analysis before the JSON => confirms why clean-probe (no generation) avoids contamination."
+  },
+  "ath_construction_flag": "loss-context no_drop cell is ill-posed (price-at-ATH cannot co-occur with a loss). Loss-context/overall ATH numbers are confounded; gain-context is the valid contrast. FIX before Stage 2: constrain ATH>=max(price,purchase).",
+  "sec1_reproduction": {
+    "target": 0.896,
+    "observed_sec1_faithful": 0.6865890952424553,
+    "abs_err": 0.20941090475754476,
+    "reproduced_tight": false,
+    "reproduced_qualitative": false,
+    "wording_range_on_smoke_loss": 0.14427032384556693
+  },
+  "prompt_sensitivity_sweep": {
+    "sec1_faithful": {
+      "p_sell": 0.6865890952424553,
+      "out_mass": 1.933040686896703e-05
+    },
+    "minimal": {
+      "p_sell": 0.7471156374311443,
+      "out_mass": 2.11143404844627e-05
+    },
+    "orientation_explicit": {
+      "p_sell": 0.8050634307254679,
+      "out_mass": 1.7040456454231467e-05
+    },
+    "embellished_v0": {
+      "p_sell": 0.8308594190880222,
+      "out_mass": 3.937172936685496e-05
+    }
+  }
+}

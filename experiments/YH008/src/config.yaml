@@ -1,0 +1,101 @@
+# YH008 Stage 0.2 + Stage 1 config snapshot
+# Authoritative per-run config. config.py loads this; a copy is snapshotted into
+# outputs/{run_id}/ at run time (never edit a snapshot; edit this source).
+#
+# NOTE ON STORAGE (this run): /workspace is at its disk quota (EDQUOT), so code
+# and outputs live under /root/yh008_work and the HF weight cache is read (not
+# written) from /workspace/.hf. To be relocated into experiments/YH008/ once the
+# quota is raised. See run report.
+#
+# Threshold meta-rule (addendum v0.3.2): no gate/filter threshold is a pre-guessed
+# constant. Each is either (a) relative to a Stage-0 null / WT-CI, or (b) a Stage-0
+# calibration output frozen before touching held-out. Ranges below are centered on
+# FCLAgent paper section 4.1 and cover gain/loss x near/far ATH -- a DESIGN CHOICE,
+# not a data-derived constant, and is FLAGGED in the run report for Yuito to veto.
+
+paths:
+  hf_home: "/workspace/.hf"          # existing read-only weight cache (pinned revision present)
+  outputs_root: "/root/yh008_work/outputs"
+
+model:
+  name: "meta-llama/Llama-3.1-8B-Instruct"
+  revision: "0e9e39f249a16976918f6564b8830bc894c89659"  # pinned (addendum: weights swap silently)
+  dtype: "float32"        # A100-80GB: fp32 is numerically clean, no_processing-free, folding-safe
+  backend: "transformer_lens"   # backend-neutral API in model.py; nnsight swappable
+  n_layers: 32
+  d_model: 4096
+
+seeds:
+  global: 20250529
+  split: 1000             # exploration / held-out split seed (fixed before any analysis)
+  ensemble: 2001          # state sampling seed (exploration)
+
+# ---- Stage 0.2: decision-token probe spec --------------------------------------
+probe:
+  # Group membership is FROZEN by inspecting the tokenizer in Stage 0.2 (see
+  # stage0_2_probe output). Base groups below; Stage 0.2 may extend after looking
+  # at actual next-token mass, and REPORTS what it froze (flag).
+  true_group_seed:  ["True", " True", "true", " true"]
+  false_group_seed: ["False", " False", "false", " false"]
+  # candidates considered for inclusion ONLY if they carry real next-token mass:
+  extra_candidates: ["Yes", " Yes", "yes", " yes", "1", " 1",
+                     "No", " No", "no", " no", "0", " 0"]
+  out_of_group_mass_flag: 0.1   # >0.1 mass outside both groups => probe failure flag (addendum)
+  # clean-probe literal assistant prefix; next token read at the slot after this:
+  assistant_prefix: '{"0": {"is_buy": "'
+  # CANONICAL clean-probe wording (FROZEN 2026-05-29) used for all Stage 1+ measurements.
+  # Selected = "sec1_faithful" (render.CLEAN_ANSWER). Rationale:
+  #   - matches section-1's stated literal closing ("Answer JSON only. is_buy must be
+  #     True or False.") and the FCLAgent Appendix-A answer-format body (continuity);
+  #   - in-group mass ~0.9997 (tied with all 4 variants; no discriminating power there);
+  #   - sell-direction on the section-1 loss state is consistent across all 4 neutral
+  #     wordings (P(sell) 0.69-0.83 > 0.5); chose the least-embellished / most spec-faithful
+  #     to avoid baking an orientation hint ("True=buy,False=sell") into the prompt.
+  # The other 3 variants are retained for the sensitivity sweep ONLY. Section-1's 0.896
+  # is treated as a wording-sensitive single point (range 0.144); v_ATH causal claims in
+  # Stage 2+ must be shown robust across neutral wordings.
+  canonical_wording: "sec1_faithful"
+
+# ---- Stage 1: state ensemble ranges (centered on FCLAgent 4.1) -----------------
+# FCLAgent 4.1: p0=300, tick=0.01, v=100, cash in [0,1e5], position w in [0,300],
+# margin in [0,0.01]. Smoke-test state: cash 30000, vol 10, ugain -63, price 293.7,
+# ATH 300, ATL 287.5, remaining 70, total 100.
+states:
+  current_price:   {center: 300.0, low: 250.0, high: 350.0}   # ~ +-17% around p0
+  position:        {low: 1, high: 300}        # long-only here (short-cover handled Stage 5+)
+  cash:            {low: 0.0, high: 100000.0, center: 30000.0}
+  ofi:             {low: -1.0, high: 1.0}     # order flow imbalance, paper range
+  total_time:      100
+  remaining_time:  {low: 5, high: 95}
+  tick: 0.01
+
+  # gain/loss set by purchase price relative to current price.
+  gain_loss:
+    gain_mult:  {low: 0.85, high: 0.98}   # bought 2-15% below current => unrealized gain
+    loss_mult:  {low: 1.02, high: 1.15}   # bought 2-15% above current => unrealized loss
+    deadband_gain_abs: 1.0  # |unrealized_gain| (price units) must exceed this to bin
+
+  # ATH conditions for the asymmetry contrast (vary ATH ONLY; hold price+gain fixed).
+  # nearness = current_price / ATH in (0,1]; 1.0 = price sits at its all-time high.
+  ath:
+    no_drop_nearness:      1.0                       # ATH == current price (no drop)
+    dropped_near_nearness: {low: 0.95, high: 0.99}   # dropped a little, still near high
+    far_nearness:          {low: 0.70, high: 0.85}   # dropped far (monotonicity check only)
+    atl_frac:              {low: 0.80, high: 0.99}   # ATL as fraction of price (<= price)
+
+ensemble:
+  n_random: 800           # randomized states for marginal disposition distribution
+  n_paired_ath: 200       # paired (no_drop vs dropped_near) contrasts x {gain,loss}
+  holdout_frac: 0.4       # exploration / held-out split (held-out reserved for Stage 3)
+  bootstrap_resamples: 1000   # addendum meta-rule (K=1000 stable 95% CI)
+
+faithfulness:
+  n_behavioral: 100       # behavioral-variant generations for FCLAgent-style faithfulness
+  max_new_tokens: 200
+
+# ---- Stage 0.5 baseline gate (decision rule fixed; only signs matter here) -----
+stage0_5_gate:
+  disposition_proxy_min: 0.0   # require P(sell|gain) - P(sell|loss) > 0
+  ath_asymmetry_min: 0.0       # require P(sell|dropped_near) - P(sell|no_drop) > 0
+  # if either <= 0 (bootstrap CI not clearly positive) -> Yee-Sharma route:
+  # STOP, do not enter Stage 2, propose section 4 fallback (profile prompting / Gemma-2-9B).

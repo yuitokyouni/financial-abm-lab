@@ -1,0 +1,2642 @@
+[
+  {
+    "p_no_drop": 0.4928389618167012,
+    "p_dropped_near": 0.4671573644391777,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9581,
+      "idx": 0
+    }
+  },
+  {
+    "p_no_drop": 0.8118490790499404,
+    "p_dropped_near": 0.800714715700265,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9889,
+      "idx": 2
+    }
+  },
+  {
+    "p_no_drop": 0.8084203495975751,
+    "p_dropped_near": 0.8169055112742962,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9719,
+      "idx": 3
+    }
+  },
+  {
+    "p_no_drop": 0.7931702234362218,
+    "p_dropped_near": 0.796810237735459,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9794,
+      "idx": 4
+    }
+  },
+  {
+    "p_no_drop": 0.6890578743260863,
+    "p_dropped_near": 0.6981568276020007,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9616,
+      "idx": 5
+    }
+  },
+  {
+    "p_no_drop": 0.7549862921188637,
+    "p_dropped_near": 0.7402456723887895,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9845,
+      "idx": 6
+    }
+  },
+  {
+    "p_no_drop": 0.7513523387665113,
+    "p_dropped_near": 0.730508456704486,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.988,
+      "idx": 8
+    }
+  },
+  {
+    "p_no_drop": 0.7824051155692855,
+    "p_dropped_near": 0.7549304863245606,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9631,
+      "idx": 10
+    }
+  },
+  {
+    "p_no_drop": 0.8522654477316409,
+    "p_dropped_near": 0.854137497702833,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9691,
+      "idx": 11
+    }
+  },
+  {
+    "p_no_drop": 0.7117047092369585,
+    "p_dropped_near": 0.7251289127245881,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9832,
+      "idx": 12
+    }
+  },
+  {
+    "p_no_drop": 0.8483864405977241,
+    "p_dropped_near": 0.8362912087785058,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9807,
+      "idx": 13
+    }
+  },
+  {
+    "p_no_drop": 0.6832847590276568,
+    "p_dropped_near": 0.7054234512806585,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9854,
+      "idx": 14
+    }
+  },
+  {
+    "p_no_drop": 0.640695318154263,
+    "p_dropped_near": 0.6393609243026822,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9581,
+      "idx": 16
+    }
+  },
+  {
+    "p_no_drop": 0.7432584998097433,
+    "p_dropped_near": 0.7309671314288937,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9687,
+      "idx": 18
+    }
+  },
+  {
+    "p_no_drop": 0.7109721941729357,
+    "p_dropped_near": 0.7099188093123201,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9848,
+      "idx": 19
+    }
+  },
+  {
+    "p_no_drop": 0.7182860634780256,
+    "p_dropped_near": 0.7164144315384322,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9719,
+      "idx": 22
+    }
+  },
+  {
+    "p_no_drop": 0.7961745025067416,
+    "p_dropped_near": 0.7952525086139497,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9766,
+      "idx": 24
+    }
+  },
+  {
+    "p_no_drop": 0.7410851487454995,
+    "p_dropped_near": 0.7388113830877159,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9681,
+      "idx": 26
+    }
+  },
+  {
+    "p_no_drop": 0.784462285358923,
+    "p_dropped_near": 0.7628513120800116,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9706,
+      "idx": 27
+    }
+  },
+  {
+    "p_no_drop": 0.8644063447014808,
+    "p_dropped_near": 0.8573122752087737,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9688,
+      "idx": 28
+    }
+  },
+  {
+    "p_no_drop": 0.8046312979156154,
+    "p_dropped_near": 0.8076384816537017,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9872,
+      "idx": 29
+    }
+  },
+  {
+    "p_no_drop": 0.6893206028523535,
+    "p_dropped_near": 0.6958203029250444,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9621,
+      "idx": 32
+    }
+  },
+  {
+    "p_no_drop": 0.6544179119050665,
+    "p_dropped_near": 0.6685015537956748,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9531,
+      "idx": 34
+    }
+  },
+  {
+    "p_no_drop": 0.6253135518313765,
+    "p_dropped_near": 0.6316455141450636,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9604,
+      "idx": 36
+    }
+  },
+  {
+    "p_no_drop": 0.7930805086045833,
+    "p_dropped_near": 0.7817104845772083,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9565,
+      "idx": 38
+    }
+  },
+  {
+    "p_no_drop": 0.7547029566836683,
+    "p_dropped_near": 0.7388514650675732,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9681,
+      "idx": 41
+    }
+  },
+  {
+    "p_no_drop": 0.5296356101061079,
+    "p_dropped_near": 0.5948501328915908,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9834,
+      "idx": 42
+    }
+  },
+  {
+    "p_no_drop": 0.8226399286410742,
+    "p_dropped_near": 0.8097269011712284,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9663,
+      "idx": 46
+    }
+  },
+  {
+    "p_no_drop": 0.7720663288722914,
+    "p_dropped_near": 0.79322634231487,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9626,
+      "idx": 47
+    }
+  },
+  {
+    "p_no_drop": 0.8213871302417725,
+    "p_dropped_near": 0.8295916955507375,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9559,
+      "idx": 49
+    }
+  },
+  {
+    "p_no_drop": 0.6870746879187892,
+    "p_dropped_near": 0.6935057311301529,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.97,
+      "idx": 50
+    }
+  },
+  {
+    "p_no_drop": 0.8079807107915709,
+    "p_dropped_near": 0.7884036758134287,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9834,
+      "idx": 51
+    }
+  },
+  {
+    "p_no_drop": 0.7441999305717876,
+    "p_dropped_near": 0.7223382581457701,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9646,
+      "idx": 52
+    }
+  },
+  {
+    "p_no_drop": 0.6984299592845006,
+    "p_dropped_near": 0.7256020149355762,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9668,
+      "idx": 53
+    }
+  },
+  {
+    "p_no_drop": 0.6739596862699537,
+    "p_dropped_near": 0.6924462813859187,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9838,
+      "idx": 54
+    }
+  },
+  {
+    "p_no_drop": 0.6938832603053906,
+    "p_dropped_near": 0.714497457961531,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9541,
+      "idx": 56
+    }
+  },
+  {
+    "p_no_drop": 0.6532431639854179,
+    "p_dropped_near": 0.6293450216669667,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9896,
+      "idx": 58
+    }
+  },
+  {
+    "p_no_drop": 0.798688530936615,
+    "p_dropped_near": 0.787999737501942,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.961,
+      "idx": 59
+    }
+  },
+  {
+    "p_no_drop": 0.751825716988836,
+    "p_dropped_near": 0.7619778921712833,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9882,
+      "idx": 61
+    }
+  },
+  {
+    "p_no_drop": 0.8232668464447804,
+    "p_dropped_near": 0.808189673806669,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9534,
+      "idx": 64
+    }
+  },
+  {
+    "p_no_drop": 0.8029655435961662,
+    "p_dropped_near": 0.8275131758395299,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9653,
+      "idx": 65
+    }
+  },
+  {
+    "p_no_drop": 0.6640919985700665,
+    "p_dropped_near": 0.6471667629398081,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9604,
+      "idx": 66
+    }
+  },
+  {
+    "p_no_drop": 0.741869551332648,
+    "p_dropped_near": 0.7333552518926194,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9673,
+      "idx": 68
+    }
+  },
+  {
+    "p_no_drop": 0.7325188369860773,
+    "p_dropped_near": 0.7072670053991583,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9863,
+      "idx": 69
+    }
+  },
+  {
+    "p_no_drop": 0.7561638735173631,
+    "p_dropped_near": 0.7416401900348606,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9891,
+      "idx": 70
+    }
+  },
+  {
+    "p_no_drop": 0.7434626738271111,
+    "p_dropped_near": 0.7443046977848564,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9788,
+      "idx": 73
+    }
+  },
+  {
+    "p_no_drop": 0.8220262058236509,
+    "p_dropped_near": 0.8158915824431672,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9899,
+      "idx": 75
+    }
+  },
+  {
+    "p_no_drop": 0.7841966435324865,
+    "p_dropped_near": 0.7799217023627869,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9696,
+      "idx": 76
+    }
+  },
+  {
+    "p_no_drop": 0.8472740208269246,
+    "p_dropped_near": 0.8231516888605511,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9799,
+      "idx": 78
+    }
+  },
+  {
+    "p_no_drop": 0.7477893825155979,
+    "p_dropped_near": 0.7445657528764201,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.987,
+      "idx": 80
+    }
+  },
+  {
+    "p_no_drop": 0.6754870253979891,
+    "p_dropped_near": 0.6889435393136526,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9711,
+      "idx": 81
+    }
+  },
+  {
+    "p_no_drop": 0.7059241514982301,
+    "p_dropped_near": 0.7209851582958492,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9715,
+      "idx": 83
+    }
+  },
+  {
+    "p_no_drop": 0.7746681447707915,
+    "p_dropped_near": 0.7605492017244251,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9818,
+      "idx": 84
+    }
+  },
+  {
+    "p_no_drop": 0.7320540808074174,
+    "p_dropped_near": 0.7617529908994282,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9593,
+      "idx": 85
+    }
+  },
+  {
+    "p_no_drop": 0.6275226475024241,
+    "p_dropped_near": 0.632386394652683,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9763,
+      "idx": 88
+    }
+  },
+  {
+    "p_no_drop": 0.7813867172452016,
+    "p_dropped_near": 0.7582457136186621,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9671,
+      "idx": 89
+    }
+  },
+  {
+    "p_no_drop": 0.7302181322624376,
+    "p_dropped_near": 0.775566568181337,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9671,
+      "idx": 91
+    }
+  },
+  {
+    "p_no_drop": 0.6284710687196833,
+    "p_dropped_near": 0.6204406805947128,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9566,
+      "idx": 92
+    }
+  },
+  {
+    "p_no_drop": 0.7295576886179915,
+    "p_dropped_near": 0.7275221768809912,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9875,
+      "idx": 93
+    }
+  },
+  {
+    "p_no_drop": 0.8416009933925571,
+    "p_dropped_near": 0.8269063226317245,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.956,
+      "idx": 95
+    }
+  },
+  {
+    "p_no_drop": 0.6972199421444828,
+    "p_dropped_near": 0.7139569356848872,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9557,
+      "idx": 96
+    }
+  },
+  {
+    "p_no_drop": 0.8073462007553074,
+    "p_dropped_near": 0.8006232311796092,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9899,
+      "idx": 98
+    }
+  },
+  {
+    "p_no_drop": 0.8127946509519897,
+    "p_dropped_near": 0.7924659850126168,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9856,
+      "idx": 102
+    }
+  },
+  {
+    "p_no_drop": 0.8058525101014078,
+    "p_dropped_near": 0.798888572889965,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9613,
+      "idx": 104
+    }
+  },
+  {
+    "p_no_drop": 0.7340967059605258,
+    "p_dropped_near": 0.7255492844512446,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9545,
+      "idx": 105
+    }
+  },
+  {
+    "p_no_drop": 0.8096200748304018,
+    "p_dropped_near": 0.8009265823215161,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9794,
+      "idx": 106
+    }
+  },
+  {
+    "p_no_drop": 0.7611307972073934,
+    "p_dropped_near": 0.7646853711196476,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9814,
+      "idx": 107
+    }
+  },
+  {
+    "p_no_drop": 0.7954321051627188,
+    "p_dropped_near": 0.788702699437278,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9687,
+      "idx": 108
+    }
+  },
+  {
+    "p_no_drop": 0.8539484709813456,
+    "p_dropped_near": 0.8689812419953648,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9594,
+      "idx": 110
+    }
+  },
+  {
+    "p_no_drop": 0.725701933963628,
+    "p_dropped_near": 0.7182607888145414,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9571,
+      "idx": 112
+    }
+  },
+  {
+    "p_no_drop": 0.8142713053002351,
+    "p_dropped_near": 0.8282715047612094,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.981,
+      "idx": 115
+    }
+  },
+  {
+    "p_no_drop": 0.7933115806940739,
+    "p_dropped_near": 0.774238718999246,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9772,
+      "idx": 117
+    }
+  },
+  {
+    "p_no_drop": 0.8172290440354824,
+    "p_dropped_near": 0.8163793416550402,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9801,
+      "idx": 118
+    }
+  },
+  {
+    "p_no_drop": 0.5971798493096698,
+    "p_dropped_near": 0.598775909389583,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9871,
+      "idx": 120
+    }
+  },
+  {
+    "p_no_drop": 0.7636107725168904,
+    "p_dropped_near": 0.7530845207718788,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9758,
+      "idx": 123
+    }
+  },
+  {
+    "p_no_drop": 0.7991373511297555,
+    "p_dropped_near": 0.7924128831475373,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9883,
+      "idx": 124
+    }
+  },
+  {
+    "p_no_drop": 0.7596534439574133,
+    "p_dropped_near": 0.7593814692060783,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9793,
+      "idx": 126
+    }
+  },
+  {
+    "p_no_drop": 0.8549152600166358,
+    "p_dropped_near": 0.8478938625803245,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9715,
+      "idx": 127
+    }
+  },
+  {
+    "p_no_drop": 0.8235913584531356,
+    "p_dropped_near": 0.8145925782612693,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9642,
+      "idx": 128
+    }
+  },
+  {
+    "p_no_drop": 0.7561832976565406,
+    "p_dropped_near": 0.784562489383544,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9804,
+      "idx": 129
+    }
+  },
+  {
+    "p_no_drop": 0.7229346869098173,
+    "p_dropped_near": 0.7019536146198473,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.958,
+      "idx": 130
+    }
+  },
+  {
+    "p_no_drop": 0.7578236672803773,
+    "p_dropped_near": 0.7551694172469313,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9586,
+      "idx": 136
+    }
+  },
+  {
+    "p_no_drop": 0.7000060491683467,
+    "p_dropped_near": 0.6802568501148312,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.973,
+      "idx": 137
+    }
+  },
+  {
+    "p_no_drop": 0.7490218434069612,
+    "p_dropped_near": 0.7490345104075695,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9722,
+      "idx": 138
+    }
+  },
+  {
+    "p_no_drop": 0.7452679760280915,
+    "p_dropped_near": 0.7372887293339992,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9514,
+      "idx": 139
+    }
+  },
+  {
+    "p_no_drop": 0.8311115652899791,
+    "p_dropped_near": 0.8156255703800508,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9734,
+      "idx": 142
+    }
+  },
+  {
+    "p_no_drop": 0.8369097667713304,
+    "p_dropped_near": 0.8237612809984145,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9523,
+      "idx": 143
+    }
+  },
+  {
+    "p_no_drop": 0.7964142026710203,
+    "p_dropped_near": 0.7897809856477286,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9859,
+      "idx": 144
+    }
+  },
+  {
+    "p_no_drop": 0.8523893253199429,
+    "p_dropped_near": 0.8390728104985261,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9876,
+      "idx": 145
+    }
+  },
+  {
+    "p_no_drop": 0.7389079526284414,
+    "p_dropped_near": 0.7167085956658685,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9609,
+      "idx": 147
+    }
+  },
+  {
+    "p_no_drop": 0.50750312505588,
+    "p_dropped_near": 0.530788178143705,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9593,
+      "idx": 148
+    }
+  },
+  {
+    "p_no_drop": 0.7534099008788518,
+    "p_dropped_near": 0.756728470506819,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9658,
+      "idx": 149
+    }
+  },
+  {
+    "p_no_drop": 0.6951876780213939,
+    "p_dropped_near": 0.7006695155736893,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9669,
+      "idx": 150
+    }
+  },
+  {
+    "p_no_drop": 0.7432809913968677,
+    "p_dropped_near": 0.7455786331229777,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9551,
+      "idx": 151
+    }
+  },
+  {
+    "p_no_drop": 0.7758056983874838,
+    "p_dropped_near": 0.7509898533215582,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9813,
+      "idx": 152
+    }
+  },
+  {
+    "p_no_drop": 0.7059586294689422,
+    "p_dropped_near": 0.7110729497065528,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.951,
+      "idx": 153
+    }
+  },
+  {
+    "p_no_drop": 0.7757517433399995,
+    "p_dropped_near": 0.7730326841790249,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9729,
+      "idx": 154
+    }
+  },
+  {
+    "p_no_drop": 0.7486932213411793,
+    "p_dropped_near": 0.7330436103113074,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9612,
+      "idx": 155
+    }
+  },
+  {
+    "p_no_drop": 0.6824140851278065,
+    "p_dropped_near": 0.6749217091422668,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9881,
+      "idx": 156
+    }
+  },
+  {
+    "p_no_drop": 0.8205204445509616,
+    "p_dropped_near": 0.8238502043529818,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9659,
+      "idx": 157
+    }
+  },
+  {
+    "p_no_drop": 0.7699098648921239,
+    "p_dropped_near": 0.7874619676294743,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9636,
+      "idx": 158
+    }
+  },
+  {
+    "p_no_drop": 0.8190382308196442,
+    "p_dropped_near": 0.8380587578156298,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9838,
+      "idx": 159
+    }
+  },
+  {
+    "p_no_drop": 0.8131367984793089,
+    "p_dropped_near": 0.793738736780827,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9705,
+      "idx": 160
+    }
+  },
+  {
+    "p_no_drop": 0.7829553823887048,
+    "p_dropped_near": 0.789503231799976,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.973,
+      "idx": 161
+    }
+  },
+  {
+    "p_no_drop": 0.6703859561926917,
+    "p_dropped_near": 0.717720428578384,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9853,
+      "idx": 162
+    }
+  },
+  {
+    "p_no_drop": 0.8175407435666262,
+    "p_dropped_near": 0.8067664463963832,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9756,
+      "idx": 165
+    }
+  },
+  {
+    "p_no_drop": 0.8216796969599843,
+    "p_dropped_near": 0.8135470455624594,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9823,
+      "idx": 168
+    }
+  },
+  {
+    "p_no_drop": 0.7045664390519392,
+    "p_dropped_near": 0.7103287638149499,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9547,
+      "idx": 171
+    }
+  },
+  {
+    "p_no_drop": 0.7733516618304394,
+    "p_dropped_near": 0.7823874355116741,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9628,
+      "idx": 172
+    }
+  },
+  {
+    "p_no_drop": 0.7685904731267427,
+    "p_dropped_near": 0.784363758854238,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9602,
+      "idx": 175
+    }
+  },
+  {
+    "p_no_drop": 0.7990185078143783,
+    "p_dropped_near": 0.7970549585400875,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9891,
+      "idx": 176
+    }
+  },
+  {
+    "p_no_drop": 0.7903928597496052,
+    "p_dropped_near": 0.790755318971598,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.976,
+      "idx": 178
+    }
+  },
+  {
+    "p_no_drop": 0.7628058316550264,
+    "p_dropped_near": 0.7515221268464849,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.977,
+      "idx": 179
+    }
+  },
+  {
+    "p_no_drop": 0.6884563548410305,
+    "p_dropped_near": 0.6983512256740453,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9537,
+      "idx": 180
+    }
+  },
+  {
+    "p_no_drop": 0.7548547582193663,
+    "p_dropped_near": 0.7569603901473827,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9634,
+      "idx": 181
+    }
+  },
+  {
+    "p_no_drop": 0.7906978383539172,
+    "p_dropped_near": 0.7779201716743267,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9515,
+      "idx": 183
+    }
+  },
+  {
+    "p_no_drop": 0.7514791166059175,
+    "p_dropped_near": 0.7537825467639252,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9651,
+      "idx": 184
+    }
+  },
+  {
+    "p_no_drop": 0.7797146921797964,
+    "p_dropped_near": 0.7994550422682688,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9638,
+      "idx": 187
+    }
+  },
+  {
+    "p_no_drop": 0.7980447237989479,
+    "p_dropped_near": 0.7910219016635418,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9778,
+      "idx": 188
+    }
+  },
+  {
+    "p_no_drop": 0.7477318443685692,
+    "p_dropped_near": 0.7473151530950437,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9522,
+      "idx": 190
+    }
+  },
+  {
+    "p_no_drop": 0.8226497337602763,
+    "p_dropped_near": 0.81222451344901,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9889,
+      "idx": 191
+    }
+  },
+  {
+    "p_no_drop": 0.7768786710455532,
+    "p_dropped_near": 0.7970082701570557,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9736,
+      "idx": 192
+    }
+  },
+  {
+    "p_no_drop": 0.6807946867612098,
+    "p_dropped_near": 0.6643195853479427,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.972,
+      "idx": 194
+    }
+  },
+  {
+    "p_no_drop": 0.7809881609234319,
+    "p_dropped_near": 0.7901430014094102,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9648,
+      "idx": 196
+    }
+  },
+  {
+    "p_no_drop": 0.7623405675834167,
+    "p_dropped_near": 0.7689664017598703,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9598,
+      "idx": 197
+    }
+  },
+  {
+    "p_no_drop": 0.7079001557941323,
+    "p_dropped_near": 0.7012229781968008,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9864,
+      "idx": 198
+    }
+  },
+  {
+    "p_no_drop": 0.6971362348378419,
+    "p_dropped_near": 0.6621473510772149,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "gain",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9824,
+      "idx": 199
+    }
+  },
+  {
+    "p_no_drop": 0.7703192885369526,
+    "p_dropped_near": 0.7428759341389319,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9508,
+      "idx": 1
+    }
+  },
+  {
+    "p_no_drop": 0.7528717303709136,
+    "p_dropped_near": 0.7710307646235964,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9698,
+      "idx": 2
+    }
+  },
+  {
+    "p_no_drop": 0.7312695207596929,
+    "p_dropped_near": 0.7097158984455443,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.973,
+      "idx": 4
+    }
+  },
+  {
+    "p_no_drop": 0.7287641679805279,
+    "p_dropped_near": 0.7317403339970987,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9869,
+      "idx": 6
+    }
+  },
+  {
+    "p_no_drop": 0.7629392903382164,
+    "p_dropped_near": 0.7831081443894035,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9875,
+      "idx": 7
+    }
+  },
+  {
+    "p_no_drop": 0.810078297341755,
+    "p_dropped_near": 0.7691523749058031,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9516,
+      "idx": 8
+    }
+  },
+  {
+    "p_no_drop": 0.7902272208311052,
+    "p_dropped_near": 0.7603022862007177,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.964,
+      "idx": 9
+    }
+  },
+  {
+    "p_no_drop": 0.8186544269963985,
+    "p_dropped_near": 0.7990918607515418,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9803,
+      "idx": 10
+    }
+  },
+  {
+    "p_no_drop": 0.7974309552034429,
+    "p_dropped_near": 0.7789178505637014,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9661,
+      "idx": 11
+    }
+  },
+  {
+    "p_no_drop": 0.7489972645155855,
+    "p_dropped_near": 0.7517889037840266,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9653,
+      "idx": 13
+    }
+  },
+  {
+    "p_no_drop": 0.7900947783828122,
+    "p_dropped_near": 0.7779902061593188,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9509,
+      "idx": 14
+    }
+  },
+  {
+    "p_no_drop": 0.7288408434671153,
+    "p_dropped_near": 0.6807994663552682,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9636,
+      "idx": 16
+    }
+  },
+  {
+    "p_no_drop": 0.7349876365731988,
+    "p_dropped_near": 0.7151280626011203,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9895,
+      "idx": 17
+    }
+  },
+  {
+    "p_no_drop": 0.7176180570484749,
+    "p_dropped_near": 0.6913411748767512,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.988,
+      "idx": 20
+    }
+  },
+  {
+    "p_no_drop": 0.8046725898233235,
+    "p_dropped_near": 0.7825105274602949,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9577,
+      "idx": 21
+    }
+  },
+  {
+    "p_no_drop": 0.6819160302195196,
+    "p_dropped_near": 0.6616283015562516,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9783,
+      "idx": 22
+    }
+  },
+  {
+    "p_no_drop": 0.7625348411952442,
+    "p_dropped_near": 0.7170763208508383,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9703,
+      "idx": 25
+    }
+  },
+  {
+    "p_no_drop": 0.7695951174601454,
+    "p_dropped_near": 0.7190806937644616,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9528,
+      "idx": 27
+    }
+  },
+  {
+    "p_no_drop": 0.6688602734429617,
+    "p_dropped_near": 0.6325549984569779,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9771,
+      "idx": 28
+    }
+  },
+  {
+    "p_no_drop": 0.7132015280892662,
+    "p_dropped_near": 0.694185100246439,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9819,
+      "idx": 29
+    }
+  },
+  {
+    "p_no_drop": 0.7320279962550372,
+    "p_dropped_near": 0.6989558474219888,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9758,
+      "idx": 30
+    }
+  },
+  {
+    "p_no_drop": 0.7252622896439624,
+    "p_dropped_near": 0.7310145071067308,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9601,
+      "idx": 31
+    }
+  },
+  {
+    "p_no_drop": 0.7633125969245832,
+    "p_dropped_near": 0.7090437949908476,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9644,
+      "idx": 32
+    }
+  },
+  {
+    "p_no_drop": 0.7461899811596419,
+    "p_dropped_near": 0.7239486312005933,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9782,
+      "idx": 34
+    }
+  },
+  {
+    "p_no_drop": 0.7021473959702462,
+    "p_dropped_near": 0.7042032786465324,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9629,
+      "idx": 36
+    }
+  },
+  {
+    "p_no_drop": 0.7078393348518476,
+    "p_dropped_near": 0.7310389840368324,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9633,
+      "idx": 37
+    }
+  },
+  {
+    "p_no_drop": 0.7730422215719374,
+    "p_dropped_near": 0.750844622011501,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9727,
+      "idx": 38
+    }
+  },
+  {
+    "p_no_drop": 0.8596159121336415,
+    "p_dropped_near": 0.8473269140737945,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.977,
+      "idx": 39
+    }
+  },
+  {
+    "p_no_drop": 0.7499125423334513,
+    "p_dropped_near": 0.7726541444999097,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9853,
+      "idx": 45
+    }
+  },
+  {
+    "p_no_drop": 0.7102163235107982,
+    "p_dropped_near": 0.717578432082231,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9824,
+      "idx": 47
+    }
+  },
+  {
+    "p_no_drop": 0.767115998510834,
+    "p_dropped_near": 0.7805707725730343,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9836,
+      "idx": 51
+    }
+  },
+  {
+    "p_no_drop": 0.7599651362891489,
+    "p_dropped_near": 0.7608374851451745,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9826,
+      "idx": 52
+    }
+  },
+  {
+    "p_no_drop": 0.8132135006910653,
+    "p_dropped_near": 0.8015399760742051,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9613,
+      "idx": 54
+    }
+  },
+  {
+    "p_no_drop": 0.8211409306504942,
+    "p_dropped_near": 0.8267728644996892,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9662,
+      "idx": 55
+    }
+  },
+  {
+    "p_no_drop": 0.7547758867055301,
+    "p_dropped_near": 0.734779379198243,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.953,
+      "idx": 56
+    }
+  },
+  {
+    "p_no_drop": 0.7793152426840121,
+    "p_dropped_near": 0.7164638480730612,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9872,
+      "idx": 58
+    }
+  },
+  {
+    "p_no_drop": 0.7425959417803746,
+    "p_dropped_near": 0.7052243518507656,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9745,
+      "idx": 60
+    }
+  },
+  {
+    "p_no_drop": 0.7869318523524721,
+    "p_dropped_near": 0.7651574090975717,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9529,
+      "idx": 61
+    }
+  },
+  {
+    "p_no_drop": 0.8047390660005654,
+    "p_dropped_near": 0.7865314168752137,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9526,
+      "idx": 62
+    }
+  },
+  {
+    "p_no_drop": 0.7966209338484939,
+    "p_dropped_near": 0.7724117587506365,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9768,
+      "idx": 64
+    }
+  },
+  {
+    "p_no_drop": 0.8208299990663009,
+    "p_dropped_near": 0.8139090375852452,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.961,
+      "idx": 66
+    }
+  },
+  {
+    "p_no_drop": 0.8129702099378707,
+    "p_dropped_near": 0.8087054557169832,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9526,
+      "idx": 67
+    }
+  },
+  {
+    "p_no_drop": 0.7377639761738106,
+    "p_dropped_near": 0.7118068107546277,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9586,
+      "idx": 69
+    }
+  },
+  {
+    "p_no_drop": 0.7701484563664038,
+    "p_dropped_near": 0.758156638528415,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9526,
+      "idx": 70
+    }
+  },
+  {
+    "p_no_drop": 0.7512218751085562,
+    "p_dropped_near": 0.7412646433975695,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9815,
+      "idx": 71
+    }
+  },
+  {
+    "p_no_drop": 0.6945425802377831,
+    "p_dropped_near": 0.6363562509545974,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9528,
+      "idx": 72
+    }
+  },
+  {
+    "p_no_drop": 0.8241543245629988,
+    "p_dropped_near": 0.8056424718809705,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9721,
+      "idx": 73
+    }
+  },
+  {
+    "p_no_drop": 0.7169076126392641,
+    "p_dropped_near": 0.7165341616999394,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9642,
+      "idx": 76
+    }
+  },
+  {
+    "p_no_drop": 0.7858117289206464,
+    "p_dropped_near": 0.7816606812674031,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9636,
+      "idx": 78
+    }
+  },
+  {
+    "p_no_drop": 0.7677436480901418,
+    "p_dropped_near": 0.7638063026990648,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9698,
+      "idx": 80
+    }
+  },
+  {
+    "p_no_drop": 0.7864781340450864,
+    "p_dropped_near": 0.7447099605317214,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9504,
+      "idx": 82
+    }
+  },
+  {
+    "p_no_drop": 0.7400860991121554,
+    "p_dropped_near": 0.7101086303786954,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9758,
+      "idx": 85
+    }
+  },
+  {
+    "p_no_drop": 0.6953301483818516,
+    "p_dropped_near": 0.7240366627024355,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9582,
+      "idx": 89
+    }
+  },
+  {
+    "p_no_drop": 0.7528316219407749,
+    "p_dropped_near": 0.7185119424157627,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.956,
+      "idx": 91
+    }
+  },
+  {
+    "p_no_drop": 0.755457068375656,
+    "p_dropped_near": 0.7024213462828113,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9661,
+      "idx": 93
+    }
+  },
+  {
+    "p_no_drop": 0.7078026316180517,
+    "p_dropped_near": 0.6559769600281344,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9603,
+      "idx": 95
+    }
+  },
+  {
+    "p_no_drop": 0.7811814269479181,
+    "p_dropped_near": 0.7528356756804342,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9805,
+      "idx": 98
+    }
+  },
+  {
+    "p_no_drop": 0.7647384843067745,
+    "p_dropped_near": 0.7147754362763551,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9653,
+      "idx": 100
+    }
+  },
+  {
+    "p_no_drop": 0.7917352809652463,
+    "p_dropped_near": 0.7497329450907235,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9584,
+      "idx": 101
+    }
+  },
+  {
+    "p_no_drop": 0.6724878734509221,
+    "p_dropped_near": 0.6483723908273684,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9531,
+      "idx": 102
+    }
+  },
+  {
+    "p_no_drop": 0.7378081801944415,
+    "p_dropped_near": 0.6809487285767057,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9518,
+      "idx": 103
+    }
+  },
+  {
+    "p_no_drop": 0.75076789760228,
+    "p_dropped_near": 0.7377680987030693,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9662,
+      "idx": 104
+    }
+  },
+  {
+    "p_no_drop": 0.7642173594371405,
+    "p_dropped_near": 0.7811600045785931,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9685,
+      "idx": 109
+    }
+  },
+  {
+    "p_no_drop": 0.7784491009386358,
+    "p_dropped_near": 0.7445551705167756,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.977,
+      "idx": 111
+    }
+  },
+  {
+    "p_no_drop": 0.747342294662099,
+    "p_dropped_near": 0.7378456348304394,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9819,
+      "idx": 112
+    }
+  },
+  {
+    "p_no_drop": 0.7247167032213879,
+    "p_dropped_near": 0.7696502777526272,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9629,
+      "idx": 113
+    }
+  },
+  {
+    "p_no_drop": 0.7919681142895499,
+    "p_dropped_near": 0.8112509462086831,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9634,
+      "idx": 114
+    }
+  },
+  {
+    "p_no_drop": 0.7472004596601782,
+    "p_dropped_near": 0.7351281034455366,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9544,
+      "idx": 115
+    }
+  },
+  {
+    "p_no_drop": 0.742012540180495,
+    "p_dropped_near": 0.7278681314821003,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9775,
+      "idx": 116
+    }
+  },
+  {
+    "p_no_drop": 0.7294691311364632,
+    "p_dropped_near": 0.7302130537775648,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9727,
+      "idx": 117
+    }
+  },
+  {
+    "p_no_drop": 0.699384145709218,
+    "p_dropped_near": 0.7178962849667015,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9862,
+      "idx": 120
+    }
+  },
+  {
+    "p_no_drop": 0.759740505028599,
+    "p_dropped_near": 0.7767346286560506,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9696,
+      "idx": 121
+    }
+  },
+  {
+    "p_no_drop": 0.7331808740059914,
+    "p_dropped_near": 0.7173516576157656,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9869,
+      "idx": 122
+    }
+  },
+  {
+    "p_no_drop": 0.7868260050962147,
+    "p_dropped_near": 0.7722740745339759,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9843,
+      "idx": 124
+    }
+  },
+  {
+    "p_no_drop": 0.8082298940101545,
+    "p_dropped_near": 0.7813890921304378,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9562,
+      "idx": 125
+    }
+  },
+  {
+    "p_no_drop": 0.7602480346097332,
+    "p_dropped_near": 0.7274771155815989,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9676,
+      "idx": 127
+    }
+  },
+  {
+    "p_no_drop": 0.7810412779365264,
+    "p_dropped_near": 0.7446533311085024,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9619,
+      "idx": 128
+    }
+  },
+  {
+    "p_no_drop": 0.7956395534817657,
+    "p_dropped_near": 0.7655659750083184,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9579,
+      "idx": 130
+    }
+  },
+  {
+    "p_no_drop": 0.7306434950555031,
+    "p_dropped_near": 0.6921063231029012,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9706,
+      "idx": 131
+    }
+  },
+  {
+    "p_no_drop": 0.7847428535165556,
+    "p_dropped_near": 0.7428166300644122,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9814,
+      "idx": 132
+    }
+  },
+  {
+    "p_no_drop": 0.7906646629253083,
+    "p_dropped_near": 0.7511383650398912,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9695,
+      "idx": 133
+    }
+  },
+  {
+    "p_no_drop": 0.7307320152542895,
+    "p_dropped_near": 0.746371249518236,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9662,
+      "idx": 135
+    }
+  },
+  {
+    "p_no_drop": 0.8338950455642613,
+    "p_dropped_near": 0.7901693593966507,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9523,
+      "idx": 137
+    }
+  },
+  {
+    "p_no_drop": 0.7597027387758315,
+    "p_dropped_near": 0.77641110978448,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9849,
+      "idx": 138
+    }
+  },
+  {
+    "p_no_drop": 0.7037704823099152,
+    "p_dropped_near": 0.685619239447398,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9529,
+      "idx": 144
+    }
+  },
+  {
+    "p_no_drop": 0.784281443194539,
+    "p_dropped_near": 0.8039901498192588,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9843,
+      "idx": 146
+    }
+  },
+  {
+    "p_no_drop": 0.6830136469605064,
+    "p_dropped_near": 0.6658409770843355,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9608,
+      "idx": 147
+    }
+  },
+  {
+    "p_no_drop": 0.7835034673673091,
+    "p_dropped_near": 0.7924248053474364,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9648,
+      "idx": 148
+    }
+  },
+  {
+    "p_no_drop": 0.7089867790703898,
+    "p_dropped_near": 0.7317339749024855,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9533,
+      "idx": 149
+    }
+  },
+  {
+    "p_no_drop": 0.7588819249196318,
+    "p_dropped_near": 0.7309634625827106,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9615,
+      "idx": 153
+    }
+  },
+  {
+    "p_no_drop": 0.7824047147414709,
+    "p_dropped_near": 0.7711623775284278,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.98,
+      "idx": 154
+    }
+  },
+  {
+    "p_no_drop": 0.7705302188735723,
+    "p_dropped_near": 0.7428468610594198,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9762,
+      "idx": 155
+    }
+  },
+  {
+    "p_no_drop": 0.7882132707882965,
+    "p_dropped_near": 0.7796356010720576,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9887,
+      "idx": 156
+    }
+  },
+  {
+    "p_no_drop": 0.7312287452531515,
+    "p_dropped_near": 0.7105966666506087,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9677,
+      "idx": 162
+    }
+  },
+  {
+    "p_no_drop": 0.8408609769317353,
+    "p_dropped_near": 0.8377457040506349,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9588,
+      "idx": 164
+    }
+  },
+  {
+    "p_no_drop": 0.7319138237885936,
+    "p_dropped_near": 0.7064006761262327,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9766,
+      "idx": 166
+    }
+  },
+  {
+    "p_no_drop": 0.764224571346404,
+    "p_dropped_near": 0.7327754901999294,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9609,
+      "idx": 168
+    }
+  },
+  {
+    "p_no_drop": 0.8934678671630116,
+    "p_dropped_near": 0.8777932344352899,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9795,
+      "idx": 169
+    }
+  },
+  {
+    "p_no_drop": 0.7578355359615521,
+    "p_dropped_near": 0.7073506736162095,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9795,
+      "idx": 170
+    }
+  },
+  {
+    "p_no_drop": 0.7642273959245447,
+    "p_dropped_near": 0.7531295663993235,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9882,
+      "idx": 173
+    }
+  },
+  {
+    "p_no_drop": 0.7678029965597121,
+    "p_dropped_near": 0.8059601748141106,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9819,
+      "idx": 175
+    }
+  },
+  {
+    "p_no_drop": 0.7882501928426088,
+    "p_dropped_near": 0.7990727049787315,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9816,
+      "idx": 178
+    }
+  },
+  {
+    "p_no_drop": 0.8127950409364499,
+    "p_dropped_near": 0.7841438609961565,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9747,
+      "idx": 180
+    }
+  },
+  {
+    "p_no_drop": 0.7466642252776675,
+    "p_dropped_near": 0.742016351139876,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9593,
+      "idx": 183
+    }
+  },
+  {
+    "p_no_drop": 0.7240872869405706,
+    "p_dropped_near": 0.7093339434168532,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9614,
+      "idx": 184
+    }
+  },
+  {
+    "p_no_drop": 0.6988974495541044,
+    "p_dropped_near": 0.7046988092260924,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9682,
+      "idx": 185
+    }
+  },
+  {
+    "p_no_drop": 0.7353592227222003,
+    "p_dropped_near": 0.7297500128849275,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9549,
+      "idx": 186
+    }
+  },
+  {
+    "p_no_drop": 0.7473182933543285,
+    "p_dropped_near": 0.7393047123511655,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9597,
+      "idx": 188
+    }
+  },
+  {
+    "p_no_drop": 0.7250682362969136,
+    "p_dropped_near": 0.7395865414205898,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9784,
+      "idx": 189
+    }
+  },
+  {
+    "p_no_drop": 0.7322857896406362,
+    "p_dropped_near": 0.7023228680050719,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9801,
+      "idx": 195
+    }
+  },
+  {
+    "p_no_drop": 0.7991928036989867,
+    "p_dropped_near": 0.7727302638561634,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9663,
+      "idx": 196
+    }
+  },
+  {
+    "p_no_drop": 0.7296483207318903,
+    "p_dropped_near": 0.6879891544922737,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9522,
+      "idx": 197
+    }
+  },
+  {
+    "p_no_drop": 0.7469588981969738,
+    "p_dropped_near": 0.6907138738828376,
+    "meta": {
+      "kind": "ath_pair",
+      "gain_sign": "loss",
+      "nearness_no_drop": 1.0,
+      "nearness_dropped": 0.9614,
+      "idx": 199
+    }
+  }
+]

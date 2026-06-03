@@ -1,0 +1,140 @@
+{
+  "run_id": "20260529-092454_7de0bb4",
+  "wallclock_finalize_s": 819.9,
+  "frozen_token_groups": {
+    "true_ids": [
+      837,
+      1904,
+      2575,
+      3082,
+      8378,
+      21260
+    ],
+    "false_ids": [
+      905,
+      3641,
+      3934,
+      4139,
+      7989,
+      31451
+    ],
+    "excluded_semantic_aliases": "Yes/yes/1, No/no/0 (see diagnostics.json)"
+  },
+  "out_of_group_mass_distribution": {
+    "n": 1440,
+    "min": 1.733934755299149e-05,
+    "median": 2.4524585663210363e-05,
+    "mean": 2.4476273793486314e-05,
+    "q95": 2.7813959420985857e-05,
+    "max": 3.2234185150525896e-05,
+    "frac_flagged_gt_0.10": 0.0
+  },
+  "sec1_reproduction": {
+    "target": 0.896,
+    "observed_sec1_faithful": 0.6865890952424553,
+    "abs_err": 0.20941090475754476,
+    "reproduced_tight": false,
+    "reproduced_qualitative": false,
+    "wording_range_on_smoke_loss": 0.14427032384556693
+  },
+  "prompt_sensitivity_sweep": {
+    "sec1_faithful": {
+      "p_sell": 0.6865890952424553,
+      "out_mass": 1.933040686896703e-05
+    },
+    "minimal": {
+      "p_sell": 0.7471156374311443,
+      "out_mass": 2.11143404844627e-05
+    },
+    "orientation_explicit": {
+      "p_sell": 0.8050634307254679,
+      "out_mass": 1.7040456454231467e-05
+    },
+    "embellished_v0": {
+      "p_sell": 0.8308594190880222,
+      "out_mass": 3.937172936685496e-05
+    }
+  },
+  "determinism": {
+    "p_sell_run1": 0.6865890952424553,
+    "p_sell_run2": 0.6865890952424553,
+    "bit_exact": true,
+    "abs_diff": 0.0
+  },
+  "batch_equivalence": {
+    "single": [
+      0.6865890952424553,
+      0.7488464617860543
+    ],
+    "batched": [
+      0.6865935971495655,
+      0.7488367928909964
+    ],
+    "max_abs_dev": 9.66889505793489e-06,
+    "ok": true
+  },
+  "clean_probe_disposition_proxy_paired": {
+    "mean": 0.01724409469100792,
+    "lo": 0.010234458018481753,
+    "hi": 0.024867169305815593,
+    "boot_mean": 0.017415527789084843,
+    "boot_sd": 0.003818057437155591,
+    "n": 240,
+    "frac_positive": 0.6208333333333333
+  },
+  "clean_probe_disposition_proxy_marginal": {
+    "mean": 0.014472114966958993,
+    "lo": 0.005032713371407927,
+    "hi": 0.023992312950978756,
+    "boot_sd": 0.004884964842600535,
+    "frac_positive": 1.0,
+    "n_gain": 228,
+    "n_loss": 252
+  },
+  "clean_probe_ath_asymmetry_gain_VALID": {
+    "mean": -0.0013809834305502757,
+    "lo": -0.004260534459099933,
+    "hi": 0.001459490702767565,
+    "boot_mean": -0.001372079314178399,
+    "boot_sd": 0.0014382435621067041,
+    "n": 127,
+    "frac_positive": 0.41732283464566927
+  },
+  "clean_probe_ath_asymmetry_overall_CONFOUNDED": {
+    "mean": -0.008304755903377713,
+    "lo": -0.010949252091211654,
+    "hi": -0.005557167499715306,
+    "boot_mean": -0.008287465390420762,
+    "boot_sd": 0.0013833847318619065,
+    "n": 240,
+    "frac_positive": 0.3375
+  },
+  "behavioral_framing_disposition_proxy": {
+    "mean": 0.2598750025108576,
+    "lo": 0.24353085906873756,
+    "hi": 0.27775973141341387,
+    "boot_mean": 0.2601518380547175,
+    "boot_sd": 0.00853590298182376,
+    "n": 240,
+    "frac_positive": 0.9833333333333333
+  },
+  "behavioral_framing_ath_gain_VALID": {
+    "mean": 0.003933266222370109,
+    "lo": -0.001987391350194613,
+    "hi": 0.00954703140849177,
+    "boot_mean": 0.003668791339025563,
+    "boot_sd": 0.0029108472663588823,
+    "n": 127,
+    "frac_positive": 0.5039370078740157
+  },
+  "behavioral_freegen_qualitative": {
+    "n": 6,
+    "parse_rate": 0.0,
+    "reason_text_rate": 0.5,
+    "cot_rate": 0.5,
+    "note": "qualitative only (fp32 free-gen is slow); the model emits CoT-style analysis before the JSON => confirms why clean-probe (no generation) avoids contamination."
+  },
+  "gate_decision": "YEE_SHARMA_FALLBACK",
+  "fallback_subbranch": "MODEL-BASELINE branch: neither clean-probe nor behavioral-framing shows a positive gain-context ATH asymmetry => baseline attenuation in the model. Yee-Sharma section-4 route: (a) profile prompting to induce investor bias, (b) Gemma-2-9B, (c) prompt review. (Free-gen faithfulness is qualitative only.)",
+  "out_dir": "/root/yh008_work/outputs/20260529-092454_7de0bb4"
+}
