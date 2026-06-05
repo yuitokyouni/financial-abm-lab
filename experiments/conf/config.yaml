@@ -1,0 +1,16 @@
+# 真・PRISM toy の 1 run config(Hydra composition のルート)。
+defaults:
+  - market: default
+  - agents: T
+  - _self_
+
+seed: 0
+capture_level: L2 # ctx 捕捉レベル(v0: L0/L1/L2)。L2 = ctx 呼び出しを全記録
+output_dir: runs
+
+# Hydra に作業ディレクトリを変えさせない(output_dir をプロジェクトルート基準に保つ)。
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: .

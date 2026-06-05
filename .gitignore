@@ -23,6 +23,8 @@ htmlcov/
 # Hydra / experiment outputs
 outputs/
 multirun/
+.hydra/
+*.log
 .snakemake/
 
 # simulation 出力(provenance は別管理、生 parquet はコミットしない)

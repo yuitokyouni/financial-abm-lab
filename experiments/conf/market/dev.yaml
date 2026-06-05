@@ -1,0 +1,10 @@
+# @package market
+# dev / smoke 用の小サイズ。**実験のサンプルサイズではない**(spec §3.1/§11 が authoritative)。
+# 単 run の対話確認・integration smoke を秒オーダーで回すための profile。
+n_agents: 50
+lam: 0.01
+p_star: 100.0
+obs_window: 20
+burn_in: 20
+measure: 80
+init_price: 100.0
