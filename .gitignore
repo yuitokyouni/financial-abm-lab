@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# uv
+# uv.lock は commit する(決定的 resolve、CLAUDE.md 方針)
+
+# tooling caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+htmlcov/
+.coverage
+.coverage.*
+
+# Hydra / experiment outputs
+outputs/
+multirun/
+.snakemake/
+
+# simulation 出力(provenance は別管理、生 parquet はコミットしない)
+runs/
+*.parquet
+!tests/**/*.parquet
+
+# editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
