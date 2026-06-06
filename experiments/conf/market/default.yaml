@@ -1,0 +1,10 @@
+# @package market
+# spec §3.1 / §11 の pre-registered 実験値。§14 と並び post-hoc 変更禁止(CLAUDE.md)。
+# 単 run を素早く回したい時は `market=dev` を使う(実験値はこちらが authoritative)。
+n_agents: 500
+lam: 0.01
+p_star: 100.0
+obs_window: 100 # L(観測窓、spec §3.3)
+burn_in: 1000
+measure: 10000
+init_price: 100.0
