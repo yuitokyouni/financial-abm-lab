@@ -1,0 +1,153 @@
+{
+  "stage": "S5.8",
+  "T_ext": 10000,
+  "seeds_ext": [
+    1000,
+    1001,
+    1002,
+    1003,
+    1004,
+    1005
+  ],
+  "verdict": "H_frozen",
+  "verdict_message": "全延長区間 hazard ≤ 2e-05 (max=0.00e+00) — S5.7 C2 late-window plateau の継続、T=50000 外挿でも gap 残存 → 凍結は定常。S6 進行 GO、Layer-2-timescale 留保が消える",
+  "thresholds": {
+    "H_frozen_max": 2e-05,
+    "H_transient_min": 0.001,
+    "anchor": "Katahira T=50000 での gap 生存 (h=2e-5 → exp(−0.97)≈0.38 でgap 残存; 1e-4 だと消える) + S5.7 C2 late-window hazard",
+    "pre_registered_dead_zone": "S6 GO だが A3 解釈を partial freeze 解除に限定、headline を『T < X で凍結』に qualify"
+  },
+  "ext_hazards": {
+    "C2": [
+      {
+        "tau_lo": 1500,
+        "tau_hi": 3000,
+        "avg_hazard": 0.0
+      },
+      {
+        "tau_lo": 3000,
+        "tau_hi": 6000,
+        "avg_hazard": 0.0
+      },
+      {
+        "tau_lo": 6000,
+        "tau_hi": 9999,
+        "avg_hazard": 0.0
+      }
+    ],
+    "C3": [
+      {
+        "tau_lo": 1500,
+        "tau_hi": 3000,
+        "avg_hazard": 0.0
+      },
+      {
+        "tau_lo": 3000,
+        "tau_hi": 6000,
+        "avg_hazard": 0.0
+      },
+      {
+        "tau_lo": 6000,
+        "tau_hi": 9999,
+        "avg_hazard": 0.0
+      }
+    ]
+  },
+  "agg_full_window_constancy": {
+    "C0u": [
+      {
+        "tau_lo": 1500,
+        "tau_hi": 2000,
+        "avg_hazard": 0.002969051103465624
+      },
+      {
+        "tau_lo": 2000,
+        "tau_hi": 3000,
+        "avg_hazard": 0.0028575155958366033
+      },
+      {
+        "tau_lo": 3000,
+        "tau_hi": 5000,
+        "avg_hazard": 0.0026780620977754914
+      }
+    ],
+    "C0p": [
+      {
+        "tau_lo": 1500,
+        "tau_hi": 2000,
+        "avg_hazard": 0.0029256860905345727
+      },
+      {
+        "tau_lo": 2000,
+        "tau_hi": 3000,
+        "avg_hazard": 0.0026793262941700773
+      },
+      {
+        "tau_lo": 3000,
+        "tau_hi": 5000,
+        "avg_hazard": 0.0027654722344598827
+      }
+    ]
+  },
+  "agg_S_50k": {
+    "C0u": 0.0,
+    "C0p": 0.0
+  },
+  "extrapolation_T50k": {
+    "C2": {
+      "n_events_ext": 0,
+      "exposure_agent_steps": 5091031.0,
+      "h_rule_of_three_95ub": 5.892716033353558e-07,
+      "S_9999": 0.9118541033434655,
+      "S_50000_floor_at_h_ub": 0.890611717327537,
+      "h_last_segment_point": 0.0,
+      "agg_at_50k": "extinct (S≈0、uncensored max lifetime 5748)"
+    },
+    "C3": {
+      "n_events_ext": 0,
+      "exposure_agent_steps": 5082856.0,
+      "h_rule_of_three_95ub": 5.902193569914237e-07,
+      "S_9999": 0.7211538461538464,
+      "S_50000_floor_at_h_ub": 0.7043272760434903,
+      "h_last_segment_point": 0.0,
+      "agg_at_50k": "extinct (S≈0、uncensored max lifetime 5748)"
+    }
+  },
+  "S_at_grid": {
+    "C2": {
+      "1500": 0.9118541033434655,
+      "2000": 0.9118541033434655,
+      "3000": 0.9118541033434655,
+      "5000": 0.9118541033434655,
+      "7500": 0.9118541033434655,
+      "9999": 0.9118541033434655
+    },
+    "C3": {
+      "1500": 0.7211538461538464,
+      "2000": 0.7211538461538464,
+      "3000": 0.7211538461538464,
+      "5000": 0.7211538461538464,
+      "7500": 0.7211538461538464,
+      "9999": 0.7211538461538464
+    },
+    "C0u": {
+      "1500": 0.015606639513080084,
+      "2000": 0.003503253480476114,
+      "3000": 0.00016316780791841306,
+      "5000": 0.0,
+      "7500": 0.0,
+      "9999": 0.0
+    },
+    "C0p": {
+      "1500": 0.015636566978729626,
+      "2000": 0.003487779287011249,
+      "3000": 0.00021753972006799963,
+      "5000": 0.0,
+      "7500": 0.0,
+      "9999": 0.0
+    }
+  },
+  "sanity_first_window": "PASS (exact match、stop trigger 非発火)",
+  "headline_caution": "延長 hazard の点推定は 6 seed で CI 広 — 値そのものは headline しない (verdict と外挿の結論のみ)",
+  "timestamp": "2026-06-07T16:59:54.223544"
+}

@@ -62,7 +62,9 @@ AGG_CONDS = ["C0u", "C0p"]
 TAU_GRID_EXT = [1500, 2000, 3000, 5000, 7500, 9999]
 HAZARD_EDGES_EXT = [0, 250, 1500, 3000, 6000, 9999]
 EXT_SEGMENTS = [(1500, 3000), (3000, 6000), (6000, 9999)]
-AGG_FULL_SEGMENTS = [(1500, 5000), (5000, 15000), (15000, 30000), (30000, 49999)]
+# agg uncensored lifetime は p99.9=2443 / max=5748 — τ≳6000 で risk set が空になる
+# (cohort 絶滅)。constancy は population が生きている区間でのみ意味を持つ。
+AGG_FULL_SEGMENTS = [(1500, 2000), (2000, 3000), (3000, 5000)]
 
 # 閾値 (plan v1.1 P2): Katahira T=50000 での gap 生存に anchor。
 #   h=1e-4 だと S(50000) ≈ S(1500)·exp(−1e-4×48500) で gap はほぼ消える (緩すぎ)。
@@ -298,35 +300,50 @@ def main() -> None:
         agg_full_segments[cond] = segs
         hs = [s["avg_hazard"] for s in segs]
         logger.info(
-            f"[agg-full] {cond} constancy: max/min = "
-            f"{max(hs) / max(min(hs), 1e-12):.2f}x "
-            f"(≈1 なら extinction まで一定 hazard、T=50000 外挿は妥当) | "
-            f"S(49999) = {agg_S_50k[cond]:.2e}"
+            f"[agg-full] {cond} constancy (cohort 生存区間のみ): max/min = "
+            f"{max(hs) / max(min(hs), 1e-12):.2f}x | "
+            f"S(49999) = {agg_S_50k[cond]:.2e} "
+            f"(τ≳6000 で cohort 絶滅 — uncensored max lifetime 5748)"
         )
 
     # ----- P2: T=50000 外挿 — gap が Katahira スケールで生き残るか -----
+    # zero-event の場合は点推定 (h=0) でなく rule-of-three 95% 上限で bound する
+    # (「6 seed では hazard 解像不足」への正しい応答 — tight な上限が出せる)
     extrap: Dict[str, Dict[str, float]] = {}
+    agg_extinct = all(v < 1e-9 for v in agg_S_50k.values())
     for cond in LOB_CONDS:
+        lt = load_lifetimes_window(f"{cond}_T10k", SEEDS_EXT, T_EXT,
+                                   recensor=False)
+        life = lt["lifetime"].to_numpy(float)
+        alive = life > T_MAIN
+        exposure = float((np.minimum(life[alive], 9999) - T_MAIN).sum())
+        n_events = int(((~lt["censored"].to_numpy(bool))
+                        & (life > T_MAIN) & (life <= 9999)).sum())
+        h_ub = (3.0 / exposure) if n_events == 0 else float("nan")
         h_last = ext_hazards[cond][-1]["avg_hazard"]
         S_9999 = float(curves[cond][9999])
-        S_50k = S_9999 * float(np.exp(-h_last * (T_KATAHIRA - 9999)))
-        agg_ref = max(np.mean(list(agg_S_50k.values())), 1e-12)
+        S_50k_floor = S_9999 * float(np.exp(-h_ub * (T_KATAHIRA - 9999))) \
+            if n_events == 0 else float("nan")
         extrap[cond] = {
-            "h_last_segment": h_last,
+            "n_events_ext": n_events,
+            "exposure_agent_steps": exposure,
+            "h_rule_of_three_95ub": h_ub,
             "S_9999": S_9999,
-            "S_50000_extrap": S_50k,
-            "gap_vs_agg_50k": S_50k / agg_ref,
+            "S_50000_floor_at_h_ub": S_50k_floor,
+            "h_last_segment_point": h_last,
+            "agg_at_50k": "extinct (S≈0、uncensored max lifetime 5748)"
+                          if agg_extinct else float(np.mean(list(agg_S_50k.values()))),
         }
         logger.info(
-            f"[extrap] {cond}: h_last={h_last:.2e} S(9999)={S_9999:.3f} → "
-            f"S(50000)≈{S_50k:.3f}, gap vs agg ≈ {S_50k / agg_ref:,.0f}x"
+            f"[extrap] {cond}: events={n_events} / exposure={exposure:,.0f} "
+            f"agent-steps → h_95UB={h_ub:.2e}/step "
+            f"(frozen 閾値 2e-5 の {2e-5 / max(h_ub, 1e-12):.0f} 分の 1)"
         )
-        # slow-leak 判別: 区間 hazard の trend (→0 か const か)
-        hs = [s["avg_hazard"] for s in ext_hazards[cond]]
-        trend = ("decaying→0" if hs[-1] < 0.5 * max(hs[0], 1e-12)
-                 else "constant (slow leak 注意)")
-        extrap[cond]["segment_trend"] = trend
-        logger.info(f"[extrap] {cond} segment trend: {hs} → {trend}")
+        logger.info(
+            f"[extrap] {cond}: S(50000) ≥ {S_50k_floor:.3f} (95% UB hazard でも) "
+            f"vs agg = extinct → gap は Katahira スケールで non-degenerate "
+            f"(比は agg≈0 のため定義不能、『LOB 残存 vs agg 絶滅』として報告)"
+        )
 
     # ----- KPI 判定 -----
     verdict, verdict_msg = classify_extension(ext_hazards)
