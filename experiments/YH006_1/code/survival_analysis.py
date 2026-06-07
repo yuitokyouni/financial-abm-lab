@@ -6,8 +6,16 @@ S5.7 plan §3.1-§3.2:
   - Kaplan-Meier (右側打ち切り対応) で S(τ)、τ ∈ [1, 1500]
   - trial-level bootstrap (seed 単位 resample × 10,000) で
     τ ∈ {100, 250, 500, 750, 1000, 1250, 1499} の 95% CI
-  - cumulative hazard Λ(τ) = −log S(τ) 併記
+  - 全域 Greenwood 95% CI band (figure 用、pooled iid 仮定)
+  - cumulative hazard Λ(τ) ≡ −ln S_KM(τ) 併記 (Nelson-Aalen ではない)
+  - 区間平均 hazard ΔΛ/Δτ (agg の早期 ramp → 安定 ~3e-3 の定量化)
   - S5.5 の censoring 率 / n と assertion で整合検算 (規約ズレ検出)
+
+対象物の明示 (重要): 本 stage の S(τ) は **agent lifetime** (birth → 退場) の
+survival であって round-trip horizon ではない。C0u の RT horizon median = 2 /
+rt/agent/step = 0.209 は YH005_1 と完全一致 (cross-experiment 整合検算済、
+2026-06-07)。agg lifetime median ≈ 390 と RT horizon median = 2 は別の対象の
+統計量で、矛盾ではない。図表は常に "agent lifetime" を明記する。
 
 Run (Windows、PAMS 不要):
   cd experiments/YH006_1
@@ -45,6 +53,7 @@ ALL_CONDS = AGG_CONDS + LOB_CONDS
 
 T_WINDOW = 1500
 TAU_GRID = [100, 250, 500, 750, 1000, 1250, 1499]
+HAZARD_EDGES = [0, 100, 250, 500, 750, 1000, 1250, 1499]
 N_BOOT = 10_000
 
 # S5.5 (tab_S5.5_lifetime_subsample.csv) の matched 値 — 整合 assertion の基準。
@@ -152,6 +161,36 @@ def km_from_counts(d: np.ndarray, c: np.ndarray) -> np.ndarray:
     return np.cumprod(factor, axis=-1)
 
 
+def greenwood_band(
+    d: np.ndarray, c: np.ndarray, S: np.ndarray, z: float = 1.96,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """全域 Greenwood 95% CI band: Var[S(t)] = S(t)² Σ_{u≤t} d_u / (n_u (n_u − d_u)).
+
+    pooled sample の iid 仮定 (trial clustering 無視) — figure の band 用。
+    grid 点の trial-level bootstrap CI と幅を比較して log に出す。
+    """
+    total = d + c
+    n_at_risk = np.flip(np.cumsum(np.flip(total)), axis=-1)
+    denom = n_at_risk * (n_at_risk - d)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        term = np.where(denom > 0, d / np.where(denom > 0, denom, 1.0), 0.0)
+    var = S ** 2 * np.cumsum(term)
+    half = z * np.sqrt(var)
+    return np.clip(S - half, 0.0, 1.0), np.clip(S + half, 0.0, 1.0)
+
+
+def hazard_segments(S: np.ndarray, edges: List[int]) -> List[Dict[str, float]]:
+    """区間平均 hazard = ΔΛ/Δτ (Λ ≡ −ln S_KM)。agg の早期 ramp を定量化する。"""
+    rows = []
+    lam = -np.log(np.clip(S, 1e-12, None))
+    for lo, hi in zip(edges[:-1], edges[1:]):
+        rows.append({
+            "tau_lo": lo, "tau_hi": hi,
+            "avg_hazard": float((lam[hi] - lam[lo]) / (hi - lo)),
+        })
+    return rows
+
+
 def bootstrap_km_ci(
     D: np.ndarray, C: np.ndarray, taus: List[int],
     n_boot: int = N_BOOT, ci: float = 0.95,
@@ -188,6 +227,7 @@ def bootstrap_km_ci(
 
 def plot_survival(
     curves: Dict[str, np.ndarray],
+    gw_bands: Dict[str, Tuple[np.ndarray, np.ndarray]],
     ci_bands: Dict[str, Dict[int, Tuple[float, float]]],
     out_path: Path, logger: logging.Logger,
 ) -> None:
@@ -202,6 +242,9 @@ def plot_survival(
     t = np.arange(T_WINDOW + 1)
     for cond in ALL_CONDS:
         S = curves[cond]
+        lo, hi = gw_bands[cond]
+        ax_top.fill_between(t, np.clip(lo, 1e-4, None), hi,
+                            color=palette[cond], alpha=0.18, linewidth=0)
         ax_top.plot(t, S, color=palette[cond], label=labels[cond], linewidth=1.6)
         band = ci_bands[cond]
         taus = sorted(band.keys())
@@ -212,10 +255,10 @@ def plot_survival(
             fmt="none", ecolor=palette[cond], capsize=3, linewidth=1.0,
         )
     ax_top.set_yscale("log")
-    ax_top.set_ylabel("S(τ) = P(lifetime > τ)   [log]")
+    ax_top.set_ylabel("S(τ) = P(agent lifetime > τ)   [log]")
     ax_top.set_title(
-        "S5.7 KM survival, matched window T=1500 "
-        "(agg re-censored; error bars = trial-level bootstrap 95% CI)"
+        "S5.7 KM agent-lifetime survival, matched window T=1500 "
+        "(band = Greenwood 95%; markers = trial-level bootstrap 95% CI)"
     )
     ax_top.legend()
     ax_top.grid(alpha=0.3, which="both")
@@ -227,8 +270,8 @@ def plot_survival(
         ax_bottom.plot(t, lam, color=palette[cond], label=labels[cond],
                        linewidth=1.6)
     ax_bottom.set_yscale("log")
-    ax_bottom.set_xlabel("τ (steps)")
-    ax_bottom.set_ylabel("Λ(τ) = −log S(τ)   [log]")
+    ax_bottom.set_xlabel("agent lifetime τ (steps)")
+    ax_bottom.set_ylabel("Λ(τ) ≡ −ln S_KM(τ)   [log]")
     ax_bottom.set_title("Cumulative hazard — gap is hazard-driven, not run-length-driven")
     ax_bottom.legend()
     ax_bottom.grid(alpha=0.3, which="both")
@@ -258,7 +301,9 @@ def main() -> None:
 
     curves: Dict[str, np.ndarray] = {}
     ci_bands: Dict[str, Dict[int, Tuple[float, float]]] = {}
+    gw_bands: Dict[str, Tuple[np.ndarray, np.ndarray]] = {}
     rows: List[Dict[str, float]] = []
+    hazard_rows: List[Dict[str, float]] = []
     consistency: Dict[str, Dict[str, float]] = {}
 
     for cond in ALL_CONDS:
@@ -280,10 +325,28 @@ def main() -> None:
             )
 
         D, C = seed_count_matrices(lt, seeds)
-        S_pooled = km_from_counts(D.sum(axis=0), C.sum(axis=0))
+        d_pool, c_pool = D.sum(axis=0), C.sum(axis=0)
+        S_pooled = km_from_counts(d_pool, c_pool)
         curves[cond] = S_pooled
         band = bootstrap_km_ci(D, C, TAU_GRID, rng=np.random.default_rng(0))
         ci_bands[cond] = band
+        gw_lo, gw_hi = greenwood_band(d_pool, c_pool, S_pooled)
+        gw_bands[cond] = (gw_lo, gw_hi)
+        # Greenwood (iid 仮定) vs trial-level bootstrap の幅比較 (τ=1499)
+        bw = band[1499][1] - band[1499][0]
+        gw = gw_hi[1499] - gw_lo[1499]
+        logger.info(
+            f"[ci_width] {cond} τ=1499: bootstrap={bw:.4f} greenwood={gw:.4f} "
+            f"(ratio {bw / max(gw, 1e-12):.2f}x — bootstrap は trial clustering 込み)"
+        )
+        # 区間平均 hazard ΔΛ/Δτ
+        for seg in hazard_segments(S_pooled, HAZARD_EDGES):
+            seg["cond"] = cond
+            hazard_rows.append(seg)
+            logger.info(
+                f"[hazard] {cond} [{seg['tau_lo']:>4},{seg['tau_hi']:>4}]: "
+                f"{seg['avg_hazard']:.2e}/step"
+            )
 
         for tau in TAU_GRID:
             s = float(S_pooled[tau])
@@ -305,7 +368,13 @@ def main() -> None:
     table.to_csv(table_path, index=False)
     logger.info(f"[output] saved: {table_path} ({len(table)} rows)")
 
-    plot_survival(curves, ci_bands,
+    hazard_table = pd.DataFrame(hazard_rows)[
+        ["cond", "tau_lo", "tau_hi", "avg_hazard"]]
+    hazard_path = OUTPUTS_DIR / "tables" / "tab_S5.7_hazard_segments.csv"
+    hazard_table.to_csv(hazard_path, index=False)
+    logger.info(f"[output] saved: {hazard_path} ({len(hazard_table)} rows)")
+
+    plot_survival(curves, gw_bands, ci_bands,
                   OUTPUTS_DIR / "figures" / "fig_S5.7_survival_curves.png",
                   logger)
 
@@ -324,14 +393,27 @@ def main() -> None:
         "T_window": T_WINDOW,
         "tau_grid": TAU_GRID,
         "n_boot": N_BOOT,
+        "estimand": "agent lifetime survival (round-trip horizon ではない)",
+        "cum_hazard_definition": "Λ(τ) ≡ −ln S_KM(τ) (Nelson-Aalen ではない)",
         "recensor_protocol": "subsample_aggregate.recensor_lifetime_T1500 と同一",
         "consistency_vs_S5.5": consistency,
+        "cross_experiment_check": {
+            "C0u_rt_horizon_median": 2.0,
+            "C0u_rt_per_agent_step": 0.209,
+            "note": "YH005_1 (median=2, 0.21 rt/agent/step) と一致 — RT 定義 drift なし。"
+                    "agg lifetime median ≈ 390 と RT horizon median = 2 は別対象の統計量",
+        },
         "headline_S_matched_1499": headline,
         "headline_gap": {"uniform_C2_over_C0u": gap_u,
                          "pareto_C3_over_C0p": gap_p},
+        "hazard_segments": hazard_rows,
         "table_path": str(table_path),
-        "note": ("raw headline 81.1% vs 0.9% は horizon 交絡のため retire、"
-                 "以後 matched S(τ) を引用 (plan §1(d))"),
+        "hazard_table_path": str(hazard_path),
+        "note": ("raw headline 81.1% vs 0.9% は horizon 交絡のため retire。"
+                 "headline は hazard 構造で張る: agg は早期 ramp 後 ~3e-3/step で"
+                 "安定 (median lifetime ≈390)、LOB は初期 shake-out 後 hazard→0。"
+                 "52x/58x は『matched 窓末 τ=1499 の survival ratio』と明示して"
+                 "curve 添付で引用 (Yuito review 2026-06-07)"),
     }
     out_json = LOGS_DIR / "S5.7_summary_for_diff.json"
     with open(out_json, "w", encoding="utf-8") as f:

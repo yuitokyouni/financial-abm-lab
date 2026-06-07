@@ -59,8 +59,46 @@ reviewer 攻撃 (horizon 交絡) → robustness 結果への変換が完了。cu
    - **P3**: LOB T=5000–10000 × 数 seed equilibration check (C2 の hazard plateau が定常か transient か — 本 S5.7 で LOB hazard ≈ 0 が可視化されたぶん、この攻撃の残存が明確になった)
 4. S6 (A3) 着手の go (S5.7 は S6 の前提に影響しない — A3 の τ_max 較正は C3 lifetime 分布ベースで不変)
 
+## 6. Yuito review (2026-06-07) への回答 — v1.1
+
+### 6.1 cross-experiment 整合の「125x / 70x ズレ」 — **不整合は存在しない (対象物の取り違え)**
+
+検算結果 (2026-06-07、`config.py::N_sg=100`):
+
+| 量 | YH006_1 実測 | YH005_1 | 判定 |
+|---|---:|---:|---|
+| **RT horizon** median (C0u, 3 trial pool n=3.1M) | **2.0** (max 191) | 2 (max 484) | **一致** |
+| rt/agent/step (C0u: 1,044,416 / (100 × 50,000)) | **0.209** | 0.21 | **一致** |
+| agent lifetime median (uncensored) | 384–390 | — (別対象) | 矛盾なし |
+
+- 「agg median duration ≈ 250」の読みは S5.7 の S(τ) を RT duration として解釈したもの — S5.7 の対象は **agent lifetime** (birth → 退場)。S(100)≈0.80 は「agent の 8 割が 100 step 以上生存」
+- 「C0p 446/trial = 3.0e-3 rt/agent/step」の 446 は RT 数ではなく **matched 窓内の lifetime sample 数** (= birth event 数)。full window の RT は 1.04M/trial、lifetime sample は 10,880/trial
+- むしろ 446/(100×1500) = 3.0e-3 births/agent/step ≈ 定常 hazard 2.8–3.0e-3 (birth rate ≈ death rate) で、lifetime framing の self-consistency が閉じる
+- **adapter の RT 定義 drift なし** (「実保有を伴う open→close」、YH005_1 と同一挙動が数値で確認済)
+- 運用面の指摘は採用: この取り違えは P1 起案 → diff 注記 → 本 review で 3 回目 (今回はレビュアー側)。oral でも確実に起きる。**全数字に対象物ラベル (agent lifetime τ / RT horizon h) を強制** — README §S5.7 に規約として明記
+
+### 6.2 headline 言語 (① 承認 + 修正条件) — 反映済
+
+- hazard 構造で張る形に README 書き換え済。ただし review 文中の「定常 hazard 2.8e-3 ≒ median 保有 ~250step」は 2 点修正:
+  (a) 「保有」は RT 混同 wording → 「agent lifetime」
+  (b) hazard は早期 ramp あり ([0,100]: 0.8e-3 → [250,500]: 2.7e-3 → τ≳500 で ~3.0–3.2e-3 安定、`tab_S5.7_hazard_segments.csv`)。一定 hazard 近似の median 248 ではなく **KM median lifetime ≈ 390** が正
+- 52x/58x は「matched 窓末 τ=1499 の survival ratio」ラベル + curve 添付を必須化、τ ラベルなし単独引用は禁止と README に明記。lead = 52x (uniform)、58x 併記、58>52 順序に重みなし
+- Λ(τ) ≡ −ln S_KM(τ) (Nelson-Aalen ではない) を code / README / JSON に明記
+
+### 6.3 τ grid (②) — 反映済
+
+- README 表を {100, 250, 500, 1000, 1499} に変更 (CSV は 7 点 grid のまま superset)
+- figure: KM curve + **全域 Greenwood 95% band** + grid 点 trial-level bootstrap marker (幅比 1.0–1.5x、log に記録)
+
+### 6.4 S5.8 = P3 / S6 は P3 後 (③④) — 同意、plan 化
+
+- P3 は S6 の論理的前提 (A3 lifetime-cap は「観測された長 lifetime が定常」を暗黙仮定 — plateau が transient なら A3 は artifact を cap する) → `stage_S5.8_plan.md` 起案
+- 区間 hazard で C2 [1000,1499] = 0 件 event は「suggestive 止まり」を裏付け (T=1500 超の timescale を bound できていない)
+- P2 (c_ticks) は S5.9 / robustness 一括に後置 (censoring は fill/matching 律速で trigger 律速でないため gap の大きさは脅かさない)
+
 ## 改訂履歴
 
 | Version | 内容 |
 |---|---|
 | v1.0 | S5.7 完走。KM matched S(1499) = LOB 73–91% vs agg 1.3–1.8% (gap 52–58x)、S5.5 整合検算 PASS、headline 差し替え確定。naive preview (~100x) は KM で 52–58x に下方修正 — 引用は KM 値に統一。 |
+| v1.1 | Yuito review 反映: (1) cross-experiment「125x ズレ」は RT horizon と agent lifetime の対象物取り違えで不整合なし (RT median=2 / 0.209 rt/agent/step が YH005_1 と一致、定義 drift なし)、対象物ラベル強制を規約化。(2) headline を hazard 構造 framing に書き換え (早期 ramp → ~3e-3 安定 / LOB shake-out → 凍結、median lifetime ≈390)、52x/58x は τ=1499 ラベル + curve 必須。(3) τ grid {100,250,500,1000,1499} + Greenwood band + hazard segments 表追加。(4) S5.8 = P3 起案、S6 は S5.8 後、P2 は S5.9 後置。 |

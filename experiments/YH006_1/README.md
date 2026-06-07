@@ -298,36 +298,55 @@ plan §2.4 の SG / MMFCN fill_rate proper は OrderTrackingSaver の log を追
 
 ---
 
-## Stage S5.7 — survival function S(τ) matched-τ 比較 (KM 推定、post-processing only)
+## Stage S5.7 — agent lifetime survival S(τ) matched-τ 比較 (KM 推定、post-processing only)
 
-### Verdict — survival gap は **hazard 起源** (run-length 起源ではない)、matched τ=1499 で **52–58x gap**
+### Verdict — survival gap は **hazard 起源** (run-length 起源ではない)
 
 Yuito 指摘 P1 (「81% vs 0.9% は T を揃えていない horizon 交絡」) への対応。新規 sim ゼロ、既存 `lifetimes_*.parquet` × 400 から KM survival curve を matched window T=1500 で推定 (agg は S5.5 §3.3 と同一の re-censor 規約)。
 
-### Headline 差し替え (proposal / oral 用)
+**対象物の明示 (必須規約)**: 本 stage の S(τ) は **agent lifetime** (birth → 退場) の survival であって **round-trip horizon ではない**。agg の RT horizon median = 2 / rt/agent/step = 0.209 は YH005_1 (median=2, 0.21) と完全一致で RT 定義 drift なし — agent lifetime median ≈ 390 とは別対象の統計量。以後、数字には必ず対象物ラベル (agent lifetime τ / RT horizon h) を付ける (レビューで取り違えが3回発生した実績があり、oral でも確実に起きるため)。
 
-> **raw「LOB censoring 81.1% vs agg 0.9%」は horizon 交絡 (T=1500 vs 50000、33x) を含むため retire。以後は matched S(τ) を引用する:**
-> **matched τ=1499 で S(τ): LOB 73.0% (C3) / 91.0% (C2) vs agg 1.3% (C0p) / 1.8% (C0u) — gap 52x (uniform) / 58x (pareto)**
+### Headline (proposal / oral 用、Yuito review 2026-06-07 反映)
 
-### KM S(τ) 表 (`tab_S5.7_survival_matched.csv`、bootstrap 95% CI は trial-level n=10,000)
+> **raw「LOB censoring 81.1% vs agg 0.9%」は horizon 交絡 (T=1500 vs 50000、33x) を含むため retire。headline は τ 不変な hazard 構造で張る:**
+>
+> **aggregate の agent 退場 hazard は早期 ramp (wealth buffer 消化) 後 ~3×10⁻³/step で安定し続ける (median agent lifetime ≈ 390 step)。LOB は τ ≲ 250 の初期 shake-out 後 hazard → 0 で凍結する。**
+>
+> 補助数値として: matched **窓末 τ=1499 の survival ratio** = 52x (uniform: C2/C0u) / 58x (pareto: C3/C0p)、必ず curve (`fig_S5.7_survival_curves.png`) 添付で。lead は 52x (uniform = wealth heterogeneity なしの純 microstructure 効果)、58x は併記。58 > 52 の順序は S3 の wealth-persistence 非対称と整合するが、agg 側 CI がほぼ接しているため重みは載せない。
 
-| τ | C0u (agg, re-censor) | C0p (agg, re-censor) | C2 (LOB) | C3 (LOB) |
+注意: survival ratio は τ とともに単調増大する (τ=250 では ~1.9x、τ=1499 で 52x) — これは「agg → 0 / LOB plateau」の積分結果。**52x 単独を τ ラベルなしで出すのは endpoint cherry-pick に見えるため禁止**。
+
+### KM S(τ) 表 (`tab_S5.7_survival_matched.csv`、CI は trial-level bootstrap n=10,000)
+
+| agent lifetime τ | C0u (agg, re-censor) | C0p (agg, re-censor) | C2 (LOB) | C3 (LOB) |
 |---:|---:|---:|---:|---:|
+| 100 | 0.921 [0.917, 0.924] | 0.839 [0.836, 0.842] | 0.963 [0.958, 0.967] | 0.805 [0.799, 0.811] |
 | 250 | 0.720 [0.713, 0.728] | 0.629 [0.623, 0.635] | 0.925 [0.918, 0.932] | 0.748 [0.741, 0.755] |
 | 500 | 0.372 [0.363, 0.381] | 0.313 [0.306, 0.320] | 0.913 [0.905, 0.921] | 0.733 [0.725, 0.740] |
 | 1000 | 0.076 [0.071, 0.082] | 0.062 [0.058, 0.067] | 0.910 [0.902, 0.918] | 0.731 [0.723, 0.738] |
 | 1499 | **0.0175** [0.0145, 0.0210] | **0.0127** [0.0101, 0.0153] | **0.9102** [0.9019, 0.9184] | **0.7304** [0.7228, 0.7382] |
 
-### Hazard 構造 (`fig_S5.7_survival_curves.png`)
+τ=250 行が「agg は median 近傍 / LOB はまだ ~0.75–0.93」を一目で出す — hazard 差が窓中盤から開いていて endpoint 専用の効果でないことの先回り反証。
 
-- **aggregate**: log-y で S(τ) がほぼ直線 = per-step hazard ほぼ一定 (Λ(τ) 線形増加、Λ(1499) ≈ 4.0–4.4)
-- **LOB**: τ ≈ 250 までの初期 shake-out (C3 は Pareto 下位の早期退場で S が 0.75 まで低下、S3 finding と整合) の後、hazard ≈ 0 で plateau (Λ(1499) ≈ 0.09–0.31)
-- → gap は「LOB の per-step hazard が初期以降ほぼゼロ」という hazard 構造の違いで、run-length では説明できない。「LOB friction が agent turnover を止める」が curve 全体で確定
+### 区間平均 hazard ΔΛ/Δτ (`tab_S5.7_hazard_segments.csv`、Λ(τ) ≡ −ln S_KM(τ)、Nelson-Aalen ではない)
+
+| 区間 | C0u | C0p | C2 | C3 |
+|---|---:|---:|---:|---:|
+| [0, 100] | 8.3e-4 | 1.8e-3 | 3.8e-4 | **2.2e-3** |
+| [100, 250] | 1.6e-3 | 1.9e-3 | 2.7e-4 | 4.9e-4 |
+| [250, 500] | 2.7e-3 | 2.8e-3 | 5.3e-5 | 8.3e-5 |
+| [500, 750] | 3.1e-3 | 3.2e-3 | 9.2e-6 | 1.0e-5 |
+| [750, 1499] | ~3.0e-3 | ~3.2e-3 | ≤2.4e-6 | ≤1.2e-6 |
+
+- **aggregate**: hazard は [0,250] で ramp (wealth buffer — 若い agent は資産が尽きるまで猶予) し、τ ≳ 500 で ~3.0–3.2e-3/step に安定。「一定 hazard」は τ ≳ 250 限定の表現にする
+- **LOB C3**: 初期 [0,100] の hazard 2.2e-3 は **agg と同 order** (Pareto 下位の shake-out は実質的な退場 dynamics) → その後 2 桁以上 collapse して凍結
+- **LOB C2**: 初期から低く (~4e-4)、τ ≳ 250 でほぼ 0
 
 ### 方法論ノート
 
 - **S5.5 整合 assertion PASS**: matched censoring 率 25.4% / 22.4% / 91.0% / 73.0% が S5.5 §3.3 と完全一致 (re-censor 規約の検算)
-- **KM の risk-set 補正は agg を上方修正**: naive 推定 (S(1499) = 0.5% / 0.1%) → KM (1.75% / 1.27%)。agg は birth が窓内に分散するため naive は下方バイアス。**gap の引用は KM 値 52–58x を使う** (naive の ~100x-級は過大)
+- **KM の risk-set 補正は agg を上方修正**: naive 推定 (S(1499) = 0.5% / 0.1%) → KM (1.75% / 1.27%)。agg は birth が窓内に分散するため naive は下方バイアス。**ratio の引用は KM 値 52x/58x** (naive の ~100x-級は過大)。naive は hazard が τ で加速して見える artifact もある (KM で平坦化)
+- figure の band は **Greenwood 95%** (pooled iid 仮定)、grid 点の marker は **trial-level bootstrap 95%** (clustering 込み、Greenwood の 1.0–1.5x 幅)。curve は KM を描く (naive を描くと曲がって「定常 hazard」主張と矛盾して見える)
 - censoring 率比較 (S5.5 の 3.6x framing) は birth-time composition に汚染された estimand なので、S(τ) matched が proposal 用の正
-- RT horizon と agent lifetime は別物 (rt_df は closed RT のみで never-closer を含まず、RT ベース S(τ) は組めない)。survival gap の主張は agent turnover の話なので lifetime ベースが正しい対象
-- **Limitations 残存**: LOB T=1500 での equilibration 未確認 (P3、T=5000–10000 数 seed check は別 stage)。c_ticks の SG 投入後 self-consistency (P2) も未処理
+- 整合検算: matched 窓内 lifetime sample 数 446/trial ÷ (100 agent × 1500 step) = 3.0e-3 births/agent/step ≈ 定常 hazard (birth rate ≈ death rate) — lifetime framing の self-consistency
+- **Limitations 残存**: LOB T=1500 での equilibration 未確認 — C2/C3 の hazard ≈ 0 plateau が定常か transient かは T > 1500 を見ないと bound できない (**S5.8 = P3 で対応、S6 の前提**)。c_ticks の SG 投入後 self-consistency (P2) は gap の解釈には効くが大きさには効かない (censoring は fill/matching 律速) ため S5.9 / robustness 一括に後置

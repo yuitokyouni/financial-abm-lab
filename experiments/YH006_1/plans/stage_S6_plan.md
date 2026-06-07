@@ -6,7 +6,7 @@
 | Status | **Draft (Yuito 承認待ち)** |
 | 想定 runtime | Win 5 分 (calibration) + Mac 1.5-3 時間 (smoke + determinism + 100 trial) + Win 30 分 (aggregation) |
 | 新規 sim | LOB 100 trial (C3_A3、Mac で実行) |
-| 前提 | S5 完走済 (`data/ensemble_summary.parquet` 600 行)、S5.5/S5.6 統合判定で S6 進行 GO ([[stage-s5p5-diff]] [[stage-s5p6-diff]]) |
+| 前提 | S5 完走済 (`data/ensemble_summary.parquet` 600 行)、S5.5/S5.6 統合判定で S6 進行 GO ([[stage-s5p5-diff]] [[stage-s5p6-diff]])。**追加 gate (Yuito review 2026-06-07 ④): S5.8 (LOB equilibration check) の H_frozen 判定が先行必須** — A3 lifetime cap は「観測された長 lifetime が定常」を暗黙仮定しており、S5.8 で H_transient なら本 plan は再設計 |
 
 本 plan は仮説 A revised (「LOB Pareto 条件下では initial wealth distribution の persistence が dominant 因子」) の **direct causal test**。S4-S5 (A1 ablation) と同じ Phase 1 後方互換 protocol で実装、C3_A3 が L3 KPI を pass すれば「Pareto wealth persistence chain が F1 機構の中核」を確定。
 

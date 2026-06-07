@@ -11,6 +11,8 @@
     1499
   ],
   "n_boot": 10000,
+  "estimand": "agent lifetime survival (round-trip horizon ではない)",
+  "cum_hazard_definition": "Λ(τ) ≡ −ln S_KM(τ) (Nelson-Aalen ではない)",
   "recensor_protocol": "subsample_aggregate.recensor_lifetime_T1500 と同一",
   "consistency_vs_S5.5": {
     "C0u": {
@@ -30,6 +32,11 @@
       "censoring_rate": 0.7304068366079907
     }
   },
+  "cross_experiment_check": {
+    "C0u_rt_horizon_median": 2.0,
+    "C0u_rt_per_agent_step": 0.209,
+    "note": "YH005_1 (median=2, 0.21 rt/agent/step) と一致 — RT 定義 drift なし。agg lifetime median ≈ 390 と RT horizon median = 2 は別対象の統計量"
+  },
   "headline_S_matched_1499": {
     "C0u": 0.017541685050059565,
     "C0p": 0.012655605265997507,
@@ -40,6 +47,177 @@
     "uniform_C2_over_C0u": 51.89058491827292,
     "pareto_C3_over_C0p": 57.71378405380279
   },
+  "hazard_segments": [
+    {
+      "tau_lo": 0,
+      "tau_hi": 100,
+      "avg_hazard": 0.0008260340510571573,
+      "cond": "C0u"
+    },
+    {
+      "tau_lo": 100,
+      "tau_hi": 250,
+      "avg_hazard": 0.0016353830571968675,
+      "cond": "C0u"
+    },
+    {
+      "tau_lo": 250,
+      "tau_hi": 500,
+      "avg_hazard": 0.0026463393948347055,
+      "cond": "C0u"
+    },
+    {
+      "tau_lo": 500,
+      "tau_hi": 750,
+      "avg_hazard": 0.0030798243094272894,
+      "cond": "C0u"
+    },
+    {
+      "tau_lo": 750,
+      "tau_hi": 1000,
+      "avg_hazard": 0.0032552237368162194,
+      "cond": "C0u"
+    },
+    {
+      "tau_lo": 1000,
+      "tau_hi": 1250,
+      "avg_hazard": 0.0029117908234889836,
+      "cond": "C0u"
+    },
+    {
+      "tau_lo": 1250,
+      "tau_hi": 1499,
+      "avg_hazard": 0.0029797983848867944,
+      "cond": "C0u"
+    },
+    {
+      "tau_lo": 0,
+      "tau_hi": 100,
+      "avg_hazard": 0.0017610324827479612,
+      "cond": "C0p"
+    },
+    {
+      "tau_lo": 100,
+      "tau_hi": 250,
+      "avg_hazard": 0.0019186603024321125,
+      "cond": "C0p"
+    },
+    {
+      "tau_lo": 250,
+      "tau_hi": 500,
+      "avg_hazard": 0.002790068333970934,
+      "cond": "C0p"
+    },
+    {
+      "tau_lo": 500,
+      "tau_hi": 750,
+      "avg_hazard": 0.003192901628414222,
+      "cond": "C0p"
+    },
+    {
+      "tau_lo": 750,
+      "tau_hi": 1000,
+      "avg_hazard": 0.0032674700951613074,
+      "cond": "C0p"
+    },
+    {
+      "tau_lo": 1000,
+      "tau_hi": 1250,
+      "avg_hazard": 0.003138221261372838,
+      "cond": "C0p"
+    },
+    {
+      "tau_lo": 1250,
+      "tau_hi": 1499,
+      "avg_hazard": 0.0032473390945756903,
+      "cond": "C0p"
+    },
+    {
+      "tau_lo": 0,
+      "tau_hi": 100,
+      "avg_hazard": 0.0003812900998808754,
+      "cond": "C2"
+    },
+    {
+      "tau_lo": 100,
+      "tau_hi": 250,
+      "avg_hazard": 0.00026558301173867753,
+      "cond": "C2"
+    },
+    {
+      "tau_lo": 250,
+      "tau_hi": 500,
+      "avg_hazard": 5.269750826187791e-05,
+      "cond": "C2"
+    },
+    {
+      "tau_lo": 500,
+      "tau_hi": 750,
+      "avg_hazard": 9.185648862356177e-06,
+      "cond": "C2"
+    },
+    {
+      "tau_lo": 750,
+      "tau_hi": 1000,
+      "avg_hazard": 2.402444177093288e-06,
+      "cond": "C2"
+    },
+    {
+      "tau_lo": 1000,
+      "tau_hi": 1250,
+      "avg_hazard": 0.0,
+      "cond": "C2"
+    },
+    {
+      "tau_lo": 1250,
+      "tau_hi": 1499,
+      "avg_hazard": 0.0,
+      "cond": "C2"
+    },
+    {
+      "tau_lo": 0,
+      "tau_hi": 100,
+      "avg_hazard": 0.002173899212252659,
+      "cond": "C3"
+    },
+    {
+      "tau_lo": 100,
+      "tau_hi": 250,
+      "avg_hazard": 0.0004876320188911654,
+      "cond": "C3"
+    },
+    {
+      "tau_lo": 250,
+      "tau_hi": 500,
+      "avg_hazard": 8.249969712689343e-05,
+      "cond": "C3"
+    },
+    {
+      "tau_lo": 500,
+      "tau_hi": 750,
+      "avg_hazard": 9.986244942450595e-06,
+      "cond": "C3"
+    },
+    {
+      "tau_lo": 750,
+      "tau_hi": 1000,
+      "avg_hazard": 8.007208116902476e-07,
+      "cond": "C3"
+    },
+    {
+      "tau_lo": 1000,
+      "tau_hi": 1250,
+      "avg_hazard": 1.2105256344263626e-06,
+      "cond": "C3"
+    },
+    {
+      "tau_lo": 1250,
+      "tau_hi": 1499,
+      "avg_hazard": 0.0,
+      "cond": "C3"
+    }
+  ],
   "table_path": "C:\\Users\\yuito\\OneDrive\\Documents\\GitHub\\speculation-game-info\\experiments\\YH006_1\\outputs\\tables\\tab_S5.7_survival_matched.csv",
-  "note": "raw headline 81.1% vs 0.9% は horizon 交絡のため retire、以後 matched S(τ) を引用 (plan §1(d))"
+  "hazard_table_path": "C:\\Users\\yuito\\OneDrive\\Documents\\GitHub\\speculation-game-info\\experiments\\YH006_1\\outputs\\tables\\tab_S5.7_hazard_segments.csv",
+  "note": "raw headline 81.1% vs 0.9% は horizon 交絡のため retire。headline は hazard 構造で張る: agg は早期 ramp 後 ~3e-3/step で安定 (median lifetime ≈390)、LOB は初期 shake-out 後 hazard→0。52x/58x は『matched 窓末 τ=1499 の survival ratio』と明示してcurve 添付で引用 (Yuito review 2026-06-07)"
 }
