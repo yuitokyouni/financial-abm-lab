@@ -39,18 +39,41 @@ sanity として T=10000 run の S(τ ≤ 1500) が S3 (T=1500 × 100 trial) の
 - runtime: S3 実測 mean ~410 s/trial (T=1500) × ~6.7 (linear scaling 仮定)
   ≈ 46 分/trial。12 trial / 8 worker ≈ 1.5–2 時間。> 4 時間/trial で stop trigger
 
-### 1.3 KPI — 延長区間の平均 hazard ΔΛ/Δτ
+### 1.3 KPI — 延長区間の segment 別 hazard ΔΛ/Δτ (v1.1 で Katahira scale に anchor)
 
-`tab_S5.8_hazard_extension.csv`: 区間 [1500, 3000], [3000, 5000], [5000, 10000] の
-ΔΛ/Δτ を C2/C3 で算出し、参照値と比較:
+`tab_S5.8_hazard_extension.csv`: 区間 [1500, 3000], [3000, 6000], [6000, 10000] の
+ΔΛ/Δτ を C2/C3 で **segment 別に** 算出 (単一平均は slow leak を隠すため禁止 —
+h→0 (真の凍結) と h=const>0 (slow leak) を分離する)。
 
-| 判定 | 基準 (両 cond) | 帰結 |
+**閾値の anchor (v1.1)**: 判定対象は「52x gap が Katahira T=50000 で生き残るか」
+なので、閾値は延長窓 8500 step ではなく T=50000 外挿に対して切る:
+- h=1e-4 → ΔΛ=0.85 で延長窓内に S 半減、T=50000 外挿で exp(−4.85) → gap 消滅。
+  1e-4 は「frozen」ではなく「遅く解ける transient」(旧 v1.0 閾値は ~5x 緩かった)
+- h=2e-5 → T=50000 外挿で exp(−0.97)≈0.38、C2 91%→~34% で gap 残存
+- anchor は自由な絶対値でなく **S5.7 C2 late-window hazard (~1e-5 オーダー、
+  `tab_S5.7_hazard_segments.csv`)**: frozen ⟺ plateau がそのまま継続
+
+| 判定 | 基準 (両 cond、全 segment) | 帰結 |
 |---|---|---|
-| **H_frozen 確定** | 全延長区間で hazard ≤ 1e-4 (agg ~3e-3 の 1/30 未満) | plateau は bounded (「half-life ≥ 7000 step」型の bound 付き)。S6 進行 GO |
-| **H_transient** | いずれかの区間で hazard ≥ 1e-3 (agg と同 order) | plateau は窓 artifact。S6 設計見直し + F1 finding の refactor を Yuito 議論 |
-| ambiguous | 中間 (1e-4 < hazard < 1e-3) | Yuito 議論 (弱い transient — bound の言い方を調整) |
+| **H_frozen** | hazard ≤ **2e-5** (S5.7 late-window の継続) | 凍結は定常、T=50000 外挿で gap 残存。S6 進行 GO、Layer-2-timescale 留保が消える |
+| **H_transient** | いずれかの segment で hazard ≥ 1e-3 (agg steady へ climb) | **rescope であって否定ではない** (§1.4)。S6 設計は要調整、Yuito 議論 |
+| **H_partial_freeze** (dead zone 2e-5–1e-3、**pre-registered**) | slow leak | S6 GO だが A3 解釈を「partial freeze の解除」に限定、headline を「T < X で凍結」に qualify (X = 外挿で gap 半減する T)。6 seed では hazard 値の解像不足 — 値そのものは headline しない |
 
-補助: S(10000) 点推定、wealth persistence (w_init vs 生存) が延長窓でも保持されるか。
+補助: 最終 segment hazard で T=50000 へ外挿した S(50000) と gap 残存率、
+segment trend (decaying→0 / constant)、S(10000) 点推定。
+agg は full T=50000 データで hazard constancy を extinction まで確認
+(外挿妥当性の裏付け、post-processing only)。
+
+### 1.4 判定後の構え (P3) — どちらも proposal の勝ち筋
+
+本 stage は proposal Limitations の Layer-2-timescale 留保 (LOB T=1500 = Katahira/33)
+を直接 test している:
+- **H_frozen** → 「凍結は定常、有限 T artifact ではない」を実証 = 留保が 1 つ消える
+- **H_transient** → 52x finding は死なない。T=1500 (≒ Katahira/33) での測定値として
+  真のまま、「friction-induced transient freeze が τ~X で解ける」へ rescope =
+  留保が測定済みの result に格上げ
+- → H_transient を panic 扱いしない。どちらに転んでも hand-wave が数字に変わる
+  **no-lose 診断** として oral で位置づける
 
 ## 2. 作業項目
 
@@ -67,10 +90,24 @@ sanity として T=10000 run の S(τ ≤ 1500) が S3 (T=1500 × 100 trial) の
 
 ```bash
 cd experiments/YH006_1 && git pull
-python -m code.lob_extension_ensemble --determinism-only   # smoke (seed=1000 × 2、T=3000 短縮版で guard)
+python -m code.lob_extension_ensemble --determinism-only   # S3 等価チェック + guard
 python -m code.lob_extension_ensemble                      # 12 trial
 git add data/ logs/ && git commit && git push
 ```
+
+**S3 等価チェック (v1.1 P1、fail-fast)**: 12 trial の前に C3 seed=1000 を
+`main_steps=1500` override で 1 回走らせ (~7 分)、archived S3 出力 (`data/C3/`) と
+semantic 一致 (rt_df 全列 + lifetimes (t_birth, t_end, censored) 集合) を確認。
+determinism guard (T=3000) は override 機構と worker の決定性を見るが S3 参照を
+持たない — 「override=1500 == S3 default」(run 長が前半 [0,1500] に漏れる経路の
+不在) はこのチェックだけが経験的に確定する。fail なら 12 trial (2h) を走らせずに
+停止。
+
+**T 不変性の事前確認 (P5、確認済 2026-06-07)**: SG は MARKET_ORDER + self-cancel +
+opposing-liquidity guard で全て per-step reactive。MMFCN の limit order は
+`ttl = timeWindowSize ∈ [100, 200]` (config 定数、T の関数ではない) で期限切れ —
+T=10000 でも stale order の book 堆積 / O(N²) 再燃の経路なし。periodic reset 類も
+なし。4h/trial trigger は保険として維持。
 
 ### 2.3 Windows — KM 延長 + 判定 (~15 分)
 
@@ -108,4 +145,5 @@ git add data/ logs/ && git commit && git push
 
 | Version | 内容 |
 |---|---|
-| v1.0 (本書、Draft) | Yuito review 2026-06-07 ③④ を受けて起案。P3 を S6 の論理的前提として強制順序化 (A3 は「長 lifetime が定常」を暗黙仮定)。T=10000 のみ 6 seed × C2/C3 (T=5000 は nested 読み)、KPI は延長区間 ΔΛ/Δτ の 1e-4 / 1e-3 閾値で H_frozen / H_transient 判別。 |
+| v1.0 (Draft) | Yuito review 2026-06-07 ③④ を受けて起案。P3 を S6 の論理的前提として強制順序化 (A3 は「長 lifetime が定常」を暗黙仮定)。T=10000 のみ 6 seed × C2/C3 (T=5000 は nested 読み)、KPI は延長区間 ΔΛ/Δτ の 1e-4 / 1e-3 閾値で H_frozen / H_transient 判別。 |
+| v1.1 (本書) | Yuito 2nd review 反映: (P1) S3 等価チェック (override=1500 == archived S3) を Mac 12 trial の**前**に fail-fast で前倒し。(P2) H_frozen 閾値を 1e-4 → **2e-5** に締め直し (旧値は T=50000 外挿で gap が消える「遅い transient」を frozen と誤判定、~5x 緩かった)、anchor は S5.7 C2 late-window hazard。segment を [1500,3000]/[3000,6000]/[6000,10000] に分割し h→0 / h=const (slow leak) を分離、dead zone (2e-5–1e-3) の処理を pre-register (= H_partial_freeze: S6 GO + A3 解釈限定 + headline qualify)。T=50000 外挿 + agg full-window constancy check (P5) を追加。(P3) H_transient = rescope であって否定ではない、を判定 message と plan に明記。(P5) liquidity guard の T 不変性を事前確認済 (MMFCN ttl ≤ 200 = 定数、SG は per-step reactive)。6 seed は binary gate には十分だが hazard 点推定は headline しない。 |

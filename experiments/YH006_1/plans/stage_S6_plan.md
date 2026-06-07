@@ -63,6 +63,8 @@ GLOSSARY L3:
 - 5 主指標で PASS 件数を集計
 - **補助 (中間予測整合性)**: A3 で `wealth_persistence_rho` (S3 で C3 = −0.011) が変化するか、`forced_retire_rate` が C3 (0.0003) から大きく上昇するか (lifetime cap は強制退場を増やすはず)
 
+**成功条件の限定 (Yuito review 2026-06-07 P4)**: lifetime 分布の変化 (`forced_retire_rate`↑、`p25 lifetime`↓ 等) は **manipulation check であって成功条件ではない** — cap したら lifetime が cap されるのはトートロジー。claim できる因果は「**凍結 tail を除くと funnel が戻る** (bin_var_slope が agg 水準へ寄る) = 凍結 tail が funnel を弱める原因」のみ。また τ_max (p25 ベース 121) が S5.7 shake-out 帯 [0,250] と重なるのは「同じ C3 lifetime 分布の下位 tail 特徴量どうし」で construction 上相関しているだけ — 独立な機構の alignment として売らない (examiner は独立性を突く)。
+
 S6 で interaction が **部分縮小** で十分 (L2 は 50% 縮小要求だった、L3 は 30% で OK) — chain validation は完全因果特定より緩い基準。
 
 ### 0.5 Phase 1 後方互換拡張 (S4 §0.4 同 protocol 継承)

@@ -1,10 +1,13 @@
 """S5.8 LOB extension runner — C2/C3 × T=10000 × 数 seed (Mac 側専用).
 
-S5.8 plan §2.2:
-  1. determinism guard: C3 seed=1000 を main_steps=3000 (短縮版) で 2 回独立 run、
-     4 parquet sha256 + rt_df semantic 比較 (main_steps override が RNG 消費順を
-     変えていないかの確認)
-  2. C2/C3 × seed 1000-1005 を main_steps=10000 で並列実行、
+S5.8 plan §2.2 (v1.1 で S3 等価チェックを前倒し):
+  1. S3 等価チェック (fail-fast、~7 分): C3 seed=1000 を override main_steps=1500
+     で 1 回走らせ、archived S3 出力 (data/C3/) と semantic 一致確認。
+     override=1500 == S3 default が成立しなければ、PAMS のどこかに run 長が
+     前半 [0,1500] に漏れる経路がある = 12 trial (2h) を走らせる前に止める
+  2. determinism guard: C3 seed=1000 を main_steps=3000 (短縮版) で 2 回独立 run、
+     4 parquet sha256 + rt_df semantic 比較 (override 機構 + worker の決定性)
+  3. C2/C3 × seed 1000-1005 を main_steps=10000 で並列実行、
      `data/{cond}_T10k/` に 4 schema parquet 出力
 
 集計 (KM 延長 + H_frozen / H_transient 判定) は Windows 側
@@ -134,6 +137,55 @@ def determinism_guard_extension(
 
 
 # ---------------------------------------------------------------------------
+# S3 等価チェック (S5.8 plan v1.1 P1) — override=1500 == archived S3 を fail-fast
+# ---------------------------------------------------------------------------
+
+def s3_equivalence_check(
+    cond: str, seed: int, logger: logging.Logger,
+) -> bool:
+    """override main_steps=1500 の 1 run が archived S3 出力と semantic 一致するか。
+
+    determinism guard (main_steps=3000) は S3 参照を持たないため、
+    『override 経路が default 経路と同一』はこのチェックだけが確定させる。
+    比較は semantic (rt_df 全列 + lifetimes の (t_birth, t_end, censored) 集合) —
+    parquet metadata 差で sha256 が割れても中身一致なら PASS (S3 guard と同規約)。
+    """
+    from run_experiment import run_lob_trial
+    ref_dir = DATA_DIR / cond
+    ref_trial = ref_dir / f"trial_{seed:04d}.parquet"
+    ref_lt = ref_dir / f"lifetimes_{seed:04d}.parquet"
+    if not (ref_trial.exists() and ref_lt.exists()):
+        logger.error(f"[s3-check] archived S3 data なし: {ref_trial}")
+        return False
+
+    logger.info(f"[s3-check] {cond} seed={seed} を override main_steps=1500 で実行")
+    out_dir = DATA_DIR / "_guard_s3_equiv"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    run_lob_trial(cond, seed, main_steps=1500).to_parquets(out_dir)
+
+    cols_rt = ["agent_id", "rt_idx", "t_open", "t_close", "horizon",
+               "direction", "q", "delta_g"]
+    rt_new = pd.read_parquet(out_dir / f"trial_{seed:04d}.parquet")[cols_rt].to_numpy()
+    rt_ref = pd.read_parquet(ref_trial)[cols_rt].to_numpy()
+    rt_match = np.array_equal(rt_new, rt_ref)
+
+    cols_lt = ["t_birth", "t_end", "censored"]
+    lt_new = pd.read_parquet(out_dir / f"lifetimes_{seed:04d}.parquet")
+    lt_ref = pd.read_parquet(ref_lt)
+    lt_match = (
+        sorted(map(tuple, lt_new[cols_lt].to_numpy().tolist()))
+        == sorted(map(tuple, lt_ref[cols_lt].to_numpy().tolist()))
+    )
+    logger.info(
+        f"[s3-check] rt_df ({len(rt_new)} vs {len(rt_ref)} rows): "
+        f"{'MATCH' if rt_match else 'MISMATCH'} | "
+        f"lifetimes ({len(lt_new)} vs {len(lt_ref)}): "
+        f"{'MATCH' if lt_match else 'MISMATCH'}"
+    )
+    return rt_match and lt_match
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -146,6 +198,8 @@ def main() -> None:
     parser.add_argument("--n-workers", type=int, default=None)
     parser.add_argument("--skip-determinism", action="store_true")
     parser.add_argument("--determinism-only", action="store_true")
+    parser.add_argument("--skip-s3-check", action="store_true",
+                        help="S3 等価チェック (override=1500 == archived S3) を skip")
     args = parser.parse_args()
 
     logger = setup_logger()
@@ -164,10 +218,23 @@ def main() -> None:
     )
     logger.info("=" * 70)
 
+    guard_cond = "C3" if "C3" in conds else conds[0]
+
+    # ----- Step A0: S3 等価チェック (P1、fail-fast、~7 分) -----
+    s3_pass = True
+    if not args.skip_s3_check:
+        s3_pass = s3_equivalence_check(guard_cond, args.seed_base, logger)
+        if not s3_pass:
+            logger.error(
+                "S3 等価チェック FAILED — override=1500 != archived S3。"
+                "run 長が前半 [0,1500] に漏れる経路あり、12 trial を中止して "
+                "Yuito 相談 (plan §4)"
+            )
+            return
+
     # ----- Step A: determinism guard (main_steps override 経路、短縮版) -----
     determinism_pass = True
     if not args.skip_determinism:
-        guard_cond = "C3" if "C3" in conds else conds[0]
         determinism_pass = determinism_guard_extension(
             guard_cond, args.seed_base, GUARD_MAIN_STEPS, logger,
         )
@@ -206,6 +273,7 @@ def main() -> None:
         "main_steps": args.main_steps,
         "guard_main_steps": GUARD_MAIN_STEPS,
         "n_workers": n_workers,
+        "s3_equivalence_pass": s3_pass,
         "determinism_pass": determinism_pass,
         "runtimes_sec": runtimes,
         "timestamp": datetime.now().isoformat(),

@@ -4,11 +4,21 @@ S5.8 plan §2.3:
   - `data/{C2,C3}_T10k/lifetimes_*.parquet` (6 seed) から KM S(τ)、τ ∈ [1, 10000]
   - sanity (§3.2): 同 seed の T=1500 run (data/C2, data/C3) と前半 1500 step の
     lifetime 集合が exact 一致するか (sequential sim なので run 長は前半に影響しない)
-  - agg 参照: C0u/C0p を T_window=10000 で re-censor して同 protocol で KM
-  - KPI: 延長区間 [1500,3000] / [3000,5000] / [5000,10000] の ΔΛ/Δτ
-      H_frozen 確定: 全区間 ≤ 1e-4 (両 cond) → S6 進行 GO
-      H_transient:   いずれか ≥ 1e-3 → S6 再設計 + F1 refactor 議論
-      ambiguous:     中間 → Yuito 議論
+  - agg 参照: C0u/C0p を T_window=10000 で re-censor して同 protocol で KM。
+    さらに full window (T=50000) の agg hazard constancy を extinction まで確認
+    (T=50000 外挿の妥当性の裏付け、P5)
+  - KPI (plan v1.1 P2 — 閾値は Katahira T=50000 での gap 生存に anchor):
+      延長区間 [1500,3000] / [3000,6000] / [6000,10000] の ΔΛ/Δτ を segment 別に見る
+      (単一平均は slow leak を隠すため禁止)。
+      H_frozen:      全区間 ≤ 2e-5 (S5.7 C2 late-window ~1e-5 オーダーの継続、
+                     T=50000 外挿で gap 残存) → S6 進行 GO
+      H_transient:   いずれか ≥ 1e-3 (agg steady 3.0-3.2e-3 へ climb)
+                     → rescope (T=1500 測定値としては真、freeze が解ける τ を報告)
+      H_partial_freeze (dead zone 2e-5 - 1e-3、pre-registered):
+                     slow leak。S6 GO だが A3 解釈を「partial freeze の解除」に限定、
+                     headline を「T < X で凍結」に qualify (X = 外挿で gap が
+                     半減する T)。6 seed では hazard 点推定の解像不足のため
+                     値そのものは headline しない
 
 Run (Windows、Mac データ git pull 後):
   cd experiments/YH006_1
@@ -50,11 +60,17 @@ LOB_CONDS = ["C2", "C3"]
 AGG_CONDS = ["C0u", "C0p"]
 
 TAU_GRID_EXT = [1500, 2000, 3000, 5000, 7500, 9999]
-HAZARD_EDGES_EXT = [0, 250, 1500, 3000, 5000, 9999]
-EXT_SEGMENTS = [(1500, 3000), (3000, 5000), (5000, 9999)]
+HAZARD_EDGES_EXT = [0, 250, 1500, 3000, 6000, 9999]
+EXT_SEGMENTS = [(1500, 3000), (3000, 6000), (6000, 9999)]
+AGG_FULL_SEGMENTS = [(1500, 5000), (5000, 15000), (15000, 30000), (30000, 49999)]
 
-H_FROZEN_MAX = 1e-4     # plan §1.3 — agg ~3e-3 の 1/30 未満
-H_TRANSIENT_MIN = 1e-3  # agg と同 order
+# 閾値 (plan v1.1 P2): Katahira T=50000 での gap 生存に anchor。
+#   h=1e-4 だと S(50000) ≈ S(1500)·exp(−1e-4×48500) で gap はほぼ消える (緩すぎ)。
+#   h=2e-5 → exp(−0.97)≈0.38、C2 91%→~34% で agg (~0) との gap が残る。
+#   anchor: S5.7 C2 late-window hazard (tab_S5.7_hazard_segments.csv、~1e-5 オーダー)
+H_FROZEN_MAX = 2e-5
+H_TRANSIENT_MIN = 1e-3  # agg steady 3.0-3.2e-3 と同 order へ climb
+T_KATAHIRA = 50_000
 
 
 def setup_logger() -> logging.Logger:
@@ -171,17 +187,29 @@ def sanity_first_window(
 def classify_extension(
     ext_hazards: Dict[str, List[Dict[str, float]]],
 ) -> Tuple[str, str]:
+    """plan v1.1 P2 の pre-registered 判定。
+
+    P3 注意: H_transient は F1 の否定ではなく rescope (T=1500 ≒ Katahira/33 での
+    測定値としては真のまま、「friction-induced transient freeze が τ~X で解ける」
+    へ格上げ)。どちらに転んでも Layer-2-timescale 留保が測定済み result になる。
+    """
     all_h = [seg["avg_hazard"] for segs in ext_hazards.values() for seg in segs]
     if all(h <= H_FROZEN_MAX for h in all_h):
         return ("H_frozen",
-                f"全延長区間の hazard ≤ {H_FROZEN_MAX:.0e} (max={max(all_h):.2e}) "
-                f"→ plateau は bounded (定常凍結)。S6 進行 GO")
+                f"全延長区間 hazard ≤ {H_FROZEN_MAX:.0e} (max={max(all_h):.2e}) — "
+                f"S5.7 C2 late-window plateau の継続、T=50000 外挿でも gap 残存 "
+                f"→ 凍結は定常。S6 進行 GO、Layer-2-timescale 留保が消える")
     if any(h >= H_TRANSIENT_MIN for h in all_h):
         return ("H_transient",
-                f"延長区間に hazard ≥ {H_TRANSIENT_MIN:.0e} あり (max={max(all_h):.2e}) "
-                f"→ T=1500 plateau は窓 artifact。S6 再設計 + F1 refactor を Yuito 議論")
-    return ("ambiguous",
-            f"中間 (max={max(all_h):.2e}) — 弱 transient、bound の言い方を Yuito 議論")
+                f"延長区間に hazard ≥ {H_TRANSIENT_MIN:.0e} (max={max(all_h):.2e}) — "
+                f"agg steady へ climb。F1 は T=1500 測定値として真のまま "
+                f"『freeze が解ける τ』へ rescope (panic 不要)。S6 設計は要調整、"
+                f"Yuito 議論")
+    return ("H_partial_freeze",
+            f"dead zone (max={max(all_h):.2e} ∈ [2e-5, 1e-3]) — slow leak。"
+            f"pre-registered 処理: S6 GO だが A3 解釈を『partial freeze の解除』に"
+            f"限定、headline は『T < X で凍結』に qualify。6 seed では hazard 値の"
+            f"解像不足、値そのものは headline しない")
 
 
 # ---------------------------------------------------------------------------
@@ -253,6 +281,53 @@ def main() -> None:
                     f"{seg['avg_hazard']:.2e}/step"
                 )
 
+    # ----- P5: agg full-window (T=50000) hazard constancy (外挿妥当性の裏付け) -----
+    agg_full_segments: Dict[str, List[Dict[str, float]]] = {}
+    agg_S_50k: Dict[str, float] = {}
+    for cond in AGG_CONDS:
+        lt = load_lifetimes_window(cond, SEEDS_FULL, T_KATAHIRA, recensor=False)
+        D, C = count_matrices(lt, SEEDS_FULL, T_KATAHIRA)
+        S_full = km_from_counts(D.sum(axis=0), C.sum(axis=0))
+        agg_S_50k[cond] = float(S_full[T_KATAHIRA - 1])
+        segs = []
+        for lo, hi in AGG_FULL_SEGMENTS:
+            h = float((-np.log(max(S_full[hi], 1e-12))
+                       + np.log(max(S_full[lo], 1e-12))) / (hi - lo))
+            segs.append({"tau_lo": lo, "tau_hi": hi, "avg_hazard": h})
+            logger.info(f"[agg-full] {cond} [{lo},{hi}]: {h:.2e}/step")
+        agg_full_segments[cond] = segs
+        hs = [s["avg_hazard"] for s in segs]
+        logger.info(
+            f"[agg-full] {cond} constancy: max/min = "
+            f"{max(hs) / max(min(hs), 1e-12):.2f}x "
+            f"(≈1 なら extinction まで一定 hazard、T=50000 外挿は妥当) | "
+            f"S(49999) = {agg_S_50k[cond]:.2e}"
+        )
+
+    # ----- P2: T=50000 外挿 — gap が Katahira スケールで生き残るか -----
+    extrap: Dict[str, Dict[str, float]] = {}
+    for cond in LOB_CONDS:
+        h_last = ext_hazards[cond][-1]["avg_hazard"]
+        S_9999 = float(curves[cond][9999])
+        S_50k = S_9999 * float(np.exp(-h_last * (T_KATAHIRA - 9999)))
+        agg_ref = max(np.mean(list(agg_S_50k.values())), 1e-12)
+        extrap[cond] = {
+            "h_last_segment": h_last,
+            "S_9999": S_9999,
+            "S_50000_extrap": S_50k,
+            "gap_vs_agg_50k": S_50k / agg_ref,
+        }
+        logger.info(
+            f"[extrap] {cond}: h_last={h_last:.2e} S(9999)={S_9999:.3f} → "
+            f"S(50000)≈{S_50k:.3f}, gap vs agg ≈ {S_50k / agg_ref:,.0f}x"
+        )
+        # slow-leak 判別: 区間 hazard の trend (→0 か const か)
+        hs = [s["avg_hazard"] for s in ext_hazards[cond]]
+        trend = ("decaying→0" if hs[-1] < 0.5 * max(hs[0], 1e-12)
+                 else "constant (slow leak 注意)")
+        extrap[cond]["segment_trend"] = trend
+        logger.info(f"[extrap] {cond} segment trend: {hs} → {trend}")
+
     # ----- KPI 判定 -----
     verdict, verdict_msg = classify_extension(ext_hazards)
     logger.info(f"[verdict] {verdict} — {verdict_msg}")
@@ -260,9 +335,14 @@ def main() -> None:
     # ----- 出力 -----
     pd.DataFrame(rows).to_csv(
         OUTPUTS_DIR / "tables" / "tab_S5.8_survival_extension.csv", index=False)
-    haz_rows = [dict(cond=c, **seg) for c, segs in ext_hazards.items()
-                for seg in segs]
-    pd.DataFrame(haz_rows)[["cond", "tau_lo", "tau_hi", "avg_hazard"]].to_csv(
+    haz_rows = (
+        [dict(cond=c, window="ext_T10k", **seg)
+         for c, segs in ext_hazards.items() for seg in segs]
+        + [dict(cond=c, window="agg_full_T50k", **seg)
+           for c, segs in agg_full_segments.items() for seg in segs]
+    )
+    pd.DataFrame(haz_rows)[
+        ["cond", "window", "tau_lo", "tau_hi", "avg_hazard"]].to_csv(
         OUTPUTS_DIR / "tables" / "tab_S5.8_hazard_extension.csv", index=False)
 
     import matplotlib.pyplot as plt
@@ -300,12 +380,23 @@ def main() -> None:
         "seeds_ext": SEEDS_EXT,
         "verdict": verdict,
         "verdict_message": verdict_msg,
-        "thresholds": {"H_frozen_max": H_FROZEN_MAX,
-                       "H_transient_min": H_TRANSIENT_MIN},
+        "thresholds": {
+            "H_frozen_max": H_FROZEN_MAX,
+            "H_transient_min": H_TRANSIENT_MIN,
+            "anchor": ("Katahira T=50000 での gap 生存 (h=2e-5 → exp(−0.97)≈0.38 で"
+                       "gap 残存; 1e-4 だと消える) + S5.7 C2 late-window hazard"),
+            "pre_registered_dead_zone": ("S6 GO だが A3 解釈を partial freeze 解除に"
+                                         "限定、headline を『T < X で凍結』に qualify"),
+        },
         "ext_hazards": ext_hazards,
+        "agg_full_window_constancy": agg_full_segments,
+        "agg_S_50k": agg_S_50k,
+        "extrapolation_T50k": extrap,
         "S_at_grid": {c: {str(tau): float(curves[c][tau]) for tau in TAU_GRID_EXT}
                       for c in curves},
         "sanity_first_window": "PASS (exact match、stop trigger 非発火)",
+        "headline_caution": ("延長 hazard の点推定は 6 seed で CI 広 — "
+                             "値そのものは headline しない (verdict と外挿の結論のみ)"),
         "timestamp": datetime.now().isoformat(),
     }
     with open(LOGS_DIR / "S5.8_summary_for_diff.json", "w", encoding="utf-8") as f:
