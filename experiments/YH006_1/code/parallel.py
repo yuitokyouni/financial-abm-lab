@@ -25,14 +25,15 @@ def default_n_workers() -> int:
 
 
 def _worker_run_trial(
-    args: Tuple[str, int, str, Optional[int], Optional[int]],
+    args: Tuple[str, int, str, Optional[int], Optional[int], Optional[int]],
 ) -> Tuple[str, int, float, int, int, Optional[str]]:
     """Worker 関数 — 1 trial 実行 + parquet 出力 + 結果サマリ返り。
 
-    args: (cond_name, seed, out_dir_str, q_const_or_None, mmfcn_order_volume_or_None)
+    args: (cond_name, seed, out_dir_str, q_const_or_None,
+           mmfcn_order_volume_or_None, main_steps_or_None)
     return: (cond, seed, runtime_sec, n_rt, n_sub, error_str_or_None)
     """
-    cond, seed, out_str, q_const, mmfcn_ov = args
+    cond, seed, out_str, q_const, mmfcn_ov, main_steps = args
     try:
         # Workerプロセス内 import (top-level import は heavy & forks 不要)
         from run_experiment import run_one_trial
@@ -40,6 +41,7 @@ def _worker_run_trial(
         result = run_one_trial(
             cond, seed, out_dir=out_dir, is_lob_smoke=False,
             q_const=q_const, mmfcn_order_volume=mmfcn_ov,
+            main_steps=main_steps,
         )
         return (cond, seed, result.runtime_sec, result.n_round_trips,
                 result.n_substitutions, None)
@@ -56,12 +58,14 @@ def run_parallel_trials(
     logger: Optional[logging.Logger] = None,
     q_const: Optional[int] = None,
     mmfcn_order_volume: Optional[int] = None,
+    main_steps: Optional[int] = None,
 ) -> List[Tuple[int, float, int, int, Optional[str]]]:
     """seeds × cond を並列実行、(seed, runtime, n_rt, n_sub, err) のリストを返す。
 
     S4-S5 (A1 ablation): q_const を渡すと QConstSpeculationAgent 経路へ。
     S5.6 (MMFCN sensitivity): mmfcn_order_volume を渡すと cfg override 経路へ。
-    両者とも None 経路は既存挙動と bit-一致。
+    S5.8 (equilibration check): main_steps を渡すと LOB run 長 override 経路へ。
+    いずれも None 経路は既存挙動と bit-一致。
     """
     if n_workers is None:
         n_workers = default_n_workers()
@@ -71,7 +75,8 @@ def run_parallel_trials(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    args = [(cond, seed, str(out_dir), q_const, mmfcn_order_volume) for seed in seeds]
+    args = [(cond, seed, str(out_dir), q_const, mmfcn_order_volume, main_steps)
+            for seed in seeds]
     logger.info(
         f"[parallel] cond={cond} n_seeds={len(seeds)} n_workers={n_workers} out={out_dir}"
     )

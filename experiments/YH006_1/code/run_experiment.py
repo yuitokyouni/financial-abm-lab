@@ -329,13 +329,15 @@ def run_lob_trial(
     cond_name: str, seed: int,
     q_const: Optional[int] = None,
     mmfcn_order_volume: Optional[int] = None,
+    main_steps: Optional[int] = None,
 ) -> SimResult:
     """LOB full-length 1 trial (warmup=200, main=1500、Phase 1 default 設定)。
 
     `run_lob_trial_smoke` を `LOB_PARAMS` で driven。S4-S5 で `q_const` を渡すと A1
     ablation 経路 (QConstSpeculationAgent 切替) が有効。S5.6 で `mmfcn_order_volume`
     を渡すと MMFCN sensitivity scan 経路 (cfg["FCNAgents"]["orderVolume"] override)。
-    両者とも None 経路は既存挙動と bit-一致 (Phase 1 後方互換 protocol、S4 §0.4 と同)。
+    S5.8 で `main_steps` を渡すと run 長 override (LOB equilibration check 経路)。
+    いずれも None 経路は既存挙動と bit-一致 (Phase 1 後方互換 protocol、S4 §0.4 と同)。
     wealth_ts は終了時 1 snapshot のみ取る (smoke と同じ実装)。
     """
     from config import LOB_PARAMS, CONDITIONS as _CONDS  # noqa: E402
@@ -349,7 +351,7 @@ def run_lob_trial(
     return run_lob_trial_smoke(
         cond_name, seed,
         warmup_steps=p["warmup_steps"],
-        main_steps=p["main_steps"],
+        main_steps=p["main_steps"] if main_steps is None else int(main_steps),
         num_fcn=p["num_fcn"],
         num_sg=p["N_sg"],
         max_normal_orders=p["max_normal_orders"],
@@ -367,9 +369,14 @@ def run_one_trial(
     cond_name: str, seed: int, out_dir: Optional[Path] = None,
     is_lob_smoke: bool = False, q_const: Optional[int] = None,
     mmfcn_order_volume: Optional[int] = None,
+    main_steps: Optional[int] = None,
 ) -> SimResult:
     cond = CONDITIONS[cond_name]
     if cond.world == "agg":
+        if main_steps is not None:
+            raise ValueError(
+                "main_steps override は LOB 専用 (S5.8)。agg は T=50000 固定。"
+            )
         result = run_aggregate_trial(cond_name, seed)
     elif cond.world == "lob":
         if is_lob_smoke:
@@ -381,6 +388,7 @@ def run_one_trial(
             result = run_lob_trial(
                 cond_name, seed, q_const=q_const,
                 mmfcn_order_volume=mmfcn_order_volume,
+                main_steps=main_steps,
             )
     else:
         raise ValueError(f"unknown world: {cond.world}")
