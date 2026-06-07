@@ -187,12 +187,16 @@ def run_lob_trial_smoke(
     c_ticks: float = 28.0,
     q_const: Optional[int] = None,
     mmfcn_order_volume: Optional[int] = None,
+    tau_max: Optional[int] = None,
 ) -> SimResult:
     """LOB smoke (S2 plan v2 §3.5 / 修正 4): WInitLoggingSpeculationAgent の
     wiring 動作確認用。短縮 sim 長で agent parquet に w_init non-NaN を assertion。
 
     S4-S5 (ablation A1): `q_const` を非 None で渡すと QConstSpeculationAgent に切替、
-    cond の `q_rule == "const"` 必須。S6 (A3) は別 subclass で同 pattern。
+    cond の `q_rule == "const"` 必須。
+    S6 (ablation A3): cond の `lifetime_cap == True` なら `tau_max` 必須、
+    LifetimeCapSpeculationAgent に切替 (cfg["SGAgents"]["tauMax"] 注入)。
+    A1 × A3 の combine は S6 scope 外 (NotImplementedError)。
 
     本関数は PAMS が import 可能な環境でのみ動く (Mac / pams 入り Linux)。
     Windows env では ImportError、smoke は skip して diff.md で記録する。
@@ -208,10 +212,20 @@ def run_lob_trial_smoke(
     cond = CONDITIONS[cond_name]
     assert cond.world == "lob", f"{cond_name} is not LOB"
     is_ablation_a1 = (cond.q_rule == "const")
+    is_ablation_a3 = bool(cond.lifetime_cap)
     if is_ablation_a1 and q_const is None:
         raise ValueError(
             f"cond={cond_name} has q_rule='const' but q_const arg not provided. "
             f"S4 較正値を渡してください。"
+        )
+    if is_ablation_a1 and is_ablation_a3:
+        raise NotImplementedError(
+            f"cond={cond_name}: A1 × A3 combine は S6 scope 外 (plan §3.2 注意)"
+        )
+    if is_ablation_a3 and tau_max is None:
+        raise ValueError(
+            f"cond={cond_name} has lifetime_cap=True but tau_max arg not provided. "
+            f"S6 較正値 (logs/S6_tau_max_calibration.json) を渡してください。"
         )
 
     # Phase 1 configs を流用、ただし SG agent class を WInitLogging 版に差し替える
@@ -234,15 +248,22 @@ def run_lob_trial_smoke(
     if mmfcn_order_volume is not None:
         cfg["FCNAgents"]["orderVolume"] = int(mmfcn_order_volume)
     # S2: w_init logging subclass。S4-S5: A1 ablation で QConst subclass へ差替。
+    # S6: A3 ablation で LifetimeCap subclass へ差替 (tauMax 注入)。
     if is_ablation_a1:
         cfg["SGAgents"]["class"] = "QConstSpeculationAgent"
         cfg["SGAgents"]["qConst"] = int(q_const)
+    elif is_ablation_a3:
+        cfg["SGAgents"]["class"] = "LifetimeCapSpeculationAgent"
+        cfg["SGAgents"]["tauMax"] = int(tau_max)
     else:
         cfg["SGAgents"]["class"] = "WInitLoggingSpeculationAgent"
 
     from custom_saver import OrderTrackingSaver  # type: ignore
     from mm_fcn_agent import MMFCNAgent  # type: ignore
-    from sg_agent import WInitLoggingSpeculationAgent, QConstSpeculationAgent  # YH006_1 内 subclass
+    from sg_agent import (  # YH006_1 内 subclass
+        WInitLoggingSpeculationAgent, QConstSpeculationAgent,
+        LifetimeCapSpeculationAgent,
+    )
 
     saver = OrderTrackingSaver()
     runner = SequentialRunner(
@@ -250,6 +271,7 @@ def run_lob_trial_smoke(
     )
     runner.class_register(WInitLoggingSpeculationAgent)
     runner.class_register(QConstSpeculationAgent)
+    runner.class_register(LifetimeCapSpeculationAgent)
     runner.class_register(MMFCNAgent)
 
     t0 = time.perf_counter()
@@ -330,6 +352,7 @@ def run_lob_trial(
     q_const: Optional[int] = None,
     mmfcn_order_volume: Optional[int] = None,
     main_steps: Optional[int] = None,
+    tau_max: Optional[int] = None,
 ) -> SimResult:
     """LOB full-length 1 trial (warmup=200, main=1500、Phase 1 default 設定)。
 
@@ -348,6 +371,11 @@ def run_lob_trial(
             f"cond={cond_name} requires q_const (q_rule='const'). "
             f"S4 較正値を呼び出し側 (ablation_ensemble.py) で指定する。"
         )
+    if cond.lifetime_cap and tau_max is None:
+        raise ValueError(
+            f"cond={cond_name} requires tau_max (lifetime_cap=True). "
+            f"S6 較正値を呼び出し側 (ablation_a3_ensemble.py) で指定する。"
+        )
     return run_lob_trial_smoke(
         cond_name, seed,
         warmup_steps=p["warmup_steps"],
@@ -358,6 +386,7 @@ def run_lob_trial(
         c_ticks=p["c_ticks"],
         q_const=q_const,
         mmfcn_order_volume=mmfcn_order_volume,
+        tau_max=tau_max,
     )
 
 
@@ -370,6 +399,7 @@ def run_one_trial(
     is_lob_smoke: bool = False, q_const: Optional[int] = None,
     mmfcn_order_volume: Optional[int] = None,
     main_steps: Optional[int] = None,
+    tau_max: Optional[int] = None,
 ) -> SimResult:
     cond = CONDITIONS[cond_name]
     if cond.world == "agg":
@@ -383,12 +413,14 @@ def run_one_trial(
             result = run_lob_trial_smoke(
                 cond_name, seed, q_const=q_const,
                 mmfcn_order_volume=mmfcn_order_volume,
+                tau_max=tau_max,
             )
         else:
             result = run_lob_trial(
                 cond_name, seed, q_const=q_const,
                 mmfcn_order_volume=mmfcn_order_volume,
                 main_steps=main_steps,
+                tau_max=tau_max,
             )
     else:
         raise ValueError(f"unknown world: {cond.world}")

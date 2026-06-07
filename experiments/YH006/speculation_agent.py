@@ -236,6 +236,16 @@ class SpeculationAgent(Agent):
 
         self._reconcile(market_id, P_now)
 
+        # A3 ablation hook (Phase 2 S6): lifetime cap。base 実装は常に False を
+        # 返すため default 経路は既存挙動と bit-一致 (後方互換 protocol)。
+        # fire 時は bankruptcy と同じ _substitute() で交代し、残存 position /
+        # asset_volumes は次 step の stale-fill recovery (上の flatten 経路、
+        # S4 で bankruptcy substitute 後 re-init 境界用に実証済) が回収する。
+        if self.pending_intent is None and self._should_force_retire(t):
+            self._substitute(t=int(t))
+            self._record_action(t, "forced_retire")
+            return orders
+
         rec = int(self.strategies[self.active_idx, mu_t])
 
         if self.position == 0 and rec != 0:
@@ -394,6 +404,15 @@ class SpeculationAgent(Agent):
             self.v_pos[v_close_mask] = 0
             self.v_ep[v_close_mask] = 0
             self.v_ea[v_close_mask] = 0
+
+    def _should_force_retire(self, t: int) -> bool:
+        """A3 ablation hook (Phase 2 S6): lifetime cap 判定。
+
+        base は常に False = Phase 1 既存挙動 (lifetime cap なし)。
+        Phase 2 の LifetimeCapSpeculationAgent が override し、
+        在籍 (t − _last_substitute_t) ≥ τ_max で強制交代する。
+        """
+        return False
 
     def _substitute(self, t: int = 0) -> None:
         # Snapshot dead state before reset (for measurement 7)
