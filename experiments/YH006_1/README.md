@@ -295,3 +295,39 @@ plan §2.4 の SG / MMFCN fill_rate proper は OrderTrackingSaver の log を追
 - S5.5 = H_micro 強支持 (RT10k pooled bin_var が full 水準保持) ✓
 - S5.6 = H_artifact_negated_strong (ε(4x) = 0.25) ✓
 - → Phase 2 主要 finding (仮説 A 単純版反証 + 仮説 A revised + lifetime persistence) は方法論的に頑健、S6 で仮説 A revised の direct causal test を実施
+
+---
+
+## Stage S5.7 — survival function S(τ) matched-τ 比較 (KM 推定、post-processing only)
+
+### Verdict — survival gap は **hazard 起源** (run-length 起源ではない)、matched τ=1499 で **52–58x gap**
+
+Yuito 指摘 P1 (「81% vs 0.9% は T を揃えていない horizon 交絡」) への対応。新規 sim ゼロ、既存 `lifetimes_*.parquet` × 400 から KM survival curve を matched window T=1500 で推定 (agg は S5.5 §3.3 と同一の re-censor 規約)。
+
+### Headline 差し替え (proposal / oral 用)
+
+> **raw「LOB censoring 81.1% vs agg 0.9%」は horizon 交絡 (T=1500 vs 50000、33x) を含むため retire。以後は matched S(τ) を引用する:**
+> **matched τ=1499 で S(τ): LOB 73.0% (C3) / 91.0% (C2) vs agg 1.3% (C0p) / 1.8% (C0u) — gap 52x (uniform) / 58x (pareto)**
+
+### KM S(τ) 表 (`tab_S5.7_survival_matched.csv`、bootstrap 95% CI は trial-level n=10,000)
+
+| τ | C0u (agg, re-censor) | C0p (agg, re-censor) | C2 (LOB) | C3 (LOB) |
+|---:|---:|---:|---:|---:|
+| 250 | 0.720 [0.713, 0.728] | 0.629 [0.623, 0.635] | 0.925 [0.918, 0.932] | 0.748 [0.741, 0.755] |
+| 500 | 0.372 [0.363, 0.381] | 0.313 [0.306, 0.320] | 0.913 [0.905, 0.921] | 0.733 [0.725, 0.740] |
+| 1000 | 0.076 [0.071, 0.082] | 0.062 [0.058, 0.067] | 0.910 [0.902, 0.918] | 0.731 [0.723, 0.738] |
+| 1499 | **0.0175** [0.0145, 0.0210] | **0.0127** [0.0101, 0.0153] | **0.9102** [0.9019, 0.9184] | **0.7304** [0.7228, 0.7382] |
+
+### Hazard 構造 (`fig_S5.7_survival_curves.png`)
+
+- **aggregate**: log-y で S(τ) がほぼ直線 = per-step hazard ほぼ一定 (Λ(τ) 線形増加、Λ(1499) ≈ 4.0–4.4)
+- **LOB**: τ ≈ 250 までの初期 shake-out (C3 は Pareto 下位の早期退場で S が 0.75 まで低下、S3 finding と整合) の後、hazard ≈ 0 で plateau (Λ(1499) ≈ 0.09–0.31)
+- → gap は「LOB の per-step hazard が初期以降ほぼゼロ」という hazard 構造の違いで、run-length では説明できない。「LOB friction が agent turnover を止める」が curve 全体で確定
+
+### 方法論ノート
+
+- **S5.5 整合 assertion PASS**: matched censoring 率 25.4% / 22.4% / 91.0% / 73.0% が S5.5 §3.3 と完全一致 (re-censor 規約の検算)
+- **KM の risk-set 補正は agg を上方修正**: naive 推定 (S(1499) = 0.5% / 0.1%) → KM (1.75% / 1.27%)。agg は birth が窓内に分散するため naive は下方バイアス。**gap の引用は KM 値 52–58x を使う** (naive の ~100x-級は過大)
+- censoring 率比較 (S5.5 の 3.6x framing) は birth-time composition に汚染された estimand なので、S(τ) matched が proposal 用の正
+- RT horizon と agent lifetime は別物 (rt_df は closed RT のみで never-closer を含まず、RT ベース S(τ) は組めない)。survival gap の主張は agent turnover の話なので lifetime ベースが正しい対象
+- **Limitations 残存**: LOB T=1500 での equilibration 未確認 (P3、T=5000–10000 数 seed check は別 stage)。c_ticks の SG 投入後 self-consistency (P2) も未処理

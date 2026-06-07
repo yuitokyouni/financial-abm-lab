@@ -1,0 +1,45 @@
+{
+  "stage": "S5.7",
+  "T_window": 1500,
+  "tau_grid": [
+    100,
+    250,
+    500,
+    750,
+    1000,
+    1250,
+    1499
+  ],
+  "n_boot": 10000,
+  "recensor_protocol": "subsample_aggregate.recensor_lifetime_T1500 と同一",
+  "consistency_vs_S5.5": {
+    "C0u": {
+      "n_total": 39314,
+      "censoring_rate": 0.2539807702090858
+    },
+    "C0p": {
+      "n_total": 44570,
+      "censoring_rate": 0.22376037693515818
+    },
+    "C2": {
+      "n_total": 10986,
+      "censoring_rate": 0.9102494083378846
+    },
+    "C3": {
+      "n_total": 13691,
+      "censoring_rate": 0.7304068366079907
+    }
+  },
+  "headline_S_matched_1499": {
+    "C0u": 0.017541685050059565,
+    "C0p": 0.012655605265997507,
+    "C2": 0.9102482976997145,
+    "C3": 0.7304028693919495
+  },
+  "headline_gap": {
+    "uniform_C2_over_C0u": 51.89058491827292,
+    "pareto_C3_over_C0p": 57.71378405380279
+  },
+  "table_path": "C:\\Users\\yuito\\OneDrive\\Documents\\GitHub\\speculation-game-info\\experiments\\YH006_1\\outputs\\tables\\tab_S5.7_survival_matched.csv",
+  "note": "raw headline 81.1% vs 0.9% は horizon 交絡のため retire、以後 matched S(τ) を引用 (plan §1(d))"
+}
