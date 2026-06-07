@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YH005 · Speculation Game — playground</title>
+<link rel="stylesheet" href="assets/app.css" />
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div class="crumb"><a href="index.html">← playground 一覧</a></div>
+    <h1>YH005 · Katahira et al. (2019) Speculation Game</h1>
+    <div class="paper"><i>Physica A</i> 524 / arXiv:1909.03185 · 実体: <code>experiments/YH005/simulate.py</code> (+ history.py)</div>
+  </header>
+
+  <p class="lead">投機エージェントが <b>認知価格 P(t)</b>(価格変化を ±2..±2 に量子化した履歴の累積)に基づき round-trip 売買する。3 層機構(認知世界 / round-trip 制約 / 破産置換による富のダイナミクス)から volatility clustering と heavy tail が創発する。下の <b>Null test</b> 切替で、どの要素を壊すと stylized facts が消えるかを確かめられる。</p>
+
+  <div id="proto-banner" class="banner warn hidden"></div>
+  <div class="banner info">エンジン: 本物の <code>experiments/YH005/simulate.py</code>(bit-parity 済ベクトル化版)を numpy で実行。per-close ループがあるため T を上げると重い(目安 ~10–40s)。return は論文通り <code>Δp = D/N</code>(log-return ではない)。</div>
+
+  <div class="layout">
+    <aside class="panel controls">
+      <h2>パラメータ</h2>
+      <div id="controls"></div>
+      <button class="run" id="runBtn">▶ シミュレーション実行</button>
+      <div class="status idle" id="status"><span class="dot"></span>待機中</div>
+    </aside>
+
+    <main>
+      <div class="metrics" id="metrics"></div>
+      <div class="plots">
+        <div class="plot full"><div class="cap">価格 p(t)</div><div id="p_price" style="height:240px"></div></div>
+        <div class="plot full"><div class="cap">リターン Δp(t)</div><div id="p_ret" style="height:240px"></div></div>
+        <div class="plot"><div class="cap">|Δp| の自己相関 (log-log) — clustering の指標</div><div id="p_volacf" style="height:300px"></div></div>
+        <div class="plot"><div class="cap">CCDF P(|Δp|>x) (log-log) — heavy tail</div><div id="p_ccdf" style="height:300px"></div></div>
+        <div class="plot full"><div class="cap">窓集計 kurtosis vs 窓幅 — aggregational Gaussianity</div><div id="p_kurt" style="height:280px"></div></div>
+      </div>
+      <details class="notes">
+        <summary>Null test と既知の数値</summary>
+        <table>
+          <tr><th>mode</th><th>意味</th><th>期待</th></tr>
+          <tr><td>baseline</td><td>通常 SG</td><td>|Δp| ACF が緩やか減衰、Hill α∈[3,5]、kurt w=1 が正</td></tr>
+          <tr><td>Null A</td><td>履歴 μ を毎ステップ乱数化(認知世界を破壊)</td><td>clustering 消失(ACF≈0)、tail 軽くなる</td></tr>
+          <tr><td>Null B</td><td>戦略を使わずランダム売買</td><td>同上、構造的相関なし</td></tr>
+        </table>
+        <p>baseline (N=1000,M=5,S=2,T=20000,seed=777) 実測: std(r)=3.3e−3, vol_acf τ=1≈0.20, Hill α≈4.5, kurt w=1≈3.6 → w=640 で ≈0(Gaussianity)。ブラウザは N/T を縮小しているので数値は揺らぐ。</p>
+      </details>
+    </main>
+  </div>
+</div>
+
+<script src="assets/runner.js"></script>
+<script>
+const C = SGP.COLORS;
+const SPECS = [
+  { id: "mode", label: "mode (Null test)", type: "select", value: "baseline", options: [
+    { value: "baseline", label: "baseline (SG)" }, { value: "nullA", label: "Null A: 履歴ランダム" }, { value: "nullB", label: "Null B: 売買ランダム" } ] },
+  { id: "N", label: "エージェント数 N", type: "range", min: 100, max: 1000, step: 50, value: 400 },
+  { id: "M", label: "記憶長 M", type: "range", min: 2, max: 5, step: 1, value: 4, hint: "履歴空間 = 5^M" },
+  { id: "S", label: "戦略数 S", type: "range", min: 1, max: 4, step: 1, value: 2 },
+  { id: "T", label: "ステップ T", type: "range", min: 1000, max: 8000, step: 500, value: 2500, hint: "大きいほど tail/ACF が安定だが重い" },
+  { id: "C", label: "認知閾値 C", type: "range", min: 0.5, max: 8, step: 0.5, value: 3 },
+  { id: "B", label: "注文単位 B", type: "range", min: 3, max: 20, step: 1, value: 9 },
+  { id: "seed", label: "seed", type: "number", min: 0, max: 99999, step: 1, value: 777 },
+];
+SGP.buildControls("controls", SPECS);
+SGP.fileProtocolBanner();
+
+const FILES = [
+  { url: "../experiments/YH005/history.py", name: "history.py" },
+  { url: "../experiments/YH005/simulate.py", name: "simulate.py" },
+];
+
+const DRIVER = `
+import json, numpy as np, sf
+from simulate import simulate
+P = json.loads(PARAMS_JSON)
+hm, dm = 'endogenous', 'strategy'
+if P['mode'] == 'nullA': hm = 'exogenous'
+if P['mode'] == 'nullB': dm = 'random'
+res = simulate(N=int(P['N']), M=int(P['M']), S=int(P['S']), T=int(P['T']),
+               B=int(P['B']), C=float(P['C']), seed=int(P['seed']),
+               history_mode=hm, decision_mode=dm)
+prices = res['prices']; r = np.diff(prices)
+std = float(r.std()) or 1e-12
+pix, pser = sf.downsample(prices, 4000)
+rix, rser = sf.downsample(r, 4000)
+ml = 200
+va = sf.acf(np.abs(r), ml)
+va_lag = list(range(1, ml+1))
+va_pos = [(l, v) for l, v in zip(va_lag, va) if v > 0]
+cx, cy = sf.ccdf(r, scale_only=True)
+# subsample ccdf
+ci, _ = sf.downsample(np.arange(cx.size), 3000)
+cx = cx[ci]; cy = cy[ci]
+def kw(x, w):
+    x = x[~np.isnan(x)]
+    if w > 1:
+        n = (len(x)//w)*w; x = x[:n].reshape(-1, w).sum(axis=1)
+    return sf.excess_kurtosis(x)
+wins = [1, 4, 16, 64, 256, 640]
+kurts = [kw(r, w) for w in wins]
+RESULT = json.dumps({
+  'std': std, 'hill': sf.hill_alpha(r), 'vol1': va[0], 'vol50': va[49], 'kurt1': kurts[0],
+  'nsub': int(res['num_substitutions']), 'nrt': int(res['round_trips']['agent_idx'].size),
+  'price_x': pix, 'price_y': pser, 'ret_x': rix, 'ret_y': rser,
+  'va_x': [a for a,_ in va_pos], 'va_y': [b for _,b in va_pos],
+  'ccdf_x': cx.tolist(), 'ccdf_y': cy.tolist(),
+  'wins': wins, 'kurts': kurts,
+})
+`;
+
+function draw(d) {
+  SGP.setMetrics("metrics", [
+    { k: "std(Δp)", v: d.std.toPrecision(3) },
+    { k: "Hill α", v: isFinite(d.hill) ? d.hill.toFixed(2) : "—", good: d.hill >= 3 && d.hill <= 5 },
+    { k: "|Δp| ACF τ=1", v: d.vol1.toFixed(3), good: d.vol1 > 0.1 },
+    { k: "|Δp| ACF τ=50", v: d.vol50.toFixed(3) },
+    { k: "kurt (w=1)", v: d.kurt1.toFixed(2), good: d.kurt1 > 1 },
+    { k: "round-trips", v: d.nrt.toLocaleString() },
+  ]);
+  SGP.plot("p_price", [{ x: d.price_x, y: d.price_y, type: "scattergl", mode: "lines", line: { color: C.g1, width: 0.8 } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { title: "t" }, yaxis: { title: "p(t)" } }));
+  SGP.plot("p_ret", [{ x: d.ret_x, y: d.ret_y, type: "scattergl", mode: "lines", line: { color: C.black, width: 0.6 } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { title: "t" }, yaxis: { title: "Δp(t)" } }));
+  SGP.plot("p_volacf", [{ x: d.va_x, y: d.va_y, type: "scattergl", mode: "markers", marker: { color: C.sim, size: 4 } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { type: "log", title: "lag τ" }, yaxis: { type: "log", title: "ACF |Δp|" } }));
+  SGP.plot("p_ccdf", [{ x: d.ccdf_x, y: d.ccdf_y, type: "scattergl", mode: "markers", marker: { color: C.g2, size: 3 } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { type: "log", title: "|Δp| / σ" }, yaxis: { type: "log", title: "P(|Δp|>x)" } }));
+  SGP.plot("p_kurt", [
+    { x: d.wins, y: d.kurts, type: "scatter", mode: "lines+markers", line: { color: C.sim }, marker: { size: 8 }, name: "excess kurtosis" },
+    { x: [d.wins[0], d.wins[d.wins.length - 1]], y: [0, 0], type: "scatter", mode: "lines", line: { color: C.ref, dash: "dash" }, name: "Gaussian (0)" },
+  ], SGP.baseLayout("", { xaxis: { type: "log", title: "窓幅 (集計ステップ数)" }, yaxis: { title: "excess kurtosis" } }));
+}
+
+async function run() {
+  const btn = document.getElementById("runBtn"); btn.disabled = true;
+  try {
+    await SGP.boot({ packages: ["numpy"] });
+    await SGP.loadSources(FILES);
+    const p = SGP.readControls(SPECS);
+    SGP.status(`実行中… (${p.mode}, N=${p.N}, T=${p.T}) — per-close ループで時間がかかります`, "busy");
+    const t0 = performance.now();
+    draw(await SGP.runDriver(DRIVER, p));
+    SGP.status(`完了 (${((performance.now() - t0) / 1000).toFixed(1)}s)`, "ok");
+  } catch (e) { console.error(e); SGP.status("エラー: " + e.message, "err"); }
+  finally { btn.disabled = false; }
+}
+document.getElementById("runBtn").addEventListener("click", run);
+</script>
+</body>
+</html>

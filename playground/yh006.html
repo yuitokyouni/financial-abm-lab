@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YH006 · SG on LOB (PAMS) — 結果ビューア</title>
+<link rel="stylesheet" href="assets/app.css" />
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div class="crumb"><a href="index.html">← playground 一覧</a></div>
+    <h1>YH006 · Speculation Game on LOB (PAMS)</h1>
+    <div class="paper">Katahira-Chen 2019 SG decision rule を Hirano-Izumi 2023 PAMS の tick-scale LOB に移植 · 2×2 (world × wealth), N=100</div>
+  </header>
+
+  <p class="lead">SG の意思決定ルールを板情報(LOB)環境に載せ替え、aggregate-demand 世界(C0u/C0p)と LOB 世界(C2/C3)で YH005_1 の 5 機構図がどう保存/破壊されるかを比較する。<b>これは結果ビューア</b>: LOB 側は PAMS ライブラリと parquet データに依存しブラウザでは走らせられないため、生成済みの図と確定数値を表示する。</p>
+
+  <div class="banner info">再生成: <code>experiments/</code> で <code>python YH006/run_experiment.py</code> → <code>python YH006/run_aggregate_c0.py</code> → <code>python YH006/compare_figure.py</code>。<code>outputs/</code> 配下は git 管理外なので、図が表示されない場合はローカルで再生成が必要。interactive で弄れる aggregate 側は <a href="yh005_1.html">YH005_1 playground</a> で。</div>
+
+  <h2 style="margin-top:30px">2×2 比較 (world × wealth)</h2>
+  <figure class="result">
+    <img src="../experiments/YH006/outputs/yh006_comparison_2x2.png" alt="2x2 comparison" loading="lazy" />
+    <figcaption>5 機構図 × 4 条件 (C0u / C0p / C2 / C3)。<b>world 効果 ≫ wealth 効果</b>: num_round_trips が LOB で 10³ 倍減、α_hill が −2。最も鮮明な交互作用は corr(|ΔG|, horizon) — funnel 構造が aggregate では robust (0.353→0.347)、LOB では Pareto 初期化で劣化 (0.61→0.33)。</figcaption>
+  </figure>
+  <figure class="result">
+    <img src="../experiments/YH006/outputs/yh006_comparison_5col.png" alt="5 column comparison" loading="lazy" />
+    <figcaption>5 列レイアウト版(条件横並び)。</figcaption>
+  </figure>
+  <figure class="result">
+    <img src="../experiments/YH006/outputs/yh006_appendix_N_scaling.png" alt="N scaling appendix" loading="lazy" />
+    <figcaption>N scaling 補遺: 旧 C0 (N=1000) vs C0u (N=100)。hold ratio は N 不変、α_hill は N 縮小で精度低下 → 「N を揃えなければ α 比較は無意味」自体が finding。</figcaption>
+  </figure>
+
+  <details class="notes" open>
+    <summary>2×2 主要メトリクス (seed=777, N=100)</summary>
+    <table>
+      <tr><th>metric</th><th>C0u (agg×uni)</th><th>C0p (agg×Par)</th><th>C2 (LOB×uni)</th><th>C3 (LOB×Par)</th><th>C1 (null)</th></tr>
+      <tr><td>num_round_trips</td><td>1,041,712</td><td>1,049,903</td><td>879</td><td>1,080</td><td>0</td></tr>
+      <tr><td>median horizon</td><td>2.0</td><td>2.0</td><td>2.0</td><td>2.0</td><td>—</td></tr>
+      <tr><td>α_hill (wealth p90)</td><td>3.910</td><td>4.068</td><td>1.98</td><td>1.91</td><td>—</td></tr>
+      <tr><td>corr(|ΔG|, horizon)</td><td>0.353</td><td>0.347</td><td>0.61</td><td>0.33</td><td>—</td></tr>
+      <tr><td>active_hold</td><td>0.234</td><td>0.232</td><td>0.324</td><td>0.327</td><td>0</td></tr>
+      <tr><td>passive_hold</td><td>0.246</td><td>0.244</td><td>0.353</td><td>0.330</td><td>0</td></tr>
+      <tr><td>idle</td><td>0.104</td><td>0.104</td><td>0.004</td><td>0.005</td><td>—</td></tr>
+    </table>
+    <p>α_hill の tail サンプル n_tail=10、点推定誤差は大きい。有意性は Phase 2 (YH006_1) で 100 trial bootstrap CI を取るまで方向性の指標として読む。</p>
+  </details>
+
+  <h2 style="margin-top:30px">C0u — aggregate × uniform (5 機構図)</h2>
+  <div class="plots">
+    <figure class="result"><img src="../experiments/YH006/results_c0u_wealth_pareto.png" loading="lazy" /><figcaption>① wealth Pareto</figcaption></figure>
+    <figure class="result"><img src="../experiments/YH006/results_c0u_horizon_distribution.png" loading="lazy" /><figcaption>② round-trip horizon</figcaption></figure>
+    <figure class="result"><img src="../experiments/YH006/results_c0u_deltaG_vs_horizon.png" loading="lazy" /><figcaption>③ ΔG vs horizon (funnel)</figcaption></figure>
+    <figure class="result"><img src="../experiments/YH006/results_c0u_hold_ratio.png" loading="lazy" /><figcaption>④ hold ratio</figcaption></figure>
+    <figure class="result"><img src="../experiments/YH006/results_c0u_order_size_time_series.png" loading="lazy" /><figcaption>⑤ order size 時系列</figcaption></figure>
+  </div>
+
+  <h2 style="margin-top:30px">C0p — aggregate × Pareto α=1.5 (5 機構図)</h2>
+  <div class="plots">
+    <figure class="result"><img src="../experiments/YH006/results_c0p_wealth_pareto.png" loading="lazy" /><figcaption>① wealth Pareto</figcaption></figure>
+    <figure class="result"><img src="../experiments/YH006/results_c0p_horizon_distribution.png" loading="lazy" /><figcaption>② round-trip horizon</figcaption></figure>
+    <figure class="result"><img src="../experiments/YH006/results_c0p_deltaG_vs_horizon.png" loading="lazy" /><figcaption>③ ΔG vs horizon (funnel)</figcaption></figure>
+    <figure class="result"><img src="../experiments/YH006/results_c0p_hold_ratio.png" loading="lazy" /><figcaption>④ hold ratio</figcaption></figure>
+    <figure class="result"><img src="../experiments/YH006/results_c0p_order_size_time_series.png" loading="lazy" /><figcaption>⑤ order size 時系列</figcaption></figure>
+  </div>
+
+  <p class="lead" style="margin-top:26px">LOB 側 (C2/C3) の per-condition 図は <code>experiments/YH006/outputs/</code>(git 管理外)に生成される。Phase 2 の機構解明は <a href="yh006_1.html">YH006_1 ビューア</a> へ。</p>
+</div>
+</body>
+</html>

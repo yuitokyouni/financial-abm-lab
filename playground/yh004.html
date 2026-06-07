@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YH004 · Grand Canonical Minority Game — playground</title>
+<link rel="stylesheet" href="assets/app.css" />
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div class="crumb"><a href="index.html">← playground 一覧</a></div>
+    <h1>YH004 · Jefferies et al. (2001) Grand-Canonical MG</h1>
+    <div class="paper">From market games to real-world markets — <i>Eur. Phys. J. B</i> 20 · 実体: <code>experiments/YH004/model.py</code></div>
+  </header>
+
+  <p class="lead">MG に <b>参加閾値 r_min</b> を導入し「自信のあるエージェントだけ取引する」。signed score を直近 T 期で rolling 集計し、最良戦略のスコアが r_min を超えたときだけ参加。r_min を上げるほど市場参加者(流動性)が減る。論文 Figure 1 の ⟨N_active⟩ vs r_min を再現する。</p>
+
+  <div id="proto-banner" class="banner warn hidden"></div>
+  <div class="banner info">エンジン: 本物の <code>experiments/YH004/model.py</code> を numpy で実行。binomial 理論曲線は scipy の代わりに pure-python の二項 CDF で計算(T_win が小さいので可)。</div>
+
+  <div class="layout">
+    <aside class="panel controls">
+      <h2>パラメータ</h2>
+      <div id="controls"></div>
+      <button class="run" id="runBtn">▶ 単一ラン (r_min 指定)</button>
+      <button class="ghost" id="scanBtn">Figure 1 スキャン (r_min グリッド)</button>
+      <div class="status idle" id="status"><span class="dot"></span>待機中</div>
+    </aside>
+
+    <main>
+      <div class="metrics" id="metrics"></div>
+      <div class="plots">
+        <div class="plot full"><div class="cap">N_active(t)(指定 r_min、burn-in 後)</div><div id="p_act" style="height:280px"></div></div>
+        <div class="plot"><div class="cap">excess = 2A − N の分布 (log y)</div><div id="p_excess" style="height:300px"></div></div>
+        <div class="plot" id="scanMeanWrap" style="display:none"><div class="cap">⟨N_active⟩ vs r_min</div><div id="p_scanmean" style="height:300px"></div></div>
+        <div class="plot full" id="scanStdWrap" style="display:none"><div class="cap">σ[N_active] vs r_min</div><div id="p_scanstd" style="height:300px"></div></div>
+      </div>
+      <details class="notes">
+        <summary>このモデルについて</summary>
+        <ul>
+          <li><code>r_min = −(T_win+1)</code> なら全員参加 = 通常の MG 極限。<code>r_min = +T_win</code> なら誰も参加せず市場凍結。</li>
+          <li>中間の r_min で参加者数が内生的に変動し、<b>volatility clustering</b> 的な burst が出る(excess 分布が fat-tail 化)。</li>
+          <li>Figure 1 スキャンの破線 = 独立 binomial walk 近似(論文 p.5)。希薄相でよく合う。</li>
+        </ul>
+      </details>
+    </main>
+  </div>
+</div>
+
+<script src="assets/runner.js"></script>
+<script>
+const C = SGP.COLORS;
+const SPECS = [
+  { id: "N", label: "プレイヤー数 N", type: "range", min: 51, max: 1001, step: 50, value: 101 },
+  { id: "M", label: "記憶長 M", type: "range", min: 1, max: 6, step: 1, value: 2 },
+  { id: "S", label: "戦略数 S", type: "range", min: 1, max: 6, step: 1, value: 2 },
+  { id: "Twin", label: "score 窓 T_win", type: "range", min: 10, max: 100, step: 5, value: 50 },
+  { id: "rmin", label: "参加閾値 r_min", type: "range", min: -50, max: 50, step: 2, value: 0, hint: "単一ラン用。±T_win が両極限" },
+  { id: "T", label: "総ステップ T", type: "range", min: 1000, max: 8000, step: 500, value: 3000 },
+  { id: "burn", label: "burn-in", type: "range", min: 0, max: 1500, step: 100, value: 500 },
+  { id: "seed", label: "seed", type: "number", min: 0, max: 99999, step: 1, value: 42 },
+];
+SGP.buildControls("controls", SPECS);
+SGP.fileProtocolBanner();
+
+const FILES = [{ url: "../experiments/YH004/model.py", name: "model.py" }];
+
+const DRIVER = `
+import json, numpy as np, sf
+from model import simulate
+P = json.loads(PARAMS_JSON)
+N=int(P['N']); M=int(P['M']); S=int(P['S']); Tw=int(P['Twin']); T=int(P['T'])
+burn=min(int(P['burn']), T-200)
+res = simulate(N, M, S, Tw, T, r_min_static=float(P['rmin']), seed=int(P['seed']))
+act = res['active'][burn:].astype(np.float64)
+exc = res['excess'][burn:].astype(np.float64)
+aix, aser = sf.downsample(act, 4000)
+lim = float(np.abs(exc).max()) or 1.0
+ctr, dens = sf.hist_density(exc, -lim, lim, 70)
+nz = dens > 0
+RESULT = json.dumps({
+  'meanA': float(act.mean()), 'stdA': float(act.std()), 'kurt': sf.excess_kurtosis(exc),
+  'act_x': aix, 'act_y': aser,
+  'ex_x': ctr[nz].tolist(), 'ex_y': dens[nz].tolist(),
+})
+`;
+
+function draw(d) {
+  SGP.setMetrics("metrics", [
+    { k: "⟨N_active⟩", v: d.meanA.toFixed(1) },
+    { k: "σ[N_active]", v: d.stdA.toFixed(2) },
+    { k: "kurt(excess)", v: d.kurt.toFixed(2), good: d.kurt > 0.5 },
+  ]);
+  SGP.plot("p_act", [{ x: d.act_x, y: d.act_y, type: "scattergl", mode: "lines", line: { color: C.sim, width: 0.7 } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { title: "t" }, yaxis: { title: "N_active(t)" } }));
+  SGP.plot("p_excess", [{ x: d.ex_x, y: d.ex_y, type: "bar", marker: { color: "rgba(91,156,255,.6)" } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { title: "excess = 2A − N" }, yaxis: { type: "log", title: "density (log)" }, bargap: 0.02 }));
+}
+
+async function ready() { await SGP.boot({ packages: ["numpy"] }); await SGP.loadSources(FILES); }
+
+async function run() {
+  const btn = document.getElementById("runBtn"); btn.disabled = true;
+  try {
+    await ready();
+    const p = SGP.readControls(SPECS);
+    SGP.status(`実行中… (r_min=${p.rmin})`, "busy");
+    const t0 = performance.now();
+    draw(await SGP.runDriver(DRIVER, p));
+    SGP.status(`完了 (${((performance.now() - t0) / 1000).toFixed(1)}s)`, "ok");
+  } catch (e) { console.error(e); SGP.status("エラー: " + e.message, "err"); }
+  finally { btn.disabled = false; }
+}
+
+async function scan() {
+  const btn = document.getElementById("scanBtn"); btn.disabled = true;
+  try {
+    await ready();
+    const p = SGP.readControls(SPECS);
+    SGP.status("Figure 1 スキャン中… (11点 × 2 trial)", "busy");
+    const driver = `
+import json, numpy as np, sf
+from model import simulate
+P = json.loads(PARAMS_JSON)
+N=int(P['N']); M=int(P['M']); S=int(P['S']); Tw=int(P['Twin']); seed=int(P['seed'])
+grid = np.linspace(-Tw, Tw, 11)
+mean=[]; sdm=[]; std=[]
+for i, rm in enumerate(grid):
+    tm=[]; ts=[]
+    for tr in range(2):
+        r = simulate(N, M, S, Tw, 500+2500, r_min_static=float(rm), seed=seed+997*i+tr)
+        a = r['active'][500:].astype(np.float64); tm.append(a.mean()); ts.append(a.std())
+    mean.append(float(np.mean(tm))); sdm.append(float(np.std(tm))); std.append(float(np.mean(ts)))
+# binomial theory (paper p.5)
+tg = np.linspace(-Tw, Tw, 81); tmean=[]; tstd=[]
+for rm in tg:
+    kth = int(np.ceil((rm+Tw)/2.0)-1)
+    Pp = 0.0 if kth<0 else (1.0 if kth>=Tw else sf.binom_cdf(kth, Tw, 0.5))
+    Ps = Pp**S
+    tmean.append(N*(1-Ps)); tstd.append((N*(1-Ps)*Ps)**0.5)
+RESULT = json.dumps({'grid': grid.tolist(),'mean':mean,'sdm':sdm,'std':std,'tg':tg.tolist(),'tmean':tmean,'tstd':tstd})
+`;
+    const d = await SGP.runDriver(driver, p);
+    document.getElementById("scanMeanWrap").style.display = "block";
+    document.getElementById("scanStdWrap").style.display = "block";
+    SGP.plot("p_scanmean", [
+      { x: d.grid, y: d.mean, error_y: { type: "data", array: d.sdm, color: C.sim }, type: "scatter", mode: "markers", marker: { color: C.sim, size: 7 }, name: "simulation" },
+      { x: d.tg, y: d.tmean, type: "scatter", mode: "lines", line: { color: C.ref, dash: "dash" }, name: "binomial theory" },
+    ], SGP.baseLayout("", { xaxis: { title: "r_min" }, yaxis: { title: "⟨N_active⟩" } }));
+    SGP.plot("p_scanstd", [
+      { x: d.grid, y: d.std, type: "scatter", mode: "markers", marker: { color: C.g1, size: 7 }, name: "simulation" },
+      { x: d.tg, y: d.tstd, type: "scatter", mode: "lines", line: { color: C.ref, dash: "dash" }, name: "binomial theory" },
+    ], SGP.baseLayout("", { xaxis: { title: "r_min" }, yaxis: { title: "σ[N_active]" } }));
+    SGP.status("スキャン完了", "ok");
+  } catch (e) { console.error(e); SGP.status("エラー: " + e.message, "err"); }
+  finally { btn.disabled = false; }
+}
+document.getElementById("runBtn").addEventListener("click", run);
+document.getElementById("scanBtn").addEventListener("click", scan);
+</script>
+</body>
+</html>
