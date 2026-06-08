@@ -62,12 +62,17 @@ class TrendAgent(Agent):
         return 0
 
 
-def build_trend_population(n: int, rng: np.random.Generator) -> list[TrendAgent]:
-    """Chiarella-Iori 型集団を生成(成分割当・horizon・閾値を rng から決定的に引く)。"""
+def build_trend_population(
+    n: int, rng: np.random.Generator, alpha: tuple[float, float, float] | None = None
+) -> list[TrendAgent]:
+    """Chiarella-Iori 型集団を生成(成分割当・horizon・閾値を rng から決定的に引く)。
+
+    `alpha`(chartist, fundamentalist, noise 比率)を渡すと既定 ALPHA を上書き(calibration 用)。
+    """
     components = rng.choice(
         [TComponent.CHARTIST, TComponent.FUNDAMENTALIST, TComponent.NOISE],
         size=n,
-        p=list(ALPHA),
+        p=list(alpha if alpha is not None else ALPHA),
     )
     horizons = rng.integers(H_MIN, H_MAX + 1, size=n)
     agents: list[TrendAgent] = []

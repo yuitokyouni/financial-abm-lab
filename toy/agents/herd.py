@@ -56,12 +56,17 @@ class HerdAgent(Agent):
         return 0
 
 
-def build_herd_population(n: int, rng: np.random.Generator) -> list[HerdAgent]:
-    """Kirman/Lux-Marchesi 型集団を生成。"""
+def build_herd_population(
+    n: int, rng: np.random.Generator, beta: tuple[float, float, float] | None = None
+) -> list[HerdAgent]:
+    """Kirman/Lux-Marchesi 型集団を生成。
+
+    `beta`(herder, fundamentalist, noise 比率)を渡すと既定 ALPHA を上書き(calibration 用)。
+    """
     components = rng.choice(
         [HComponent.HERDER, HComponent.FUNDAMENTALIST, HComponent.NOISE],
         size=n,
-        p=list(ALPHA),
+        p=list(beta if beta is not None else ALPHA),
     )
     horizons = rng.integers(HS_MIN, HS_MAX + 1, size=n)
     agents: list[HerdAgent] = []
