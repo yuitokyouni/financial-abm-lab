@@ -95,6 +95,7 @@ class Market:
         self.return_hist: list[float] = []
         self.volume_hist: list[float] = []
         self.agg_action_hist: list[float] = []
+        self.price_hist: list[float] = [params.init_price]  # 価格 *水準* 履歴(誤価格観測の元)
 
     def step(self, actions: npt.NDArray[np.int64]) -> float:
         """行動ベクトル a_{·,t} から ED を集約し価格を更新。ED を返す。"""
@@ -104,6 +105,7 @@ class Market:
         self.volume_hist.append(float(np.abs(actions).sum()))
         self.agg_action_hist.append(float(actions.mean()))
         self.price = new_price
+        self.price_hist.append(new_price)
         return ed
 
 
@@ -112,12 +114,18 @@ def run_simulation(
     agents: Sequence[Agent],
     decision_rngs: Sequence[np.random.Generator],
     capture: CaptureSink,
+    obs_transform: Callable[
+        [dict[str, npt.NDArray[np.float64]], int], dict[str, npt.NDArray[np.float64]]
+    ]
+    | None = None,
 ) -> RunResult:
     """burn-in + measure step を回し、measure 期間の系列を返す。
 
     各 agent は自分の ``Ctx``(固有 RNG + 共有 CaptureSink)を通じてのみ観測・乱数・発注する。
-    観測スナップショットは市場全体履歴から step ごとに 1 度だけ構築し全 agent で共有する
-    (グローバル履歴なので同一)。
+    観測スナップショットは市場全体履歴から step ごとに 1 度だけ構築し全 agent で共有する。
+
+    ``obs_transform`` を渡すと、各 step で全 agent が観測する前に観測 dict を変換する
+    (B2 介入フック、spec §7。介入無しの既定では恒等)。
     """
     if len(agents) != params.n_agents or len(decision_rngs) != params.n_agents:
         raise ValueError("agents / decision_rngs の数が n_agents と一致しない")
@@ -136,8 +144,15 @@ def run_simulation(
     actions = np.empty(params.n_agents, dtype=np.int64)
     for t in range(total):
         obs = build_observation(
-            market.return_hist, market.volume_hist, market.agg_action_hist, params.obs_window
+            market.return_hist,
+            market.agg_action_hist,
+            market.volume_hist,
+            market.price_hist,
+            params.p_star,
+            params.obs_window,
         )
+        if obs_transform is not None:
+            obs = obs_transform(obs, t)
         for i, (agent, ctx) in enumerate(zip(agents, ctxs, strict=True)):
             ctx.bind_step(t, obs, {})
             actions[i] = agent.act(ctx)

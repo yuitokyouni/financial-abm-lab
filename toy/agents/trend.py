@@ -1,49 +1,82 @@
-"""trend — Model T(trend-following、spec §3.2)。
+"""trend — Model T(Chiarella-Iori 型、原典: Chiarella-Iori-Perelló 2009)。
 
-``trend_{i,t} = mean(r_{t-h_i:t}) / std(r_{t-h_i:t})``、r = log-return。
-行動: ``a = sign(trend) if |trend| > θ_i else 0``。
-ヘテロ性: ``h_i ~ DiscreteUniform[5,50]``、``θ_i ~ Uniform[0.5,2.0]``。
+chartist + fundamentalist + noise の混合(chartist 優勢)。各成分は観測ベクトルから内部で
+信号を計算する(B2 ≠ A、spec §3.2):
 
-観測は ctx.observe("price_returns")(生 log-return 履歴)から取り、trend は **内部で** 計算する
-(観測チャネル介入が機構の入力源を degrade するが機構自体は ablate しない設計、§3.3)。
+- **chartist**: 価格 return 履歴を読み、正規化トレンド `mean(r)/std(r)` を計算。
+- **fundamentalist**: 誤価格系列 `m=log(p*/p)`(雑音つき観測 §3.1)を読み平均回帰。
+- **noise**: 一様ランダム行動(自走の素 — 純決定論の死んだ不動点を回避)。
+
+noise 成分があるため、初期の平坦市場から自力で立ち上がる(v0.2 自作 T の死活問題を解消)。
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 
 import numpy as np
 from provabm.ctx import Ctx
 
 from toy.agents.base import Agent
-from toy.observation import PRICE_RETURNS
+from toy.observation import FUNDAMENTAL, PRICE_RETURNS
 
-# spec §3.2 のヘテロ性レンジ。
-H_MIN, H_MAX = 5, 50
-THETA_MIN, THETA_MAX = 0.5, 2.0
+# spec §3.2 の free parameter(calibration target)。デフォルトは自走 + SF を出す目安。
+ALPHA = (0.5, 0.3, 0.2)  # (chartist, fundamentalist, noise) 母集団比率
+H_MIN, H_MAX = 5, 50  # 観測 horizon
+THETA_C_MIN, THETA_C_MAX = 0.5, 2.0  # chartist 発火閾値(正規化トレンド)
+THETA_F_MIN, THETA_F_MAX = 0.0, 0.01  # fundamentalist 発火閾値(誤価格 = log 比)
+
+
+class TComponent(StrEnum):
+    CHARTIST = "chartist"
+    FUNDAMENTALIST = "fundamentalist"
+    NOISE = "noise"
 
 
 @dataclass(slots=True)
 class TrendAgent(Agent):
-    """1 体の trend-follower。"""
+    """Chiarella-Iori 型の 1 成分エージェント。"""
 
-    horizon: int  # h_i
-    theta: float  # θ_i(発火閾値)
+    component: TComponent
+    horizon: int
+    theta: float
 
     def decide(self, ctx: Ctx) -> int:
-        returns = ctx.observe(PRICE_RETURNS)
-        window = returns[-self.horizon :]
-        sd = float(window.std())
-        if sd == 0.0:  # 履歴ゼロ/定数(burn-in 初期)→ 中立
-            return 0
-        trend = float(window.mean()) / sd
-        if abs(trend) > self.theta:
-            return int(np.sign(trend))
+        if self.component is TComponent.NOISE:
+            # 一様ランダム {-1,0,+1}(自走の素)。乱数は ctx 経由(honest・再現可能)。
+            return int(ctx.random("noise") * 3) - 1
+
+        if self.component is TComponent.CHARTIST:
+            window = ctx.observe(PRICE_RETURNS)[-self.horizon :]
+            sd = float(window.std())
+            if sd == 0.0:
+                return 0
+            signal = float(window.mean()) / sd  # 正規化トレンド
+        else:  # FUNDAMENTALIST
+            window = ctx.observe(FUNDAMENTAL)[-self.horizon :]
+            signal = float(window.mean())  # 平均誤価格(>0 = 割安 → 買い)
+
+        if abs(signal) > self.theta:
+            return int(np.sign(signal))
         return 0
 
 
 def build_trend_population(n: int, rng: np.random.Generator) -> list[TrendAgent]:
-    """ヘテロな Model T 集団を生成(param は `rng` から決定的に引く)。"""
+    """Chiarella-Iori 型集団を生成(成分割当・horizon・閾値を rng から決定的に引く)。"""
+    components = rng.choice(
+        [TComponent.CHARTIST, TComponent.FUNDAMENTALIST, TComponent.NOISE],
+        size=n,
+        p=list(ALPHA),
+    )
     horizons = rng.integers(H_MIN, H_MAX + 1, size=n)
-    thetas = rng.uniform(THETA_MIN, THETA_MAX, size=n)
-    return [TrendAgent(int(h), float(t)) for h, t in zip(horizons, thetas, strict=True)]
+    agents: list[TrendAgent] = []
+    for comp, h in zip(components, horizons, strict=True):
+        if comp == TComponent.CHARTIST:
+            theta = float(rng.uniform(THETA_C_MIN, THETA_C_MAX))
+        elif comp == TComponent.FUNDAMENTALIST:
+            theta = float(rng.uniform(THETA_F_MIN, THETA_F_MAX))
+        else:
+            theta = 0.0
+        agents.append(TrendAgent(TComponent(comp), int(h), theta))
+    return agents

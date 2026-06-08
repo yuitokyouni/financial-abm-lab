@@ -54,6 +54,8 @@ packages = ["provabm", "atlas", "toy"]
 line-length = 100
 target-version = "py311"
 src = ["provabm", "atlas", "toy", "experiments", "tests"]
+# toy/models は PRISM から vanilla 移植した外部正準モデル。整形・型は原典のまま保持。
+extend-exclude = ["toy/models"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
@@ -72,6 +74,8 @@ target-version = ["py311"]
 python_version = "3.11"
 strict = true
 files = ["provabm", "atlas", "toy"]
+# toy/models は vanilla 移植の外部コード(原典のまま)。strict 型検査の対象外。
+exclude = ["toy/models/"]
 # 第三者ライブラリの型 stub 欠如で strict が落ちないようにする。
 [[tool.mypy.overrides]]
 module = [
@@ -85,6 +89,7 @@ module = [
     "hydra.*",
     "pyarrow.*",
     "sklearn.*",
+    "scipy.*",
 ]
 ignore_missing_imports = true
 

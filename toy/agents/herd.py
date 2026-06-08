@@ -1,46 +1,75 @@
-"""herd — Model H(herding、spec §3.2)。
+"""herd — Model H(群れ、原典: Kirman 1993 / Lux-Marchesi 1999 / Alfarano-Lux-Wagner 2008)。
 
-``social_{i,t} = mean(ā_{t-h_i^s:t})``、ā = 集約行動履歴。
-行動: ``a = sign(social) with prob p_i, else uniform on {-1,0,+1}``。
-ヘテロ性: ``p_i ~ Uniform[0.6,0.95]``、``h_i^s ~ DiscreteUniform[5,50]``。
+T と土台を揃え、speculative 成分だけ trend→herd に変えた混合: fundamentalist(錨)+ herder
+(他者の集約行動をコピー)+ noise(自走)。fundamentalist がファンダに引き戻すことで価格は
+有界になり、herder が opinion を溜める → たまに大きく振れる(fat tails / ボラ集中)。純 herding
+(錨なし)は単調暴走して SF が出ないため、原典(ALW は fundamentalist 錨を持つ)に忠実な形にする。
 
-社会信号は ctx.observe("agg_action")(生の集約行動履歴)から内部で計算する(§3.3)。
-確率的選択の乱数は **ctx.random 経由**(honest・再現可能)。
+機構の差(T vs H): speculative 成分が読む観測が、価格トレンド(T)か他者の行動(H)か。
+→ trend masking は T を、social masking は H を叩く(spec §7.2)。
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 
 import numpy as np
 from provabm.ctx import Ctx
 
 from toy.agents.base import Agent
-from toy.observation import AGG_ACTION
+from toy.observation import AGG_ACTION, FUNDAMENTAL
 
-# spec §3.2 のヘテロ性レンジ。
-HS_MIN, HS_MAX = 5, 50
-P_MIN, P_MAX = 0.6, 0.95
+# spec §3.2 の free parameter(calibration target)。T と対称(speculative 成分のみ差し替え)。
+ALPHA = (0.5, 0.3, 0.2)  # (herder, fundamentalist, noise) 母集団比率
+HS_MIN, HS_MAX = 5, 50  # 観測 horizon
+THETA_F_MIN, THETA_F_MAX = 0.0, 0.01  # fundamentalist 発火閾値(誤価格)
+
+
+class HComponent(StrEnum):
+    HERDER = "herder"
+    FUNDAMENTALIST = "fundamentalist"
+    NOISE = "noise"
 
 
 @dataclass(slots=True)
 class HerdAgent(Agent):
-    """1 体の herder。"""
+    """Kirman/Lux-Marchesi 型の 1 成分エージェント。"""
 
-    horizon: int  # h_i^s
-    follow_prob: float  # p_i
+    component: HComponent
+    horizon: int
+    theta: float
 
     def decide(self, ctx: Ctx) -> int:
-        social = ctx.observe(AGG_ACTION)
-        signal = float(social[-self.horizon :].mean())
-        if ctx.random("follow") < self.follow_prob:
+        if self.component is HComponent.NOISE:
+            return int(ctx.random("noise") * 3) - 1
+
+        if self.component is HComponent.HERDER:
+            social = ctx.observe(AGG_ACTION)[-self.horizon :]
+            return int(np.sign(float(social.mean())))  # 多数派に同調(他者をコピー)
+
+        # FUNDAMENTALIST(錨)
+        window = ctx.observe(FUNDAMENTAL)[-self.horizon :]
+        signal = float(window.mean())
+        if abs(signal) > self.theta:
             return int(np.sign(signal))
-        # uniform on {-1,0,+1}: int(U[0,1)*3) - 1
-        return int(ctx.random("explore") * 3) - 1
+        return 0
 
 
 def build_herd_population(n: int, rng: np.random.Generator) -> list[HerdAgent]:
-    """ヘテロな Model H 集団を生成。"""
+    """Kirman/Lux-Marchesi 型集団を生成。"""
+    components = rng.choice(
+        [HComponent.HERDER, HComponent.FUNDAMENTALIST, HComponent.NOISE],
+        size=n,
+        p=list(ALPHA),
+    )
     horizons = rng.integers(HS_MIN, HS_MAX + 1, size=n)
-    probs = rng.uniform(P_MIN, P_MAX, size=n)
-    return [HerdAgent(int(h), float(p)) for h, p in zip(horizons, probs, strict=True)]
+    agents: list[HerdAgent] = []
+    for comp, h in zip(components, horizons, strict=True):
+        theta = (
+            float(rng.uniform(THETA_F_MIN, THETA_F_MAX))
+            if comp == HComponent.FUNDAMENTALIST
+            else 0.0
+        )
+        agents.append(HerdAgent(HComponent(comp), int(h), theta))
+    return agents
