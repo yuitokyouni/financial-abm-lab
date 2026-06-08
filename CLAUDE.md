@@ -31,7 +31,7 @@
 
 | 領域 | v0 で実装する | v0 で touch しない |
 |------|----------|---------------|
-| Toy experiment | 完全実装。`docs/experimental_design_v0.1.md` を pre-registered spec として扱う | 判定基準の post-hoc 修正 |
+| Toy experiment | 完全実装。`docs/experimental_design_v0.2.md` を pre-registered spec として扱う | 判定基準の post-hoc 修正 |
 | PROV-ABM | L2 capture(`ctx.*` API、reported reach、最低限の seed/config/output 記録) | L3+ AST whitelist、taint、validator strict 拒否ロジック、may\\must gap 計算、Lean 形式化 |
 | Atlas | Battery/Mechanism/Response の抽象 protocol scaffold(空 class、type hint のみ) | 実際の battery 実装、leaderboard infrastructure、scoring 機構、Type2 survival test |
 
@@ -52,7 +52,7 @@ real-prism/
 ├── .github/workflows/         # CI(pytest + ruff + mypy)
 ├── .pre-commit-config.yaml
 ├── docs/
-│   ├── experimental_design_v0.1.md   # pre-registered spec(post-hoc 変更禁止)
+│   ├── experimental_design_v0.2.md   # pre-registered spec(§2/§14 post-hoc 変更禁止)
 │   └── prov_abm_design_notes.md      # PROV-ABM/Atlas 設計ノート
 ├── provabm/                   # framework パッケージ
 │   ├── __init__.py
@@ -151,24 +151,22 @@ real-prism/
 
 ## 事前登録(pre-registered)制約
 
-`docs/experimental_design_v0.1.md` の **§2(仮説と判定基準)と §14(decision tree)は post-hoc 変更禁止**。
+`docs/experimental_design_v0.2.md` の **§2(仮説と判定基準)と §14(decision tree)は post-hoc 変更禁止**。
 
 実装中に「この基準は厳しすぎる/緩すぎる」「サンプルサイズを減らせば速い」と気づいても、勝手に動かすな。**Issue を立てて Yuito の判断を仰げ。** これが pre-registration の核心で、ここを緩めると本 repo の価値が消える。
 
 ---
 
-## 未解決(coder が判断してはいけない)
+## 留保 1/2(解決済み・v0.2)
 
-`docs/experimental_design_v0.1.md` v0.1 → v0.2 で fix 待ちの留保。**Yuito の confirm が来るまで calibration / SF battery 関連の実装は scaffold のみで止めること。**
+`docs/experimental_design_v0.2.md` で留保 1/2 を default で解決済み(2026-06-08 Yuito confirm)。
 
-- **留保 1**: SF calibration の anchor。
-  - **default(v0.2 で採用予定)**: 相互等価性 — Model T を任意のリーズナブル点に固定し、Model H をその T と SF 距離最小化で calibrate。実データ参照は外す。
-  - 別案(否決予定): 両モデルとも実データ(S&P500 等)に近接。
-- **留保 2**: SF battery のスコープ。
-  - **default(v0.2 で採用予定)**: SF1-SF4 を calibration target、SF5/SF6 は post-equivalence 独立検証量。
-  - 別案(否決予定): SF1-SF6 全部を calibration target。
+- **留保 1 → 相互等価性 anchor**: Model T を固定点 T* に置き、Model H を SF1-4 距離最小化で calibrate。実データ(S&P500)参照は外す(spec §5.2)。
+- **留保 2 → SF1-4 を calibration target、SF5/6 を post-equivalence 独立検証量**(spec §4 末尾・§5.1・§6.1。SF classifier 入力は SF1-4 の 4 次元)。
 
-Yuito が confirm するまで、`toy/calibration.py` は protocol/interface だけ書き、grid search の本体は実装しない。確認が来た時点で v0.2 を切ってから実装に入る。
+これで `toy/sf_battery.py`(SF1-6 測定、spec §4)と `toy/calibration.py`(Stage 1-3、spec §5.2)の本体実装が unblock された。
+
+**ただし留保の substance(T* の具体固定値、Model H 探索空間、SF5/6 verification の妥当性)は別途議論予定で未確定。** spec §4-§6 に「v0.2 暫定」として inline マーク済み。変更が生じたら **v0.3 として versioned に切り直す**(post-hoc サイレント編集は禁止)。実装は v0.2 の確定部分に沿って進め、暫定部分に依存する箇所は議論確定を待つ。
 
 ---
 
@@ -210,6 +208,6 @@ Yuito が confirm するまで、`toy/calibration.py` は protocol/interface だ
 
 ## 参考文献
 
-- `docs/experimental_design_v0.1.md` — pre-registered 実験設計
+- `docs/experimental_design_v0.2.md` — pre-registered 実験設計
 - `docs/prov_abm_design_notes.md` — PROV-ABM / Atlas 戦略・設計ノート
-- 学術文献は `docs/experimental_design_v0.1.md` の Appendix C
+- 学術文献は `docs/experimental_design_v0.2.md` の Appendix C
