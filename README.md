@@ -1,0 +1,31 @@
+### Building the Foundation for Financial ABM Research
+
+financial-abm-lab/
+  README.md
+  pyproject.toml
+  .gitignore
+  configs/
+    experiment_example.yaml
+  data/
+    raw/
+    processed/
+    external/
+  notebooks/
+    00_sanity_check.ipynb
+  src/
+    fabm/
+      __init__.py
+      config.py
+      rng.py
+      logging.py
+      data/
+      stats/
+      microstructure/
+      abm/
+      validation/
+  experiments/
+    runs/
+  reports/
+  tests/
+    test_rng.py
+    test_config.py
