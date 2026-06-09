@@ -33,7 +33,8 @@
 - 詳細は `specs/001-exp-a-clob-harness/`（spec/plan/research/data-model/contracts）。
 
 <!-- SPECKIT START -->
-現在アクティブな feature: 実験A harness。plan = `specs/001-exp-a-clob-harness/plan.md`
-（spec.md / research.md / data-model.md / contracts/sim-interface.md / quickstart.md）。
+現在アクティブな feature: 実験B 学習 MM collusion harness。spec = `specs/002-exp-b-collusion-harness/spec.md`
+（plan/tasks は未作成 → `/speckit-plan` から）。
+実験A（001、検証済・license 成立）: `specs/001-exp-a-clob-harness/`（spec/plan/research/data-model/contracts/quickstart）。
 technologies・project structure・コマンドはここを読む。
 <!-- SPECKIT END -->
