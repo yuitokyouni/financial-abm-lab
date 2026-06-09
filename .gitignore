@@ -15,3 +15,6 @@ obsidian_ABM_microstructure/.obsidian/workspace.json
 
 # junction: vault/docs -> ../docs (Obsidian で見るための実体リンク。実ファイルは docs/ で追跡)
 obsidian_ABM_microstructure/docs/
+
+# build metadata
+*.egg-info/
