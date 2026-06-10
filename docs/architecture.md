@@ -116,12 +116,14 @@ classDiagram
     fee : float
     jump_size : float
     lambda_jump : float
+    lr : float
     markup_mean : float
     markup_se : float
     mechanism : str
     memory : int
     n_mm : int
     n_seeds : int
+    noise_rate : float
     periods_total : int
     runtime_sec : float
     staleness : str
@@ -131,7 +133,7 @@ classDiagram
     act(state: int, t: int) int
     frozen() 'FixedPolicy'
     greedy(state: int) int
-    update(s, a, r, s_next, a_next)* None
+    update(s, a, r, s_next, a_next) bool
   }
   class IRResult {
     baseline_profile : tuple[int, ...]
@@ -187,6 +189,7 @@ classDiagram
     m
     v
     step(actions: tuple[int, ...]) tuple[np.ndarray, dict]
+    step_core(actions: tuple[int, ...])
   }
   class MarketMaker {
     m : float
@@ -216,7 +219,7 @@ classDiagram
     t : int
   }
   class QLearner {
-    update(s: int, a: int, r: float, s_next: int, a_next: int) None
+    update(s: int, a: int, r: float, s_next: int, a_next: int) bool
   }
   class RunResult {
     config
@@ -225,7 +228,7 @@ classDiagram
     runtime_sec : float
   }
   class SARSA {
-    update(s: int, a: int, r: float, s_next: int, a_next: int) None
+    update(s: int, a: int, r: float, s_next: int, a_next: int) bool
   }
   class Side {
     name
@@ -264,11 +267,12 @@ classDiagram
     act(state: int, t: int) int
     frozen() 'ZIPolicy'
     greedy(state: int) int
-    update(s, a, r, s_next, a_next)* None
+    update(s, a, r, s_next, a_next) bool
   }
   class _Tabular {
     beta
     gamma
+    greedy_table
     lr
     n_actions
     q : ndarray

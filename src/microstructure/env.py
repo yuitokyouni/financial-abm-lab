@@ -90,7 +90,12 @@ class MarketEnv:
 
     # ---- 1 学習期 ----------------------------------------------------------
 
-    def step(self, actions: tuple[int, ...]) -> tuple[np.ndarray, dict]:
+    def step_core(self, actions: tuple[int, ...]):
+        """1 学習期の中核（train の高速経路 — info dict を作らない）。step() と同一計算。
+
+        returns (rewards: list[float], extraction, noise_pnl, fees, n_fills,
+                 winner_a, h_w, disp)
+        """
         cfg = self.cfg
         n_steps = cfg.period_steps
         if n_steps == 1:
@@ -128,7 +133,7 @@ class MarketEnv:
 
         # reward（勝者総取り、tie は D-B8: 等分割 or 輪番）
         pool = noise_pnl + fees - extraction
-        rewards = np.zeros(cfg.n_mm)
+        rewards = [0.0] * cfg.n_mm
         if cfg.tie_rule == "split" or len(winners) == 1:
             share = pool / len(winners)
             for i in winners:
@@ -139,7 +144,12 @@ class MarketEnv:
 
         self.v = v_final
         self.m = v_final  # clear で学習（両 staleness 共通）
+        return rewards, extraction, noise_pnl, fees, n_fills, winner_a, h_w, disp
+
+    def step(self, actions: tuple[int, ...]) -> tuple[np.ndarray, dict]:
+        (rewards, extraction, noise_pnl, fees, n_fills,
+         winner_a, h_w, disp) = self.step_core(actions)
         info = {"extraction": extraction, "noise_pnl": noise_pnl, "fees": fees,
                 "n_noise": n_fills, "winner_h": h_w, "winner_action": winner_a,
                 "disp": disp}
-        return rewards, info
+        return np.asarray(rewards), info

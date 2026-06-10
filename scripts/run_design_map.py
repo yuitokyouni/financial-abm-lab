@@ -20,9 +20,58 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from microstructure.calibrations import get_calibration  # noqa: E402
-from microstructure.designmap import (BudgetExceeded, BudgetLedger, coarse_grid,  # noqa: E402
-                                      dense_neighbors, parse_cell_id,
-                                      robustness_variants, run_cell, write_csv)
+from microstructure.designmap import (BudgetExceeded, BudgetLedger, aggregate_cell,  # noqa: E402
+                                      cell_id, coarse_grid, dense_neighbors,
+                                      density_spoke, parse_cell_id,
+                                      robustness_variants, run_cell, run_one_seed,
+                                      write_csv, _planned_periods)
+
+
+def _seed_job(job_idx: int, cfg, seed: int):
+    """並列 worker の単位（job_idx でセルを識別——robustness 変種は cell_id が
+    衝突しうるため index キー）。"""
+    m, ir, actual, rt = run_one_seed(cfg, seed)
+    return job_idx, seed, m, ir, actual, rt
+
+
+def _run_parallel(jobs, ledger, tier, workers):
+    """親プロセスが ledger を専有（charge は submit 前・refund は完了時）。"""
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    points = []
+    groups: dict[int, dict] = {}
+    with ProcessPoolExecutor(max_workers=workers) as ex:
+        futs = {}
+        for j, (cfg, n_seeds) in enumerate(jobs):
+            stop = False
+            for s in range(n_seeds):
+                planned = _planned_periods(cfg)
+                try:
+                    ledger.charge(tier, planned)
+                except BudgetExceeded as e:
+                    print(f"[budget] submission stopped at job {j}: {e}", flush=True)
+                    stop = True
+                    break
+                futs[ex.submit(_seed_job, j, cfg, s)] = planned
+            if stop:
+                break
+        for fut in as_completed(futs):
+            planned = futs[fut]
+            j, seed, m, ir, actual, rt = fut.result()
+            ledger.refund(tier, planned - actual)
+            g = groups.setdefault(j, {})
+            g[seed] = (m, ir, actual, rt)
+            cfg, n_seeds = jobs[j]
+            if len(g) == n_seeds:
+                ss = sorted(g)
+                point = aggregate_cell(cfg, [g[k][0] for k in ss], [g[k][1] for k in ss],
+                                       sum(g[k][2] for k in ss), sum(g[k][3] for k in ss))
+                points.append(point)
+                print(f"[{len(points)}/{len(jobs)}] {point.cell}"
+                      f" markup={point.markup_mean:.3f}±{point.markup_se:.3f}"
+                      f" extr={point.extraction_mean:.4f} cert={point.certified}"
+                      f" conv={point.converged_frac:.1f}"
+                      f" ({point.runtime_sec:.0f}s cpu)", flush=True)
+    return points
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,11 +80,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("--budget-ledger", required=True)
     ap.add_argument("--around", help="dense: 中心 cell-id")
+    ap.add_argument("--dense-axis", choices=["nvol", "density"], default="nvol",
+                    help="dense の軸: nvol=N×vol 近傍 / density=事象密度スポーク（finding 0002）")
     ap.add_argument("--headline", help="robustness: cell-id（カンマ区切り）")
     ap.add_argument("--cell", help="較正セル名（calibrations REGISTRY）")
     ap.add_argument("--seeds", type=int, default=5)
     ap.add_argument("--t-max", type=int, help="smoke 用に t_max を縮小")
     ap.add_argument("--limit", type=int, help="smoke 用にセル数を制限")
+    ap.add_argument("--parallel", type=int, default=1,
+                    help="(セル,seed) 単位の process 並列数（ledger は親が専有）")
     args = ap.parse_args(argv)
 
     if args.cell:
@@ -52,7 +105,9 @@ def main(argv: list[str] | None = None) -> int:
     elif args.tier == "dense":
         if not args.around:
             ap.error("--tier dense requires --around <cell-id>")
-        jobs = [(cfg, args.seeds) for cfg in dense_neighbors(parse_cell_id(args.around))]
+        center = parse_cell_id(args.around)
+        builder = density_spoke if args.dense_axis == "density" else dense_neighbors
+        jobs = [(cfg, args.seeds) for cfg in builder(center)]
         tier = "dense"
     elif args.tier == "robustness":
         if not args.headline:
@@ -74,18 +129,21 @@ def main(argv: list[str] | None = None) -> int:
                  s) for cfg, s in jobs]
 
     ledger = BudgetLedger(args.budget_ledger)
-    points = []
-    for i, (cfg, n_seeds) in enumerate(jobs):
-        try:
-            point, _, _ = run_cell(cfg, list(range(n_seeds)), ledger, tier)
-        except BudgetExceeded as e:
-            print(f"[budget] STOP at job {i}/{len(jobs)}: {e}")
-            break
-        points.append(point)
-        print(f"[{i + 1}/{len(jobs)}] {point.cell} markup={point.markup_mean:.3f}"
-              f"±{point.markup_se:.3f} extr={point.extraction_mean:.4f}"
-              f" cert={point.certified} conv={point.converged_frac:.1f}"
-              f" ({point.runtime_sec:.1f}s)")
+    if args.parallel > 1:
+        points = _run_parallel(jobs, ledger, tier, args.parallel)
+    else:
+        points = []
+        for i, (cfg, n_seeds) in enumerate(jobs):
+            try:
+                point, _, _ = run_cell(cfg, list(range(n_seeds)), ledger, tier)
+            except BudgetExceeded as e:
+                print(f"[budget] STOP at job {i}/{len(jobs)}: {e}")
+                break
+            points.append(point)
+            print(f"[{i + 1}/{len(jobs)}] {point.cell} markup={point.markup_mean:.3f}"
+                  f"±{point.markup_se:.3f} extr={point.extraction_mean:.4f}"
+                  f" cert={point.certified} conv={point.converged_frac:.1f}"
+                  f" ({point.runtime_sec:.1f}s)", flush=True)
     if points:
         write_csv(points, args.out)
     print(f"done: {len(points)} points → {args.out}; "

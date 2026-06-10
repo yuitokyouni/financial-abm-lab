@@ -51,6 +51,7 @@
 - **Decision**:
   - 学習率 α_lr = 0.15、割引 γ = 0.95、Q 初期値 = 0、ε_t = exp(−β·t)、β = 4.6×10⁻⁶（ε ≈ 0.01 at t = 10⁶ 期）。α_lr・β・γ は robustness 軸（粗 grid では固定、robustness tier で振る）。
   - **収束 = greedy policy（全状態の argmax）が W = 10⁵ 期連続で不変**。上限 T_max = 2×10⁶ 期。到達せず終了 → 「非収束」ラベル（地図上で区別、measurement はするが認定 gate に進めない）。
+  - **v2（2026-06-11、pilot 実測による refinement）**: 上の全状態基準は確率報酬の本環境では**構造的に到達不能**と判明（本番 t_max の pilot 4 セル×2 seed が全て非収束。機構: tail の探索 blip（ε≈10⁻⁴ でも 2×10⁶ 期に数百回）が off-path 状態の Q を更新し、その行の argmax は報酬ノイズで容易に flip → streak が常時リセット。Calvano の基準が機能したのは彼の報酬が action profile 所与で決定論的だったから）。v2 の収束対象は**観測される行動**: 10⁴ 期ごとに現在の greedy 政策を凍結 probe（64 期の決定論 rollout、state=action 履歴のみ・乱数非消費＝学習軌道は不変）し、**greedy limit-cycle が連続 W/10⁴ = 10 回不変**なら収束。off-path の argmax flap は観測行動を変えない限り無関係になる。旧基準は「全状態安定」というより強い主張で、必要なら headline 点の感度として報告可能。
   - 測定 phase: 収束後 ε = 0・学習停止で K = 10⁴ 期走らせ、実現 spread（期ごとの勝者 h）・抽出・markup を集計。
 - **Rationale**: Calvano の収束概念（policy 安定）をそのまま機械判定化。数値は Calvano 規模（収束は典型 ~10⁶ 期以内）に整合し、T_max は D-B9 予算から逆算（1 run ≤ 2×10⁶ 期 ≈ 10 s）。同時学習に理論保証は無い（原則IV）ので「収束」はラベルであって主張ではない。
 - **Alternatives**: Q 値ノルム収束（policy が同じでも値が漂う/逆もあり、判定が不安定）／固定 horizon のみ（収束/非収束の区別を失う）→ 却下。

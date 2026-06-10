@@ -52,6 +52,8 @@ class DesignMapPoint:
     memory: int
     n_mm: int
     algo: str
+    noise_rate: float
+    lr: float
     markup_mean: float
     markup_se: float
     extraction_mean: float
@@ -115,43 +117,64 @@ def _planned_periods(cfg: LearnConfig) -> int:
     return cfg.t_max + _MEASURE_BURN_IN + cfg.measure_periods
 
 
-def run_cell(cfg: LearnConfig, seeds: list[int],
-             ledger: BudgetLedger | None = None, tier: str = "coarse",
-             ) -> tuple[DesignMapPoint, list[CellMeasurement], list[IRResult]]:
-    """1 条件セルを複数 seed で回し、地図の 1 点に集計する。"""
-    t0 = time.perf_counter()
-    cells: list[CellMeasurement] = []
-    irs: list[IRResult] = []
-    periods_total = 0
-    for s in seeds:
-        c = cfg.replace(seed=s)
-        planned = _planned_periods(c)
-        if ledger is not None:
-            ledger.charge(tier, planned)
-        tr = train(c)
-        actual = tr.periods_run + _MEASURE_BURN_IN + c.measure_periods
-        if ledger is not None:
-            ledger.refund(tier, planned - actual)
-        periods_total += actual
-        cells.append(measure(c, tr))
-        irs.append(impulse_response(c, tr))
+def aggregate_cell(cfg: LearnConfig, cells: list[CellMeasurement],
+                   irs: list[IRResult], periods_total: int,
+                   runtime_sec: float) -> DesignMapPoint:
+    """seed 群の測定を地図の 1 点に集計（逐次 run_cell と並列 runner が共有）。"""
     markups = np.array([m.markup for m in cells])
     extr = np.array([m.extraction_rate for m in cells])
-    n = len(seeds)
+    n = len(cells)
     se = (lambda a: float(a.std(ddof=1) / math.sqrt(n)) if n > 1 else 0.0)
     verdict = certify(cells, irs, cfg.markup_floor) if n > 1 else None
-    point = DesignMapPoint(
+    return DesignMapPoint(
         cell=cell_id(cfg), mechanism=cfg.mechanism, batch_interval=cfg.batch_interval,
         staleness=cfg.staleness, lambda_jump=cfg.lambda_jump, jump_size=cfg.jump_size,
         fee=cfg.fee, memory=cfg.memory, n_mm=cfg.n_mm, algo=cfg.algo,
+        noise_rate=cfg.noise_rate, lr=cfg.lr,
         markup_mean=float(markups.mean()), markup_se=se(markups),
         extraction_mean=float(extr.mean()), extraction_se=se(extr),
         certified=bool(verdict.certified) if verdict else False,
         converged_frac=float(np.mean([m.converged for m in cells])),
         exited_frac=float(np.mean([m.exited for m in cells])),
         n_seeds=n, periods_total=periods_total,
-        runtime_sec=time.perf_counter() - t0,
+        runtime_sec=runtime_sec,
     )
+
+
+def run_one_seed(cfg: LearnConfig, seed: int):
+    """1 (セル, seed) の train→measure→IR（並列 worker の単位）。
+
+    returns (CellMeasurement, IRResult, actual_periods, runtime_sec)
+    """
+    t0 = time.perf_counter()
+    c = cfg.replace(seed=seed)
+    tr = train(c)
+    actual = tr.periods_run + _MEASURE_BURN_IN + c.measure_periods
+    m = measure(c, tr)
+    ir = impulse_response(c, tr)
+    return m, ir, actual, time.perf_counter() - t0
+
+
+def run_cell(cfg: LearnConfig, seeds: list[int],
+             ledger: BudgetLedger | None = None, tier: str = "coarse",
+             ) -> tuple[DesignMapPoint, list[CellMeasurement], list[IRResult]]:
+    """1 条件セルを複数 seed で回し、地図の 1 点に集計する（逐次版）。"""
+    t0 = time.perf_counter()
+    cells: list[CellMeasurement] = []
+    irs: list[IRResult] = []
+    periods_total = 0
+    for s in seeds:
+        planned = _planned_periods(cfg)
+        if ledger is not None:
+            ledger.charge(tier, planned)
+        m, ir, actual, _ = run_one_seed(cfg, s)
+        if ledger is not None:
+            ledger.refund(tier, planned - actual)
+        periods_total += actual
+        cells.append(m)
+        irs.append(ir)
+    point = aggregate_cell(cfg, cells, irs, periods_total,
+                           time.perf_counter() - t0)
     return point, cells, irs
 
 
@@ -281,6 +304,22 @@ def dense_neighbors(center: LearnConfig) -> list[LearnConfig]:
         for lam_mult in (0.7, 1.0, 1.4):
             out.append(center.replace(batch_interval=n_int,
                                       lambda_jump=center.lambda_jump * lam_mult))
+    return out
+
+
+def density_spoke(center: LearnConfig) -> list[LearnConfig]:
+    """Tier-2: 事象密度スポーク——認定が物理的に可能な regime の探索（finding 0002）。
+
+    baseline 疎度（pn=ν·dt=0.01）では on-path の Q ギャップが報酬ノイズに埋まり、
+    policy/cycle いずれの意味でも収束が成立しない（pilot 実測）。noise_rate を上げ
+    （fill/期 を増やし）、lr を下げて（平均化を強めて）SNR を確保した世界で gate を
+    動かす。(ν=30, lr=0.15) は lr の役割を分離する対照。
+    """
+    out = []
+    for nr, lr in ((10.0, 0.02), (30.0, 0.02), (30.0, 0.15)):
+        for mech, N, stal in CONDITIONS:
+            out.append(center.replace(noise_rate=nr, lr=lr, mechanism=mech,
+                                      batch_interval=N, staleness=stal))
     return out
 
 
