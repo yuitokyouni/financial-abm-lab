@@ -31,7 +31,7 @@
 
 **Acceptance Scenarios**:
 
-1. **Given** 収束判定基準（経験的安定）を満たした policy、**When** markup を複数 seed で測る、**Then** markup 点推定±SE と floor 体系の単調性（ZI ≤ myopic-Nash ≤ 実現）が報告される。
+1. **Given** 収束判定基準（経験的安定）を満たした policy、**When** markup を複数 seed で測る、**Then** markup 点推定±SE と参照点（ZI・myopic-Nash・monopoly）に対する実現 spread の位置が報告される（順序の理論保証は Nash ≤ 実現のみ。D-B5 訂正）。
 2. **Given** markup>0 が有意な点、**When** 強制 1 期逸脱（undercut）を注入、**Then** 懲罰（逸脱後の利得低下）と協調の再確立が検出されれば「認定」、されなければ「高止まり（非認定）」と機械分類される。
 3. **Given** n=1（独占）への縮退、**When** 同一学習設定で走らせる、**Then** 実現 spread が monopoly 方向（myopic-Nash 超）へ行く sanity が通る。
 4. **Given** memory=0（myopic）への縮退、**When** 走らせる、**Then** 実現 spread が myopic-Nash 近傍に収束する（懲罰を条件づけられない → collusion 不能、の理論整合）。
@@ -105,7 +105,7 @@
 - **FR-002**: 学習 baseline は tabular Q-learning（ε-greedy 減衰・学習率・割引率を明示パラメータ化）。頑健性のため第 2 変種（最低 1 つ）を同一インターフェイスで差し替え可能にする。
 - **FR-003**: 市場側は 001 の外生価格・連続/batch エンジンを共有し、**committed-quote**（baseline）と **revisable-quote**（clear 直前に belief 更新後の再気配＝sniping 消失）を機構フラグとして提供する。
 - **FR-004**: 競争ベンチマーク＝同一 n の myopic/one-shot stage-game Nash spread を sim と独立に算出する（arbitrageur 逆選択への GM break-even、001 anchor を再利用）。monopoly spread は n=1 sanity 専用とし、markup 分母に使わない。
-- **FR-005**: ZI floor（ランダム action 集団の実現 spread）を測定し、floor 体系 ZI ≤ myopic-Nash ≤ 実現 の単調性を検査する。
+- **FR-005**: ZI floor（ランダム action 集団の実現 spread）を解析と sim の両側で測定する。**順序訂正（2026-06-10, research D-B5）**: 勝者総取りの spread 競争では理論順序は **myopic-Nash ≤ 実現（収束時）** であり、ZI は中間参照点（「ZI ≤ Nash」は成立しない——ZI=E[min h] は grid 中央寄り、Nash は break-even 近傍）。検査するのは (i) ZI 解析値=sim 実測、(ii) Nash ≤ monopoly、(iii) 実現と各参照点の相対位置の報告。
 - **FR-006**: markup = (実現 spread − myopic-Nash) / myopic-Nash を、収束 policy 上・複数 seed・SE 付きで測定する。収束（経験的安定）の判定基準を明示し機械判定する。
 - **FR-007**: impulse-response 検査を機械判定で実装する: 収束後に強制 1 期逸脱（undercut）を注入 → 懲罰の有無 → 協調再確立の有無。**認定 = markup 有意 AND 検査通過**。
 - **FR-008**: memory 閾値（C2）は認定通過点のみで測定する（gate、原則IV。非認定点の閾値は報告しない）。
@@ -134,7 +134,7 @@
 - **SC-005**: 主結果の方向が ≥2 学習アルゴリズム・セルあたり ≥5 seed・粗 grid 横断で再現される、または依存性が明示される。
 - **SC-006**: memory 閾値の測定に gate 違反ゼロ（非認定点の閾値を一切報告しない）。
 - **SC-007**: 外部アンカー 1 点の結果が出典付きで報告される。
-- **SC-008**: sanity 縮退が全て通る: n=1 → monopoly 方向、memory=0 → myopic-Nash 近傍、floor 体系の単調性。
+- **SC-008**: sanity 縮退が全て通る: n=1 → monopoly 方向、memory=0 → myopic-Nash 近傍、ZI 解析値=sim 実測・Nash ≤ monopoly（floor の順序主張は D-B5 訂正後の形）。
 
 ## Assumptions
 

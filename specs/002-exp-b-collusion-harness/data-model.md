@@ -51,7 +51,7 @@ spec の Key Entities → 具体 dataclass/フィールド。001 の SimConfig/M
 - `myopic_nash_spread(cfg) -> float`: 対称純 Nash（全列挙・単独逸脱検査）。複数あれば最小を返し全候補も保持
 - `monopoly_grid(cfg) -> float`: n=1 の argmax π（inelastic では grid 上限、D-B11）
 - `zi_floor(cfg) -> float`: E[min of n 一様 grid 抽選]（厳密和）
-- **test_benchmarks**: grid 細分で nash → h\*_cont（gm_break_even）収束／floor 単調性 ZI ≤ Nash ≤ monopoly
+- **test_benchmarks**: grid 細分で nash → h\*_cont（gm_break_even）収束／Nash ≤ monopoly_grid／ZI 解析値 = ZIPolicy 実測（順序は D-B5 訂正後の形：ZI は中間参照点）
 
 ## DesignMapPoint (`designmap.py`)
 
@@ -72,7 +72,7 @@ spec の Key Entities → 具体 dataclass/フィールド。001 の SimConfig/M
 | ゼロサム会計（001 と同一規約） | test_env_mechanics |
 | 同一 LearnConfig ⇒ bit 同一結果 | test_env_mechanics |
 | grid 細分で Nash → GM h\* | test_benchmarks |
-| ZI ≤ myopic-Nash ≤ monopoly_grid | test_benchmarks |
+| myopic-Nash ≤ monopoly_grid・ZI 解析=実測（D-B5 訂正後） | test_benchmarks |
 | grim-trigger 合成 policy ⇒ certified | test_verdict_gate |
 | 固定高止まり ⇒ ¬certified（懲罰なし） | test_verdict_gate |
 | n=1 ⇒ 実現 spread が Nash 超（上限方向） | test_qlearn_sanity |

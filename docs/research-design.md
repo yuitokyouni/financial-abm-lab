@@ -115,7 +115,7 @@ B の中心問題は、名前のついた**二力の対決**である（M1 findi
 
 ### 3.4 指標
 
-- **supra-competitive markup**：実現 spread の競争ベンチマークに対する超過。markup = (実現 spread − 競争 spread) / 競争 spread。**競争ベンチマークは独占（単体 MM）spread ではなく、同一 n 体の myopic / one-shot stage-game Nash**（履歴に条件づけない best-response の不動点）。これは「arbitrageur からの逆選択への Glosten-Milgrom break-even」で決まる（§4.1 C4 と同一の結び目＝A1+A2+C4）。さらにその下に **zero-intelligence floor**（メカニズム＋order-flow 制約だけで出る spread、知能ゼロのベースライン）を置き、「どこからが戦略/知能の寄与か」を分離する。floor 体系：ZI floor ≤ myopic-Nash floor ≤ 実現 spread。
+- **supra-competitive markup**：実現 spread の競争ベンチマークに対する超過。markup = (実現 spread − 競争 spread) / 競争 spread。**競争ベンチマークは独占（単体 MM）spread ではなく、同一 n 体の myopic / one-shot stage-game Nash**（履歴に条件づけない best-response の不動点）。これは「arbitrageur からの逆選択への Glosten-Milgrom break-even」で決まる（§4.1 C4 と同一の結び目＝A1+A2+C4）。さらに **zero-intelligence 参照点**（メカニズム＋order-flow 制約だけで出る spread、知能ゼロのベースライン）を置き、「どこからが戦略/知能の寄与か」を分離する。〔**訂正 2026-06-10**（B 実装時に確定、`specs/002-exp-b-collusion-harness/research.md` D-B5）：勝者総取りの spread 競争では知能は spread を*下げる*方向に働くため、理論順序は **myopic-Nash ≤ 実現（収束時）** であり、ZI（=E[min h]、grid 中央寄り）は**中間参照点**。旧記述「ZI ≤ myopic-Nash ≤ 実現」は誤り。学習実現が ZI の下か上かが競争/協調学習の診断になる。〕
 - **collusion の安定性／頑健性**：supra-competitive 状態が (i) 新規 MM の参入、(ii) 需要／volatility ショック、(iii) 強制的な 1 期逸脱（reward-punishment が再確立するか）に対して持続するか。Calvano 流の deviation + punishment 分析。**この impulse-response 検査を通過した点のみ collusion と認め、その後でのみ §3.5 の memory 閾値を測る（artifact の閾値を測らないための gate＝追加点①）。**
 - **設計マップ（本研究の中心測度）**：各市場設計について **両軸とも学習(B)世界で測った** (抽出量, collusion markup) を平面にプロットする（学習 MM も sniped される＝同一世界で coherent）。実験 A は frontier のデータ源ではなく**検証アンカー**に徹する（A=unit test, B=findings を漏らさない）。比較は単一勝者でなく地図であり、trade-off / 整合 / 対立 のどれも読み取れる。
 

@@ -38,11 +38,12 @@
 - **Rationale**: A1 knot——「同一 n の myopic/one-shot Nash」が分母。離散 grid 上で解析的に解くことで (i) agent が実際に選べる行動空間と同じ空間で分母が定義され、grid 粗さによる見かけ markup を排除、(ii) grid 細分極限で GM break-even h\* に収束（`test_benchmarks` で assert）＝001 anchor への接続が検証可能、(iii) **機構別**に計算することで「batch が競争水準そのものを動かす効果」と「collusion」を分離（分母を間違えると変調と競争シフトを混同する）。`benchmarks.py` は env/qlearn を import しない（分母が学習コードのバグを共有しない、001 anchors と同じ構造担保）。
 - **Alternatives**: 連続 h\* をそのまま分母（grid 粗さが markup に混入）／監督下の best-response 学習で数値的に Nash を出す（sim 依存＝独立性喪失）／monopoly 分母（A1 違反・knot 破り）→ 却下。
 
-## D-B5. ZI floor = 解析期待値 + sim 照合
+## D-B5. ZI floor = 解析期待値 + sim 照合（**順序主張の訂正あり**）
 
-- **Decision**: ZI 集団 = 各期 grid 上の一様ランダム action。floor = E[実現 spread] = E[min(h_1..h_n)]（一様 i.i.d. の最小値、grid 上の厳密和）。`benchmarks.zi_floor` が解析値を返し、ZIPolicy の sim 実測と test で照合。floor 体系 `ZI ≤ myopic-Nash ≤ 実現` の単調性検査に使う。
-- **Rationale**: 「メカニズム＋order-flow 制約だけで出る spread」の操作的定義。解析と sim の二重化は battery と同じ規律。
-- **Alternatives**: ZI を sim のみで測る（独立検査にならない）→ 却下。
+- **Decision**: ZI 集団 = 各期 grid 上の一様ランダム action。ZI 参照点 = E[実現 spread] = E[min(h_1..h_n)]（一様 i.i.d. の最小値、grid 上の厳密和）。`benchmarks.zi_floor` が解析値を返し、ZIPolicy の sim 実測と test で照合。
+- **訂正（2026-06-10、実装時に確定）**: 設計 docs（research-design §3.4・ontology）の「floor 体系 ZI ≤ myopic-Nash ≤ 実現」は本市場では**誤り**。勝者総取りの spread 競争（Bertrand 型）では、知能（best response）は spread を**下げる**方向に働く：Nash は break-even 近傍（grid 下方）、ZI = E[min h] は grid 支持域の中央寄り。ゆえに一般に **myopic-Nash ≤ ZI** であり、正しい理論的保証は「**myopic-Nash ≤ 学習実現（収束時）**」のみ。ZI は「知能ゼロならどこに出るか」の**中間参照点**として報告し、学習実現が ZI より下（競争学習）か上（協調学習）かが情報になる。default grid での Nash ≤ ZI は test で検査する（grid 設定依存の経験的性質として、定理としてではなく）。
+- **Rationale**: 「メカニズム＋order-flow 制約だけで出る spread」の操作的定義。解析と sim の二重化は battery と同じ規律。誤った順序を invariant としてテストに焼くと、正しい実装が落ちる/誤った実装が通る。
+- **Alternatives**: ZI を sim のみで測る（独立検査にならない）→ 却下。順序主張を維持（導出と矛盾）→ 却下。
 
 ## D-B6. 学習ハイパーと収束判定（経験的安定）
 
@@ -59,9 +60,10 @@
   1. pre window 100 期で基準 profile（各 MM の greedy action）と基準利得を記録。
   2. 逸脱者 i=0 に **myopic 最良応答**（他者の基準 action 所与で当期 π 最大の action＝最大 undercut とは限らない）を **1 期強制**。
   3. T_ir = 200 期観測。**懲罰検出** = 相手側の action が基準より ≥1 grid step タイト化が逸脱後 ≤10 期以内に発生 **かつ** 逸脱者の T_ir 累積利得 < 非逸脱 counterfactual（逸脱が割に合わない＝支持均衡）。**再確立検出** = 最後の 50 期、全員の action が基準 profile の ±1 grid step 内。
-  4. **認定 = [markup 有意] ∧ [懲罰] ∧ [再確立]**。markup 有意 = セル内 ≥5 seed の markup 平均 − 2·SE > **0.05**（5% の経済的 floor。微小 markup を collusion と呼ばない）。
+  4. **認定 = [markup 有意] ∧ [懲罰] ∧ [再確立]**。markup 有意 = セル内 ≥5 seed の markup 平均 − 2·SE > **0.05**（5% の経済的 floor。微小 markup を collusion と呼ばない）。**seed 集約（実装注記, 2026-06-10）**: IR は seed ごとに pass/fail（懲罰 ∧ ¬逸脱有利 ∧ 再確立）を判定し、**pass 率 ≥ 0.8** かつ全 seed 収束でセル認定（`verdict.IR_PASS_FRAC`）。
   - **分類器自体を test で固定**（`test_verdict_gate.py`）: (i) 手書き **grim-trigger** policy 組（逸脱を見たら Nash へ永久回帰…ではなく有限懲罰→復帰版）→ PASS すべき。(ii) **固定高止まり**（全員無条件に高 h、逸脱に無反応）→ 懲罰なしで FAIL すべき。(iii) ε>0 の探索ノイズを懲罰と誤検出しないこと（凍結後に注入する設計の検証）。
 - **Rationale**: 原則IV の gate（A3×C2）の操作化。閾値（10 期・200 期・±1 step・5%・2SE）は懲罰の典型時定数（数期）と grid 解像度から固定し、headline 点では閾値感度を robustness 報告。**gate の検出力を学習コードと独立に検証する**のが 001 の anchor 独立性と同型の規律——gate が壊れていたら全認定が無意味になるため、ここが B の検証の本丸。
+- **実装注記（2026-06-10、決定論化）**: frozen policy の state は action 履歴のみ＝IR rollout は**完全決定論**（flow 乱数は動学に影響しない）。よって逸脱収支は realized reward でなく**期待 stage payoff（benchmarks、解析）の累積差**で厳密評価する——realized で測ると収支がたかだか数期の到着ノイズ（pn·数期）に沈み、判定がコイントスになる。懲罰・再確立も profile 列のみで判定。env/乱数は IR に不要。
 - **Alternatives**: markup のみで認定（探索不足の高止まりと区別不能＝A3 違反）／学習 ON のまま逸脱注入（Q が逸脱で汚染され、測っているものが変わる）→ 却下。
 
 ## D-B8. tie-breaking = 決定論的等分割
@@ -77,6 +79,7 @@
   - **Tier-2 dense ≤ 1×10⁹**: 変調の符号が変わる近傍の局所密 grid（N・vol・fee の細分）。
   - **Tier-3 robustness ≤ 1×10⁹**: SARSA 全 headline 点・α_lr/β/γ 振り・tie 規則第2種・memory 閾値 sweep（認定通過点のみ）・追加 seed（headline ≥20 seed）・impulse-response。
   - 実測 timing（runtime_sec、001 の RunResult に既設）を log し、見積り（5 μs/期）との乖離が ±3× を超えたら予算根拠を research.md に追記して更新する（数値を黙って変えない）。
+  - **実測追記（2026-06-10, MVP 実装時）**: train() の per-period コスト実測 = **連続 ~39 μs／batch(N=20) ~81 μs**（K=15・n=2・memory=1、純 Python ループ）。見積り 5 μs の 8–16× 超過。**予算は学習期数で定義しているため tier 上限（1/1/1×10⁹）は不変**だが、wall-clock の見通しを訂正: 総予算消化 ≈ 33–67 h serial ≈ **4–8 h（8 コア seed/セル並列）**。coarse tier 単体（≤0.96×10⁹ 期）≈ 10–21 h serial ≈ 1.5–3 h 並列。研究実行前に内側ループの最適化（act/update の numpy スカラー呼び出し削減、env チャンク拡大）で 3–5× の短縮余地あり——ただし最適化は決定論と検証緑を保ったまま行い、本 feature の scope 外（実行フェーズの前処理）とする。
 - **Rationale**: B1（grid 全張り爆発の防止）。3×10⁹ 期 ≈ 4–5 h serial（5 μs/期）＝seed 並列で 1 h 級＝ローカル完結。tier を数値で固定することで「もう少しだけ回す」の漸進的爆発を遮断。
 - **Alternatives**: wall-clock 予算（マシン依存で再現不能）／無制限（B1 違反）→ 却下。
 

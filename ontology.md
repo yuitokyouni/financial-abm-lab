@@ -9,7 +9,7 @@
 - **学習ベース抽出 / tacit collusion**: 学習 MM 同士が明示的合意なしに supra-competitive な spread を学習・維持する協調。実験 B の失敗モード。
 - **supra-competitive markup**: 実現 spread の競争ベンチマークに対する超過。markup = (実現 spread − 競争 spread) / 競争 spread。競争ベンチマークは同一 n の myopic-Nash（独占ではない, A1）。
 - **competitive benchmark (競争 spread)**: markup の分母。同一 n 体の myopic / one-shot stage-game Nash＝arbitrageur 逆選択への **Glosten-Milgrom break-even**。**独占（単体 MM）spread とは別物**（→「混同しやすい語」）。
-- **zero-intelligence (ZI) floor**: メカニズム＋order-flow 制約だけで出る spread（知能ゼロのベースライン、固有名は出さない）。「どこからが戦略/知能の寄与か」を分離。floor 体系: ZI floor ≤ myopic-Nash floor ≤ 実現 spread。
+- **zero-intelligence (ZI) floor**: メカニズム＋order-flow 制約だけで出る spread（知能ゼロのベースライン、固有名は出さない）。「どこからが戦略/知能の寄与か」を分離。**順序訂正（002 D-B5, 2026-06-10）**: 勝者総取り spread 競争では理論順序は **myopic-Nash ≤ 学習実現（収束時）**で、ZI（=E[min h]、grid 中央寄り）は**中間参照点**——旧記述「ZI ≤ myopic-Nash ≤ 実現」は誤り。学習実現が ZI の下（競争学習）か上（協調学習）かが診断情報。
 - **demand-reduction（uniform-price）**: uniform-price clearing で marginal quote が約定全量の受取価格に効くため、undercut が自分の受取価格を不利に動かす誘因。Bertrand の「undercut 全取り」が成立しない理由（C1）。
 - **Kyle λ**: 注文サイズ→価格変化の price impact 係数。実験A の anchor battery の impact 層（GM=スプレッド層、Budish=sniping 層、clearing=batch 層と並ぶ）。実装は **identity-blind flow 回帰**：sim は主体を知らずに λ̂=Σx·Δp/Σx² を測り、anchor は flow 組成から独立導出。N=1 で **GM identity（λ = competitive half-spread h\*）**＝spread 層との三角検証（D5b v2、旧 `=J` の circular 版は finding 0001 ③ で閉鎖）。
 - **participation margin**: `f·(noise 約定量) − sniping 損 − 機会コスト c`。competitive MM は利益ゼロなので、流動性存続は PnL 符号でなくこの margin の符号（退出判定）で測る。連続 vs batch が退出を反転させるか＝US3。AMM の「fee が LVR を補償→LP 残留か」と同型。

@@ -14,7 +14,7 @@
 
 **Purpose**: 全モジュールが依存する設定型を先に固定する
 
-- [ ] T001 LearnConfig dataclass を `src/microstructure/learnconfig.py` に実装（001 SimConfig と同語彙の市場 primitives、mechanism/batch_interval/staleness、n_mm/memory、action grid 導出 property（|A|=15, [0.5·h\*_cont, 2.0·J]）、学習ハイパー（lr/gamma/eps_beta）、収束・測定・IR gate 数値（D-B6/D-B7 既定値）、noise_reserve/tie_rule、`__post_init__` validation（状態数上限検査含む）、`replace()` ヘルパ。contracts §1 に準拠）
+- [X] T001 LearnConfig dataclass を `src/microstructure/learnconfig.py` に実装（001 SimConfig と同語彙の市場 primitives、mechanism/batch_interval/staleness、n_mm/memory、action grid 導出 property（|A|=15, [0.5·h\*_cont, 2.0·J]）、学習ハイパー（lr/gamma/eps_beta）、収束・測定・IR gate 数値（D-B6/D-B7 既定値）、noise_reserve/tie_rule、`__post_init__` validation（状態数上限検査含む）、`replace()` ヘルパ。contracts §1 に準拠）
 
 ---
 
@@ -22,11 +22,11 @@
 
 **Purpose**: 測定装置の独立部品（分母・環境・政策）。**benchmarks は env/qlearn を import しない**（構造的独立、001 anchors 規律）
 
-- [ ] T002 [P] benchmarks を `src/microstructure/benchmarks.py` に実装（`stage_payoff`: D-B4 閉形式 continuous/batch/revisable・勝者=min h・tie 等分割、`myopic_nash_spread`: 対称純 Nash の全列挙＋単独逸脱検査（複数解は最小＋候補保持）、`monopoly_grid`: n=1 argmax、`zi_floor`: E[min of n 一様 grid 抽選] 厳密和。import は anchors と stdlib/numpy のみ）
-- [ ] T003 [P] MarketEnv を `src/microstructure/env.py` に実装（`reset/step`、continuous=1 step・batch=N step 蓄積の学習期構造（D-B3 の手番順序厳守）、committed/revisable（revisable は arb 手番直前に belief→v 更新＝抽出が恒等 0）、tie_rule split/rotate、master seed→`spawn` の独立 RNG ストリーム（price/arb/noise/探索, D-B12）、info に extraction/winner_h/disp/noise_fills、001 と同一の会計規約）
-- [ ] T004 [P] 政策クラスを `src/microstructure/qlearn.py` に実装（`Policy` protocol（act/update/greedy/frozen）、状態 encode=action index 組の混基数整数、`QLearner`/`SARSA`（表形式、ε_t=exp(−β·t)）、`ZIPolicy`、`FixedPolicy`（状態→action 表、gate 検証用））
-- [ ] T005 [P] benchmarks 検証を `tests/test_benchmarks.py` に実装（grid 細分（|A|=15→61→241）で `myopic_nash_spread → anchors.gm_break_even` 収束、floor 単調性 ZI ≤ Nash ≤ monopoly_grid、batch 分母が continuous 分母と異なる（機構別性）、revisable で sniping 項=0 の payoff 整合）
-- [ ] T006 [P] env 機構検証を `tests/test_env_mechanics.py` に実装（staleness="revisable" ⇒ 全期 extraction==0 **恒等・tolerance なし**（continuous/batch 両方）、ゼロサム会計（arb 利得=MM 損）、tie-split の保存則（分配和=全体）、同一 LearnConfig⇒bit 同一軌道、batch 期構造が 001 `_run_batch` 規約（stale settle・clear 時 1 回 picking-off）と一致——FixedPolicy 固定 h で 001 engine の同パラメータ抽出と統計一致）
+- [X] T002 [P] benchmarks を `src/microstructure/benchmarks.py` に実装（`stage_payoff`: D-B4 閉形式 continuous/batch/revisable・勝者=min h・tie 等分割、`myopic_nash_spread`: 対称純 Nash の全列挙＋単独逸脱検査（複数解は最小＋候補保持）、`monopoly_grid`: n=1 argmax、`zi_floor`: E[min of n 一様 grid 抽選] 厳密和。import は anchors と stdlib/numpy のみ）
+- [X] T003 [P] MarketEnv を `src/microstructure/env.py` に実装（`reset/step`、continuous=1 step・batch=N step 蓄積の学習期構造（D-B3 の手番順序厳守）、committed/revisable（revisable は arb 手番直前に belief→v 更新＝抽出が恒等 0）、tie_rule split/rotate、master seed→`spawn` の独立 RNG ストリーム（price/arb/noise/探索, D-B12）、info に extraction/winner_h/disp/noise_fills、001 と同一の会計規約）
+- [X] T004 [P] 政策クラスを `src/microstructure/qlearn.py` に実装（`Policy` protocol（act/update/greedy/frozen）、状態 encode=action index 組の混基数整数、`QLearner`/`SARSA`（表形式、ε_t=exp(−β·t)）、`ZIPolicy`、`FixedPolicy`（状態→action 表、gate 検証用））
+- [X] T005 [P] benchmarks 検証を `tests/test_benchmarks.py` に実装（grid 細分（|A|=15→61→241）で `myopic_nash_spread → anchors.gm_break_even` 収束、floor 単調性 ZI ≤ Nash ≤ monopoly_grid、batch 分母が continuous 分母と異なる（機構別性）、revisable で sniping 項=0 の payoff 整合）
+- [X] T006 [P] env 機構検証を `tests/test_env_mechanics.py` に実装（staleness="revisable" ⇒ 全期 extraction==0 **恒等・tolerance なし**（continuous/batch 両方）、ゼロサム会計（arb 利得=MM 損）、tie-split の保存則（分配和=全体）、同一 LearnConfig⇒bit 同一軌道、batch 期構造が 001 `_run_batch` 規約（stale settle・clear 時 1 回 picking-off）と一致——FixedPolicy 固定 h で 001 engine の同パラメータ抽出と統計一致）
 
 **Checkpoint**: 測定装置（分母・環境・政策）が独立検証済み —— ここまで緑で story 着手可
 
@@ -38,12 +38,12 @@
 
 **Independent Test**: 単一セルで `train→measure→impulse_response→certify` が決定論で完走し、certified の真偽どちらでも機械的に出る（spec US1 Acceptance 1–4）。
 
-- [ ] T007 [US1] `train(cfg) -> TrainResult` を `src/microstructure/qlearn.py` に実装（n 体同時学習ループ、収束=greedy policy 全状態 argmax が stable_window=10⁵ 期連続不変、t_max=2×10⁶ cap、periods_run/policy_stable_at 記録、非収束ラベル。D-B6）
-- [ ] T008 [US1] `measure(cfg, result) -> CellMeasurement` を `src/microstructure/verdict.py` に実装（ε=0・学習停止・K=10⁴ 期、realized spread（期ごとの勝者 h）/extraction/markup=(実現−Nash)/Nash（分母=benchmarks.myopic_nash_spread 同機構）、floors=(zi, nash, monopoly_grid)、per-seed 集計と SE）
-- [ ] T009 [US1] `impulse_response(cfg, result) -> IRResult` と `certify(...) -> CollusionVerdict` を `src/microstructure/verdict.py` に実装（D-B7 プロトコル: Q 凍結・ε=0、pre=100 期、1 期 myopic-BR 強制逸脱、T_ir=200、懲罰=相手 ≥1 step タイト化 ≤10 期 ∧ 逸脱累積利得<counterfactual（独立 RNG ストリームで同一環境 replay）、再確立=末尾 50 期 ±1 step、認定=有意(mean−2SE>0.05) ∧ 懲罰 ∧ ¬逸脱有利 ∧ 再確立）
-- [ ] T010 [P] [US1] gate 分類器の独立検証を `tests/test_verdict_gate.py` に実装（**本 feature 検証の本丸**: 手書き grim-trigger 型 FixedPolicy 組（高 h 協調・逸脱検知で k 期 Nash 回帰→復帰）⇒ certified=True、無反応固定高止まり ⇒ 懲罰なしで certified=False、ε>0 探索ノイズを懲罰と誤検出しない（凍結注入の検証）、閾値境界の決定論）
-- [ ] T011 [P] [US1] 縮退 sanity を `tests/test_qlearn_sanity.py` に実装（n=1 ⇒ 実現 spread が Nash 超（grid 上限方向、D-B11 の ceiling 明示）、memory=0 ⇒ 実現 spread が Nash ±1 grid step、floor 単調性 ZI ≤ Nash ≤ 実現、train の決定論（Q 表 bit 一致））
-- [ ] T012 [US1] e2e スモークを `tests/test_us1_pipeline.py` に実装（縮小 t_max（~5×10⁴ 期）の単一セルで quickstart §単一セルの全手順が決定論で完走、verdict のフィールドが全て埋まる——certified の真偽は問わない）
+- [X] T007 [US1] `train(cfg) -> TrainResult` を `src/microstructure/qlearn.py` に実装（n 体同時学習ループ、収束=greedy policy 全状態 argmax が stable_window=10⁵ 期連続不変、t_max=2×10⁶ cap、periods_run/policy_stable_at 記録、非収束ラベル。D-B6）
+- [X] T008 [US1] `measure(cfg, result) -> CellMeasurement` を `src/microstructure/verdict.py` に実装（ε=0・学習停止・K=10⁴ 期、realized spread（期ごとの勝者 h）/extraction/markup=(実現−Nash)/Nash（分母=benchmarks.myopic_nash_spread 同機構）、floors=(zi, nash, monopoly_grid)、per-seed 集計と SE）
+- [X] T009 [US1] `impulse_response(cfg, result) -> IRResult` と `certify(...) -> CollusionVerdict` を `src/microstructure/verdict.py` に実装（D-B7 プロトコル: Q 凍結・ε=0、pre=100 期、1 期 myopic-BR 強制逸脱、T_ir=200、懲罰=相手 ≥1 step タイト化 ≤10 期 ∧ 逸脱累積利得<counterfactual（独立 RNG ストリームで同一環境 replay）、再確立=末尾 50 期 ±1 step、認定=有意(mean−2SE>0.05) ∧ 懲罰 ∧ ¬逸脱有利 ∧ 再確立）
+- [X] T010 [P] [US1] gate 分類器の独立検証を `tests/test_verdict_gate.py` に実装（**本 feature 検証の本丸**: 手書き grim-trigger 型 FixedPolicy 組（高 h 協調・逸脱検知で k 期 Nash 回帰→復帰）⇒ certified=True、無反応固定高止まり ⇒ 懲罰なしで certified=False、ε>0 探索ノイズを懲罰と誤検出しない（凍結注入の検証）、閾値境界の決定論）
+- [X] T011 [P] [US1] 縮退 sanity を `tests/test_qlearn_sanity.py` に実装（n=1 ⇒ 実現 spread が Nash 超（grid 上限方向、D-B11 の ceiling 明示）、memory=0 ⇒ 実現 spread が Nash ±1 grid step、floor 単調性 ZI ≤ Nash ≤ 実現、train の決定論（Q 表 bit 一致））
+- [X] T012 [US1] e2e スモークを `tests/test_us1_pipeline.py` に実装（縮小 t_max（~5×10⁴ 期）の単一セルで quickstart §単一セルの全手順が決定論で完走、verdict のフィールドが全て埋まる——certified の真偽は問わない）
 
 **Checkpoint**: US1 単独で動く＝MVP。実スケール run（t_max=2×10⁶）の実行と結果記録は /speckit-implement 後の研究実行フェーズ
 
