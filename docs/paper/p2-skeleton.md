@@ -1,6 +1,9 @@
 # P2 論文 skeleton — Calvano 型アルゴ共謀の移植可能性監査
 
-**Status**: skeleton v1.1（2026-06-12）。**venue 確定: JEDC 主**（随時投稿、査読文化適合、
+**Status**: skeleton v1.1（2026-06-12）。**draft 完成期限 = 2026-07-31**（10 月を
+「投稿するだけ」で迎える）。8–9 月の主戦場 = P1 prereg 確定・Atlas Stage 3・
+whitepaper v0.2。本文は英語、節 draft は `docs/paper/sections/`。
+**venue 確定: JEDC 主**（随時投稿、査読文化適合、
 読者=Atlas 採用候補コミュニティ、フルレングスで prereg chain + incident exhibits を収容）。
 **arXiv 即時公開＋標的引用（Calvano 系・Klein・Banchio-Skrzypacz へ直接送付）＋
 JPX WP トラック並走**。理論化（疎報酬非収束の証明）が立てば companion を EC 2027-02 に
