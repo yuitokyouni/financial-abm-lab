@@ -73,7 +73,8 @@ P3 の被監査モデル（LLM-ABM）は当面 C0 適合のラッパーから始
 | CB | Cont-Bouchaud | 新規実装（port 無し） | **識別トリオ（古典）**。channels = () → {CB, ZI} 応答等価類の事前予測（claims §2.2） |
 | LM | Lux-Marchesi | port 草稿あり（`feat/intervention-sweep` の `toy/models/lm.py`、v0.3 API 適合要） | **識別トリオ（古典）**。部分観測の B2 切り出しが設計判断 |
 | ALW | Alfarano-Lux-Wagner | toy H（Kirman/ALW 型）が母体 | **識別トリオ（古典）** |
-| ZI | zero-intelligence | port 草稿あり（同 branch `zi.py`）。**Farmer-Patelli-Zovko (2005) 原典 audit 通過まで正準と見なさない** | 陰性対照（channels = ()） |
+| ZI | zero-intelligence | port 草稿あり（同 branch `zi.py`）。**Farmer-Patelli-Zovko (2005) 原典 audit 通過まで正準と見なさない** | 陰性対照（channels = ()）。SF battery 通過は期待しない（claims §2.2 v1.2、射程は microstructure 系 SF） |
+| Genoa-ZI+ | Genoa 人工市場（Raberto et al. 2001 系） | 新規実装（**自前で SF 通過確認できた場合のみ採用**、claims §2.2） | 戦略フリー対照（channels = ("volatility",)——SF 等価集合と IR 識別 family の両方に入る唯一の非行動的機構） |
 | T | Chiarella-Iori 型 trend-following | toy 実装済（v0.3 正準） | toy §14 判定の主役 → paper-grade では補助機構 |
 | H | Kirman/ALW 型 herding | toy 実装済（v0.3 正準） | 同上（ALW アダプタの母体） |
 | SG | Speculation Game | port 草稿あり（同 branch `sg.py`） | 補助機構（トリオ外） |
