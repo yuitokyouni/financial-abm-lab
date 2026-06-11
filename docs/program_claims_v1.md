@@ -1,6 +1,10 @@
 # Program Claims v1 — claim-first ループと P1/P2/P3 の目標文
 
-**Status**: draft v1（2026-06-11）。Yuito レビュー待ち。承認後、本書がプログラム全体（本 repo = P1、ABM-Microstructure = P2、将来の監査 repo = P3）の主張構造の一次ソースになる。
+**Status**: draft v1.1（2026-06-11）。本書がプログラム全体（本 repo = P1、ABM-Microstructure = P2、将来の監査 repo = P3）の主張構造の一次ソース。
+
+**改訂履歴**
+- v1.1（2026-06-11）: Yuito レビュー反映——P1 トリオ確定 = **CB/LM/ALW（古典踏襲、「世界標準たるために古典を踏襲するのが筋」）**。ZI の正準定義 = Farmer 原典準拠。CB の観測チャネル欠如は主張から逃がさず **{CB, ZI} 応答等価類の事前予測**として目標文に組み込んだ（§2.2）。
+- v1（2026-06-11): 初版 draft。
 
 ---
 
@@ -27,7 +31,9 @@
 
 ### P1（Atlas コア）
 
-> **ゼロ知能陰性対照を含む N 個の異機構モデルが、事前固定された stylized facts battery を統計的等価（TOST）で通過する一方、事前登録された介入応答プロトコルは全機構ペアを family-wise α = 0.05・検出力 1−β ≥ 0.9（最小検出効果 = chance + 15pp）で識別する。**
+> **古典機構トリオ（Cont-Bouchaud / Lux-Marchesi / Alfarano-Lux-Wagner）とゼロ知能陰性対照（Farmer 原典準拠）が、事前固定された stylized facts battery を統計的等価（TOST）で通過する一方、事前登録された介入応答プロトコルは、観測チャネルを持つ全機構ペアを family-wise α = 0.05・検出力 1−β ≥ 0.9（最小検出効果 = chance + 15pp）で識別し、観測チャネルを欠く {CB, ZI} は事前予測どおり応答等価（TOST）に留まる。**
+
+識別の主張（観測チャネルあり）と等価の予測（チャネル無し）が**同じ理論から両側に**出る構造——介入応答は「分けられるはずのもの」を分け、「分けられないはずのもの」を分けない。後者は falsifiable な理論予測であり、CB が flat でなければ機構理解の方が間違っている。
 
 - 対象権威：計算経済学（JEDC / Computational Economics）＋ ML 側（NeurIPS Datasets & Benchmarks）。
 - 中身：真・PRISM toy の成功経路（GO）の論文化。機構トリオ＋ZI 陰性対照＋検出力解析。
@@ -38,17 +44,21 @@
 | 項目 | 値 | 根拠 |
 |---|---|---|
 | 識別の検定 | 機構ペア (i,j) × 介入 scheme s ごとに H0: accuracy = 0.5（一側） | ペア単位が主張の単位 |
-| 多重比較 | Holm、family = 全ペア × 全 scheme（N=4 機構 → 6 ペア × 4 scheme = 24 検定） | family-wise α = 0.05 |
+| 多重比較 | Holm、family = 観測チャネルを持つ全ペア × 全 scheme（{CB,LM,ALW,ZI} → 識別 5 ペア × 4 scheme = 20 検定。(CB,ZI) は識別 family から除外し等価予測側で検定） | family-wise α = 0.05 |
 | 最小検出効果（MDE） | accuracy = 0.65（chance + 15pp） | GO 閾値 0.75 より下に置き、閾値ギリギリの効果も検出力内に収める |
 | 検出力 | 1−β ≥ 0.9 @ MDE、Holm 最悪 α' ≈ 0.05/24 | 二項検定の正規近似で n ≈ 190/条件 → **CV 依存性の補正（Nadeau–Bengio）で ×2 して n = 400 runs/条件以上**。v0.3 の M=1000 はこれを満たす |
 | SF 等価性 | 「識別できない」は TOST で主張：CV accuracy の 90% CI が [0.45, 0.55] に収まること | 棄却失敗 ≠ 等価。v0.3 の pass band 50–55% の形式化 |
 | 陰性対照 | ZI の介入応答 flat も TOST（介入有無の判別 accuracy CI が [0.45, 0.55] 内） | 「応答しないこと」も等価性検定で主張する |
 | 分散報告 | 全指標 seed 横断 mean ± SE + n、CV は fold 間分散を別記 | プログラム共通様式（§3） |
 
-#### 2.2 P1 の正直な前提リスク（目標文を脅かすもの、先に潰す順）
+#### 2.2 トリオ確定（2026-06-11、Yuito 決定）と前提リスク
 
-1. **ZI が SF battery を通過するかは経験的に非自明**（vol clustering / heavy tail は ZI から自然には出にくい）。通過しない場合、目標文は「N 機構が SF 等価、ZI は SF でも IR でも区別される」へ縮退（縮退規則として事前登録する）。陰性対照の本義（IR-flat）は SF 通過と独立に成立する。
-2. **トリオの構成**。指名された CB/LM/ALW のうち、CB（Cont-Bouchaud）は古典形で観測チャネルを持たない（クラスタ形成が外生確率）→ B2 介入面が無く、識別トリオの一員ではなく**第二の陰性対照**が正しい席。LM は部分観測で B2 実装困難（既知）。v0.3 正準は T（Chiarella-Iori）/H（Kirman–ALW 型）。**推奨トリオ: T / H / SG**（SG は自前モデルで観測チャネル設計が自由）＋ ZI（＋余力で CB）陰性対照。確定は Yuito 判断。
+**トリオ = CB / LM / ALW（古典踏襲）＋ ZI 陰性対照。** 根拠：世界標準を主張するベンチが識別して見せる対象は、分野が 30 年読んできた古典でなければならない（自前モデルでの識別は「自分に都合のいい機構を分けた」と読まれる）。v0.3 toy の T/H はそのまま toy の §14 判定に使い、paper-grade で古典セットに移行する。T/H/SG は補助機構として残す（N≥4 拡張は任意）。
+
+- **CB の観測チャネル欠如は欠陥ではなく主張の一部**：古典形 CB はクラスタ形成が外生確率で、観測情報を使わない → B2 介入面が無い。これを「{CB, ZI} は応答等価」という**事前予測**として目標文に組み込んだ（§2 冒頭）。識別と等価予測が同一理論から出る両側構造になり、主張はむしろ強くなる。
+- **ZI の正準定義 = Doyne Farmer の原典準拠**（Farmer, Patelli & Zovko 2005, PNAS——continuous double auction での ZI order flow。起源としては Gode & Sunder 1993 を引く）。他 repo で ZI の解釈ばらつきが既に観測されているため、実装は原典の order-flow 仕様に対して audit する。orphan branch `feat/intervention-sweep`（commit 0ebb6f9）の `toy/models/zi.py` port 草稿は**この audit を通すまで正準と見なさない**。
+- **LM の部分観測**は実装リスクとして残る（B2 介入面の切り出しに設計判断が要る）。出発点 = 同 branch の `toy/models/lm.py` port 草稿。
+- **ZI（および CB）の SF 通過は経験的に非自明**（vol clustering は両者から自然に出にくい）。縮退規則を事前登録する：通過しない機構があれば、目標文は「SF 等価集合 + SF でも区別される機構」の階層形へ縮む（どの機構がどちらに落ちても主張構造は立つ）。縮退規則の文言確定は paper-grade OSF 登録時。
 
 ### P2（共謀 × 市場設計 = ABM-Microstructure）
 
