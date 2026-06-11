@@ -110,11 +110,14 @@ classDiagram
     batch_interval : int
     cell : str
     certified : bool
+    config_hash : str
     converged_frac : float
+    eps_beta : float
     exited_frac : float
     extraction_mean : float
     extraction_se : float
     fee : float
+    gamma : float
     jump_size : float
     lambda_jump : float
     lr : float
@@ -128,6 +131,7 @@ classDiagram
     periods_total : int
     runtime_sec : float
     staleness : str
+    tie_rule : str
   }
   class FixedPolicy {
     table

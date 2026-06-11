@@ -10,7 +10,7 @@ import pytest
 from microstructure import anchors
 from microstructure.calibrations import (CalibrationIncomplete, get_calibration)
 from microstructure.designmap import (BudgetExceeded, BudgetLedger, cell_id,
-                                      coarse_grid, parse_cell_id,
+                                      coarse_grid, config_hash, parse_cell_id,
                                       robustness_variants, _planned_periods)
 from microstructure.learnconfig import LearnConfig
 from microstructure.verdict import CollusionVerdict, memory_threshold
@@ -86,6 +86,22 @@ def test_robustness_variants_cover_d_b9():
     assert "sarsa" in algos                          # 第2アルゴリズム
     assert any(cfg.tie_rule == "rotate" for cfg, _ in variants)
     assert any(s >= 20 for _, s in variants)         # headline 追加 seed
+
+
+def test_config_hash_separates_cell_id_collisions():
+    """cell id に乗らない軸（変種・override）でも結果行のキーが衝突しないこと。
+
+    robustness 変種（tie/eps_beta/gamma 等）は cell id を共有するが config_hash は
+    全て異なる。noise_rate/lr override も同様。seed だけは hash に乗らない
+    （同一セルの seed 群は同一キーで集計される）。"""
+    base = LearnConfig()
+    variants = [cfg for cfg, _ in robustness_variants(base)]
+    ids = [cell_id(c) for c in variants]
+    hashes = [config_hash(c) for c in variants]
+    assert len(set(ids)) < len(variants)             # id は衝突する（前提の確認）
+    assert len(set(hashes)) == len(variants)         # hash は衝突しない
+    assert config_hash(base) != config_hash(base.replace(noise_rate=30.0, lr=0.15))
+    assert config_hash(base) == config_hash(base.replace(seed=7))
 
 
 def test_bcs_calibration_eq3_closure():

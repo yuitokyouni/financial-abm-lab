@@ -12,11 +12,13 @@ ledger に記録される。--t-max/--seeds/--limit は smoke 用の縮小オー
 （本番予算見積りは LearnConfig 既定の t_max 基準）。
 
 crash 耐性: セルが完了するたび --out に追記し（全完了を待たない）、再実行時は
-既存 --out に載っているセルを skip する（resume）。skip は cell id 単位なので、
-job 列に同一 cell id の変種が混ざる robustness tier では resume を使えない
-（その場合は起動を拒否する——黙って誤対応するより安全側）。worker プロセス喪失は
-当該 job だけ落として続行し、charge は ledger に残る（lost compute の正直な記帳。
-大規模喪失は BudgetLedger.reconcile で監査 entry 付きで精算する）。
+既存 --out に載っているセルを skip する（resume）。skip の照合キーは **config_hash**
+（seed を除く全 config フィールドの hash、CSV に永続化）——cell id に乗らない軸
+（--noise-rate/--lr override、robustness 変種の eps_beta/gamma/tie_rule）でも
+衝突しない。hash 列の無い旧 CSV へは cell id 照合に後方互換 fallback し、その場合
+cell id が一意でない job 列は起動拒否する。worker プロセス喪失は当該 job だけ
+落として続行し、charge は ledger に残る（lost compute の正直な記帳。大規模喪失は
+BudgetLedger.reconcile で監査 entry 付きで精算する）。
 """
 from __future__ import annotations
 
@@ -28,8 +30,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from microstructure.calibrations import get_calibration  # noqa: E402
 from microstructure.designmap import (BudgetExceeded, BudgetLedger, aggregate_cell,  # noqa: E402
-                                      append_csv, cell_id, coarse_grid,
-                                      dense_neighbors, density_spoke, done_cells,
+                                      append_csv, cell_id, coarse_grid, config_hash,
+                                      dense_neighbors, density_spoke, done_keys,
                                       parse_cell_id, robustness_variants, run_cell,
                                       run_one_seed, _planned_periods)
 
@@ -163,18 +165,19 @@ def main(argv: list[str] | None = None) -> int:
                  s) for cfg, s in jobs]
 
     skipped = 0
-    done = done_cells(args.out)
+    mode, done = done_keys(args.out)
     if done:
-        ids = [cell_id(cfg) for cfg, _ in jobs]
+        keyf = config_hash if mode == "config_hash" else (lambda cfg: cell_id(cfg))
+        ids = [keyf(cfg) for cfg, _ in jobs]
         if len(set(ids)) != len(ids):
-            print(f"[resume] cell id が一意でない job 列（robustness 変種等）は resume 不可。"
+            print(f"[resume] {mode} が一意でない job 列は resume 不可。"
                   f"既存 {args.out} を退避してから再実行すること", flush=True)
             return 2
         before = len(jobs)
-        jobs = [(cfg, s) for cfg, s in jobs if cell_id(cfg) not in done]
+        jobs = [(cfg, s) for cfg, s in jobs if keyf(cfg) not in done]
         skipped = before - len(jobs)
-        print(f"[resume] {skipped}/{before} cells already in {args.out} — skipped",
-              flush=True)
+        print(f"[resume] {skipped}/{before} cells already in {args.out} — skipped"
+              f" (key={mode})", flush=True)
 
     ledger = BudgetLedger(args.budget_ledger)
     if args.parallel > 1:

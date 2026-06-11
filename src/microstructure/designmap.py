@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import math
 import time
@@ -40,6 +41,18 @@ def cell_id(cfg: LearnConfig) -> str:
             f"-fee{cfg.fee:g}-mem{cfg.memory}-n{cfg.n_mm}-{cfg.algo}")
 
 
+def config_hash(cfg: LearnConfig) -> str:
+    """seed を除く全 config フィールドの hash。
+
+    cell_id は表示用の短縮キーで noise_rate/lr/eps_beta/gamma/tie_rule 等が乗らない。
+    結果行の同一性・resume の照合はこの hash で行う（override や robustness 変種が
+    同一 cell_id を持つことによる衝突 bug class の遮断）。
+    """
+    d = {k: v for k, v in asdict(cfg).items() if k != "seed"}
+    raw = repr(sorted(d.items()))
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
+
+
 @dataclass
 class DesignMapPoint:
     cell: str
@@ -54,6 +67,10 @@ class DesignMapPoint:
     algo: str
     noise_rate: float
     lr: float
+    eps_beta: float
+    gamma: float
+    tie_rule: str
+    config_hash: str
     markup_mean: float
     markup_se: float
     extraction_mean: float
@@ -144,6 +161,8 @@ def aggregate_cell(cfg: LearnConfig, cells: list[CellMeasurement],
         staleness=cfg.staleness, lambda_jump=cfg.lambda_jump, jump_size=cfg.jump_size,
         fee=cfg.fee, memory=cfg.memory, n_mm=cfg.n_mm, algo=cfg.algo,
         noise_rate=cfg.noise_rate, lr=cfg.lr,
+        eps_beta=cfg.eps_beta, gamma=cfg.gamma, tie_rule=cfg.tie_rule,
+        config_hash=config_hash(cfg),
         markup_mean=float(markups.mean()), markup_se=se(markups),
         extraction_mean=float(extr.mean()), extraction_se=se(extr),
         certified=bool(verdict.certified) if verdict else False,
@@ -388,10 +407,17 @@ def append_csv(point: DesignMapPoint, path: str | Path) -> None:
         w.writerow(asdict(point))
 
 
-def done_cells(path: str | Path) -> set[str]:
-    """既存 out CSV に完了済みとして載っている cell id 集合（resume の skip 判定）。"""
+def done_keys(path: str | Path) -> tuple[str, set[str]]:
+    """既存 out CSV の完了キー集合（resume の skip 照合）。
+
+    returns (mode, keys)。mode = "config_hash"（新 schema、フル構成で照合——override や
+    robustness 変種でも衝突しない）または "cell"（hash 列の無い旧 CSV への後方互換）。
+    """
     path = Path(path)
     if not path.exists():
-        return set()
+        return "config_hash", set()
     with open(path, newline="", encoding="utf-8") as f:
-        return {row["cell"] for row in csv.DictReader(f)}
+        rows = list(csv.DictReader(f))
+    if rows and "config_hash" in rows[0]:
+        return "config_hash", {r["config_hash"] for r in rows}
+    return "cell", {r["cell"] for r in rows}
