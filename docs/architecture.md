@@ -67,9 +67,12 @@ classDiagram
     path : Path
     total_spent : int
     audit(subject: str, note: str) None
+    baseline(note: str) None
     charge(tier: str, periods: int) None
+    rebuild_spent() dict[str, int]
     reconcile(tier: str, periods: int, note: str) None
     refund(tier: str, periods: int) None
+    verify() bool
   }
   class Calibration {
     alpha

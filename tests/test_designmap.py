@@ -68,6 +68,24 @@ def test_ledger_concurrent_instances_do_not_clobber(tmp_path):
     assert led.data["audits"][0]["subject"] == "test"
 
 
+def test_ledger_journal_is_ground_truth(tmp_path):
+    """台帳の一次記録は追記 journal: snapshot が上書きで壊れても fold から再導出できる。"""
+    path = tmp_path / "budget.json"
+    caps = {"coarse": 1000, "dense": 1000, "robustness": 1000}
+    led = BudgetLedger(path, caps=caps)
+    led.baseline("opening")
+    led.charge("coarse", 100)
+    led.refund("coarse", 30)
+    led.reconcile("coarse", 20, "test")
+    assert led.verify() and led.rebuild_spent()["coarse"] == 50
+    # snapshot を破損させる（旧 incident の再現）→ journal から復元できる
+    path.write_text(json.dumps({"spent": {"coarse": 999, "dense": 0, "robustness": 0},
+                                "refusals": []}))
+    led2 = BudgetLedger(path, caps=caps)
+    assert not led2.verify()
+    assert led2.rebuild_spent()["coarse"] == 50
+
+
 def test_memory_threshold_gate():
     assert memory_threshold({0: _verdict(False), 1: _verdict(True),
                              2: _verdict(True)}) == 1

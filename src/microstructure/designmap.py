@@ -92,9 +92,12 @@ class BudgetExceeded(RuntimeError):
 class BudgetLedger:
     """学習期数の予算台帳（JSON 永続）。charge は run 起動**前**に呼び、超過なら拒否。
 
-    並行性: 全ての更新は lock file + read-modify-write で直列化する（2026-06-11 の
-    incident——複数プロセスの ledger instance が JSON を丸ごと last-writer-wins で
-    上書きし、audits と charge が lost update した——への恒久対策。0002a 追記参照）。
+    並行性と監査可能性（2026-06-11 incident 対応、0002a 追記参照）:
+    - 全ての更新は lock file + read-modify-write で直列化（lost update の遮断）。
+    - **台帳の一次記録は追記専用 journal**（`<path>.journal.jsonl`、1 行 1 イベント）。
+      snapshot（JSON の spent）は journal の fold のキャッシュに格下げ——上書きで
+      壊れても `rebuild_spent()` で再導出でき、`verify()` で一致を機械検査できる。
+      スナップショット上書きは台帳ではない——台帳とは追記ログのことである。
     """
 
     DEFAULT_CAPS = {"coarse": 1_000_000_000, "dense": 1_000_000_000,
@@ -138,6 +141,40 @@ class BudgetLedger:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(self.data, indent=1))
 
+    @property
+    def _journal_path(self) -> Path:
+        return self.path.with_suffix(".journal.jsonl")
+
+    def _journal_append(self, event: dict) -> None:
+        with open(self._journal_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+    def baseline(self, note: str) -> None:
+        """journal の起点 event。移行時に現 snapshot の spent を ground truth として刻む。"""
+        with self._locked():
+            self._journal_append({"op": "baseline",
+                                  "spent": {k: int(v) for k, v in self.data["spent"].items()},
+                                  "note": note})
+
+    def rebuild_spent(self) -> dict[str, int]:
+        """journal の fold から spent を導出（journal が台帳、snapshot はキャッシュ）。"""
+        spent = {t: 0 for t in self.caps}
+        if not self._journal_path.exists():
+            return {k: int(v) for k, v in self.data["spent"].items()}  # journal 導入前
+        for line in self._journal_path.read_text(encoding="utf-8").splitlines():
+            e = json.loads(line)
+            if e["op"] == "baseline":
+                spent.update({k: int(v) for k, v in e["spent"].items()})
+            elif e["op"] == "charge":
+                spent[e["tier"]] += int(e["periods"])
+            elif e["op"] in ("refund", "reconcile"):
+                spent[e["tier"]] = max(0, spent[e["tier"]] - int(e["periods"]))
+        return spent
+
+    def verify(self) -> bool:
+        """snapshot(spent) と journal fold の一致を機械検査。"""
+        return {k: int(v) for k, v in self.data["spent"].items()} == self.rebuild_spent()
+
     def charge(self, tier: str, periods: int) -> None:
         with self._locked():
             spent = self.data["spent"][tier]
@@ -146,17 +183,21 @@ class BudgetLedger:
                     {"tier": tier, "requested": int(periods),
                      "spent_at_refusal": int(spent), "cap": int(self.caps[tier])})
                 self._save()
+                self._journal_append({"op": "refusal", "tier": tier,
+                                      "periods": int(periods), "spent": int(spent)})
                 raise BudgetExceeded(
                     f"tier '{tier}': {spent} + {periods} > cap {self.caps[tier]} "
                     f"(D-B9。拒否は ledger に記録済み)")
             self.data["spent"][tier] = spent + int(periods)
             self._save()
+            self._journal_append({"op": "charge", "tier": tier, "periods": int(periods)})
 
     def refund(self, tier: str, periods: int) -> None:
         """予約（t_max ベース）と実消費の差を返金。"""
         with self._locked():
             self.data["spent"][tier] = max(0, self.data["spent"][tier] - int(periods))
             self._save()
+            self._journal_append({"op": "refund", "tier": tier, "periods": int(periods)})
 
     def reconcile(self, tier: str, periods: int, note: str) -> None:
         """成果物として保持されなかった run の charge を、監査 entry 付きで返金する。
@@ -171,6 +212,8 @@ class BudgetLedger:
                 {"tier": tier, "periods": int(periods), "note": note})
             self.data["spent"][tier] = max(0, self.data["spent"][tier] - int(periods))
             self._save()
+            self._journal_append({"op": "reconcile", "tier": tier,
+                                  "periods": int(periods), "note": note})
 
     def audit(self, subject: str, note: str) -> None:
         """監査メモを ledger に恒久記録する（lock 下で消えない）。"""
@@ -178,6 +221,7 @@ class BudgetLedger:
             self.data.setdefault("audits", []).append(
                 {"subject": subject, "note": note})
             self._save()
+            self._journal_append({"op": "audit", "subject": subject, "note": note})
 
     @property
     def total_spent(self) -> int:
