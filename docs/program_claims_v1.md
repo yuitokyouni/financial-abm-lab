@@ -1,6 +1,11 @@
 # Program Claims v1 — claim-first ループと P1/P2/P3 の目標文
 
-**Status**: draft v1（2026-06-11）。Yuito レビュー待ち。承認後、本書がプログラム全体（本 repo = P1、ABM-Microstructure = P2、将来の監査 repo = P3）の主張構造の一次ソースになる。
+**Status**: draft v1.1（2026-06-11）。本書がプログラム全体（本 repo = P1、ABM-Microstructure = P2、将来の監査 repo = P3）の主張構造の一次ソース。
+
+**改訂履歴**
+- v1.2（2026-06-11）: 文献監査の反映——「ZI が SF battery を通過する」は**過大主張として撤回**（FPZ の射程は microstructure 系 SF であり return 系列 battery ではない。Bouchaud 系レビュー: ZI 型 order-flow は臨界調整なしにランダムウォーク性すら再現しない。clustering には ZI-Plus 的な戦略要素の段階追加が必要）。代替として **Genoa 型 ZI+（条件付き）**を導入し、目標文を「SF は行動的機構群を、戦略フリーの確率的フィードバック則からすら分離できない。介入応答はできる」へ組み替え。
+- v1.1（2026-06-11）: Yuito レビュー反映——P1 トリオ確定 = **CB/LM/ALW（古典踏襲、「世界標準たるために古典を踏襲するのが筋」）**。ZI の正準定義 = Farmer 原典準拠。CB の観測チャネル欠如は主張から逃がさず **{CB, ZI} 応答等価類の事前予測**として目標文に組み込んだ（§2.2）。
+- v1（2026-06-11): 初版 draft。
 
 ---
 
@@ -27,7 +32,11 @@
 
 ### P1（Atlas コア）
 
-> **ゼロ知能陰性対照を含む N 個の異機構モデルが、事前固定された stylized facts battery を統計的等価（TOST）で通過する一方、事前登録された介入応答プロトコルは全機構ペアを family-wise α = 0.05・検出力 1−β ≥ 0.9（最小検出効果 = chance + 15pp）で識別する。**
+修辞の核：**「SF バッテリーは行動的機構群を、戦略フリーの確率的フィードバック則からすら分離できない。介入応答はできる。」**
+
+> **古典機構トリオ（Cont-Bouchaud / Lux-Marchesi / Alfarano-Lux-Wagner）と、戦略フリーの確率的フィードバック則（Genoa 型 ZI+——予算制約下のランダム注文＋指値のみが過去ボラティリティに依存。自前実装で SF battery 通過を確認できた場合のみ集合に加える）が、事前固定された stylized facts battery を統計的等価（TOST）で通過する一方、事前登録された介入応答プロトコルは、観測チャネルを持つ全機構ペアを family-wise α = 0.05・検出力 1−β ≥ 0.9（最小検出効果 = chance + 15pp）で識別し、観測チャネルを欠く機構（FPZ-ZI、古典形 CB）は事前予測どおり応答等価（TOST）に留まる。**
+
+三層構造：(i) SF 等価集合に**行動的機構ですらない** Genoa-ZI+ が入る＝SF の弁別力欠如の最強形。(ii) 識別の主張（チャネルあり：LM/ALW/Genoa＋ trio 間）と (iii) 等価の予測（チャネル無し：{FPZ-ZI, CB}）が同じ理論から両側に出る——介入応答は「分けられるはずのもの」を分け、「分けられないはずのもの」を分けない。(iii) は falsifiable な理論予測であり、CB が flat でなければ機構理解の方が間違っている。
 
 - 対象権威：計算経済学（JEDC / Computational Economics）＋ ML 側（NeurIPS Datasets & Benchmarks）。
 - 中身：真・PRISM toy の成功経路（GO）の論文化。機構トリオ＋ZI 陰性対照＋検出力解析。
@@ -38,17 +47,23 @@
 | 項目 | 値 | 根拠 |
 |---|---|---|
 | 識別の検定 | 機構ペア (i,j) × 介入 scheme s ごとに H0: accuracy = 0.5（一側） | ペア単位が主張の単位 |
-| 多重比較 | Holm、family = 全ペア × 全 scheme（N=4 機構 → 6 ペア × 4 scheme = 24 検定） | family-wise α = 0.05 |
+| 多重比較 | Holm、family = 少なくとも一方が観測チャネルを持つ全ペア × 全 scheme（Genoa-ZI+ 採用時 {CB,LM,ALW,Genoa,ZI} → 識別 9 ペア × 4 scheme = 36 検定／不採用時 5 ペア × 4 = 20 検定。family の定義は Genoa 採用 gate の帰結として事前登録）。(CB, FPZ-ZI) は識別 family から除外し等価予測側（TOST）で検定 | family-wise α = 0.05 |
 | 最小検出効果（MDE） | accuracy = 0.65（chance + 15pp） | GO 閾値 0.75 より下に置き、閾値ギリギリの効果も検出力内に収める |
-| 検出力 | 1−β ≥ 0.9 @ MDE、Holm 最悪 α' ≈ 0.05/24 | 二項検定の正規近似で n ≈ 190/条件 → **CV 依存性の補正（Nadeau–Bengio）で ×2 して n = 400 runs/条件以上**。v0.3 の M=1000 はこれを満たす |
+| 検出力 | 1−β ≥ 0.9 @ MDE、Holm 最悪 α' ≈ 0.05/36（Genoa 採用時） | 二項検定の正規近似で n ≈ 200/条件 → **CV 依存性の補正（Nadeau–Bengio）で ×2 して n = 400 runs/条件以上**。v0.3 の M=1000 はこれを満たす |
 | SF 等価性 | 「識別できない」は TOST で主張：CV accuracy の 90% CI が [0.45, 0.55] に収まること | 棄却失敗 ≠ 等価。v0.3 の pass band 50–55% の形式化 |
 | 陰性対照 | ZI の介入応答 flat も TOST（介入有無の判別 accuracy CI が [0.45, 0.55] 内） | 「応答しないこと」も等価性検定で主張する |
 | 分散報告 | 全指標 seed 横断 mean ± SE + n、CV は fold 間分散を別記 | プログラム共通様式（§3） |
 
-#### 2.2 P1 の正直な前提リスク（目標文を脅かすもの、先に潰す順）
+#### 2.2 トリオ確定（2026-06-11、Yuito 決定）と前提リスク
 
-1. **ZI が SF battery を通過するかは経験的に非自明**（vol clustering / heavy tail は ZI から自然には出にくい）。通過しない場合、目標文は「N 機構が SF 等価、ZI は SF でも IR でも区別される」へ縮退（縮退規則として事前登録する）。陰性対照の本義（IR-flat）は SF 通過と独立に成立する。
-2. **トリオの構成**。指名された CB/LM/ALW のうち、CB（Cont-Bouchaud）は古典形で観測チャネルを持たない（クラスタ形成が外生確率）→ B2 介入面が無く、識別トリオの一員ではなく**第二の陰性対照**が正しい席。LM は部分観測で B2 実装困難（既知）。v0.3 正準は T（Chiarella-Iori）/H（Kirman–ALW 型）。**推奨トリオ: T / H / SG**（SG は自前モデルで観測チャネル設計が自由）＋ ZI（＋余力で CB）陰性対照。確定は Yuito 判断。
+**トリオ = CB / LM / ALW（古典踏襲）＋ ZI 陰性対照。** 根拠：世界標準を主張するベンチが識別して見せる対象は、分野が 30 年読んできた古典でなければならない（自前モデルでの識別は「自分に都合のいい機構を分けた」と読まれる）。v0.3 toy の T/H はそのまま toy の §14 判定に使い、paper-grade で古典セットに移行する。T/H/SG は補助機構として残す（N≥4 拡張は任意）。
+
+- **CB の観測チャネル欠如は欠陥ではなく主張の一部**：古典形 CB はクラスタ形成が外生確率で、観測情報を使わない → B2 介入面が無い。これを「{CB, ZI} は応答等価」という**事前予測**として目標文に組み込んだ（§2 冒頭）。識別と等価予測が同一理論から出る両側構造になり、主張はむしろ強くなる。
+- **ZI の正準定義 = Doyne Farmer の原典準拠**（Farmer, Patelli & Zovko 2005, PNAS——continuous double auction での ZI order flow。起源としては Gode & Sunder 1993 を引く）。他 repo で ZI の解釈ばらつきが既に観測されているため、実装は原典の order-flow 仕様に対して audit する。orphan branch `feat/intervention-sweep`（commit 0ebb6f9）の `toy/models/zi.py` port 草稿は**この audit を通すまで正準と見なさない**。
+- **ZI の SF 射程の訂正（v1.2、文献監査）**：FPZ が再現を主張するのは **microstructure 系 SF**（スプレッド・価格拡散・インパクト形状）であって、return 系列 battery（SF1–4）ではない。Bouchaud 系レビューは ZI 型 order-flow が臨界調整なしには価格のランダムウォーク性すら再現しないと明言し、clustering には戦略要素の段階追加（ZI-Plus：diagonal effect、stimulated refill 等）が要る、が文献の構図。よって **FPZ-ZI に SF battery 通過を期待しない**——役割は IR-flat の陰性対照に限定し、SF 落ちは事前登録済みの想定内とする（正確な引用は実装前の文献固定で pin する）。
+- **Genoa 型 ZI+ の条件付き導入（v1.2）**：Genoa 人工市場（Raberto–Cincotti–Focardi–Marchesi 2001 系）は予算制約下のランダム注文＋**指値のみが過去ボラティリティに依存**という最小仮定で fat tails と vol clustering の両方を回復する——戦略ゼロ・異質性ゼロ・状態フィードバック 1 本で SF を通過する実例であり、チャネル（ボラ観測）を 1 本持つので IR が定義できる。事前登録には「**自前実装で SF battery（SF1–4 TOST）を通過した場合のみ SF 等価集合に加える**」と条件付きで書く。採用されれば目標文は「SF は行動的機構群を戦略フリーの確率的フィードバック則からすら分離できない」という、ZI 単体に頼る元の修辞より強く文献で防御可能な形になる。
+- **LM の部分観測**は実装リスクとして残る（B2 介入面の切り出しに設計判断が要る）。出発点 = 同 branch の `toy/models/lm.py` port 草稿。
+- **CB の SF 通過も経験的に非自明**（vol clustering は古典形から出にくい——接続確率の slow dynamics が無い）。縮退規則を事前登録する：通過しない機構があれば、目標文は「SF 等価集合 + SF でも区別される機構」の階層形へ縮む（どの機構がどちらに落ちても主張構造は立つ）。縮退規則の文言確定は paper-grade OSF 登録時。
 
 ### P2（共謀 × 市場設計 = ABM-Microstructure）
 
