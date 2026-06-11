@@ -81,6 +81,22 @@ read-modify-write。charge/refund/reconcile/audit を**追記専用 journal**
 機械検査、snapshot 破損→journal 復元の回帰テスト付き）。lost update は型として
 起き得なくなり、再構成は例外処理ではなく通常動作になった。
 
+**差分表（snapshot 観測値 vs journal/artifacts 再構成値、forensic）**:
+
+| tier | 観測（再構成前） | 再構成 | Δ | Δ の帰属 |
+|---|---|---|---|---|
+| coarse | 739,236,803 | 739,236,803 | 0 | 汚染ウィンドウ中の更新なし |
+| dense | 375,424,143 | 410,444,094 | **+35,019,951** | 喪失 event ＋ attr20 未実測 75 run の planned 上限計上（保守側余剰 ≥ 0）の**混合**。journal 導入前ゆえ event 単位の分解は不能——これ自体が追記台帳の論拠 |
+| robustness | 176,910,853 | 190,981,553 | **+14,070,700** | **純粋な lost update**（全成分が厳密: bcs.csv 60,303,000 + tier3.csv 110,577,553 + bcs_per_seed 20,101,000=非収束で planned=actual）。charge 約 7 event 相当が tier3×bcs_per_seed の interleave で喪失 |
+
+報告系列との照合: 「dense 197M」= attr20 投入前（density+attr5 = 196,752,058、これは
+再構成でも不変）。「robustness 211M」= tier3 の planned 見積り（60+151M）であって
+実測系列ではない——実測は tier3 の早期収束 refund で 110.6M に縮み、bcs_per_seed
+20.1M が加わって 191.0M。全 Δ が正（観測の過小）なのは「charge 喪失 > refund 喪失」
+と整合（charge は 2.01M/event と大きく、refund は早期収束分のみで小さい）。
+**bounding との関係**: 判定の無汚染証明（前項 (3)）は「真値ピーク < cap」にのみ
+依拠し、Δ の大きさにも出自にも依存しない。
+
 **教訓**: 単一書き手の仮定は守られない——強制されていない不変条件は incident の
 予約である（キー衝突と同型）。復旧を可能にしたのは今回も決定論＋artifacts
 （periods_total の永続化）だった。一般化:
