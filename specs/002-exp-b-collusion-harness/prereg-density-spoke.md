@@ -1,6 +1,7 @@
 # 事前登録 — density spoke の解釈規則（P2 移植可能性監査・主結果）
 
-**登録日**: 2026-06-11（OSF registration URL: 登録後にここへ逆記入）
+**登録日**: 2026-06-11（OSF registration: https://osf.io/63pj2/ — Open-Ended Registration、
+public、本ファイル添付・git commit `3cad65f` 参照。結果生成前に登録済み）
 **登録時点で density spoke の結果は一切生成されていない**（後述 §5 の開示参照）。
 本書の判定基準・縮退規則は登録後変更しない。変更が必要になった場合は amendment として
 OSF 側に記録し、versioned に切り直す（サイレント編集禁止）。
