@@ -1,4 +1,13 @@
-# OSF Preregistration form answers — density spoke (paste-ready)
+# OSF registration form answers — density spoke (paste-ready)
+
+## Open-Ended Registration: Summary（実際に使用したテンプレ）
+
+> This registration freezes the interpretation rules for the "density spoke" experiment (Experiment B, portability audit of Calvano-type algorithmic collusion to sparse-reward market making) before any spoke results exist. The complete pre-registered rules — design (18 cells: 3 event-density × learning-rate points × 6 market-design conditions, 5 seeds each), mechanical certification criteria, headline-cell selection rule, degradation rules for the negative outcome, and disclosure of all data existing at registration time — are specified in the attached `prereg-density-spoke.md`, frozen at public git commit `3cad65f` (repository: github.com/yuitokyouni/ABM-Microstructure). The attached file is canonical; no spoke data have been generated. Certification will be the mechanical application of the analysis code at the pinned commit, with no post-hoc criterion adjustment.
+
+---
+
+以下は "OSF Preregistration" 詳細テンプレ用の全欄英文（未使用だが将来の P1 paper-grade
+登録の雛形として保持）。
 
 対応する凍結文書: `prereg-density-spoke.md`（git commit `3cad65f`）。本ファイルは OSF の
 "OSF Preregistration" テンプレ各欄に貼る英文の記録（single source of truth）。
