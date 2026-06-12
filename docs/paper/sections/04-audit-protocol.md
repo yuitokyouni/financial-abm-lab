@@ -157,8 +157,11 @@ the headline markup (62.05) through the committed denominator implied a realized
 spread of 10.4 on a grid bounded at 2.0—an impossibility that forced the
 denominator structure into the open and produced, on re-derivation, an exact
 reconciliation (realized = 1.50, interior to the grid). We record the failed
-check alongside the reconciliation, since an audit trail that contains only
-successes is indistinguishable from one that was never run.
+check alongside the reconciliation, for two reasons. First, an audit trail
+documents procedures performed, not verdicts reached; this one is re-executable
+against the archived artifacts, which—not the presence of failures—is what makes
+it inspectable. Second, a check that cannot fail certifies nothing by passing;
+the recorded failure documents that ours could.
 
 ### 4.4 Compute governance: budgets, an append-only ledger, and incidents
 
@@ -199,9 +202,10 @@ a bounding argument recorded showing that no budget-gate decision could have
 flipped under any magnitude of the lost updates. The general lessons—identity
 keys must be total over the perturbation space, and a ledger is an append-only
 log, not an overwritable snapshot—are, we suggest, portable to any simulation
-campaign that wants its claims audited. A protocol that has never caught its
-operator proves only that it was never pointed at one; ours caught us twice, and
-the paper is accompanied by the records.
+campaign that wants its claims audited. Both incidents were caught by the
+protocol's own consistency checks; the complete records, including the
+discarded-unread partial results and the ledger reconstruction worksheets,
+accompany the paper.
 
 <!-- TODO(pin): OSF URL 表記の最終形 / D-B11・Appendix C の cross-ref 番号 /
      文献引用(Calvano et al. 2020, Glosten-Milgrom 1985, Green-Porter 1984,
