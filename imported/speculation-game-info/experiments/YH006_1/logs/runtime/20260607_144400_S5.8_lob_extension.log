@@ -1,0 +1,12 @@
+2026-06-07 14:44:00,417 [INFO] ======================================================================
+2026-06-07 14:44:00,417 [INFO] S5.8 LOB extension — conds=['C2', 'C3'], seeds=[1000, 1001, 1002, 1003, 1004, 1005], main_steps=10000, n_workers=8
+2026-06-07 14:44:00,417 [INFO] ======================================================================
+2026-06-07 14:44:00,425 [INFO] [s3-check] C3 seed=1000 を override main_steps=1500 で実行
+2026-06-07 14:45:44,123 [INFO] [s3-check] rt_df (3876 vs 3876 rows): MATCH | lifetimes (144 vs 144): MATCH
+2026-06-07 14:45:44,124 [INFO] [guard] extension determinism: C3 seed=1000 main_steps=3000 × 2 runs
+2026-06-07 14:52:02,964 [INFO] [guard] trial_1000.parquet: MATCH (a=141d3e374cb2c613... b=141d3e374cb2c613...)
+2026-06-07 14:52:02,965 [INFO] [guard] agents_1000.parquet: MATCH (a=7dc218df80acc32e... b=7dc218df80acc32e...)
+2026-06-07 14:52:02,965 [INFO] [guard] lifetimes_1000.parquet: MATCH (a=5957b9013d693ee9... b=5957b9013d693ee9...)
+2026-06-07 14:52:02,966 [INFO] [guard] wealth_ts_1000.parquet: MATCH (a=11f9911813732310... b=11f9911813732310...)
+2026-06-07 14:52:02,999 [INFO] [guard] rt_df semantic: PASS
+2026-06-07 14:52:02,999 [INFO] --determinism-only mode、guard のみ完了して終了

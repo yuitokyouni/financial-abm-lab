@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YH002 · Lux-Marchesi Volatility Clustering — playground</title>
+<link rel="stylesheet" href="assets/app.css" />
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div class="crumb"><a href="index.html">← playground 一覧</a></div>
+    <h1>YH002 · Lux & Marchesi (2000) Volatility Clustering</h1>
+    <div class="paper">Volatility clustering in financial markets: a microsimulation of interacting agents — <i>IJTAF</i> 3(4) · 実体: <code>experiments/YH002/model.py</code> (Parameter Set I)</div>
+  </header>
+
+  <p class="lead">楽観/悲観 chartist と fundamentalist の間を、価格トレンド・乖離に応じて確率的に遷移する。chartist 比率 <code>z(t)</code> が臨界値 <code>z̄</code> を跨ぐ <b>on-off intermittency</b> が volatility clustering と heavy tail を生む。<code>β</code>(価格反応)と <code>σ_μ</code>(ファンダ雑音)を変えて挙動を見る。</p>
+
+  <div id="proto-banner" class="banner warn hidden"></div>
+  <div class="banner info">エンジン: 本物の <code>experiments/YH002/model.py</code> を numpy で実行。1 integer step = 100 内部ステップなので、step 数を上げると重い。ACF は statsmodels の代わりに同等の numpy 実装で計算。</div>
+
+  <div class="layout">
+    <aside class="panel controls">
+      <h2>パラメータ</h2>
+      <div id="controls"></div>
+      <button class="run" id="runBtn">▶ シミュレーション実行</button>
+      <div class="status idle" id="status"><span class="dot"></span>待機中</div>
+    </aside>
+
+    <main>
+      <div class="metrics" id="metrics"></div>
+      <div class="plots">
+        <div class="plot full"><div class="cap">リターン時系列 r(t) = ln p(t) − ln p(t−1)</div><div id="p_ret" style="height:280px"></div></div>
+        <div class="plot"><div class="cap">chartist 比率 z(t) と臨界 z̄</div><div id="p_z" style="height:300px"></div></div>
+        <div class="plot"><div class="cap">リターン分布 vs 同分散ガウス (片対数)</div><div id="p_dist" style="height:300px"></div></div>
+        <div class="plot"><div class="cap">生存関数 P(|r|>x) (log-log)</div><div id="p_surv" style="height:300px"></div></div>
+        <div class="plot"><div class="cap">自己相関: raw / squared / |r|</div><div id="p_acf" style="height:300px"></div></div>
+      </div>
+      <details class="notes">
+        <summary>このモデルについて / 既知の数値</summary>
+        <ul>
+          <li><b>z̄ ≈ 0.660</b> (Appendix A の分岐条件を解いた値、論文本文 0.65 と一致)。z(t) が z̄ 付近で intermittent に振動するとボラが clustering する。</li>
+          <li>Hill tail index: 10% tail で α̂≈1.92 (論文中央値 1.93)。raw return の ACF は lag 1-2 に小さな負スパイク、squared/|r| は緩やか減衰(findings 記載済)。</li>
+          <li>excess kurtosis は単一 seed の最大 burst 頻度に強依存。論文 Table 2 の 135.73 は中央値ベースで、短い run では届かない。</li>
+          <li>ADF はここでは省略(T が長いと検出力が高く unit root を棄却、論文の non-rejection は 500-obs subsample 由来)。</li>
+        </ul>
+      </details>
+    </main>
+  </div>
+</div>
+
+<script src="assets/runner.js"></script>
+<script>
+const C = SGP.COLORS;
+const SPECS = [
+  { id: "steps", label: "integer steps", type: "range", min: 200, max: 2500, step: 100, value: 800, hint: "×100 内部ステップ。大きいほど重い" },
+  { id: "beta", label: "価格反応 β", type: "range", min: 1, max: 12, step: 0.5, value: 6 },
+  { id: "sigma_mu", label: "ファンダ雑音 σ_μ", type: "range", min: 0.0, max: 0.2, step: 0.01, value: 0.05 },
+  { id: "nu1", label: "chartist 遷移率 ν1", type: "range", min: 1, max: 6, step: 0.5, value: 3 },
+  { id: "seed", label: "seed", type: "number", min: 0, max: 99999, step: 1, value: 42 },
+];
+SGP.buildControls("controls", SPECS);
+SGP.fileProtocolBanner();
+
+const FILES = [{ url: "../experiments/YH002/model.py", name: "model.py" }];
+
+const DRIVER = `
+import json, numpy as np, sf
+from model import Params, simulate
+P = json.loads(PARAMS_JSON)
+prm = Params(beta=float(P['beta']), sigma_mu=float(P['sigma_mu']), nu1=float(P['nu1']))
+res = simulate(params=prm, n_integer_steps=int(P['steps']), steps_per_unit=100,
+               seed=int(P['seed']), n_c_init=50, verbose=False)
+prices = res['prices']; ret = res['returns']; z = res['z']; zbar = float(res['zbar'])
+std = float(ret.std()) or 1e-9
+rix, rser = sf.downsample(ret, 4000)
+zix, zser = sf.downsample(z, 4000)
+centers, dens = sf.hist_density(ret, -6*std, 6*std, 100)
+grid = np.linspace(-6*std, 6*std, 300); gp = sf.gaussian_pdf(grid, float(ret.mean()), std)
+ar = np.sort(np.abs(ret[ret != 0])); n = ar.size
+surv = 1.0 - np.arange(1, n+1)/(n+1)
+gabs = np.sort(np.abs(np.random.default_rng(0).normal(0, std, size=n)))
+ml = 120
+acf_raw = sf.acf(ret, ml); acf_sq = sf.acf(ret**2, ml); acf_abs = sf.acf(np.abs(ret), ml)
+RESULT = json.dumps({
+  'zbar': zbar, 'kurt': sf.excess_kurtosis(ret),
+  'hill10': sf.hill_alpha(ret, k=max(2,int(0.10*n))), 'std': std,
+  'ret_x': rix, 'ret_y': rser, 'z_x': zix, 'z_y': zser,
+  'dist_x': centers.tolist(), 'dist_y': dens.tolist(), 'g_x': grid.tolist(), 'g_y': gp.tolist(),
+  'surv_x': ar.tolist(), 'surv_y': surv.tolist(), 'gsurv_x': gabs.tolist(), 'gsurv_y': surv.tolist(),
+  'lags': list(range(1, ml+1)), 'acf_raw': acf_raw, 'acf_sq': acf_sq, 'acf_abs': acf_abs,
+  'ci': 1.96/np.sqrt(len(ret)),
+})
+`;
+
+function draw(d) {
+  SGP.setMetrics("metrics", [
+    { k: "z̄ (critical)", v: d.zbar.toFixed(3), good: true },
+    { k: "excess kurtosis", v: d.kurt.toFixed(1), good: d.kurt > 3 },
+    { k: "Hill α (10%)", v: d.hill10.toFixed(2) },
+    { k: "std(r)", v: d.std.toPrecision(3) },
+  ]);
+  SGP.plot("p_ret", [{ x: d.ret_x, y: d.ret_y, type: "scattergl", mode: "lines", line: { color: C.black, width: 0.6 } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { title: "t" }, yaxis: { title: "r(t)" } }));
+  SGP.plot("p_z", [
+    { x: d.z_x, y: d.z_y, type: "scattergl", mode: "lines", line: { color: C.sim, width: 0.8 }, name: "z(t)" },
+    { x: [0, d.z_x[d.z_x.length - 1]], y: [d.zbar, d.zbar], type: "scatter", mode: "lines", line: { color: C.ref, dash: "dash" }, name: `z̄=${d.zbar.toFixed(3)}` },
+  ], SGP.baseLayout("", { xaxis: { title: "t" }, yaxis: { title: "z", range: [0, 1] } }));
+  SGP.plot("p_dist", [
+    { x: d.dist_x, y: d.dist_y, type: "bar", marker: { color: "rgba(91,156,255,.55)" }, name: "Simulation" },
+    { x: d.g_x, y: d.g_y, type: "scatter", mode: "lines", line: { color: C.ref, width: 2 }, name: "Gaussian" },
+  ], SGP.baseLayout("", { yaxis: { type: "log", title: "density (log)" }, xaxis: { title: "r" }, bargap: 0 }));
+  SGP.plot("p_surv", [
+    { x: d.surv_x, y: d.surv_y, type: "scattergl", mode: "markers", marker: { color: C.sim, size: 3 }, name: "Simulation" },
+    { x: d.gsurv_x, y: d.gsurv_y, type: "scatter", mode: "lines", line: { color: C.ref, dash: "dash" }, name: "Gaussian (same σ)" },
+  ], SGP.baseLayout("", { xaxis: { type: "log", title: "|r|" }, yaxis: { type: "log", title: "P(|r|>x)" } }));
+  SGP.plot("p_acf", [
+    { x: d.lags, y: d.acf_raw, type: "scatter", mode: "lines", line: { color: C.muted, width: 1 }, name: "raw r" },
+    { x: d.lags, y: d.acf_sq, type: "scatter", mode: "lines", line: { color: C.g2, width: 1.4 }, name: "r²" },
+    { x: d.lags, y: d.acf_abs, type: "scatter", mode: "lines", line: { color: C.sim, width: 1.4 }, name: "|r|" },
+    { x: [1, d.lags.length], y: [d.ci, d.ci], type: "scatter", mode: "lines", line: { color: C.ref, dash: "dot", width: 0.8 }, showlegend: false },
+    { x: [1, d.lags.length], y: [-d.ci, -d.ci], type: "scatter", mode: "lines", line: { color: C.ref, dash: "dot", width: 0.8 }, showlegend: false },
+  ], SGP.baseLayout("", { xaxis: { title: "lag" }, yaxis: { title: "ACF" } }));
+}
+
+async function run() {
+  const btn = document.getElementById("runBtn");
+  btn.disabled = true;
+  try {
+    await SGP.boot({ packages: ["numpy"] });
+    await SGP.loadSources(FILES);
+    const p = SGP.readControls(SPECS);
+    SGP.status(`実行中… (${p.steps}×100 steps)`, "busy");
+    const t0 = performance.now();
+    const d = await SGP.runDriver(DRIVER, p);
+    draw(d);
+    SGP.status(`完了 (${((performance.now() - t0) / 1000).toFixed(1)}s)`, "ok");
+  } catch (e) {
+    console.error(e);
+    SGP.status("エラー: " + e.message, "err");
+  } finally {
+    btn.disabled = false;
+  }
+}
+document.getElementById("runBtn").addEventListener("click", run);
+</script>
+</body>
+</html>

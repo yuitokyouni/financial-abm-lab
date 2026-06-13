@@ -1,0 +1,13 @@
+{
+  "cond": "C3",
+  "n_trials": 100,
+  "n_rt_total": 477695,
+  "pooled_median": 3.0,
+  "pooled_mean": 15.74880415327772,
+  "pooled_p25": 1.0,
+  "pooled_p75": 10.0,
+  "median_of_trial_medians": 3.0,
+  "sd_of_trial_medians": 0.6113406364191519,
+  "q_const_primary": 3,
+  "timestamp": "2026-05-13T22:54:53.077187"
+}

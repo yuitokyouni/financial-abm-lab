@@ -1,0 +1,396 @@
+# YH006_1 — Phase 2 結果サマリ
+
+## Stage S1 (tentative) — Phase 1 データ再分析
+
+**実行範囲**: 4 / 4 条件で完走 (C0u, C0p, C2, C3)
+
+### 5 主指標 (点推定、CI は S1-secondary で取る)
+
+| cond | n_rt | Pearson | Spearman | Kendall | binVar slope | qreg slope diff |
+|---|---:|---:|---:|---:|---:|---:|
+| C0u | 1,041,712 | 0.3535 | 0.1944 | 0.1561 | -0.2033 | 0.5833 |
+| C0p | 1,049,903 | 0.3471 | 0.1923 | 0.1545 | -0.2308 | 0.5965 |
+| C2 | 879 | 0.6091 | 0.4221 | 0.3416 | -0.1758 | 1.8182 |
+| C3 | 1,080 | 0.3329 | 0.2816 | 0.2216 | -0.1727 | 0.9444 |
+
+### Interaction = (C3 − C2) − (C0p − C0u)
+
+| indicator | full | first half | second half |
+|---|---:|---:|---:|
+| rho_pearson | -0.2699 | -0.2178 | -0.3161 |
+| rho_spearman | -0.1384 | -0.0610 | -0.2214 |
+| tau_kendall | -0.1184 | -0.0589 | -0.1862 |
+| bin_var_slope | +0.0305 | -0.1270 | +0.2823 |
+| qreg_slope_diff | -0.8869 | -0.5049 | -1.1997 |
+
+### Plan B 先取り指標
+
+| cond | corr(w_init, h) | skew(high − low) | Hill α (|ΔG|) |
+|---|---:|---:|---:|
+| C0u | -0.0006 | -0.1343 | 1.9196 |
+| C0p | -0.0027 | -0.0963 | 1.9650 |
+| C2 | nan | -0.6847 | 3.1687 |
+| C3 | nan | -0.0356 | 2.9352 |
+
+### S1 (tentative) の役割と判定
+
+本 Stage は (a) 5 指標実装 sanity check / (b) Phase 1 → Phase 2 schema アダプタ確定 / (c) 桁感の事前確認、の 3 点に scope 限定。**plan A/B 分岐判定は出さない**。最終確定は S3 完了後の S1-secondary (100 trial bootstrap CI) で行う。S2/S3 は本 S1 結果に関わらず実行される。
+
+### Layer 2 timescale concern (Phase 2 scope 外)
+
+Phase 1 LOB の T=1500 は Katahira 標準 T=50000 より 33x 短く、本 sim 長を超える長期での F1 持続性は未検証。Phase 2 では検証せず、最終 README + proposal Limitations 節に明記する。
+
+---
+
+## Stage S2 — aggregate baseline 100 trial ensemble
+
+**実行範囲**: C0p: 100 trial, C0u: 100 trial
+
+### 主指標 ensemble mean ± 95% CI (bootstrap 10,000 resample)
+
+| metric | C0u (mean [CI]) | C0p (mean [CI]) |
+|---|---|---|
+| rho_pearson | +0.3472 [+0.3457, +0.3488] | +0.3469 [+0.3456, +0.3482] |
+| rho_spearman | +0.1942 [+0.1932, +0.1952] | +0.1943 [+0.1933, +0.1952] |
+| tau_kendall | +0.1560 [+0.1552, +0.1568] | +0.1561 [+0.1553, +0.1568] |
+| bin_var_slope | -0.3141 [-0.3395, -0.2885] | -0.3242 [-0.3475, -0.3002] |
+| q90_q10_slope_diff | +0.5932 [+0.5909, +0.5956] | +0.5914 [+0.5891, +0.5938] |
+| corr_w_init_h | +0.0003 [-0.0001, +0.0008] | -0.0004 [-0.0009, +0.0001] |
+| skew_high_minus_low | -0.1138 [-0.1188, -0.1069] | -0.1170 [-0.1199, -0.1142] |
+| hill_alpha | +2.4583 [+2.1666, +2.8041] | +2.8228 [+2.4205, +3.2410] |
+| lifetime_median | +389.6300 [+388.6350, +390.6400] | +387.8200 [+386.8949, +388.7450] |
+| lifetime_p90 | +907.4260 [+904.8580, +909.9820] | +905.0120 [+902.3360, +907.7132] |
+| wealth_persistence_rho | -0.0083 [-0.0261, +0.0089] | -0.0103 [-0.0328, +0.0120] |
+| forced_retire_rate | +0.0021 [+0.0021, +0.0021] | +0.0021 [+0.0021, +0.0021] |
+
+### Pooled bin variance slope (S2 plan v2 修正 1, Yuito 指示 #1)
+
+- **C0u**: pooled bin_var_slope = -0.4036
+- **C0p**: pooled bin_var_slope = -0.2879
+
+### Sub-checkpoint: q90_q10_slope_diff trial 間 SD
+
+- **C0u**: SD = 0.0121 → **OK (<=0.3)**
+- **C0p**: SD = 0.0121 → **OK (<=0.3)**
+
+### Lifetime censoring flag (S2 plan v2 修正 3)
+
+- **C0u**: censoring 重大 flag 0 件 (median ≤ T/2)
+- **C0p**: censoring 重大 flag 0 件 (median ≤ T/2)
+
+### Determinism guard
+
+C0u seed=1000 × 2 回独立実行: **PASS (rt_df + agents_df bit-一致)**
+
+### LOB SG agent subclass smoke (S2 plan v2 修正 4)
+
+C3 short smoke: **SKIPPED** (Windows env で PAMS 不在、Mac で別途実行予定)
+
+### Layer 2 timescale concern (Phase 2 scope 外、再掲)
+
+Phase 1 LOB の T=1500 は Katahira 標準 T=50000 より 33x 短く、本 sim 長を 超える長期での F1 持続性は未検証。Phase 2 では検証せず、最終 README + proposal Limitations 節に明記する。
+
+---
+
+## Stage S3 — LOB ensemble (C2/C3) + 4 条件 interaction
+
+**実行範囲**: C0p: 100 trial, C0u: 100 trial, C2: 100 trial, C3: 100 trial
+
+### 主指標 4 条件 mean ± 95% CI (bootstrap 10,000 resample)
+
+| metric | C0u | C0p | C2 | C3 |
+|---|---|---|---|---|
+| rho_pearson | +0.3472 [+0.3457, +0.3488] | +0.3469 [+0.3456, +0.3482] | +0.2776 [+0.2613, +0.2945] | +0.2571 [+0.2431, +0.2715] |
+| rho_spearman | +0.1942 [+0.1932, +0.1952] | +0.1943 [+0.1933, +0.1952] | +0.1422 [+0.1323, +0.1525] | +0.1333 [+0.1246, +0.1422] |
+| tau_kendall | +0.1560 [+0.1552, +0.1568] | +0.1561 [+0.1553, +0.1569] | +0.1081 [+0.0999, +0.1166] | +0.1012 [+0.0939, +0.1082] |
+| bin_var_slope | -0.3141 [-0.3394, -0.2880] | -0.3242 [-0.3484, -0.3002] | -0.0359 [-0.0665, -0.0044] | -0.0413 [-0.0741, -0.0074] |
+| q90_q10_slope_diff | +0.5932 [+0.5909, +0.5956] | +0.5914 [+0.5891, +0.5938] | +0.2127 [+0.1999, +0.2256] | +0.2170 [+0.2057, +0.2290] |
+| corr_w_init_h | +0.0003 [-0.0001, +0.0008] | -0.0004 [-0.0009, +0.0001] | -0.0061 [-0.0184, +0.0058] | -0.0040 [-0.0141, +0.0065] |
+| skew_high_minus_low | -0.1138 [-0.1188, -0.1070] | -0.1170 [-0.1198, -0.1140] | +0.5040 [+0.4359, +0.5704] | +0.5346 [+0.4687, +0.6153] |
+| hill_alpha | +2.4583 [+2.1676, +2.8038] | +2.8228 [+2.4193, +3.2409] | +3.1454 [+2.8884, +3.4292] | +2.9782 [+2.7673, +3.2098] |
+| lifetime_median | +389.6300 [+388.6250, +390.6500] | +387.8200 [+386.8800, +388.7350] | +1500.0000 [+1500.0000, +1500.0000] | +1485.5150 [+1481.4750, +1489.2800] |
+| lifetime_p90 | +907.4260 [+904.8900, +909.9871] | +905.0120 [+902.3430, +907.6930] | +1500.0000 [+1500.0000, +1500.0000] | +1500.0000 [+1500.0000, +1500.0000] |
+| wealth_persistence_rho | -0.0083 [-0.0262, +0.0094] | -0.0103 [-0.0322, +0.0121] | +0.2369 [+0.2162, +0.2573] | -0.0107 [-0.0323, +0.0109] |
+| forced_retire_rate | +0.0021 [+0.0021, +0.0021] | +0.0021 [+0.0021, +0.0021] | +0.0001 [+0.0001, +0.0001] | +0.0003 [+0.0002, +0.0003] |
+
+### Pooled bin_var_slope 2×2 + pattern (S3 plan v2 §3.7、修正 1)
+
+| | wealth=uniform | wealth=pareto | wealth diff (pareto-uniform) |
+|---|---|---|---|
+| world=agg | C0u: -0.4036 | C0p: -0.2879 | +0.1157 (S2 確定) |
+| world=lob | C2: -0.0330 | C3: -0.1748 | -0.1419 |
+
+**Interaction value (LOB diff − aggregate diff)** = -0.2575
+
+**Pattern**: **δ** — LOB diff CI [-0.052, +0.042] が 0 を跨ぐ → 判定保留、S1-secondary の bootstrap CI で再判定
+
+### Interaction = (C3 − C2) − (C0p − C0u) ± 95% CI (S1-secondary 確定前の 100 trial 値)
+
+| metric | mean | CI lo | CI hi | n |
+|---|---:|---:|---:|---:|
+| rho_pearson | -0.0201 | -0.0422 | +0.0020 | 100 |
+| rho_spearman | -0.0090 | -0.0224 | +0.0041 | 100 |
+| tau_kendall | -0.0070 | -0.0179 | +0.0035 | 100 |
+| bin_var_slope | +0.0046 | -0.0540 | +0.0640 | 100 |
+| q90_q10_slope_diff | +0.0061 | -0.0088 | +0.0212 | 100 |
+
+### Lifetime distribution: 仮説 A 中間予測 primary evidence (§3.8、修正 2)
+
+**主指標 (Yuito mandate 2026-04-30)**: p25 / conditional median / censoring 率 — median と p90 は LOB で T 張り付くため補助。
+
+| cond | T | n_trials | n_samples | **p25 (主)** | **conditional median (主)** | **censoring 率 (主)** | median (補助) | p90 (補助) | median>T/2 (補助) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| C0u | 50000 | 100 | 1071577 | **227.0** | **391.0** | **0.9%** | 389.6 | 907.4 | 0/100 |
+| C0p | 50000 | 100 | 1076362 | **224.0** | **389.0** | **0.9%** | 387.8 | 905.0 | 0/100 |
+| C2 | 1500 | 100 | 11093 | **1500.0** | **119.0** | **90.1%** | 1500.0 | 1500.0 | 100/100 |
+| C3 | 1500 | 100 | 13891 | **212.0** | **40.0** | **72.0%** | 1485.5 | 1500.0 | 100/100 |
+
+**仮説 A 判定**: LOB censoring_rate=81.1% vs agg 0.9% (gap=+80.1%), median>T/2 trial 件数=200/200 / C2 p25=1500.0 vs C3 p25=212.0 → **仮説 A 中間予測の primary evidence 確定** (LOB friction が agent turnover を抑制、tail composition persist)
+
+**Mac stage finding (継承)**: C2 (LOB uniform) は全 agent が roughly 同 pace で 生存 (p25 も T 近く)、C3 (LOB pareto) は下位 25% が早期退場 (Pareto tail で wealth 失敗) — wealth-tail composition の persist が visualized。aggregate (T=50000) の censoring_rate ≪ 1 との対比で、LOB friction が agent identity の 流動を実際に止めている定量証拠 (S1-secondary plan で Fig.4 / Fig.5 として申し送り予定)。
+
+**survival analysis (Kaplan-Meier 等) は引き続き Phase 2 scope 外** (S2 plan v2 §0.7、S3 plan v2 修正 2 確定済)。
+
+### KPI L1 暫定確認 (S1 単 trial 値からの更新、S1-secondary 確定前)
+
+3 中 2 以上で符号と桁が一致 → satisfy。`tab_S3_interaction.csv` 参照。
+
+**plan A/B 分岐判定は出さない、S1-secondary plan で Yuito 承認後に確定**。
+
+### Layer 2 timescale concern (Phase 2 scope 外、再掲)
+
+Phase 1 LOB の T=1500 は Katahira 標準 T=50000 より 33x 短く、本 sim 長を超える 長期での F1 持続性は未検証。Phase 2 では検証せず、最終 README + proposal Limitations 節に明記する。
+
+---
+
+## Stage S5 — A1 ablation (C2_A1 / C3_A1) + KPI L2 判定
+
+### L2 fail の意義 — 仮説 A 単純版の反証 + 仮説 A revised の浮上
+
+KPI L2 は 5 metrics 全 fail だが、これは「実験失敗」ではなく **causal hypothesis の改訂イベント** として解釈する。
+
+- **仮説 A 単純版 (反証)**: 「q heterogeneity → funnel pollution」。A1 ablation (q_const = 3 固定) で interaction が S3 baseline から有意縮小すべき、という対偶が成立しなかった。Spearman ratio 1.006 / Kendall ratio 1.090 (≈ 1.0) は funnel の monotonic structure が q heterogeneity 由来でないことの直接反証。
+- **仮説 A revised (新規 causal candidate)**: pooled bin_var_slope の 6 条件 非対称 — **C2_A1 (−0.31) ≈ C0u (−0.40)** (uniform 側に強く近づく) vs **C3_A1 (−0.09) ≈ C3 (−0.13)** (Pareto 側のままほぼ動かず) — から、uniform 条件下では q heterogeneity が部分寄与する一方、**Pareto 条件下では initial wealth distribution の persistence が dominant 因子** であることが示唆される。これは S6 (A3 ablation) で direct causal test 可能。
+
+### 数値解釈の補足
+
+- **Pearson の 90% 縮小 (ratio = 0.092)** は variance reduction effect (外れ値が均された結果) であり、機構的縮小ではない可能性が高い。S3 baseline 自体が小さく (−0.020) shrinkage CI が 0 を跨ぐので L2 fail。
+- **Spearman/Kendall ratio ≈ 1.0** は q heterogeneity が funnel の monotonic structure を作っていないことの直接反証。これが仮説 A 単純版の反証の最も明確な指標。
+- **bin_var ratio 3.8x の拡大** は、q heterogeneity を切ると funnel の "純粋な" heteroscedasticity が観察しやすくなる現象として理解可能 (q が wealth-coupled noise として作用していた可能性)。
+
+### 次の S6 (A3 ablation) 位置付け
+
+S6 は仮説 A revised の direct causal test (initial wealth distribution を C2 同様 uniform 化) として価値が高く、別 plan で承認待ちフローで進める。
+
+**実行範囲**: C0p: 100 trial, C0u: 100 trial, C2: 100 trial, C2_A1: 100 trial, C3: 100 trial, C3_A1: 100 trial
+
+**q_const** = 3 (C3 100 trial の pooled median から較正、`logs/S4_q_const_calibration.json`)
+
+### Pooled bin_var_slope (6 条件)
+
+| cond | pooled bin_var_slope |
+|---|---:|
+| C0u | -0.4036 |
+| C0p | -0.2879 |
+| C2 | -0.0593 |
+| C3 | -0.1264 |
+| C2_A1 | -0.3071 |
+| C3_A1 | -0.0901 |
+
+### A1 interaction shrinkage vs S3 baseline (5 metrics)
+
+| metric | S3 mean [CI] | A1 mean [CI] | shrinkage [CI] | ratio | L2 |
+|---|---|---|---|---:|---|
+| rho_pearson | -0.0201 [-0.0422, +0.0020] | -0.0018 [-0.0148, +0.0105] | -0.0183 [-0.0428, +0.0061] | 0.092 | fail |
+| rho_spearman | -0.0090 [-0.0224, +0.0041] | -0.0091 [-0.0185, +0.0005] | +0.0001 [-0.0152, +0.0149] | 1.006 | fail |
+| tau_kendall | -0.0070 [-0.0179, +0.0035] | -0.0076 [-0.0158, +0.0009] | +0.0006 [-0.0119, +0.0129] | 1.090 | fail |
+| bin_var_slope | +0.0046 [-0.0540, +0.0640] | +0.0176 [-0.0375, +0.0731] | -0.0130 [-0.0746, +0.0483] | 3.806 | fail |
+| q90_q10_slope_diff | +0.0061 [-0.0088, +0.0212] | -0.0046 [-0.0130, +0.0036] | +0.0107 [-0.0064, +0.0280] | 0.759 | fail |
+
+**L2 判定基準**: shrinkage ratio ≤ 0.5 (= 50% 以上縮小) AND shrinkage CI が 0 を含まない
+
+**L2 pass 件数: 0 / 5**
+
+### Layer 2 timescale concern (Phase 2 scope 外、再掲)
+
+Phase 1 LOB の T=1500 は Katahira 標準 T=50000 より 33x 短く、本 sim 長を超える 長期での F1 持続性は未検証。Phase 2 では検証せず、最終 README + proposal Limitations 節に明記する。
+
+---
+
+## Stage S5.5 — aggregate sub-sample 再分析 (sample disparity 制御)
+
+### Verdict — **H_micro 強支持** (microstructure 真効果)
+
+Yuito 方法論的指摘 1 (「aggregate と LOB で RT 数が 8 倍違う、対照実験として致命的な不揃い」) に対し、既存 aggregate parquet から 2 種類 sub-sample (T1500 / RT10k) を抽出して LOB と 4 通り比較。**RT10k pooled bin_var slope (C0u/C0p ともに −0.37) が full aggregate 水準 (−0.40 / −0.29) を保持** → S6 (A3 ablation) 進行可。
+
+### RT 数実測 (Yuito 指摘の数値正確性確認)
+
+| 比較 | per-trial 比 | Yuito の表現対応 |
+|---|---:|---|
+| full agg / LOB | ~227x | 全 sim 期間比較は致命的に不揃い |
+| **T1500 agg / LOB** | **~6.8x** | **「8 倍」の出所** (同時間窓比較) |
+| **RT10k agg / LOB** | **~2.2x** | **「2-3 倍に取って bin_var 安定性確保」と一致** |
+
+LOB per-trial RT は S1 単 trial 値 (~880) から S5 後の 100 trial データで **4,300-4,800** に増加 (5x 以上)、Yuito の "8 倍" 計算と整合。
+
+### Pooled bin_var slope 4 sub-sample × 4 cond
+
+| | wealth=uniform | wealth=pareto | wealth diff |
+|---|---:|---:|---:|
+| **full_agg** | C0u: −0.4036 | C0p: −0.2879 | +0.1157 (S2/S3 確定) |
+| **T1500_agg** | C0u: −0.2473 | C0p: **−0.4945** | **−0.2472** (**符号反転**) |
+| **RT10k_agg** | C0u: **−0.3758** | C0p: **−0.3736** | +0.0022 (≈ 0) |
+| **LOB** | C2: −0.0593 | C3: −0.1264 | −0.0671 |
+
+**判定**: RT10k で sample size を LOB の ~2.2x まで揃えても aggregate pooled bin_var は full 水準 (−0.37) を保ち、LOB (−0.06〜−0.13) と依然 5x 以上の差 → **microstructure 真効果**。H_artifact 閾値 (|slope| ≤ 0.15) には全く届かない。
+
+### 副次的発見 — T1500 で wealth diff が符号反転
+
+時間軸を揃えた T1500_agg では C0u −0.40→−0.25 (38% 縮小)、C0p −0.29→**−0.49** (71% 拡大) で wealth diff の符号が +0.12 → −0.25 に反転。S5 仮説 A revised の formulation は **sample window 固定** を明示すべき (S6 plan で取り込み)。
+
+### Lifetime — H_micro の補強 evidence
+
+aggregate に T=1500 cap を被せただけでは censoring 率は 25.4% / 22.4% にしか上がらず、LOB の 91.0% / 73.0% と依然 3x 以上の差。→ LOB の長寿命は microstructure friction による turnover 抑制が原因で、時間窓 artifact ではない (仮説 A 中間予測 primary evidence と整合)。
+
+### S6 進行への signal
+
+S5.5 単独では H_micro 強支持。S5.6 (MMFCN sensitivity scan) との統合判定:
+- S5.5 = H_micro ✓ ∧ S5.6 = H_artifact_negated → **S6 進行**
+- S5.6 = H_artifact_mmfcn or ambiguous → Yuito 議論
+
+---
+
+## Stage S5.6 — MMFCN sensitivity scan (約定 artifact 検出)
+
+### Verdict — **H_artifact_negated_strong** (MMFCN は副次的供給源)
+
+Yuito 方法論的指摘 2 (「PAMS / MMFCN 設定で約定をしづらくさせる artifact」) に対し、LOB C3 setup で MMFCN の `orderVolume` を {15, 30, 60, 120} の 4 設定 × 2 trial (seed=1000, 1001) で scan。弾力性 ε(4x) = log(1.42)/log(4) = **0.254 ≤ 0.3** → MMFCN は独立、Phase 2 finding 頑健、S6 進行可。
+
+### 設定別 mean (`tab_S5.6_mmfcn_sensitivity.csv`)
+
+| metric | mmfcn_05x | **mmfcn_1x** | mmfcn_2x | mmfcn_4x |
+|---|---:|---:|---:|---:|
+| n_rt_mean | 4679.5 | **4398.0** | 5464.0 | 6251.0 |
+| n_rt ratio vs 1x | 1.06 | 1.00 | 1.24 | **1.42** |
+| rt_rate/agent_step (SG fill ease proxy) | 0.0312 | 0.0293 | 0.0364 | 0.0417 |
+| forced_retire_rate | 0.435 | 0.390 | 0.405 | 0.355 |
+| censoring_rate | 67.4% | 71.0% | 69.2% | 71.0% |
+
+### 判定 — 弾力性ベース (Yuito 2026-05-19 提示)
+
+- ε(4x) = 0.254 → MMFCN は副次的供給源 (独立性高)
+- 4 倍にしても n_rt は 1.42x のみ (線形供給依存なら 4.0x の期待)、0.5x でもほぼ変化なし → 現状設定は既に余裕供給
+- forced_retire / censoring が setting に対し flat → SG 内在 dynamics が dominant
+
+### baseline bit-一致 PASS
+
+`mmfcn_1x` (= orderVolume 30) を `mmfcn_order_volume=None` 経路で実行 → `data/C3/trial_1000/1001.parquet` と sha256 完全一致 → Phase 1 後方互換 hook の non-regression 確認。
+
+### SG fill_rate proper の限界
+
+plan §2.4 の SG / MMFCN fill_rate proper は OrderTrackingSaver の log を追加 export する必要があり、本 version では未測定。代わりに `rt_rate_per_agent_step` (= n_rt / (N_sg × main_steps)) を proxy として併記、4x/1x 比 = 1.42 で MMFCN 独立性を支持。
+
+### S5.5 + S5.6 統合判定 — **S6 (A3 ablation) 進行 GO**
+
+- S5.5 = H_micro 強支持 (RT10k pooled bin_var が full 水準保持) ✓
+- S5.6 = H_artifact_negated_strong (ε(4x) = 0.25) ✓
+- → Phase 2 主要 finding (仮説 A 単純版反証 + 仮説 A revised + lifetime persistence) は方法論的に頑健、S6 で仮説 A revised の direct causal test を実施
+
+---
+
+## Stage S5.7 — agent lifetime survival S(τ) matched-τ 比較 (KM 推定、post-processing only)
+
+### Verdict — survival gap は **hazard 起源** (run-length 起源ではない)
+
+Yuito 指摘 P1 (「81% vs 0.9% は T を揃えていない horizon 交絡」) への対応。新規 sim ゼロ、既存 `lifetimes_*.parquet` × 400 から KM survival curve を matched window T=1500 で推定 (agg は S5.5 §3.3 と同一の re-censor 規約)。
+
+**対象物の明示 (必須規約)**: 本 stage の S(τ) は **agent lifetime** (birth → 退場) の survival であって **round-trip horizon ではない**。agg の RT horizon median = 2 / rt/agent/step = 0.209 は YH005_1 (median=2, 0.21) と完全一致で RT 定義 drift なし — agent lifetime median ≈ 390 とは別対象の統計量。以後、数字には必ず対象物ラベル (agent lifetime τ / RT horizon h) を付ける (レビューで取り違えが3回発生した実績があり、oral でも確実に起きるため)。
+
+### Headline (proposal / oral 用、Yuito review 2026-06-07 反映)
+
+> **raw「LOB censoring 81.1% vs agg 0.9%」は horizon 交絡 (T=1500 vs 50000、33x) を含むため retire。headline は τ 不変な hazard 構造で張る:**
+>
+> **aggregate の agent 退場 hazard は早期 ramp (wealth buffer 消化) 後 ~3×10⁻³/step で安定し続ける (median agent lifetime ≈ 390 step)。LOB は τ ≲ 250 の初期 shake-out 後 hazard → 0 で凍結する。**
+>
+> 補助数値として: matched **窓末 τ=1499 の survival ratio** = 52x (uniform: C2/C0u) / 58x (pareto: C3/C0p)、必ず curve (`fig_S5.7_survival_curves.png`) 添付で。lead は 52x (uniform = wealth heterogeneity なしの純 microstructure 効果)、58x は併記。58 > 52 の順序は S3 の wealth-persistence 非対称と整合するが、agg 側 CI がほぼ接しているため重みは載せない。
+
+注意: survival ratio は τ とともに単調増大する (τ=250 では ~1.9x、τ=1499 で 52x) — これは「agg → 0 / LOB plateau」の積分結果。**52x 単独を τ ラベルなしで出すのは endpoint cherry-pick に見えるため禁止**。
+
+### KM S(τ) 表 (`tab_S5.7_survival_matched.csv`、CI は trial-level bootstrap n=10,000)
+
+| agent lifetime τ | C0u (agg, re-censor) | C0p (agg, re-censor) | C2 (LOB) | C3 (LOB) |
+|---:|---:|---:|---:|---:|
+| 100 | 0.921 [0.917, 0.924] | 0.839 [0.836, 0.842] | 0.963 [0.958, 0.967] | 0.805 [0.799, 0.811] |
+| 250 | 0.720 [0.713, 0.728] | 0.629 [0.623, 0.635] | 0.925 [0.918, 0.932] | 0.748 [0.741, 0.755] |
+| 500 | 0.372 [0.363, 0.381] | 0.313 [0.306, 0.320] | 0.913 [0.905, 0.921] | 0.733 [0.725, 0.740] |
+| 1000 | 0.076 [0.071, 0.082] | 0.062 [0.058, 0.067] | 0.910 [0.902, 0.918] | 0.731 [0.723, 0.738] |
+| 1499 | **0.0175** [0.0145, 0.0210] | **0.0127** [0.0101, 0.0153] | **0.9102** [0.9019, 0.9184] | **0.7304** [0.7228, 0.7382] |
+
+τ=250 行が「agg は median 近傍 / LOB はまだ ~0.75–0.93」を一目で出す — hazard 差が窓中盤から開いていて endpoint 専用の効果でないことの先回り反証。
+
+### 区間平均 hazard ΔΛ/Δτ (`tab_S5.7_hazard_segments.csv`、Λ(τ) ≡ −ln S_KM(τ)、Nelson-Aalen ではない)
+
+| 区間 | C0u | C0p | C2 | C3 |
+|---|---:|---:|---:|---:|
+| [0, 100] | 8.3e-4 | 1.8e-3 | 3.8e-4 | **2.2e-3** |
+| [100, 250] | 1.6e-3 | 1.9e-3 | 2.7e-4 | 4.9e-4 |
+| [250, 500] | 2.7e-3 | 2.8e-3 | 5.3e-5 | 8.3e-5 |
+| [500, 750] | 3.1e-3 | 3.2e-3 | 9.2e-6 | 1.0e-5 |
+| [750, 1499] | ~3.0e-3 | ~3.2e-3 | ≤2.4e-6 | ≤1.2e-6 |
+
+- 構造対比は「**即時 high hazard → 凍結** (LOB) vs **ramp → steady** (agg)」で出す:
+  - **aggregate**: low-infant-hazard の ramp (0.8e-3 → 3.0e-3、wealth buffer — 若い agent は資産が尽きるまで猶予) を経て τ ≳ 500 で ~3.0–3.2e-3/step に安定、**凍結しない**。median lifetime 390 が一定 hazard 近似の 248 より長いのもこの early ramp 由来で整合
+  - **LOB C3**: grace period なしで即 2.2e-3 (= agg 早期 0.8e-3 の ~3x、agg steady に近い水準) に入り Pareto 下位 tail を flush → 2 桁以上 collapse して**凍結**
+  - **LOB C2**: 初期から低く (~4e-4)、τ ≳ 250 でほぼ 0
+
+### 方法論ノート
+
+- **S5.5 整合 assertion PASS**: matched censoring 率 25.4% / 22.4% / 91.0% / 73.0% が S5.5 §3.3 と完全一致 (re-censor 規約の検算)
+- **KM の risk-set 補正は agg を上方修正**: naive 推定 (S(1499) = 0.5% / 0.1%) → KM (1.75% / 1.27%)。agg は birth が窓内に分散するため naive は下方バイアス。**ratio の引用は KM 値 52x/58x** (naive の ~100x-級は過大)。naive は hazard が τ で加速して見える artifact もある (KM で平坦化)
+- figure の band は **Greenwood 95%** (pooled iid 仮定)、grid 点の marker は **trial-level bootstrap 95%** (clustering 込み、Greenwood の 1.0–1.5x 幅)。curve は KM を描く (naive を描くと曲がって「定常 hazard」主張と矛盾して見える)
+- censoring 率比較 (S5.5 の 3.6x framing) は birth-time composition に汚染された estimand なので、S(τ) matched が proposal 用の正
+- 整合検算: matched 窓内 lifetime sample 数 446/trial ÷ (100 agent × 1500 step) = 3.0e-3 births/agent/step ≈ 定常 hazard (birth rate ≈ death rate) — lifetime framing の self-consistency
+- **Limitations 残存**: LOB T=1500 での equilibration 未確認 — C2/C3 の hazard ≈ 0 plateau が定常か transient かは T > 1500 を見ないと bound できない (**S5.8 = P3 で対応、S6 の前提 → S5.8 で H_frozen 確定、この留保は消えた**)。c_ticks の SG 投入後 self-consistency (P2) は gap の解釈には効くが大きさには効かない (censoring は fill/matching 律速) ため S5.9 / robustness 一括に後置
+
+---
+
+## Stage S5.8 — LOB equilibration check: T=10000 延長 (P3、S6 の前提 gate)
+
+### Verdict — **H_frozen 確定** (凍結は定常、有限 T artifact ではない) → **S6 進行 GO**
+
+C2/C3 × T=10000 × 6 seed (Mac、max ~30 分/trial)。延長区間 [1500, 9999] で **退場 event 0 件 / exposure 5.09M agent-steps** (両 cond) — pre-registered 閾値 (全 segment ≤ 2e-5) を点推定でなく**上限で**クリア:
+
+| | C2 | C3 |
+|---|---:|---:|
+| at-risk @1500 | 600 | 600 |
+| 延長区間 event 数 | **0** | **0** |
+| exposure (agent-steps) | 5,091,031 | 5,082,856 |
+| **h 95% 上限 (rule of three)** | **5.89e-7/step** | **5.90e-7/step** |
+| vs frozen 閾値 2e-5 | **34 分の 1** | **34 分の 1** |
+| S(9999) | 0.9119 [0.8889, 0.9317] | 0.7212 [0.7034, 0.7444] |
+| S(50000) 下限 (95% UB hazard でも) | **≥ 0.891** | **≥ 0.704** |
+
+「6 seed では hazard 解像不足」の懸念は zero-event により解消 — 広い CI の点推定ではなく tight な上限 (h ≤ 5.9e-7) として報告できる。dead zone (H_partial_freeze) には掠りもしなかった。
+
+### Katahira スケール (T=50000) での gap の最終形
+
+- **aggregate**: cohort は **絶滅する**。hazard は cohort 生存区間で一定 (2.7–3.0e-3/step、max/min = 1.09–1.11x、`tab_S5.8_hazard_extension.csv` の agg_full_T50k 行)、uncensored max lifetime = 5748 / p99.9 = 2443 — τ ≳ 6000 で全 agent が退場済み
+- **LOB**: shake-out 後の凍結 population が 95% UB hazard でも **89% (C2) / 70% (C3) 以上残存**
+- → gap は「LOB 残存 vs agg 絶滅」。**比 (52x 等) は τ ラベル付きでのみ使い、Katahira スケールでは比が定義不能 (agg ≈ 0) なので比ではなくこの言い方で報告する**
+
+### 採用 figure (`fig_S5.8_survival_extension.png`)
+
+agg (green) は log-y で絶滅まで一直線 (定常 hazard の視覚証明)、LOB (red) は shake-out 後 8500 step 完全水平。S5.7 の主張「hazard 起源」が T=10000 まで延長されて確定。
+
+### 検証 (全 PASS)
+
+- **S3 等価チェック** (Mac、fail-fast): override main_steps=1500 が archived S3 と semantic 一致
+- **determinism guard** (T=3000 × 2 run): PASS
+- **前半窓 sanity** (Windows、12 seed × 2 cond): T10k run の前半 1500 step の uncensored lifetime 集合が S3 と **exact 一致** — run 長は前半 dynamics に影響しない (sequential sim の経験的確定)
+- **S5.7 との整合**: 6-seed S(1500) = 0.9119 / 0.7212 vs 100-trial 0.9102 / 0.7304 — CI 内
+- runtime max ~30 分/trial、4h trigger 非発火 (MMFCN ttl ≤ 200 の T 不変性予測どおり)
+
+### S6 への含意
+
+- A3 (lifetime cap) の暗黙前提「観測された長 lifetime は定常」が実証された — A3 は artifact でなく**実在する凍結を人為的に解除する**介入として解釈できる。S6 進行 GO
+- Layer-2-timescale 留保 (LOB T=1500 = Katahira/33) は「hand-wave の留保」から「測定済み result」に格上げ: T を 6.7x 延長しても凍結は 1 event も解けない

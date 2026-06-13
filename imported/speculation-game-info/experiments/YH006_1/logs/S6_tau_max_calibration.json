@@ -1,0 +1,30 @@
+{
+  "stage": "S6 §3.3",
+  "cond": "C3",
+  "n_trials": 100,
+  "n_samples": 13691,
+  "censoring_rate": 0.7304068366079907,
+  "candidates": {
+    "a_trial_level_median": {
+      "L_50": 1489.86,
+      "tau_max": 745
+    },
+    "b_conditional_median": {
+      "L_50": 39.0,
+      "tau_max": 20
+    },
+    "c_p25": {
+      "L_50": 241.0,
+      "tau_max": 121
+    },
+    "d_lifetime_mean": {
+      "L_50": 1095.610254911986,
+      "tau_max": 548
+    }
+  },
+  "primary": "c_p25",
+  "tau_max": 121,
+  "rule": "tau_max = ceil(L_50 × 0.5), L_50 = pooled lifetime p25 (GLOSSARY A3)",
+  "candidate_spread_x": 37.25,
+  "timestamp": "2026-06-07T17:11:22.745793"
+}

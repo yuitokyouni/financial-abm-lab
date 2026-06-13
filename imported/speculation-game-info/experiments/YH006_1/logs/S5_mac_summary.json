@@ -1,0 +1,14 @@
+{
+  "stage": "S5-mac-A1",
+  "conds": [
+    "C2_A1",
+    "C3_A1"
+  ],
+  "n_trials_per_cond": 100,
+  "seed_base": 1000,
+  "n_workers": 8,
+  "q_const": 3,
+  "main_steps": 1500,
+  "warmup_steps": 200,
+  "timestamp": "2026-05-14T18:40:21.027233"
+}

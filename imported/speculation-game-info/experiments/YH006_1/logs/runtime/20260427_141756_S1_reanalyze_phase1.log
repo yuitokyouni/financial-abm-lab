@@ -1,0 +1,37 @@
+2026-04-27 14:17:56,081 [INFO] ======================================================================
+2026-04-27 14:17:56,082 [INFO] Stage S1 (tentative) — Phase 1 reanalysis
+2026-04-27 14:17:56,082 [INFO] ======================================================================
+2026-04-27 14:17:56,082 [INFO] --- Step 1: pkl integrity check + load ---
+2026-04-27 14:17:56,082 [INFO] [integrity] C0u: file_size = 48.76 MB OK
+2026-04-27 14:17:56,104 [INFO] [integrity] C0u: num_round_trips = 1041712 (expected 1041712, rel_err=0.00000) OK
+2026-04-27 14:17:56,105 [INFO] [integrity] C0u: alpha_hill = 3.910 (expected 3.910, rel_err=0.0001) OK
+2026-04-27 14:17:56,105 [INFO] [integrity] C0p: file_size = 49.10 MB OK
+2026-04-27 14:17:56,125 [INFO] [integrity] C0p: num_round_trips = 1049903 (expected 1049903, rel_err=0.00000) OK
+2026-04-27 14:17:56,126 [INFO] [integrity] C0p: alpha_hill = 4.068 (expected 4.068, rel_err=0.0001) OK
+2026-04-27 14:17:56,126 [WARNING] [integrity] C2: pkl missing at C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\_phase1_imported\C2_result.pkl — skipping (ガード節)
+2026-04-27 14:17:56,126 [WARNING] [integrity] C3: pkl missing at C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\_phase1_imported\C3_result.pkl — skipping (ガード節)
+2026-04-27 14:17:56,126 [WARNING] 4 条件未揃: missing = ['C2', 'C3']. ガード節で interaction 計算を skip (plan v2 §1 注意点 1)。
+2026-04-27 14:17:56,126 [INFO] --- Step 2: Phase 1 → Phase 2 schema adapter ---
+2026-04-27 14:17:56,582 [INFO]   C0u: 1,041,712 RTs, 100 agents adapted; w_init available = True
+2026-04-27 14:17:57,049 [INFO]   C0p: 1,049,903 RTs, 100 agents adapted; w_init available = True
+2026-04-27 14:17:58,463 [INFO] [output] saved parquet: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\phase1_reanalysis_round_trips.parquet (24.19 MB)
+2026-04-27 14:17:58,464 [INFO] [output] saved parquet: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\phase1_reanalysis_agents.parquet (9.2 KB)
+2026-04-27 14:17:58,464 [INFO] --- Step 3: 5 main + plan B preemptive indicators ---
+2026-04-27 14:18:04,532 [INFO]   C0u: n_rt=1,041,712  P=+0.3535  S=+0.1944  K=+0.1561  binV=-0.2033  qreg=+0.5833
+2026-04-27 14:18:04,532 [INFO]           plan-B: corr(w_init,h)=-0.0006  skew_diff=-0.1343  Hill_α=1.9196
+2026-04-27 14:18:16,327 [INFO]   C0p: n_rt=1,049,903  P=+0.3471  S=+0.1923  K=+0.1545  binV=-0.2308  qreg=+0.5965
+2026-04-27 14:18:16,327 [INFO]           plan-B: corr(w_init,h)=-0.0027  skew_diff=-0.0963  Hill_α=1.9650
+2026-04-27 14:18:16,328 [INFO] --- Step 4: timescale half-time (RT count median split) ---
+2026-04-27 14:18:24,684 [INFO]   C0u first_half (n=520,856): P=+0.3567  S=+0.1982  K=+0.1594  binV=-0.1264  qreg=+0.5965
+2026-04-27 14:18:24,685 [INFO]   C0u second_half (n=520,856): P=+0.3502  S=+0.1905  K=+0.1528  binV=-0.3497  qreg=+0.5833
+2026-04-27 14:18:31,599 [INFO]   C0p first_half (n=524,951): P=+0.3396  S=+0.1856  K=+0.1488  binV=-0.4857  qreg=+0.5833
+2026-04-27 14:18:31,599 [INFO]   C0p second_half (n=524,952): P=+0.3545  S=+0.1991  K=+0.1601  binV=-0.2198  qreg=+0.6061
+2026-04-27 14:18:31,599 [INFO] --- Step 5: interaction calculation ---
+2026-04-27 14:18:31,600 [WARNING] Skipping interaction (gated): only 2 of 4 conditions loaded.
+2026-04-27 14:18:31,600 [INFO] --- Step 6: outputs ---
+2026-04-27 14:18:31,655 [INFO] [output] saved csv: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\tables\tab_S1_phase1_reanalysis.csv
+2026-04-27 14:18:34,979 [INFO] [output] saved figure: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\figures\fig_S1_indicator_comparison.png
+2026-04-27 14:18:34,980 [INFO] [output] saved readme: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\README.md
+2026-04-27 14:18:34,980 [INFO] ======================================================================
+2026-04-27 14:18:34,980 [INFO] S1 (tentative) complete. Loaded 2/4 conditions. Full interaction available: False.
+2026-04-27 14:18:34,980 [INFO] ======================================================================

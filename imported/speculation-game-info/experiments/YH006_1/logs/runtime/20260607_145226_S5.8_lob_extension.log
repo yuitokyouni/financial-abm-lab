@@ -1,0 +1,25 @@
+2026-06-07 14:52:26,692 [INFO] ======================================================================
+2026-06-07 14:52:26,693 [INFO] S5.8 LOB extension — conds=['C2', 'C3'], seeds=[1000, 1001, 1002, 1003, 1004, 1005], main_steps=10000, n_workers=8
+2026-06-07 14:52:26,693 [INFO] ======================================================================
+2026-06-07 14:52:26,693 [INFO] [parallel] cond=C2 n_seeds=6 n_workers=8 out=/Users/hasegawayuito/Documents/GitHub/speculation-game-info/experiments/YH006_1/data/C2_T10k
+2026-06-07 14:57:42,677 [INFO] [parallel] C2 seed=1000 done (1/6): runtime=313.4s n_rt=4,276 n_sub=14
+2026-06-07 14:58:10,645 [INFO] [parallel] C2 seed=1004 done (2/6): runtime=341.4s n_rt=4,236 n_sub=9
+2026-06-07 15:05:59,430 [INFO] [parallel] C2 seed=1003 done (3/6): runtime=810.3s n_rt=4,353 n_sub=12
+2026-06-07 15:13:01,371 [INFO] [parallel] C2 seed=1002 done (4/6): runtime=1232.3s n_rt=4,497 n_sub=20
+2026-06-07 15:17:09,689 [INFO] [parallel] C2 seed=1005 done (5/6): runtime=1480.7s n_rt=3,395 n_sub=9
+2026-06-07 15:22:19,221 [INFO] [parallel] C2 seed=1001 done (6/6): runtime=1790.2s n_rt=4,356 n_sub=8
+2026-06-07 15:22:19,393 [INFO] [parallel] cond=C2 all done: total=1792.8s, throughput=0.00 trial/s
+2026-06-07 15:22:19,394 [INFO] [parallel] cond=C3 n_seeds=6 n_workers=8 out=/Users/hasegawayuito/Documents/GitHub/speculation-game-info/experiments/YH006_1/data/C3_T10k
+2026-06-07 15:28:21,769 [INFO] [parallel] C3 seed=1002 done (1/6): runtime=360.2s n_rt=3,833 n_sub=49
+2026-06-07 15:28:24,529 [INFO] [parallel] C3 seed=1004 done (2/6): runtime=363.0s n_rt=4,076 n_sub=37
+2026-06-07 15:34:10,211 [INFO] [parallel] C3 seed=1005 done (3/6): runtime=708.7s n_rt=4,734 n_sub=52
+2026-06-07 15:34:59,665 [INFO] [parallel] C3 seed=1001 done (4/6): runtime=758.2s n_rt=4,943 n_sub=61
+2026-06-07 15:37:03,644 [INFO] [parallel] C3 seed=1000 done (5/6): runtime=882.3s n_rt=3,876 n_sub=61
+2026-06-07 15:47:11,738 [INFO] [parallel] C3 seed=1003 done (6/6): runtime=1490.4s n_rt=3,832 n_sub=65
+2026-06-07 15:47:11,910 [INFO] [parallel] cond=C3 all done: total=1492.6s, throughput=0.00 trial/s
+2026-06-07 15:47:11,913 [INFO] summary written: /Users/hasegawayuito/Documents/GitHub/speculation-game-info/experiments/YH006_1/logs/S5.8_mac_summary.json
+2026-06-07 15:47:11,913 [INFO] ======================================================================
+2026-06-07 15:47:11,913 [INFO] S5.8 LOB extension (sim part) complete.
+2026-06-07 15:47:11,913 [INFO] git add data/ logs/ && git commit && git push → Windows 側で
+2026-06-07 15:47:11,913 [INFO] python -m code.survival_extension を実行する。
+2026-06-07 15:47:11,913 [INFO] ======================================================================

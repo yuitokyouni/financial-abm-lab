@@ -1,0 +1,10 @@
+2026-04-30 00:51:46,003 [INFO] ======================================================================
+2026-04-30 00:51:46,003 [INFO] S3 LOB ensemble — conds=['C2', 'C3'], n_trials=100, seed_base=1000, n_workers=8, main_steps=1500, warmup=200
+2026-04-30 00:51:46,003 [INFO] ======================================================================
+2026-04-30 00:51:46,007 [INFO] [guard] LOB determinism check: C3 seed=1000 × 2 runs
+2026-04-30 00:57:46,480 [INFO] [guard] trial_1000.parquet: MATCH (a=0484bb795ad55d22... b=0484bb795ad55d22...)
+2026-04-30 00:57:46,480 [INFO] [guard] agents_1000.parquet: MATCH (a=ea793a8947654099... b=ea793a8947654099...)
+2026-04-30 00:57:46,480 [INFO] [guard] lifetimes_1000.parquet: MATCH (a=8144f2099f74b8f1... b=8144f2099f74b8f1...)
+2026-04-30 00:57:46,481 [INFO] [guard] wealth_ts_1000.parquet: MATCH (a=93dc6bad78aa94c5... b=93dc6bad78aa94c5...)
+2026-04-30 00:57:50,268 [INFO] [guard] rt_df semantic (np.array_equal on 8 cols): PASS
+2026-04-30 00:57:50,268 [INFO] --determinism-only mode、guard のみ完了して終了

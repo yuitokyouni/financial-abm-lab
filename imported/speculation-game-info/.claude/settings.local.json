@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(python3:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(gh repo:*)",
+      "Bash(git remote:*)",
+      "Bash(git commit:*)",
+      "Bash(pdftotext --version)",
+      "Bash(pip show *)",
+      "Bash(/opt/anaconda3/bin/python *)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(tee /tmp/yh003_run.log)",
+      "WebSearch",
+      "WebFetch(domain:arxiv.org)",
+      "Bash(brew --version)",
+      "PowerShell(Get-CimInstance *)",
+      "PowerShell($p = Get-Process -Id 8720 -ErrorAction SilentlyContinue; if \\($p\\) { \"PID 8720: CPU=$\\([math]::Round\\($p.CPU,1\\)\\)s WS=$\\([math]::Round\\($p.WorkingSet64/1MB,0\\)\\)MB Started=$\\($p.StartTime\\) Elapsed=$\\([math]::Round\\(\\(\\(Get-Date\\) - $p.StartTime\\).TotalMinutes,1\\)\\)min\" } else { \"PID 8720 not running\" })",
+      "Bash(git mv *)",
+      "Bash(git pull *)"
+    ]
+  }
+}

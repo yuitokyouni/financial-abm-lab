@@ -1,0 +1,14 @@
+2026-05-13 22:54:53,072 [INFO] ======================================================================
+2026-05-13 22:54:53,073 [INFO] q_const calibration — cond=C3, n_trials=100, n_rt_total=477,695
+2026-05-13 22:54:53,074 [INFO] ======================================================================
+2026-05-13 22:54:53,074 [INFO] pooled q distribution:
+2026-05-13 22:54:53,074 [INFO]   median = 3.00 (→ q_const_primary = 3)
+2026-05-13 22:54:53,075 [INFO]   mean   = 15.75
+2026-05-13 22:54:53,075 [INFO]   p25    = 1.00
+2026-05-13 22:54:53,075 [INFO]   p75    = 10.00
+2026-05-13 22:54:53,076 [INFO] per-trial median 統計 (n=100 trial):
+2026-05-13 22:54:53,076 [INFO]   median of medians = 3.00
+2026-05-13 22:54:53,076 [INFO]   SD of medians     = 0.611
+2026-05-13 22:54:53,076 [INFO] agreement check: |pooled_median - median_of_trial_medians| = 0.000
+2026-05-13 22:54:53,081 [INFO] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\logs\S4_q_const_calibration.json
+2026-05-13 22:54:53,081 [INFO] --> q_const = 3 (C2_A1 / C3_A1 で共通使用)

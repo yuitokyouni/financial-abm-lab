@@ -1,0 +1,19 @@
+2026-04-27 14:17:13,218 [INFO] ======================================================================
+2026-04-27 14:17:13,218 [INFO] Stage S1 (tentative) — Phase 1 reanalysis
+2026-04-27 14:17:13,218 [INFO] ======================================================================
+2026-04-27 14:17:13,219 [INFO] --- Step 1: pkl integrity check + load ---
+2026-04-27 14:17:13,219 [INFO] [integrity] C0u: file_size = 48.76 MB OK
+2026-04-27 14:17:13,240 [INFO] [integrity] C0u: num_round_trips = 1041712 (expected 1041712, rel_err=0.00000) OK
+2026-04-27 14:17:13,243 [INFO] [integrity] C0u: alpha_hill = 3.910 (expected 3.910, rel_err=0.0001) OK
+2026-04-27 14:17:13,244 [INFO] [integrity] C0p: file_size = 49.10 MB OK
+2026-04-27 14:17:13,263 [INFO] [integrity] C0p: num_round_trips = 1049903 (expected 1049903, rel_err=0.00000) OK
+2026-04-27 14:17:13,263 [INFO] [integrity] C0p: alpha_hill = 4.068 (expected 4.068, rel_err=0.0001) OK
+2026-04-27 14:17:13,264 [WARNING] [integrity] C2: pkl missing at C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\_phase1_imported\C2_result.pkl — skipping (ガード節)
+2026-04-27 14:17:13,264 [WARNING] [integrity] C3: pkl missing at C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\_phase1_imported\C3_result.pkl — skipping (ガード節)
+2026-04-27 14:17:13,264 [WARNING] 4 条件未揃: missing = ['C2', 'C3']. ガード節で interaction 計算を skip (plan v2 §1 注意点 1)。
+2026-04-27 14:17:13,264 [INFO] --- Step 2: Phase 1 → Phase 2 schema adapter ---
+2026-04-27 14:17:13,851 [INFO]   C0u: 1,041,712 RTs, 100 agents adapted; w_init available = True
+2026-04-27 14:17:14,385 [INFO]   C0p: 1,049,903 RTs, 100 agents adapted; w_init available = True
+2026-04-27 14:17:16,125 [INFO] [output] saved parquet: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\phase1_reanalysis_round_trips.parquet (24.19 MB)
+2026-04-27 14:17:16,125 [INFO] [output] saved parquet: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\phase1_reanalysis_agents.parquet (9.2 KB)
+2026-04-27 14:17:16,125 [INFO] --- Step 3: 5 main + plan B preemptive indicators ---

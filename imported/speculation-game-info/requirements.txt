@@ -1,0 +1,5 @@
+numpy
+matplotlib
+scipy
+powerlaw
+pams==0.2.2

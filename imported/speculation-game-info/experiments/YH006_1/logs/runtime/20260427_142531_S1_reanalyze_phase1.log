@@ -1,0 +1,66 @@
+2026-04-27 14:25:31,016 [INFO] ======================================================================
+2026-04-27 14:25:31,017 [INFO] Stage S1 (tentative) — Phase 1 reanalysis
+2026-04-27 14:25:31,017 [INFO] ======================================================================
+2026-04-27 14:25:31,017 [INFO] --- Step 1: pkl integrity check + load ---
+2026-04-27 14:25:31,017 [INFO] [integrity] C0u: file_size = 48.76 MB OK
+2026-04-27 14:25:31,038 [INFO] [integrity] C0u: num_round_trips = 1041712 (expected 1041712, rel_err=0.00000) OK
+2026-04-27 14:25:31,038 [INFO] [integrity] C0u: alpha_hill = 3.910 (expected 3.910, rel_err=0.0001) OK
+2026-04-27 14:25:31,039 [INFO] [integrity] C0p: file_size = 49.10 MB OK
+2026-04-27 14:25:31,058 [INFO] [integrity] C0p: num_round_trips = 1049903 (expected 1049903, rel_err=0.00000) OK
+2026-04-27 14:25:31,059 [INFO] [integrity] C0p: alpha_hill = 4.068 (expected 4.068, rel_err=0.0001) OK
+2026-04-27 14:25:31,059 [INFO] [integrity] C2: file_size = 0.22 MB OK
+2026-04-27 14:25:31,060 [INFO] [integrity] C2: num_round_trips = 879 (expected 879, rel_err=0.00000) OK
+2026-04-27 14:25:31,061 [INFO] [integrity] C2: alpha_hill = 1.985 (expected 1.980, rel_err=0.0024) OK
+2026-04-27 14:25:31,061 [INFO] [integrity] C3: file_size = 0.23 MB OK
+2026-04-27 14:25:31,062 [INFO] [integrity] C3: num_round_trips = 1080 (expected 1080, rel_err=0.00000) OK
+2026-04-27 14:25:31,062 [INFO] [integrity] C3: alpha_hill = 1.913 (expected 1.910, rel_err=0.0013) OK
+2026-04-27 14:25:31,062 [INFO] --- Step 2: Phase 1 → Phase 2 schema adapter ---
+2026-04-27 14:25:31,505 [INFO]   C0u: 1,041,712 RTs, 100 agents adapted; w_init available = True
+2026-04-27 14:25:31,943 [INFO]   C0p: 1,049,903 RTs, 100 agents adapted; w_init available = True
+2026-04-27 14:25:31,946 [WARNING] [w_init/lob] PAMS unavailable on this env — LOB w_init reconstruction skipped. Run on Mac or supplement Phase 2 sim with explicit w_init logging.
+2026-04-27 14:25:31,953 [INFO]   C2: 879 RTs, 100 agents adapted; w_init available = False
+2026-04-27 14:25:31,957 [WARNING] [w_init/lob] PAMS unavailable on this env — LOB w_init reconstruction skipped. Run on Mac or supplement Phase 2 sim with explicit w_init logging.
+2026-04-27 14:25:31,966 [INFO]   C3: 1,080 RTs, 100 agents adapted; w_init available = False
+2026-04-27 14:25:33,430 [INFO] [output] saved parquet: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\phase1_reanalysis_round_trips.parquet (24.21 MB)
+2026-04-27 14:25:33,430 [INFO] [output] saved parquet: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\phase1_reanalysis_agents.parquet (9.9 KB)
+2026-04-27 14:25:33,430 [INFO] --- Step 3: 5 main + plan B preemptive indicators ---
+2026-04-27 14:25:39,184 [INFO]   C0u: n_rt=1,041,712  P=+0.3535  S=+0.1944  K=+0.1561  binV=-0.2033  qreg=+0.5833
+2026-04-27 14:25:39,184 [INFO]           plan-B: corr(w_init,h)=-0.0006  skew_diff=-0.1343  Hill_α=1.9196
+2026-04-27 14:25:50,921 [INFO]   C0p: n_rt=1,049,903  P=+0.3471  S=+0.1923  K=+0.1545  binV=-0.2308  qreg=+0.5965
+2026-04-27 14:25:50,922 [INFO]           plan-B: corr(w_init,h)=-0.0027  skew_diff=-0.0963  Hill_α=1.9650
+2026-04-27 14:25:50,968 [INFO]   C2: n_rt=879  P=+0.6091  S=+0.4221  K=+0.3416  binV=-0.1758  qreg=+1.8182
+2026-04-27 14:25:50,969 [INFO]           plan-B: corr(w_init,h)=+nan  skew_diff=-0.6847  Hill_α=3.1687
+2026-04-27 14:25:51,072 [INFO]   C3: n_rt=1,080  P=+0.3329  S=+0.2816  K=+0.2216  binV=-0.1727  qreg=+0.9444
+2026-04-27 14:25:51,072 [INFO]           plan-B: corr(w_init,h)=+nan  skew_diff=-0.0356  Hill_α=2.9352
+2026-04-27 14:25:51,072 [INFO] --- Step 4: timescale half-time (RT count median split) ---
+2026-04-27 14:25:59,422 [INFO]   C0u first_half (n=520,856): P=+0.3567  S=+0.1982  K=+0.1594  binV=-0.1264  qreg=+0.5965
+2026-04-27 14:25:59,422 [INFO]   C0u second_half (n=520,856): P=+0.3502  S=+0.1905  K=+0.1528  binV=-0.3497  qreg=+0.5833
+2026-04-27 14:26:06,071 [INFO]   C0p first_half (n=524,951): P=+0.3396  S=+0.1856  K=+0.1488  binV=-0.4857  qreg=+0.5833
+2026-04-27 14:26:06,071 [INFO]   C0p second_half (n=524,952): P=+0.3545  S=+0.1991  K=+0.1601  binV=-0.2198  qreg=+0.6061
+2026-04-27 14:26:06,140 [INFO]   C2 first_half (n=439): P=+0.6386  S=+0.3325  K=+0.2751  binV=+0.2500  qreg=+1.3625
+2026-04-27 14:26:06,140 [INFO]   C2 second_half (n=440): P=+0.5886  S=+0.5031  K=+0.4060  binV=-0.3818  qreg=+2.0769
+2026-04-27 14:26:06,204 [INFO]   C3 first_half (n=540): P=+0.4037  S=+0.2589  K=+0.2056  binV=-0.2364  qreg=+0.8444
+2026-04-27 14:26:06,204 [INFO]   C3 second_half (n=540): P=+0.2769  S=+0.2902  K=+0.2270  binV=+0.0303  qreg=+0.9000
+2026-04-27 14:26:06,204 [INFO] --- Step 5: interaction calculation ---
+2026-04-27 14:26:06,205 [INFO]   interaction[rho_pearson] = -0.2699
+2026-04-27 14:26:06,205 [INFO]   interaction[rho_spearman] = -0.1384
+2026-04-27 14:26:06,205 [INFO]   interaction[tau_kendall] = -0.1184
+2026-04-27 14:26:06,205 [INFO]   interaction[bin_var_slope] = +0.0305
+2026-04-27 14:26:06,205 [INFO]   interaction[qreg_slope_diff] = -0.8869
+2026-04-27 14:26:06,205 [INFO]   interaction[rho_pearson_first_half] = -0.2178
+2026-04-27 14:26:06,205 [INFO]   interaction[rho_spearman_first_half] = -0.0610
+2026-04-27 14:26:06,206 [INFO]   interaction[tau_kendall_first_half] = -0.0589
+2026-04-27 14:26:06,206 [INFO]   interaction[bin_var_slope_first_half] = -0.1270
+2026-04-27 14:26:06,206 [INFO]   interaction[qreg_slope_diff_first_half] = -0.5049
+2026-04-27 14:26:06,206 [INFO]   interaction[rho_pearson_second_half] = -0.3161
+2026-04-27 14:26:06,206 [INFO]   interaction[rho_spearman_second_half] = -0.2214
+2026-04-27 14:26:06,206 [INFO]   interaction[tau_kendall_second_half] = -0.1862
+2026-04-27 14:26:06,206 [INFO]   interaction[bin_var_slope_second_half] = +0.2823
+2026-04-27 14:26:06,206 [INFO]   interaction[qreg_slope_diff_second_half] = -1.1997
+2026-04-27 14:26:06,206 [INFO] --- Step 6: outputs ---
+2026-04-27 14:26:06,214 [INFO] [output] saved csv: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\tables\tab_S1_phase1_reanalysis.csv
+2026-04-27 14:26:07,765 [INFO] [output] saved figure: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\figures\fig_S1_indicator_comparison.png
+2026-04-27 14:26:07,766 [INFO] [output] saved readme: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\README.md
+2026-04-27 14:26:07,766 [INFO] ======================================================================
+2026-04-27 14:26:07,766 [INFO] S1 (tentative) complete. Loaded 4/4 conditions. Full interaction available: True.
+2026-04-27 14:26:07,767 [INFO] ======================================================================

@@ -1,0 +1,26 @@
+2026-05-01 01:15:13,284 [INFO] ======================================================================
+2026-05-01 01:15:13,284 [INFO] S3 combine — conds=['C2', 'C3'], n_trials=100
+2026-05-01 01:15:13,285 [INFO] ======================================================================
+2026-05-01 01:15:13,290 [INFO] [integrity] C2: 400 / 400 parquet files
+2026-05-01 01:15:14,221 [INFO] [integrity] C2 sample rt: 2820 rows, cols=['agent_id', 'rt_idx', 't_open', 't_close', 'horizon', 'direction', 'q', 'w_open', 'w_close', 'delta_g', 'cond', 'seed']
+2026-05-01 01:15:14,239 [INFO] [integrity] C2 sample agents: 100 rows, cols=['agent_id', 'birth_step', 'retire_step', 'lifetime', 'w_init', 'w_final', 'forced_retired', 'lifetime_capped', 'n_round_trips', 'cond', 'seed']
+2026-05-01 01:15:14,259 [INFO] [integrity] C2 sample lifetimes: 105 rows, cols=['agent_id', 'sample_idx', 't_birth', 't_end', 'lifetime', 'censored', 'cond', 'seed']
+2026-05-01 01:15:14,274 [INFO] [integrity] C2 sample wealth_ts: 100 rows, cols=['t', 'agent_id', 'w', 'is_active', 'cond', 'seed']
+2026-05-01 01:15:14,280 [INFO] [integrity] C2: OK
+2026-05-01 01:15:14,284 [INFO] [integrity] C3: 400 / 400 parquet files
+2026-05-01 01:15:14,303 [INFO] [integrity] C3 sample rt: 4114 rows, cols=['agent_id', 'rt_idx', 't_open', 't_close', 'horizon', 'direction', 'q', 'w_open', 'w_close', 'delta_g', 'cond', 'seed']
+2026-05-01 01:15:14,325 [INFO] [integrity] C3 sample agents: 100 rows, cols=['agent_id', 'birth_step', 'retire_step', 'lifetime', 'w_init', 'w_final', 'forced_retired', 'lifetime_capped', 'n_round_trips', 'cond', 'seed']
+2026-05-01 01:15:14,331 [INFO] [integrity] C3 sample lifetimes: 131 rows, cols=['agent_id', 'sample_idx', 't_birth', 't_end', 'lifetime', 'censored', 'cond', 'seed']
+2026-05-01 01:15:14,337 [INFO] [integrity] C3 sample wealth_ts: 100 rows, cols=['t', 'agent_id', 'w', 'is_active', 'cond', 'seed']
+2026-05-01 01:15:14,341 [INFO] [integrity] C3: OK
+2026-05-01 01:15:14,360 [INFO] [load] existing ensemble_summary: 200 rows, conds=['C0p', 'C0u']
+2026-05-01 01:15:14,364 [INFO] [load] kept C0u/C0p rows: 200
+2026-05-01 01:15:14,365 [INFO] [lob] computing ensemble_summary for C2 (T=1500)...
+2026-05-01 01:15:29,921 [INFO] [lob] C2: 100 rows
+2026-05-01 01:15:29,921 [INFO] [lob] computing ensemble_summary for C3 (T=1500)...
+2026-05-01 01:15:45,230 [INFO] [lob] C3: 100 rows
+2026-05-01 01:15:45,244 [INFO] [save] C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\ensemble_summary.parquet: 400 rows (conds=['C0p', 'C0u', 'C2', 'C3'])
+2026-05-01 01:15:45,249 [INFO] [counts] per-cond: {'C0p': 100, 'C0u': 100, 'C2': 100, 'C3': 100}
+2026-05-01 01:15:45,249 [INFO] ======================================================================
+2026-05-01 01:15:45,249 [INFO] S3 combine complete. Next: aggregate_full_summary.py
+2026-05-01 01:15:45,249 [INFO] ======================================================================

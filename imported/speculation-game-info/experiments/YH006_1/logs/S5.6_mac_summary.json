@@ -1,0 +1,89 @@
+{
+  "stage": "S5.6",
+  "cond": "C3",
+  "order_volumes": [
+    15,
+    30,
+    60,
+    120
+  ],
+  "seeds": [
+    1000,
+    1001
+  ],
+  "n_jobs": 8,
+  "runs": [
+    {
+      "setting": "mmfcn_05x",
+      "order_volume": 15,
+      "seed": 1000,
+      "runtime_sec": 160.35101425000175,
+      "n_rt": 4500,
+      "n_sub": 63,
+      "error": null
+    },
+    {
+      "setting": "mmfcn_2x",
+      "order_volume": 60,
+      "seed": 1000,
+      "runtime_sec": 172.99857062500087,
+      "n_rt": 4795,
+      "n_sub": 60,
+      "error": null
+    },
+    {
+      "setting": "mmfcn_1x",
+      "order_volume": 30,
+      "seed": 1000,
+      "runtime_sec": 207.95330174999253,
+      "n_rt": 3876,
+      "n_sub": 61,
+      "error": null
+    },
+    {
+      "setting": "mmfcn_4x",
+      "order_volume": 120,
+      "seed": 1000,
+      "runtime_sec": 238.17242487499607,
+      "n_rt": 5504,
+      "n_sub": 53,
+      "error": null
+    },
+    {
+      "setting": "mmfcn_1x",
+      "order_volume": 30,
+      "seed": 1001,
+      "runtime_sec": 241.4945217499917,
+      "n_rt": 4920,
+      "n_sub": 61,
+      "error": null
+    },
+    {
+      "setting": "mmfcn_4x",
+      "order_volume": 120,
+      "seed": 1001,
+      "runtime_sec": 324.645078290996,
+      "n_rt": 6998,
+      "n_sub": 67,
+      "error": null
+    },
+    {
+      "setting": "mmfcn_2x",
+      "order_volume": 60,
+      "seed": 1001,
+      "runtime_sec": 435.30835033400217,
+      "n_rt": 6133,
+      "n_sub": 59,
+      "error": null
+    },
+    {
+      "setting": "mmfcn_05x",
+      "order_volume": 15,
+      "seed": 1001,
+      "runtime_sec": 491.3817162500054,
+      "n_rt": 4859,
+      "n_sub": 65,
+      "error": null
+    }
+  ]
+}

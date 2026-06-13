@@ -1,0 +1,78 @@
+{
+  "decision": "PASS_STAGE2_LOSS_CONDITIONAL_CONFIRMED",
+  "verdict": "All 3 neutral clean-probe wordings give a POSITIVE loss-context ATH asymmetry (CI excludes 0). Direction is stable within the clean-probe family; the behavioral-framing inversion is a reason-generation artifact. Prepare Stage 2 (clean-probe, loss-conditional v_ATH).",
+  "ath_loss_by_wording": {
+    "sec1_faithful": {
+      "ath_asymmetry_loss": {
+        "mean": 0.010697419555877304,
+        "lo": 0.006635995028656898,
+        "hi": 0.014717446331603108,
+        "boot_mean": 0.010692165004053372,
+        "boot_sd": 0.0020202408665896585,
+        "n": 113,
+        "frac_positive": 0.6814159292035398
+      },
+      "out_group_mass_max": 3.0482460244507514e-05,
+      "positive_CI_excludes_0": true,
+      "negative_CI_excludes_0": false
+    },
+    "minimal": {
+      "ath_asymmetry_loss": {
+        "mean": 0.028801294399901194,
+        "lo": 0.021983849504152452,
+        "hi": 0.03605813573398289,
+        "boot_mean": 0.02875931781562789,
+        "boot_sd": 0.0035859706984441163,
+        "n": 113,
+        "frac_positive": 0.7522123893805309
+      },
+      "out_group_mass_max": 2.7983140839848986e-05,
+      "positive_CI_excludes_0": true,
+      "negative_CI_excludes_0": false
+    },
+    "plain": {
+      "ath_asymmetry_loss": {
+        "mean": 0.027689611127494046,
+        "lo": 0.024026528384549967,
+        "hi": 0.03144948366467907,
+        "boot_mean": 0.0277083627939129,
+        "boot_sd": 0.0018779337711084046,
+        "n": 113,
+        "frac_positive": 0.9469026548672567
+      },
+      "out_group_mass_max": 2.2681611519748124e-05,
+      "positive_CI_excludes_0": true,
+      "negative_CI_excludes_0": false
+    }
+  },
+  "disposition_by_framing": {
+    "clean_probe": {
+      "mean": 0.01724409469100792,
+      "lo": 0.010234458018481753,
+      "hi": 0.024867169305815593,
+      "boot_mean": 0.017415527789084843,
+      "boot_sd": 0.003818057437155591,
+      "n": 240,
+      "frac_positive": 0.6208333333333333
+    },
+    "behavioral_framing": {
+      "mean": 0.2598750025108576,
+      "lo": 0.24353085906873756,
+      "hi": 0.27775973141341387,
+      "boot_mean": 0.2601518380547175,
+      "boot_sd": 0.00853590298182376,
+      "n": 240,
+      "frac_positive": 0.9833333333333333
+    }
+  },
+  "n_positive": 3,
+  "n_null": 0,
+  "n_flip": 0,
+  "wordings": [
+    "sec1_faithful",
+    "minimal",
+    "plain"
+  ],
+  "n_loss_pairs": 113,
+  "prior_behavioral_framing_ath_loss": "-0.0704 [-0.0834,-0.0573] (P0 run, reversed)"
+}

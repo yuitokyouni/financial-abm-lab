@@ -1,0 +1,158 @@
+{
+  "stage": "S5",
+  "q_const": 3,
+  "n_trials_per_cond": {
+    "C0u": 100,
+    "C0p": 100,
+    "C2": 100,
+    "C3": 100,
+    "C2_A1": 100,
+    "C3_A1": 100
+  },
+  "pooled_bin_var": {
+    "C0u": -0.4035714285714285,
+    "C0p": -0.2879120879120879,
+    "C2": -0.059340659340659345,
+    "C3": -0.12637362637362637,
+    "C2_A1": -0.3071428571428571,
+    "C3_A1": -0.09010989010989012
+  },
+  "a1_interaction": [
+    {
+      "metric": "rho_pearson",
+      "interaction_mean": -0.0018430992612029685,
+      "ci_lo": -0.014758844631401466,
+      "ci_hi": 0.010549895215417769,
+      "n": 100
+    },
+    {
+      "metric": "rho_spearman",
+      "interaction_mean": -0.009086496271250556,
+      "ci_lo": -0.018545698620587373,
+      "ci_hi": 0.0004846210620778479,
+      "n": 100
+    },
+    {
+      "metric": "tau_kendall",
+      "interaction_mean": -0.007592023453815075,
+      "ci_lo": -0.015770972299126735,
+      "ci_hi": 0.0009419565014320882,
+      "n": 100
+    },
+    {
+      "metric": "bin_var_slope",
+      "interaction_mean": 0.017607142857142863,
+      "ci_lo": -0.03752737887112885,
+      "ci_hi": 0.07313143106893107,
+      "n": 100
+    },
+    {
+      "metric": "q90_q10_slope_diff",
+      "interaction_mean": -0.004625989858746498,
+      "ci_lo": -0.013036845601002024,
+      "ci_hi": 0.00362721486367856,
+      "n": 100
+    }
+  ],
+  "s3_interaction": [
+    {
+      "metric": "rho_pearson",
+      "interaction_mean": -0.0201417522849165,
+      "ci_lo": -0.0422458724933914,
+      "ci_hi": 0.0019865147391388,
+      "n": 100
+    },
+    {
+      "metric": "rho_spearman",
+      "interaction_mean": -0.009032012796821,
+      "ci_lo": -0.0224212969930073,
+      "ci_hi": 0.0041182117694861,
+      "n": 100
+    },
+    {
+      "metric": "tau_kendall",
+      "interaction_mean": -0.0069651189528716,
+      "ci_lo": -0.0178932349910464,
+      "ci_hi": 0.003451732207514,
+      "n": 100
+    },
+    {
+      "metric": "bin_var_slope",
+      "interaction_mean": 0.0046257076257076,
+      "ci_lo": -0.0540150099900099,
+      "ci_hi": 0.064042907092907,
+      "n": 100
+    },
+    {
+      "metric": "q90_q10_slope_diff",
+      "interaction_mean": 0.0060910341164926,
+      "ci_lo": -0.0087983891188894,
+      "ci_hi": 0.021207163299888,
+      "n": 100
+    }
+  ],
+  "shrinkage": [
+    {
+      "metric": "rho_pearson",
+      "s3_mean": -0.020141752284916548,
+      "a1_mean": -0.0018430992612029685,
+      "shrinkage_mean": -0.018298653023713574,
+      "shrinkage_lo": -0.04278792153822309,
+      "shrinkage_hi": 0.006143777679517609,
+      "shrinkage_ratio": 0.091506400988915,
+      "ci_excludes_zero": false,
+      "L2_pass": false,
+      "n": 100
+    },
+    {
+      "metric": "rho_spearman",
+      "s3_mean": -0.00903201279682103,
+      "a1_mean": -0.009086496271250556,
+      "shrinkage_mean": 5.44834744295232e-05,
+      "shrinkage_lo": -0.015207938649329433,
+      "shrinkage_hi": 0.014871538135323851,
+      "shrinkage_ratio": 1.0060322627586071,
+      "ci_excludes_zero": false,
+      "L2_pass": false,
+      "n": 100
+    },
+    {
+      "metric": "tau_kendall",
+      "s3_mean": -0.006965118952871694,
+      "a1_mean": -0.007592023453815075,
+      "shrinkage_mean": 0.0006269045009433819,
+      "shrinkage_lo": -0.011879639172547661,
+      "shrinkage_hi": 0.012888427018768935,
+      "shrinkage_ratio": 1.090006287787075,
+      "ci_excludes_zero": false,
+      "L2_pass": false,
+      "n": 100
+    },
+    {
+      "metric": "bin_var_slope",
+      "s3_mean": 0.004625707625707626,
+      "a1_mean": 0.017607142857142863,
+      "shrinkage_mean": -0.012981435231435237,
+      "shrinkage_lo": -0.07463567890442889,
+      "shrinkage_hi": 0.04825864552114551,
+      "shrinkage_ratio": 3.806367432150314,
+      "ci_excludes_zero": false,
+      "L2_pass": false,
+      "n": 100
+    },
+    {
+      "metric": "q90_q10_slope_diff",
+      "s3_mean": 0.0060910341164926475,
+      "a1_mean": -0.004625989858746498,
+      "shrinkage_mean": 0.01071702397523915,
+      "shrinkage_lo": -0.006412628307932062,
+      "shrinkage_hi": 0.02804477706597119,
+      "shrinkage_ratio": 0.7594752828950243,
+      "ci_excludes_zero": false,
+      "L2_pass": false,
+      "n": 100
+    }
+  ],
+  "L2_pass_count": 0,
+  "L2_total_metrics": 5
+}

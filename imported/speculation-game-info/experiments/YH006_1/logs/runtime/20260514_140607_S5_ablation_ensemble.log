@@ -1,0 +1,221 @@
+2026-05-14 14:06:07,127 [INFO] q_const from S4_q_const_calibration.json: 3 (cond=C3, n_trials=100)
+2026-05-14 14:06:07,128 [INFO] ======================================================================
+2026-05-14 14:06:07,128 [INFO] S5 A1 ablation ensemble — conds=['C2_A1', 'C3_A1'], n_trials=100, seed_base=1000, n_workers=8, q_const=3, main_steps=1500
+2026-05-14 14:06:07,128 [INFO] ======================================================================
+2026-05-14 14:06:07,128 [INFO] [smoke] A1 wiring check — C3_A1 seed=9001, q_const=3, warmup=200/main=200
+2026-05-14 14:07:18,024 [INFO] [smoke] PASS: n_rt=3596, all q == 3 (assertion), runtime=70.6s
+2026-05-14 14:07:18,024 [INFO] [guard] A1 determinism check: C3_A1 seed=1000 × 2 runs, q_const=3
+2026-05-14 14:13:10,296 [INFO] [guard] trial_1000.parquet: MATCH (a=357ba946b61e57b9... b=357ba946b61e57b9...)
+2026-05-14 14:13:10,297 [INFO] [guard] agents_1000.parquet: MATCH (a=ef88fc13d89c9afb... b=ef88fc13d89c9afb...)
+2026-05-14 14:13:10,297 [INFO] [guard] lifetimes_1000.parquet: MATCH (a=2b3cd4914f7d16cc... b=2b3cd4914f7d16cc...)
+2026-05-14 14:13:10,298 [INFO] [guard] wealth_ts_1000.parquet: MATCH (a=23fa6a78a2b16b63... b=23fa6a78a2b16b63...)
+2026-05-14 14:13:10,358 [INFO] [guard] rt_df semantic: PASS
+2026-05-14 14:13:10,359 [INFO] [parallel] cond=C2_A1 n_seeds=100 n_workers=8 out=/Users/hasegawayuito/Documents/GitHub/speculation-game-info/experiments/YH006_1/data/C2_A1
+2026-05-14 14:19:35,777 [INFO] [parallel] C2_A1 seed=1000 done (1/100): runtime=381.3s n_rt=23,480 n_sub=45
+2026-05-14 14:21:33,466 [INFO] [parallel] C2_A1 seed=1004 done (2/100): runtime=499.3s n_rt=19,559 n_sub=29
+2026-05-14 14:24:32,329 [INFO] [parallel] C2_A1 seed=1002 done (3/100): runtime=677.5s n_rt=27,248 n_sub=42
+2026-05-14 14:25:26,633 [INFO] [parallel] C2_A1 seed=1007 done (4/100): runtime=731.7s n_rt=25,935 n_sub=39
+2026-05-14 14:25:46,508 [INFO] [parallel] C2_A1 seed=1003 done (5/100): runtime=752.1s n_rt=23,165 n_sub=43
+2026-05-14 14:25:49,820 [INFO] [parallel] C2_A1 seed=1006 done (6/100): runtime=755.2s n_rt=21,812 n_sub=33
+2026-05-14 14:27:14,055 [INFO] [parallel] C2_A1 seed=1009 done (7/100): runtime=338.3s n_rt=23,988 n_sub=25
+2026-05-14 14:27:24,243 [INFO] [parallel] C2_A1 seed=1005 done (8/100): runtime=849.2s n_rt=28,471 n_sub=34
+2026-05-14 14:28:31,766 [INFO] [parallel] C2_A1 seed=1001 done (9/100): runtime=916.9s n_rt=27,775 n_sub=51
+2026-05-14 14:29:12,075 [INFO] [parallel] C2_A1 seed=1008 done (10/100): runtime=574.3s n_rt=22,721 n_sub=32
+2026-05-14 14:31:45,724 [INFO] [parallel] C2_A1 seed=1010 done (11/100): runtime=430.8s n_rt=28,379 n_sub=41
+2026-05-14 14:33:05,292 [INFO] [parallel] C2_A1 seed=1014 done (12/100): runtime=349.1s n_rt=23,664 n_sub=43
+2026-05-14 14:35:19,135 [INFO] [parallel] C2_A1 seed=1016 done (13/100): runtime=405.0s n_rt=27,025 n_sub=34
+2026-05-14 14:35:24,292 [INFO] [parallel] C2_A1 seed=1015 done (14/100): runtime=477.6s n_rt=26,584 n_sub=47
+2026-05-14 14:35:49,185 [INFO] [parallel] C2_A1 seed=1013 done (15/100): runtime=597.0s n_rt=25,537 n_sub=62
+2026-05-14 14:36:07,675 [INFO] [parallel] C2_A1 seed=1011 done (16/100): runtime=638.6s n_rt=26,413 n_sub=49
+2026-05-14 14:38:54,202 [INFO] [parallel] C2_A1 seed=1012 done (17/100): runtime=785.4s n_rt=25,664 n_sub=41
+2026-05-14 14:41:25,201 [INFO] [parallel] C2_A1 seed=1020 done (18/100): runtime=363.6s n_rt=27,007 n_sub=45
+2026-05-14 14:43:02,179 [INFO] [parallel] C2_A1 seed=1017 done (19/100): runtime=827.6s n_rt=25,119 n_sub=48
+2026-05-14 14:43:46,442 [INFO] [parallel] C2_A1 seed=1018 done (20/100): runtime=718.2s n_rt=26,179 n_sub=45
+2026-05-14 14:47:07,762 [INFO] [parallel] C2_A1 seed=1021 done (21/100): runtime=700.9s n_rt=28,489 n_sub=57
+2026-05-14 14:47:24,614 [INFO] [parallel] C2_A1 seed=1019 done (22/100): runtime=856.9s n_rt=26,386 n_sub=52
+2026-05-14 14:47:38,346 [INFO] [parallel] C2_A1 seed=1025 done (23/100): runtime=371.2s n_rt=21,617 n_sub=43
+2026-05-14 14:48:44,619 [INFO] [parallel] C2_A1 seed=1022 done (24/100): runtime=773.2s n_rt=24,759 n_sub=49
+2026-05-14 14:49:31,233 [INFO] [parallel] C2_A1 seed=1027 done (25/100): runtime=342.4s n_rt=24,772 n_sub=44
+2026-05-14 14:50:28,370 [INFO] [parallel] C2_A1 seed=1023 done (26/100): runtime=858.2s n_rt=25,881 n_sub=41
+2026-05-14 14:51:34,735 [INFO] [parallel] C2_A1 seed=1024 done (27/100): runtime=758.2s n_rt=25,693 n_sub=37
+2026-05-14 14:53:05,192 [INFO] [parallel] C2_A1 seed=1026 done (28/100): runtime=600.4s n_rt=28,257 n_sub=61
+2026-05-14 14:55:52,383 [INFO] [parallel] C2_A1 seed=1030 done (29/100): runtime=491.5s n_rt=28,450 n_sub=33
+2026-05-14 14:58:28,775 [INFO] [parallel] C2_A1 seed=1032 done (30/100): runtime=535.0s n_rt=26,535 n_sub=37
+2026-05-14 14:59:24,911 [INFO] [parallel] C2_A1 seed=1029 done (31/100): runtime=717.8s n_rt=25,871 n_sub=61
+2026-05-14 15:02:20,593 [INFO] [parallel] C2_A1 seed=1034 done (32/100): runtime=643.7s n_rt=24,277 n_sub=41
+2026-05-14 15:02:58,774 [INFO] [parallel] C2_A1 seed=1031 done (33/100): runtime=851.6s n_rt=26,600 n_sub=49
+2026-05-14 15:03:00,248 [INFO] [parallel] C2_A1 seed=1028 done (34/100): runtime=949.8s n_rt=28,119 n_sub=55
+2026-05-14 15:03:22,628 [INFO] [parallel] C2_A1 seed=1033 done (35/100): runtime=772.1s n_rt=23,282 n_sub=40
+2026-05-14 15:05:50,757 [INFO] [parallel] C2_A1 seed=1038 done (36/100): runtime=383.3s n_rt=26,888 n_sub=37
+2026-05-14 15:06:16,608 [INFO] [parallel] C2_A1 seed=1035 done (37/100): runtime=788.8s n_rt=26,552 n_sub=48
+2026-05-14 15:08:09,311 [INFO] [parallel] C2_A1 seed=1037 done (38/100): runtime=578.2s n_rt=26,034 n_sub=47
+2026-05-14 15:08:35,653 [INFO] [parallel] C2_A1 seed=1036 done (39/100): runtime=760.8s n_rt=26,727 n_sub=61
+2026-05-14 15:09:07,823 [INFO] [parallel] C2_A1 seed=1039 done (40/100): runtime=405.1s n_rt=23,616 n_sub=37
+2026-05-14 15:13:01,564 [INFO] [parallel] C2_A1 seed=1040 done (41/100): runtime=600.3s n_rt=24,660 n_sub=60
+2026-05-14 15:14:32,284 [INFO] [parallel] C2_A1 seed=1044 done (42/100): runtime=493.1s n_rt=25,891 n_sub=48
+2026-05-14 15:15:20,035 [INFO] [parallel] C2_A1 seed=1043 done (43/100): runtime=567.0s n_rt=23,883 n_sub=44
+2026-05-14 15:15:56,254 [INFO] [parallel] C2_A1 seed=1041 done (44/100): runtime=773.5s n_rt=26,742 n_sub=50
+2026-05-14 15:16:20,174 [INFO] [parallel] C2_A1 seed=1042 done (45/100): runtime=775.1s n_rt=26,536 n_sub=43
+2026-05-14 15:16:41,642 [INFO] [parallel] C2_A1 seed=1045 done (46/100): runtime=509.8s n_rt=26,709 n_sub=51
+2026-05-14 15:21:13,499 [INFO] [parallel] C2_A1 seed=1047 done (47/100): runtime=723.2s n_rt=26,266 n_sub=57
+2026-05-14 15:22:11,776 [INFO] [parallel] C2_A1 seed=1046 done (48/100): runtime=813.9s n_rt=23,543 n_sub=38
+2026-05-14 15:23:44,280 [INFO] [parallel] C2_A1 seed=1048 done (49/100): runtime=640.3s n_rt=25,761 n_sub=57
+2026-05-14 15:23:50,424 [INFO] [parallel] C2_A1 seed=1051 done (50/100): runtime=471.7s n_rt=25,135 n_sub=60
+2026-05-14 15:27:03,091 [INFO] [parallel] C2_A1 seed=1052 done (51/100): runtime=640.5s n_rt=26,287 n_sub=40
+2026-05-14 15:27:40,584 [INFO] [parallel] C2_A1 seed=1049 done (52/100): runtime=786.2s n_rt=23,304 n_sub=52
+2026-05-14 15:27:53,581 [INFO] [parallel] C2_A1 seed=1053 done (53/100): runtime=669.7s n_rt=25,003 n_sub=37
+2026-05-14 15:29:27,272 [INFO] [parallel] C2_A1 seed=1050 done (54/100): runtime=844.8s n_rt=26,621 n_sub=42
+2026-05-14 15:30:56,106 [INFO] [parallel] C2_A1 seed=1056 done (55/100): runtime=429.4s n_rt=25,223 n_sub=38
+2026-05-14 15:31:19,194 [INFO] [parallel] C2_A1 seed=1055 done (56/100): runtime=544.9s n_rt=27,693 n_sub=39
+2026-05-14 15:31:24,983 [INFO] [parallel] C2_A1 seed=1054 done (57/100): runtime=609.3s n_rt=23,551 n_sub=36
+2026-05-14 15:36:03,551 [INFO] [parallel] C2_A1 seed=1058 done (58/100): runtime=538.6s n_rt=21,560 n_sub=38
+2026-05-14 15:36:24,248 [INFO] [parallel] C2_A1 seed=1057 done (59/100): runtime=751.4s n_rt=27,343 n_sub=29
+2026-05-14 15:38:35,968 [INFO] [parallel] C2_A1 seed=1063 done (60/100): runtime=434.6s n_rt=25,054 n_sub=36
+2026-05-14 15:39:55,512 [INFO] [parallel] C2_A1 seed=1062 done (61/100): runtime=537.1s n_rt=26,308 n_sub=27
+2026-05-14 15:41:03,836 [INFO] [parallel] C2_A1 seed=1059 done (62/100): runtime=800.8s n_rt=25,746 n_sub=34
+2026-05-14 15:41:41,304 [INFO] [parallel] C2_A1 seed=1060 done (63/100): runtime=825.2s n_rt=25,825 n_sub=42
+2026-05-14 15:41:49,934 [INFO] [parallel] C2_A1 seed=1061 done (64/100): runtime=740.3s n_rt=25,085 n_sub=36
+2026-05-14 15:42:56,484 [INFO] [parallel] C2_A1 seed=1064 done (65/100): runtime=689.1s n_rt=25,803 n_sub=53
+2026-05-14 15:43:39,179 [INFO] [parallel] C2_A1 seed=1066 done (66/100): runtime=432.9s n_rt=22,788 n_sub=36
+2026-05-14 15:49:28,881 [INFO] [parallel] C2_A1 seed=1067 done (67/100): runtime=650.3s n_rt=27,689 n_sub=36
+2026-05-14 15:50:10,799 [INFO] [parallel] C2_A1 seed=1068 done (68/100): runtime=612.9s n_rt=25,437 n_sub=57
+2026-05-14 15:50:25,550 [INFO] [parallel] C2_A1 seed=1065 done (69/100): runtime=859.5s n_rt=26,814 n_sub=51
+2026-05-14 15:51:35,676 [INFO] [parallel] C2_A1 seed=1071 done (70/100): runtime=583.1s n_rt=27,527 n_sub=49
+2026-05-14 15:51:37,321 [INFO] [parallel] C2_A1 seed=1072 done (71/100): runtime=518.2s n_rt=27,273 n_sub=56
+2026-05-14 15:51:43,571 [INFO] [parallel] C2_A1 seed=1069 done (72/100): runtime=637.3s n_rt=25,848 n_sub=24
+2026-05-14 15:52:18,276 [INFO] [parallel] C2_A1 seed=1070 done (73/100): runtime=633.8s n_rt=27,707 n_sub=35
+2026-05-14 15:53:24,333 [INFO] [parallel] C2_A1 seed=1073 done (74/100): runtime=582.7s n_rt=26,956 n_sub=56
+2026-05-14 15:56:07,398 [INFO] [parallel] C2_A1 seed=1076 done (75/100): runtime=339.5s n_rt=25,897 n_sub=49
+2026-05-14 15:59:35,773 [INFO] [parallel] C2_A1 seed=1077 done (76/100): runtime=477.1s n_rt=25,111 n_sub=40
+2026-05-14 16:00:23,234 [INFO] [parallel] C2_A1 seed=1074 done (77/100): runtime=651.9s n_rt=27,546 n_sub=42
+2026-05-14 16:01:59,333 [INFO] [parallel] C2_A1 seed=1079 done (78/100): runtime=613.4s n_rt=26,956 n_sub=47
+2026-05-14 16:03:47,758 [INFO] [parallel] C2_A1 seed=1080 done (79/100): runtime=687.1s n_rt=25,848 n_sub=43
+2026-05-14 16:03:54,242 [INFO] [parallel] C2_A1 seed=1075 done (80/100): runtime=821.2s n_rt=23,893 n_sub=36
+2026-05-14 16:04:29,994 [INFO] [parallel] C2_A1 seed=1081 done (81/100): runtime=663.2s n_rt=25,812 n_sub=54
+2026-05-14 16:04:46,849 [INFO] [parallel] C2_A1 seed=1078 done (82/100): runtime=787.2s n_rt=25,228 n_sub=32
+2026-05-14 16:05:28,413 [INFO] [parallel] C2_A1 seed=1082 done (83/100): runtime=558.6s n_rt=24,980 n_sub=45
+2026-05-14 16:08:24,551 [INFO] [parallel] C2_A1 seed=1085 done (84/100): runtime=382.7s n_rt=26,878 n_sub=41
+2026-05-14 16:10:29,481 [INFO] [parallel] C2_A1 seed=1084 done (85/100): runtime=604.0s n_rt=24,474 n_sub=56
+2026-05-14 16:11:23,339 [INFO] [parallel] C2_A1 seed=1089 done (86/100): runtime=394.0s n_rt=27,503 n_sub=33
+2026-05-14 16:12:04,777 [INFO] [parallel] C2_A1 seed=1083 done (87/100): runtime=746.6s n_rt=26,481 n_sub=53
+2026-05-14 16:13:14,904 [INFO] [parallel] C2_A1 seed=1086 done (88/100): runtime=564.8s n_rt=23,719 n_sub=42
+2026-05-14 16:14:11,151 [INFO] [parallel] C2_A1 seed=1088 done (89/100): runtime=578.8s n_rt=25,507 n_sub=57
+2026-05-14 16:15:13,921 [INFO] [parallel] C2_A1 seed=1087 done (90/100): runtime=677.1s n_rt=28,026 n_sub=44
+2026-05-14 16:16:24,803 [INFO] [parallel] C2_A1 seed=1090 done (91/100): runtime=654.0s n_rt=24,181 n_sub=37
+2026-05-14 16:16:55,743 [INFO] [parallel] C2_A1 seed=1091 done (92/100): runtime=508.7s n_rt=26,374 n_sub=34
+2026-05-14 16:20:20,183 [INFO] [parallel] C2_A1 seed=1093 done (93/100): runtime=534.1s n_rt=28,375 n_sub=47
+2026-05-14 16:21:09,245 [INFO] [parallel] C2_A1 seed=1094 done (94/100): runtime=542.4s n_rt=24,137 n_sub=39
+2026-05-14 16:22:43,400 [INFO] [parallel] C2_A1 seed=1092 done (95/100): runtime=731.9s n_rt=25,827 n_sub=56
+2026-05-14 16:22:56,336 [INFO] [parallel] C2_A1 seed=1097 done (96/100): runtime=460.1s n_rt=27,061 n_sub=46
+2026-05-14 16:25:16,786 [INFO] [parallel] C2_A1 seed=1096 done (97/100): runtime=664.2s n_rt=24,769 n_sub=36
+2026-05-14 16:25:29,464 [INFO] [parallel] C2_A1 seed=1095 done (98/100): runtime=733.2s n_rt=26,677 n_sub=44
+2026-05-14 16:26:06,490 [INFO] [parallel] C2_A1 seed=1099 done (99/100): runtime=549.8s n_rt=26,187 n_sub=48
+2026-05-14 16:26:07,566 [INFO] [parallel] C2_A1 seed=1098 done (100/100): runtime=581.9s n_rt=22,628 n_sub=32
+2026-05-14 16:26:07,610 [INFO] [parallel] cond=C2_A1 all done: total=7977.4s, throughput=0.01 trial/s
+2026-05-14 16:26:07,611 [INFO] [parallel] cond=C3_A1 n_seeds=100 n_workers=8 out=/Users/hasegawayuito/Documents/GitHub/speculation-game-info/experiments/YH006_1/data/C3_A1
+2026-05-14 16:32:27,684 [INFO] [parallel] C3_A1 seed=1000 done (1/100): runtime=375.8s n_rt=24,794 n_sub=92
+2026-05-14 16:34:03,455 [INFO] [parallel] C3_A1 seed=1004 done (2/100): runtime=472.2s n_rt=20,051 n_sub=80
+2026-05-14 16:37:58,441 [INFO] [parallel] C3_A1 seed=1002 done (3/100): runtime=706.4s n_rt=28,743 n_sub=87
+2026-05-14 16:38:50,622 [INFO] [parallel] C3_A1 seed=1007 done (4/100): runtime=758.7s n_rt=27,411 n_sub=87
+2026-05-14 16:39:11,223 [INFO] [parallel] C3_A1 seed=1006 done (5/100): runtime=779.6s n_rt=23,663 n_sub=93
+2026-05-14 16:39:11,323 [INFO] [parallel] C3_A1 seed=1003 done (6/100): runtime=779.5s n_rt=26,160 n_sub=86
+2026-05-14 16:39:39,576 [INFO] [parallel] C3_A1 seed=1009 done (7/100): runtime=333.6s n_rt=27,685 n_sub=82
+2026-05-14 16:40:00,116 [INFO] [parallel] C3_A1 seed=1005 done (8/100): runtime=828.2s n_rt=26,224 n_sub=98
+2026-05-14 16:40:29,231 [INFO] [parallel] C3_A1 seed=1001 done (9/100): runtime=857.4s n_rt=25,701 n_sub=84
+2026-05-14 16:42:22,123 [INFO] [parallel] C3_A1 seed=1008 done (10/100): runtime=592.0s n_rt=26,237 n_sub=100
+2026-05-14 16:45:36,868 [INFO] [parallel] C3_A1 seed=1014 done (11/100): runtime=354.9s n_rt=25,944 n_sub=94
+2026-05-14 16:45:45,911 [INFO] [parallel] C3_A1 seed=1010 done (12/100): runtime=465.1s n_rt=25,652 n_sub=103
+2026-05-14 16:47:10,808 [INFO] [parallel] C3_A1 seed=1016 done (13/100): runtime=399.3s n_rt=24,746 n_sub=86
+2026-05-14 16:48:22,897 [INFO] [parallel] C3_A1 seed=1015 done (14/100): runtime=500.3s n_rt=25,942 n_sub=90
+2026-05-14 16:49:04,888 [INFO] [parallel] C3_A1 seed=1013 done (15/100): runtime=591.2s n_rt=24,559 n_sub=91
+2026-05-14 16:49:24,086 [INFO] [parallel] C3_A1 seed=1011 done (16/100): runtime=631.1s n_rt=24,881 n_sub=104
+2026-05-14 16:52:41,378 [INFO] [parallel] C3_A1 seed=1012 done (17/100): runtime=807.8s n_rt=26,945 n_sub=91
+2026-05-14 16:53:03,562 [INFO] [parallel] C3_A1 seed=1020 done (18/100): runtime=350.1s n_rt=28,212 n_sub=96
+2026-05-14 16:56:17,692 [INFO] [parallel] C3_A1 seed=1017 done (19/100): runtime=832.9s n_rt=25,923 n_sub=93
+2026-05-14 16:57:23,993 [INFO] [parallel] C3_A1 seed=1018 done (20/100): runtime=704.6s n_rt=25,754 n_sub=90
+2026-05-14 16:58:49,280 [INFO] [parallel] C3_A1 seed=1025 done (21/100): runtime=343.1s n_rt=26,899 n_sub=92
+2026-05-14 16:59:31,300 [INFO] [parallel] C3_A1 seed=1021 done (22/100): runtime=666.0s n_rt=26,045 n_sub=112
+2026-05-14 16:59:34,345 [INFO] [parallel] C3_A1 seed=1019 done (23/100): runtime=825.5s n_rt=25,999 n_sub=90
+2026-05-14 17:02:31,593 [INFO] [parallel] C3_A1 seed=1022 done (24/100): runtime=804.0s n_rt=28,324 n_sub=91
+2026-05-14 17:03:17,481 [INFO] [parallel] C3_A1 seed=1027 done (25/100): runtime=351.2s n_rt=24,109 n_sub=86
+2026-05-14 17:03:43,091 [INFO] [parallel] C3_A1 seed=1023 done (26/100): runtime=856.5s n_rt=25,920 n_sub=107
+2026-05-14 17:05:24,395 [INFO] [parallel] C3_A1 seed=1024 done (27/100): runtime=760.6s n_rt=26,639 n_sub=83
+2026-05-14 17:06:16,930 [INFO] [parallel] C3_A1 seed=1026 done (28/100): runtime=596.7s n_rt=28,064 n_sub=89
+2026-05-14 17:07:53,052 [INFO] [parallel] C3_A1 seed=1030 done (29/100): runtime=496.1s n_rt=28,003 n_sub=100
+2026-05-14 17:11:29,726 [INFO] [parallel] C3_A1 seed=1029 done (30/100): runtime=715.9s n_rt=27,205 n_sub=106
+2026-05-14 17:12:18,432 [INFO] [parallel] C3_A1 seed=1032 done (31/100): runtime=538.3s n_rt=27,263 n_sub=93
+2026-05-14 17:15:08,685 [INFO] [parallel] C3_A1 seed=1028 done (32/100): runtime=976.7s n_rt=29,630 n_sub=88
+2026-05-14 17:16:43,143 [INFO] [parallel] C3_A1 seed=1034 done (33/100): runtime=676.2s n_rt=26,672 n_sub=96
+2026-05-14 17:16:46,310 [INFO] [parallel] C3_A1 seed=1031 done (34/100): runtime=852.2s n_rt=26,977 n_sub=90
+2026-05-14 17:16:54,201 [INFO] [parallel] C3_A1 seed=1033 done (35/100): runtime=788.8s n_rt=24,434 n_sub=76
+2026-05-14 17:19:00,202 [INFO] [parallel] C3_A1 seed=1038 done (36/100): runtime=399.3s n_rt=26,526 n_sub=87
+2026-05-14 17:19:40,787 [INFO] [parallel] C3_A1 seed=1035 done (37/100): runtime=801.3s n_rt=27,871 n_sub=103
+2026-05-14 17:20:16,716 [INFO] [parallel] C3_A1 seed=1036 done (38/100): runtime=741.2s n_rt=27,609 n_sub=99
+2026-05-14 17:21:13,790 [INFO] [parallel] C3_A1 seed=1037 done (39/100): runtime=581.7s n_rt=26,817 n_sub=92
+2026-05-14 17:21:53,172 [INFO] [parallel] C3_A1 seed=1039 done (40/100): runtime=402.4s n_rt=22,855 n_sub=99
+2026-05-14 17:26:22,925 [INFO] [parallel] C3_A1 seed=1040 done (41/100): runtime=577.5s n_rt=25,023 n_sub=92
+2026-05-14 17:27:11,135 [INFO] [parallel] C3_A1 seed=1044 done (42/100): runtime=448.1s n_rt=23,398 n_sub=100
+2026-05-14 17:27:46,314 [INFO] [parallel] C3_A1 seed=1045 done (43/100): runtime=447.5s n_rt=23,125 n_sub=99
+2026-05-14 17:27:49,849 [INFO] [parallel] C3_A1 seed=1043 done (44/100): runtime=527.4s n_rt=24,300 n_sub=97
+2026-05-14 17:28:52,909 [INFO] [parallel] C3_A1 seed=1042 done (45/100): runtime=716.4s n_rt=24,754 n_sub=97
+2026-05-14 17:29:21,268 [INFO] [parallel] C3_A1 seed=1041 done (46/100): runtime=752.3s n_rt=26,894 n_sub=121
+2026-05-14 17:34:04,577 [INFO] [parallel] C3_A1 seed=1047 done (47/100): runtime=728.8s n_rt=28,684 n_sub=130
+2026-05-14 17:34:30,596 [INFO] [parallel] C3_A1 seed=1046 done (48/100): runtime=794.6s n_rt=23,778 n_sub=92
+2026-05-14 17:35:36,478 [INFO] [parallel] C3_A1 seed=1051 done (49/100): runtime=464.3s n_rt=25,822 n_sub=100
+2026-05-14 17:36:48,133 [INFO] [parallel] C3_A1 seed=1048 done (50/100): runtime=623.0s n_rt=24,713 n_sub=88
+2026-05-14 17:39:13,901 [INFO] [parallel] C3_A1 seed=1052 done (51/100): runtime=618.4s n_rt=26,428 n_sub=59
+2026-05-14 17:40:49,193 [INFO] [parallel] C3_A1 seed=1049 done (52/100): runtime=815.6s n_rt=25,925 n_sub=100
+2026-05-14 17:40:56,772 [INFO] [parallel] C3_A1 seed=1053 done (53/100): runtime=693.0s n_rt=27,006 n_sub=101
+2026-05-14 17:41:42,393 [INFO] [parallel] C3_A1 seed=1050 done (54/100): runtime=833.6s n_rt=26,575 n_sub=95
+2026-05-14 17:43:03,257 [INFO] [parallel] C3_A1 seed=1056 done (55/100): runtime=444.2s n_rt=26,204 n_sub=104
+2026-05-14 17:43:51,874 [INFO] [parallel] C3_A1 seed=1055 done (56/100): runtime=558.2s n_rt=28,026 n_sub=110
+2026-05-14 17:44:43,734 [INFO] [parallel] C3_A1 seed=1054 done (57/100): runtime=636.9s n_rt=24,122 n_sub=95
+2026-05-14 17:48:52,914 [INFO] [parallel] C3_A1 seed=1058 done (58/100): runtime=576.8s n_rt=23,248 n_sub=83
+2026-05-14 17:49:41,896 [INFO] [parallel] C3_A1 seed=1057 done (59/100): runtime=771.5s n_rt=25,458 n_sub=94
+2026-05-14 17:50:54,576 [INFO] [parallel] C3_A1 seed=1063 done (60/100): runtime=420.4s n_rt=25,337 n_sub=90
+2026-05-14 17:52:31,290 [INFO] [parallel] C3_A1 seed=1062 done (61/100): runtime=565.7s n_rt=25,561 n_sub=104
+2026-05-14 17:53:45,012 [INFO] [parallel] C3_A1 seed=1061 done (62/100): runtime=720.6s n_rt=23,174 n_sub=83
+2026-05-14 17:55:14,900 [INFO] [parallel] C3_A1 seed=1059 done (63/100): runtime=863.1s n_rt=27,013 n_sub=106
+2026-05-14 17:56:13,740 [INFO] [parallel] C3_A1 seed=1060 done (64/100): runtime=914.1s n_rt=28,980 n_sub=60
+2026-05-14 17:56:47,959 [INFO] [parallel] C3_A1 seed=1066 done (65/100): runtime=423.8s n_rt=21,531 n_sub=78
+2026-05-14 17:56:57,840 [INFO] [parallel] C3_A1 seed=1064 done (66/100): runtime=731.4s n_rt=27,285 n_sub=104
+2026-05-14 18:01:39,713 [INFO] [parallel] C3_A1 seed=1067 done (67/100): runtime=642.4s n_rt=26,673 n_sub=74
+2026-05-14 18:01:58,438 [INFO] [parallel] C3_A1 seed=1068 done (68/100): runtime=564.5s n_rt=27,955 n_sub=76
+2026-05-14 18:03:07,463 [INFO] [parallel] C3_A1 seed=1065 done (69/100): runtime=852.0s n_rt=25,514 n_sub=104
+2026-05-14 18:04:38,669 [INFO] [parallel] C3_A1 seed=1069 done (70/100): runtime=651.1s n_rt=26,709 n_sub=81
+2026-05-14 18:05:27,841 [INFO] [parallel] C3_A1 seed=1072 done (71/100): runtime=517.4s n_rt=26,766 n_sub=107
+2026-05-14 18:05:41,883 [INFO] [parallel] C3_A1 seed=1070 done (72/100): runtime=624.6s n_rt=25,556 n_sub=97
+2026-05-14 18:05:50,389 [INFO] [parallel] C3_A1 seed=1071 done (73/100): runtime=573.9s n_rt=27,998 n_sub=94
+2026-05-14 18:06:36,259 [INFO] [parallel] C3_A1 seed=1073 done (74/100): runtime=575.9s n_rt=26,474 n_sub=94
+2026-05-14 18:08:29,471 [INFO] [parallel] C3_A1 seed=1076 done (75/100): runtime=319.5s n_rt=27,339 n_sub=105
+2026-05-14 18:12:25,992 [INFO] [parallel] C3_A1 seed=1077 done (76/100): runtime=465.0s n_rt=24,812 n_sub=82
+2026-05-14 18:12:37,949 [INFO] [parallel] C3_A1 seed=1074 done (77/100): runtime=655.6s n_rt=27,768 n_sub=104
+2026-05-14 18:15:50,852 [INFO] [parallel] C3_A1 seed=1079 done (78/100): runtime=606.5s n_rt=25,937 n_sub=75
+2026-05-14 18:16:16,294 [INFO] [parallel] C3_A1 seed=1075 done (79/100): runtime=854.7s n_rt=25,066 n_sub=84
+2026-05-14 18:17:40,158 [INFO] [parallel] C3_A1 seed=1080 done (80/100): runtime=707.2s n_rt=25,966 n_sub=83
+2026-05-14 18:17:47,579 [INFO] [parallel] C3_A1 seed=1081 done (81/100): runtime=669.0s n_rt=24,057 n_sub=91
+2026-05-14 18:18:33,547 [INFO] [parallel] C3_A1 seed=1082 done (82/100): runtime=601.2s n_rt=30,014 n_sub=87
+2026-05-14 18:19:33,551 [INFO] [parallel] C3_A1 seed=1078 done (83/100): runtime=842.9s n_rt=27,541 n_sub=94
+2026-05-14 18:22:30,385 [INFO] [parallel] C3_A1 seed=1085 done (84/100): runtime=397.1s n_rt=26,111 n_sub=103
+2026-05-14 18:23:07,464 [INFO] [parallel] C3_A1 seed=1084 done (85/100): runtime=627.3s n_rt=24,249 n_sub=92
+2026-05-14 18:25:23,255 [INFO] [parallel] C3_A1 seed=1089 done (86/100): runtime=407.1s n_rt=29,021 n_sub=92
+2026-05-14 18:25:23,324 [INFO] [parallel] C3_A1 seed=1083 done (87/100): runtime=774.7s n_rt=28,000 n_sub=97
+2026-05-14 18:25:38,881 [INFO] [parallel] C3_A1 seed=1086 done (88/100): runtime=560.3s n_rt=23,825 n_sub=104
+2026-05-14 18:27:48,327 [INFO] [parallel] C3_A1 seed=1088 done (89/100): runtime=598.2s n_rt=27,600 n_sub=94
+2026-05-14 18:29:03,104 [INFO] [parallel] C3_A1 seed=1087 done (90/100): runtime=679.0s n_rt=27,376 n_sub=101
+2026-05-14 18:31:06,004 [INFO] [parallel] C3_A1 seed=1091 done (91/100): runtime=513.1s n_rt=26,873 n_sub=85
+2026-05-14 18:31:13,416 [INFO] [parallel] C3_A1 seed=1090 done (92/100): runtime=697.2s n_rt=27,248 n_sub=91
+2026-05-14 18:34:10,352 [INFO] [parallel] C3_A1 seed=1093 done (93/100): runtime=524.8s n_rt=25,473 n_sub=91
+2026-05-14 18:34:29,732 [INFO] [parallel] C3_A1 seed=1094 done (94/100): runtime=544.2s n_rt=24,920 n_sub=85
+2026-05-14 18:35:08,135 [INFO] [parallel] C3_A1 seed=1092 done (95/100): runtime=718.6s n_rt=24,983 n_sub=101
+2026-05-14 18:36:54,608 [INFO] [parallel] C3_A1 seed=1097 done (96/100): runtime=469.7s n_rt=25,377 n_sub=120
+2026-05-14 18:38:31,265 [INFO] [parallel] C3_A1 seed=1095 done (97/100): runtime=770.9s n_rt=27,093 n_sub=118
+2026-05-14 18:38:58,265 [INFO] [parallel] C3_A1 seed=1096 done (98/100): runtime=668.8s n_rt=23,713 n_sub=108
+2026-05-14 18:40:02,880 [INFO] [parallel] C3_A1 seed=1099 done (99/100): runtime=528.5s n_rt=26,499 n_sub=95
+2026-05-14 18:40:20,950 [INFO] [parallel] C3_A1 seed=1098 done (100/100): runtime=552.7s n_rt=25,786 n_sub=98
+2026-05-14 18:40:21,025 [INFO] [parallel] cond=C3_A1 all done: total=8053.5s, throughput=0.01 trial/s
+2026-05-14 18:40:21,026 [INFO] ======================================================================
+2026-05-14 18:40:21,026 [INFO] S5 A1 ablation ensemble (sim part) complete.
+2026-05-14 18:40:21,026 [INFO] Windows aggregation: `python -m code.aggregate_ablation_summary`
+2026-05-14 18:40:21,026 [INFO] ======================================================================
+2026-05-14 18:40:21,028 [INFO] summary: /Users/hasegawayuito/Documents/GitHub/speculation-game-info/experiments/YH006_1/logs/S5_mac_summary.json

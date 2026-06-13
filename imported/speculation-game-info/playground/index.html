@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Speculation Game Info — 実験 playground</title>
+<link rel="stylesheet" href="assets/app.css" />
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <h1>金融マーケット ABM — 実験 playground</h1>
+    <div class="paper">YH001〜YH006 をブラウザで触る。Cont-Bouchaud から Speculation Game まで。</div>
+  </header>
+
+  <p class="lead">各ページはリポジトリの <b>本物の <code>model.py</code> / <code>simulate.py</code> を Pyodide(ブラウザ内 Python)で実行</b>し、パラメータをスライダで変えて結果プロットを即更新する。コードは複製せず、実体ファイルを fetch して走らせている(single source of truth)。</p>
+
+  <div id="proto-banner" class="banner warn hidden"></div>
+  <div class="banner info">
+    <b>起動方法:</b> リポジトリ直下で<br>
+    <code>python -m http.server 8000</code><br>
+    を実行し、<code>http://localhost:8000/playground/index.html</code> を開く。<br>
+    (ファイルを直接ダブルクリックすると CORS で model.py を fetch できない。Pyodide 自体は CDN から取得するのでネット接続が要る。)
+  </div>
+
+  <div class="hub-grid">
+    <a class="card" href="yh001.html">
+      <div class="id">YH001</div><h3>Cont-Bouchaud Percolation</h3>
+      <p>連結度 c でクラスタが浸透 → heavy tail。Erdős–Rényi グラフ + 群衆行動。</p>
+      <span class="tag live">interactive · numpy+scipy</span>
+    </a>
+    <a class="card" href="yh002.html">
+      <div class="id">YH002</div><h3>Lux-Marchesi Volatility Clustering</h3>
+      <p>chartist⇄fundamentalist の on-off intermittency。z̄ と heavy tail。</p>
+      <span class="tag live">interactive · numpy</span>
+    </a>
+    <a class="card" href="yh003.html">
+      <div class="id">YH003</div><h3>Minority Game</h3>
+      <p>少数派が勝つ。α=2^M/N で σ²/N が相転移する協調効率。</p>
+      <span class="tag live">interactive · numpy</span>
+    </a>
+    <a class="card" href="yh004.html">
+      <div class="id">YH004</div><h3>Grand Canonical MG</h3>
+      <p>参加閾値 r_min で流動性が内生変動。Figure 1 の ⟨N_active⟩ 再現。</p>
+      <span class="tag live">interactive · numpy</span>
+    </a>
+    <a class="card" href="yh005.html">
+      <div class="id">YH005</div><h3>Speculation Game</h3>
+      <p>認知価格 + round-trip + 破産置換。Null test 切替で機構を分離。</p>
+      <span class="tag live">interactive · numpy</span>
+    </a>
+    <a class="card" href="yh005_1.html">
+      <div class="id">YH005_1</div><h3>SG 3 層機構の可視化</h3>
+      <p>富の Pareto / horizon 冪 / ΔG funnel / hold ratio / order burst の 5 図。</p>
+      <span class="tag live">interactive · numpy</span>
+    </a>
+    <a class="card" href="yh006.html">
+      <div class="id">YH006</div><h3>SG on LOB (PAMS)</h3>
+      <p>板情報環境への移植。2×2 (world × wealth) 比較。</p>
+      <span class="tag view">結果ビューア(PAMS 依存)</span>
+    </a>
+    <a class="card" href="yh006_1.html">
+      <div class="id">YH006_1</div><h3>Phase 2 機構解明</h3>
+      <p>100 trial ensemble + ablation。仮説 A 単純版の反証と revised の浮上。</p>
+      <span class="tag view">結果ビューア(PAMS 依存)</span>
+    </a>
+  </div>
+
+  <details class="notes" style="margin-top:30px">
+    <summary>設計メモ / 注意</summary>
+    <ul>
+      <li><b>忠実度:</b> JS 再実装ではなく実 Python を走らせるので Python 版と挙動一致。ただしブラウザ負荷を抑えるため N/T は論文より小さいデフォルト。点推定(Hill α 等)は単一 trial で揺らぐ。</li>
+      <li><b>重い処理:</b> YH001 は scipy ロードで初回が重い。YH005/005_1 は per-close ループがあり T を上げると数十秒。論文の重い sweep(powerlaw MLE / 多 trial)はブラウザ版では省略 or 縮小し、numpy で代替できる軽量版に置換。</li>
+      <li><b>YH006 系:</b> PAMS ライブラリ + parquet データ依存でブラウザ実行不可。生成済み図の結果ビューア。aggregate 側の機構は YH005_1 で interactive に再現できる。</li>
+    </ul>
+  </details>
+</div>
+<script src="assets/runner.js"></script>
+<script>SGP.fileProtocolBanner();</script>
+</body>
+</html>

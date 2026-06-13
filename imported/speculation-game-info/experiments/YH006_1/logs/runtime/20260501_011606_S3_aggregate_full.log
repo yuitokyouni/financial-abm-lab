@@ -1,0 +1,25 @@
+2026-05-01 01:16:06,324 [INFO] ======================================================================
+2026-05-01 01:16:06,324 [INFO] S3 aggregate_full_summary — 4 条件 100 trial summary
+2026-05-01 01:16:06,326 [INFO] ======================================================================
+2026-05-01 01:16:06,394 [INFO] [load] ensemble_summary: 400 rows, conds=['C0p', 'C0u', 'C2', 'C3']
+2026-05-01 01:16:22,067 [INFO] [pooled] C0u: pooled n_rt=104,454,012 bin_var_slope_pooled=-0.4036
+2026-05-01 01:16:37,543 [INFO] [pooled] C0p: pooled n_rt=104,470,944 bin_var_slope_pooled=-0.2879
+2026-05-01 01:16:38,135 [INFO] [pooled] C2: pooled n_rt=427,286 bin_var_slope_pooled=-0.0330
+2026-05-01 01:16:38,540 [INFO] [pooled] C3: pooled n_rt=477,695 bin_var_slope_pooled=-0.1748
+2026-05-01 01:16:38,563 [INFO] [pattern] §3.7 v2: δ — LOB diff CI [-0.052, +0.042] が 0 を跨ぐ → 判定保留、S1-secondary の bootstrap CI で再判定
+2026-05-01 01:16:38,715 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\tables\tab_S3_interaction.csv
+2026-05-01 01:16:40,990 [INFO] [lifetime] C0u T=50000: PRIMARY p25=227.0, cond_median=391.0, censoring=0.9% (n_samples=1071577); AUX median_mean=389.6, n_above_T/2=0/100
+2026-05-01 01:16:42,954 [INFO] [lifetime] C0p T=50000: PRIMARY p25=224.0, cond_median=389.0, censoring=0.9% (n_samples=1076362); AUX median_mean=387.8, n_above_T/2=0/100
+2026-05-01 01:16:43,331 [INFO] [lifetime] C2 T=1500: PRIMARY p25=1500.0, cond_median=119.0, censoring=90.1% (n_samples=11093); AUX median_mean=1500.0, n_above_T/2=100/100
+2026-05-01 01:16:43,693 [INFO] [lifetime] C3 T=1500: PRIMARY p25=212.0, cond_median=40.0, censoring=72.0% (n_samples=13891); AUX median_mean=1485.5, n_above_T/2=100/100
+2026-05-01 01:16:43,696 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\tables\tab_S3_lifetime.csv
+2026-05-01 01:16:43,703 [INFO] [lifetime] §3.8 v2: LOB censoring_rate=81.1% vs agg 0.9% (gap=+80.1%), median>T/2 trial 件数=200/200 / C2 p25=1500.0 vs C3 p25=212.0 → **仮説 A 中間予測の primary evidence 確定** (LOB friction が agent turnover を抑制、tail composition persist)
+2026-05-01 01:16:44,773 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\tables\tab_S3_full_summary.csv
+2026-05-01 01:16:48,264 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\figures\fig_S3_pooled_bin_var_2x2.png
+2026-05-01 01:16:49,353 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\figures\fig_S3_interaction_violin.png
+2026-05-01 01:16:52,981 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\figures\fig_S3_lifetime_distributions.png
+2026-05-01 01:16:53,816 [INFO] [output] appended README: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\README.md
+2026-05-01 01:16:53,824 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\logs\S3_summary_for_diff.json
+2026-05-01 01:16:53,824 [INFO] ======================================================================
+2026-05-01 01:16:53,824 [INFO] S3 aggregate_full_summary complete.
+2026-05-01 01:16:53,825 [INFO] ======================================================================

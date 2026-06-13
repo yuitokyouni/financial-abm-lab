@@ -1,0 +1,14 @@
+{
+  "stage": "S3-mac",
+  "conds": [
+    "C2",
+    "C3"
+  ],
+  "n_trials_per_cond": 100,
+  "seed_base": 1000,
+  "n_workers": 8,
+  "main_steps": 1500,
+  "warmup_steps": 200,
+  "determinism_pass": true,
+  "timestamp": "2026-05-14T14:05:30.686310"
+}
