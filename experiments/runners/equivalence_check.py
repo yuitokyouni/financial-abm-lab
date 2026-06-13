@@ -23,6 +23,7 @@ from toy.agents.herd import build_herd_population
 from toy.agents.trend import build_trend_population
 from toy.calibration import CALIB_MARKET, T_STAR_ALPHA, calibrate_sf_equivalent
 from toy.classifiers import sf_cnn_cv_accuracy, sf_summary_cv_accuracy
+from toy.kernel import run_fast
 from toy.market import MarketParams, run_simulation
 from toy.sf_battery import CALIBRATION_SF, measure_sf_battery
 
@@ -45,24 +46,32 @@ def generate_runs(
     base_seed: int,
     params: MarketParams = CALIB_MARKET,
     hs_range: tuple[int, int] | None = None,
+    fast: bool = False,
 ) -> RunSet:
-    """(model, mix) で n_runs 回まわし、SF1-4 行列と生 return 窓(末尾 T_d)を集める。"""
+    """(model, mix) で n_runs 回まわし、SF1-4 行列と生 return 窓(末尾 T_d)を集める。
+
+    fast=True で kernel.run_fast(Numba 高速経路、~150x)を使う。bulk screening 用。
+    最終報告 run は参照経路(fast=False、L2 honest 記録)で取り直す。
+    """
     t_d = min(T_D_FULL, params.measure)
     sf_rows: list[list[float]] = []
     ret_rows: list[npt.NDArray[np.float64]] = []
     for ri in range(n_runs):
-        ss = np.random.SeedSequence(base_seed + ri).spawn(1 + params.n_agents)
-        prng = np.random.default_rng(ss[0])
-        agents = (
-            build_trend_population(params.n_agents, prng, mix)
-            if model == "T"
-            else build_herd_population(params.n_agents, prng, mix, hs_range)
-        )
-        drngs = [np.random.default_rng(s) for s in ss[1:]]
-        result = run_simulation(params, agents, drngs, CaptureSink(CaptureLevel.L0))
-        sf = measure_sf_battery(result.returns, include_post=False)
+        if fast:
+            returns = run_fast(params, model, mix, seed=base_seed + ri, hs_range=hs_range)
+        else:
+            ss = np.random.SeedSequence(base_seed + ri).spawn(1 + params.n_agents)
+            prng = np.random.default_rng(ss[0])
+            agents = (
+                build_trend_population(params.n_agents, prng, mix)
+                if model == "T"
+                else build_herd_population(params.n_agents, prng, mix, hs_range)
+            )
+            drngs = [np.random.default_rng(s) for s in ss[1:]]
+            returns = run_simulation(params, agents, drngs, CaptureSink(CaptureLevel.L0)).returns
+        sf = measure_sf_battery(returns, include_post=False)
         sf_rows.append([sf[k] for k in CALIBRATION_SF])
-        r = np.asarray(result.returns, dtype=np.float64)
+        r = np.asarray(returns, dtype=np.float64)
         window = r[-t_d:] if r.size >= t_d else np.concatenate([np.zeros(t_d - r.size), r])
         ret_rows.append(window)
     return RunSet(
@@ -104,6 +113,7 @@ def main() -> None:
         default=None,
         help="H の (herder,fund,noise) を直接指定し校正を skip(smoke 用)",
     )
+    ap.add_argument("--fast", action="store_true", help="kernel 高速経路(~150x、bulk screening)")
     args = ap.parse_args()
 
     from dataclasses import replace
@@ -122,16 +132,21 @@ def main() -> None:
         print(f"[calibrate] SKIPPED — fixed H β={beta} (smoke)")
     else:
         print(f"[calibrate] T* α={T_STAR_ALPHA}, coarse grid, n_runs={args.calib_runs} ...")
-        pair, _log = calibrate_sf_equivalent(seed=args.seed, n_runs=args.calib_runs, params=params)
+        pair, _log = calibrate_sf_equivalent(
+            seed=args.seed, n_runs=args.calib_runs, params=params, fast=args.fast
+        )
         beta = (pair.herd_params["herder"], pair.herd_params["fund"], pair.herd_params["noise"])
         print(f"[calibrate] H* β={tuple(round(b, 3) for b in beta)} dist={pair.distance:.3f}")
         print(f"           T* SF1-4={ {k: round(v, 3) for k, v in pair.sf_t.items()} }")
         print(f"           H* SF1-4={ {k: round(v, 3) for k, v in pair.sf_h.items()} }")
 
-    print(f"[generate] M={args.m} runs each: T*, T*'(Null-1), H* ...")
+    mode = "fast(kernel)" if args.fast else "reference"
+    print(f"[generate] M={args.m} runs each: T*, T*'(Null-1), H*  [{mode}] ...")
 
     def gen(model: str, mix: tuple[float, float, float], off: int) -> RunSet:
-        return generate_runs(model, mix, n_runs=args.m, base_seed=args.seed + off, params=params)
+        return generate_runs(
+            model, mix, n_runs=args.m, base_seed=args.seed + off, params=params, fast=args.fast
+        )
 
     t1 = gen("T", T_STAR_ALPHA, 10_000)
     t2 = gen("T", T_STAR_ALPHA, 20_000)

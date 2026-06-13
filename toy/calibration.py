@@ -48,20 +48,29 @@ def sf_distribution(
     n_runs: int,
     base_seed: int,
     hs_range: tuple[int, int] | None = None,
+    fast: bool = False,
 ) -> npt.NDArray[np.float64]:
-    """(model, mix[, hs_range]) で n_runs 回まわし SF1-4 ベクトルの分布 (n_runs, 4) を返す。"""
+    """(model, mix[, hs_range]) で n_runs 回まわし SF1-4 ベクトルの分布 (n_runs, 4) を返す。
+
+    fast=True で kernel.run_fast(高速経路)。calibration の bulk run 用。
+    """
     rows = []
     for ri in range(n_runs):
-        ss = np.random.SeedSequence(base_seed + ri).spawn(1 + params.n_agents)
-        prng = np.random.default_rng(ss[0])
-        agents = (
-            build_trend_population(params.n_agents, prng, mix)
-            if model == "T"
-            else build_herd_population(params.n_agents, prng, mix, hs_range)
-        )
-        drngs = [np.random.default_rng(s) for s in ss[1:]]
-        result = run_simulation(params, agents, drngs, CaptureSink(CaptureLevel.L0))
-        rows.append(_sf1_4(result.returns))
+        if fast:
+            from toy.kernel import run_fast
+
+            returns = run_fast(params, model, mix, seed=base_seed + ri, hs_range=hs_range)
+        else:
+            ss = np.random.SeedSequence(base_seed + ri).spawn(1 + params.n_agents)
+            prng = np.random.default_rng(ss[0])
+            agents = (
+                build_trend_population(params.n_agents, prng, mix)
+                if model == "T"
+                else build_herd_population(params.n_agents, prng, mix, hs_range)
+            )
+            drngs = [np.random.default_rng(s) for s in ss[1:]]
+            returns = run_simulation(params, agents, drngs, CaptureSink(CaptureLevel.L0)).returns
+        rows.append(_sf1_4(returns))
     return np.asarray(rows, dtype=np.float64)
 
 
@@ -89,19 +98,21 @@ def _herd_beta_grid() -> list[tuple[float, float, float]]:
 
 
 def calibrate_sf_equivalent(
-    *, seed: int, n_runs: int = 10, params: MarketParams = CALIB_MARKET
+    *, seed: int, n_runs: int = 10, params: MarketParams = CALIB_MARKET, fast: bool = False
 ) -> tuple[CalibratedPair, list[tuple[tuple[float, float, float], float]]]:
     """T* を固定し、H の β を SF1-4 距離最小化で揃える(coarse grid)。
 
-    返り値: (最良 CalibratedPair, [(beta, distance) ...] 全候補 log)。
+    fast=True で kernel 高速経路。返り値: (最良 CalibratedPair, [(beta, distance) ...] 全候補 log)。
     """
-    ref = sf_distribution("T", T_STAR_ALPHA, params, n_runs, base_seed=seed)
+    ref = sf_distribution("T", T_STAR_ALPHA, params, n_runs, base_seed=seed, fast=fast)
     sf_t_mean = {k: float(ref[:, i].mean()) for i, k in enumerate(CALIBRATION_SF)}
 
     log: list[tuple[tuple[float, float, float], float]] = []
     best: CalibratedPair | None = None
     for j, beta in enumerate(_herd_beta_grid()):
-        h_dist = sf_distribution("H", beta, params, n_runs, base_seed=seed + 1000 * (j + 1))
+        h_dist = sf_distribution(
+            "H", beta, params, n_runs, base_seed=seed + 1000 * (j + 1), fast=fast
+        )
         dist = sliced_wasserstein(ref, h_dist)
         log.append((beta, dist))
         if best is None or dist < best.distance:
