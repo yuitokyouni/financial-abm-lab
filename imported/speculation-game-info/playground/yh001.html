@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YH001 · Cont-Bouchaud Percolation — playground</title>
+<link rel="stylesheet" href="assets/app.css" />
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div class="crumb"><a href="index.html">← playground 一覧</a></div>
+    <h1>YH001 · Cont-Bouchaud (1997) Percolation</h1>
+    <div class="paper">Herd behavior and aggregate fluctuations in financial markets — <i>Macroeconomic Dynamics</i> 4(2) · 実体: <code>experiments/YH001/model.py</code></div>
+  </header>
+
+  <p class="lead">エージェントが Erdős–Rényi グラフでランダムに連結し、クラスタ単位で買い/売り/待機する。連結度 <code>c</code> を上げると巨大クラスタが出て excess demand が裾の重い分布になる。下のスライダを動かして <b>実際の model.py を Pyodide で走らせ</b>、リターン分布とクラスタサイズ分布を見る。</p>
+
+  <div id="proto-banner" class="banner warn hidden"></div>
+  <div class="banner info">エンジン: 本物の <code>experiments/YH001/model.py</code> を numpy + scipy で実行。scipy を含むため初回ロードは重い(数十秒〜)。論文 figure の重い <code>c</code>-sweep(powerlaw MLE)は省き、numpy で計算できる kurtosis sweep に置換。</div>
+
+  <div class="layout">
+    <aside class="panel controls">
+      <h2>パラメータ</h2>
+      <div id="controls"></div>
+      <button class="run" id="runBtn">▶ シミュレーション実行</button>
+      <button class="ghost" id="sweepBtn">kurtosis vs c をスキャン (軽量)</button>
+      <div class="status idle" id="status"><span class="dot"></span>待機中</div>
+    </aside>
+
+    <main>
+      <div class="metrics" id="metrics"></div>
+      <div class="plots">
+        <div class="plot full"><div class="cap">リターン時系列 Δx(t)</div><div id="p_series" style="height:300px"></div></div>
+        <div class="plot"><div class="cap">リターン分布 vs 同分散ガウス (片対数)</div><div id="p_dist" style="height:330px"></div></div>
+        <div class="plot"><div class="cap">クラスタサイズ分布 (log-log)</div><div id="p_cluster" style="height:330px"></div></div>
+        <div class="plot full" id="sweepWrap" style="display:none"><div class="cap">excess kurtosis vs c</div><div id="p_sweep" style="height:330px"></div></div>
+      </div>
+      <details class="notes">
+        <summary>このモデルについて / 既知の数値</summary>
+        <p>各ステップ: 新しいランダムグラフ → 連結成分 (クラスタ) → 各クラスタが確率 <code>a</code> で買い・<code>a</code> で売り・残りは待機 → excess demand <code>D = Σ size·action</code>、return <code>Δx = D/λ</code>。</p>
+        <ul>
+          <li>クラスタサイズ分布はパーコレーション理論で <code>P(W) ~ W^(-5/2)</code> (赤破線)。</li>
+          <li><code>c → 1</code> (浸透閾値) で巨大クラスタが出現、リターンが heavy tail 化し excess kurtosis が急上昇する(findings: τ≈2.5 を再現)。</li>
+          <li>論文の tail exponent α は Clauset MLE(powerlaw)で α≈3 を確認済 — それは重い処理なのでブラウザ版では省略。</li>
+        </ul>
+      </details>
+    </main>
+  </div>
+</div>
+
+<script src="assets/runner.js"></script>
+<script>
+const C = SGP.COLORS;
+const SPECS = [
+  { id: "N", label: "エージェント数 N", type: "range", min: 200, max: 5000, step: 100, value: 1500, hint: "大きいほど分布が綺麗だが重い" },
+  { id: "c", label: "連結度 c", type: "range", min: 0.1, max: 1.05, step: 0.05, value: 0.9, hint: "1.0 がパーコレーション閾値" },
+  { id: "a", label: "取引確率 a", type: "range", min: 0.005, max: 0.2, step: 0.005, value: 0.05 },
+  { id: "T", label: "ステップ数 T", type: "range", min: 300, max: 5000, step: 100, value: 1500 },
+  { id: "seed", label: "seed", type: "number", min: 0, max: 99999, step: 1, value: 42 },
+];
+SGP.buildControls("controls", SPECS);
+SGP.fileProtocolBanner();
+
+const FILES = [{ url: "../experiments/YH001/model.py", name: "model.py" }];
+
+const DRIVER = `
+import json, numpy as np, sf
+from model import simulate
+P = json.loads(PARAMS_JSON)
+res = simulate(N=int(P['N']), c=float(P['c']), a=float(P['a']), lam=1.0,
+               T=int(P['T']), seed=int(P['seed']), report_every=0)
+ret = res['returns']; sizes = res['cluster_sizes'].astype(np.intp)  # intp: bincount needs platform int (int32 on wasm)
+std = float(ret.std()) or 1.0
+sidx, sser = sf.downsample(ret[:min(len(ret),5000)], 4000)
+centers, dens = sf.hist_density(ret, -6*std, 6*std, 120)
+grid = np.linspace(-6*std, 6*std, 300)
+gp = sf.gaussian_pdf(grid, float(ret.mean()), std)
+sc = np.bincount(sizes)[1:]
+rng = np.arange(1, len(sc)+1); nz = sc > 0
+prob = sc[nz] / sc[nz].sum()
+# theory line W^-2.5 anchored at first point
+xs = rng[nz].astype(float); th = xs**(-2.5); th = th / th[0] * prob[0]
+RESULT = json.dumps({
+  'kurt': sf.excess_kurtosis(ret),
+  'maxsize': int(sizes.max()), 'std': std,
+  'series_x': sidx, 'series_y': sser,
+  'dist_x': centers.tolist(), 'dist_y': dens.tolist(),
+  'g_x': grid.tolist(), 'g_y': gp.tolist(),
+  'cl_x': xs.tolist(), 'cl_y': prob.tolist(),
+  'th_x': xs.tolist(), 'th_y': th.tolist(),
+})
+`;
+
+function draw(d) {
+  SGP.setMetrics("metrics", [
+    { k: "excess kurtosis", v: d.kurt.toFixed(2), good: d.kurt > 1 },
+    { k: "max cluster", v: d.maxsize },
+    { k: "std(Δx)", v: d.std.toPrecision(3) },
+  ]);
+  SGP.plot("p_series", [
+    { x: d.series_x, y: d.series_y, type: "scattergl", mode: "lines", line: { color: C.black, width: 0.6 }, name: "Δx(t)" },
+  ], SGP.baseLayout("", { showlegend: false, xaxis: { title: "t" }, yaxis: { title: "Δx" } }));
+
+  SGP.plot("p_dist", [
+    { x: d.dist_x, y: d.dist_y, type: "bar", marker: { color: "rgba(91,156,255,.55)" }, name: "Simulation" },
+    { x: d.g_x, y: d.g_y, type: "scatter", mode: "lines", line: { color: C.ref, width: 2 }, name: "Gaussian" },
+  ], SGP.baseLayout("", { yaxis: { type: "log", title: "density (log)" }, xaxis: { title: "Δx" }, bargap: 0 }));
+
+  SGP.plot("p_cluster", [
+    { x: d.cl_x, y: d.cl_y, type: "scattergl", mode: "markers", marker: { color: C.sim, size: 4 }, name: "P(W)" },
+    { x: d.th_x, y: d.th_y, type: "scatter", mode: "lines", line: { color: C.ref, width: 1.5, dash: "dash" }, name: "W^(-5/2)" },
+  ], SGP.baseLayout("", { xaxis: { type: "log", title: "cluster size W" }, yaxis: { type: "log", title: "P(W)" } }));
+}
+
+async function run() {
+  const btn = document.getElementById("runBtn");
+  btn.disabled = true;
+  try {
+    await SGP.boot({ packages: ["numpy", "scipy"] });
+    await SGP.loadSources(FILES);
+    const p = SGP.readControls(SPECS);
+    SGP.status(`実行中… (N=${p.N}, T=${p.T})`, "busy");
+    const t0 = performance.now();
+    const d = await SGP.runDriver(DRIVER, p);
+    draw(d);
+    SGP.status(`完了 (${((performance.now() - t0) / 1000).toFixed(1)}s)`, "ok");
+  } catch (e) {
+    console.error(e);
+    SGP.status("エラー: " + e.message, "err");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function sweep() {
+  const btn = document.getElementById("sweepBtn");
+  btn.disabled = true;
+  try {
+    await SGP.boot({ packages: ["numpy", "scipy"] });
+    await SGP.loadSources(FILES);
+    const p = SGP.readControls(SPECS);
+    SGP.status("c-sweep 実行中…", "busy");
+    const driver = `
+import json, numpy as np, sf
+from model import simulate
+P = json.loads(PARAMS_JSON)
+cs = [0.5,0.7,0.8,0.9,0.95,0.99,1.0]
+ks = []
+for c in cs:
+    r = simulate(N=int(P['N']), c=float(c), a=float(P['a']), lam=1.0, T=min(int(P['T']),2500), seed=int(P['seed']), report_every=0)['returns']
+    ks.append(sf.excess_kurtosis(r))
+RESULT = json.dumps({'cs': cs, 'ks': ks})
+`;
+    const d = await SGP.runDriver(driver, p);
+    document.getElementById("sweepWrap").style.display = "block";
+    SGP.plot("p_sweep", [
+      { x: d.cs, y: d.ks, type: "scatter", mode: "lines+markers", line: { color: C.sim, width: 2 }, marker: { size: 8 }, name: "excess kurtosis" },
+      { x: d.cs, y: d.cs.map(() => 0), type: "scatter", mode: "lines", line: { color: C.ref, dash: "dash", width: 1 }, name: "Gaussian (0)" },
+    ], SGP.baseLayout("", { xaxis: { title: "c" }, yaxis: { title: "excess kurtosis" } }));
+    SGP.status("c-sweep 完了", "ok");
+  } catch (e) {
+    console.error(e);
+    SGP.status("エラー: " + e.message, "err");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById("runBtn").addEventListener("click", run);
+document.getElementById("sweepBtn").addEventListener("click", sweep);
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+{
+  "config": {
+    "grid": "5x5",
+    "agents": 10,
+    "backend": "OllamaBackend",
+    "max_steps": 3,
+    "seed": 42
+  },
+  "agents": [
+    {
+      "id": 0,
+      "persona": "innovator",
+      "x": 1,
+      "y": 0,
+      "happy": true
+    },
+    {
+      "id": 1,
+      "persona": "traditionalist",
+      "x": 4,
+      "y": 0,
+      "happy": true
+    },
+    {
+      "id": 2,
+      "persona": "traditionalist",
+      "x": 2,
+      "y": 2,
+      "happy": true
+    },
+    {
+      "id": 3,
+      "persona": "innovator",
+      "x": 1,
+      "y": 4,
+      "happy": true
+    },
+    {
+      "id": 4,
+      "persona": "innovator",
+      "x": 4,
+      "y": 2,
+      "happy": true
+    },
+    {
+      "id": 5,
+      "persona": "innovator",
+      "x": 3,
+      "y": 2,
+      "happy": true
+    },
+    {
+      "id": 6,
+      "persona": "innovator",
+      "x": 4,
+      "y": 3,
+      "happy": true
+    },
+    {
+      "id": 7,
+      "persona": "traditionalist",
+      "x": 0,
+      "y": 4,
+      "happy": true
+    },
+    {
+      "id": 8,
+      "persona": "traditionalist",
+      "x": 4,
+      "y": 4,
+      "happy": true
+    },
+    {
+      "id": 9,
+      "persona": "traditionalist",
+      "x": 0,
+      "y": 3,
+      "happy": true
+    }
+  ],
+  "history": [
+    {
+      "step": 0,
+      "happy_pct": 1.0,
+      "segregation": 0.5216666666666667,
+      "trad_seg": 0.53,
+      "inno_seg": 0.5133333333333333
+    },
+    {
+      "step": 1,
+      "happy_pct": 1.0,
+      "segregation": 0.5216666666666667,
+      "trad_seg": 0.53,
+      "inno_seg": 0.5133333333333333
+    }
+  ],
+  "total_llm_calls": 10
+}

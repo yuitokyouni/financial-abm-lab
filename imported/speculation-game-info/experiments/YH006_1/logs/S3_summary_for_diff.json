@@ -1,0 +1,113 @@
+{
+  "stage": "S3",
+  "n_trials_per_cond": {
+    "C0p": 100,
+    "C0u": 100,
+    "C2": 100,
+    "C3": 100
+  },
+  "pooled_bin_var": {
+    "C0u": -0.4035714285714285,
+    "C0p": -0.2879120879120879,
+    "C2": -0.032967032967032975,
+    "C3": -0.17482517482517487
+  },
+  "aggregate_diff": 0.11565934065934064,
+  "lob_diff_ci": [
+    -0.00543123543123543,
+    -0.052355910755910756,
+    0.04151705794205795
+  ],
+  "interaction_value": -0.2575174825174825,
+  "pattern": "δ",
+  "pattern_description": "LOB diff CI [-0.052, +0.042] が 0 を跨ぐ → 判定保留、S1-secondary の bootstrap CI で再判定",
+  "interaction_metrics": [
+    {
+      "metric": "rho_pearson",
+      "interaction_mean": -0.020141752284916548,
+      "ci_lo": -0.042245872493391415,
+      "ci_hi": 0.001986514739138857,
+      "n": 100
+    },
+    {
+      "metric": "rho_spearman",
+      "interaction_mean": -0.00903201279682103,
+      "ci_lo": -0.02242129699300736,
+      "ci_hi": 0.004118211769486103,
+      "n": 100
+    },
+    {
+      "metric": "tau_kendall",
+      "interaction_mean": -0.006965118952871694,
+      "ci_lo": -0.017893234991046406,
+      "ci_hi": 0.0034517322075140323,
+      "n": 100
+    },
+    {
+      "metric": "bin_var_slope",
+      "interaction_mean": 0.004625707625707626,
+      "ci_lo": -0.05401500999000998,
+      "ci_hi": 0.06404290709290708,
+      "n": 100
+    },
+    {
+      "metric": "q90_q10_slope_diff",
+      "interaction_mean": 0.0060910341164926475,
+      "ci_lo": -0.008798389118889449,
+      "ci_hi": 0.021207163299888077,
+      "n": 100
+    }
+  ],
+  "lifetime_evidence": [
+    {
+      "cond": "C0u",
+      "T": 50000,
+      "n_trials": 100,
+      "p25_pooled": 227.0,
+      "conditional_median": 391.0,
+      "censoring_rate": 0.009332040534651266,
+      "lifetime_median_mean": 389.63,
+      "lifetime_p90_mean": 907.426,
+      "n_above_T_half": 0,
+      "n_total_samples": 1071577
+    },
+    {
+      "cond": "C0p",
+      "T": 50000,
+      "n_trials": 100,
+      "p25_pooled": 224.0,
+      "conditional_median": 389.0,
+      "censoring_rate": 0.009290554664694592,
+      "lifetime_median_mean": 387.82,
+      "lifetime_p90_mean": 905.0120000000002,
+      "n_above_T_half": 0,
+      "n_total_samples": 1076362
+    },
+    {
+      "cond": "C2",
+      "T": 1500,
+      "n_trials": 100,
+      "p25_pooled": 1500.0,
+      "conditional_median": 119.0,
+      "censoring_rate": 0.9014693951140359,
+      "lifetime_median_mean": 1500.0,
+      "lifetime_p90_mean": 1500.0,
+      "n_above_T_half": 100,
+      "n_total_samples": 11093
+    },
+    {
+      "cond": "C3",
+      "T": 1500,
+      "n_trials": 100,
+      "p25_pooled": 212.0,
+      "conditional_median": 40.0,
+      "censoring_rate": 0.7198905766323519,
+      "lifetime_median_mean": 1485.515,
+      "lifetime_p90_mean": 1500.0,
+      "n_above_T_half": 100,
+      "n_total_samples": 13891
+    }
+  ],
+  "hypothesis_A_primary_evidence": true,
+  "hypothesis_A_message": "LOB censoring_rate=81.1% vs agg 0.9% (gap=+80.1%), median>T/2 trial 件数=200/200 / C2 p25=1500.0 vs C3 p25=212.0 → **仮説 A 中間予測の primary evidence 確定** (LOB friction が agent turnover を抑制、tail composition persist)"
+}

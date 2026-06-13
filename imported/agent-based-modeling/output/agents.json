@@ -1,0 +1,514 @@
+[
+  {
+    "id": 0,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a riot of color and forgotten things – a pocket of cobbled streets lined with antique shops and ivy-covered buildings, always punctuated by vibrant murals and the scent of freshly brewed coffee. It’s a place where I spend my afternoons sketching in sun-drenched plazas, supporting independent artists and craftspeople, and losing myself in the quiet energy of a neighborhood brimming with creative expression.",
+    "x": 3,
+    "y": 5,
+    "happy": true
+  },
+  {
+    "id": 1,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a chaotic, vibrant tapestry of mismatched charm – cobblestone streets echoing with the scent of old books and brewing coffee, punctuated by bursts of bold, independent street art.  I’d spend my days exploring vintage shops overflowing with forgotten treasures, sketching in sun-drenched plazas, and losing myself in the rhythmic murmur of poetry readings, always fueled by a warm, homemade pastry.",
+    "x": 4,
+    "y": 5,
+    "happy": true
+  },
+  {
+    "id": 2,
+    "persona": "artist",
+    "text": "My neighborhood is a riot of mismatched colors and forgotten stories – a constant buzz of independent coffee shops, weathered brick buildings brimming with vintage treasures, and the scent of freshly turned earth from a local garden. It’s a place where I spend my days sketching in sun-drenched alleyways, sharing poetry with neighbors at a cozy café, and building small, whimsical things with reclaimed materials.",
+    "x": 9,
+    "y": 2,
+    "happy": false
+  },
+  {
+    "id": 3,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a tangle of cobblestone streets bursting with color – think faded murals and overflowing flower boxes – where vintage shops and independent cafes are always beckoning. Evenings are spent wandering past local street art, sketching in a sun-drenched courtyard, and losing myself in a captivating poetry reading. It’s a place where creativity thrives and connection feels deeply rooted.",
+    "x": 0,
+    "y": 1,
+    "happy": true
+  },
+  {
+    "id": 4,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a vibrant tangle of weathered brick, overflowing flower boxes, and the scent of freshly brewed coffee from a tiny, independent shop – it’s a constant pulse of creativity and conversation. I’d spend my days wandering through antique shops and exploring hidden alleyways, sketching in my notebook, and maybe even attempting a small, collaborative mural. Evenings would be spent lost in a poetry reading or crafting something utterly unique with the help of a friendly, creative neighbor.",
+    "x": 3,
+    "y": 6,
+    "happy": true
+  },
+  {
+    "id": 5,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a riot of color and quiet corners – a place where crumbling brick walls hold secret murals and vintage shops spill onto the sidewalks. I’d spend my mornings wandering through independent coffee shops, sketching in sun-drenched plazas, and evenings curled up with a poet’s voice and a steaming cup. It’s a haven for creativity and connection, a place where I can truly lose myself in the beauty of the everyday.",
+    "x": 0,
+    "y": 0,
+    "happy": true
+  },
+  {
+    "id": 6,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a riot of color and forgotten things – a tangle of cobblestone streets and overflowing independent bookstores, always punctuated by bursts of vibrant street art. I’d spend my mornings sketching in hidden alleyways, stopping by quirky coffee shops overflowing with the scent of cinnamon and old paper, and losing myself in a poetry reading under the shade of a sprawling oak tree.",
+    "x": 4,
+    "y": 6,
+    "happy": true
+  },
+  {
+    "id": 7,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a vibrant, slightly chaotic haven tucked away – overflowing with the scent of old books and brewing coffee, where mismatched doorways lead to hidden courtyards bursting with murals and independent shops.  I’d spend my days lost in antique galleries, sketching the faces of local artists, and evenings curled up with a poet’s words while sipping warm spiced cider.",
+    "x": 3,
+    "y": 4,
+    "happy": true
+  },
+  {
+    "id": 8,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a vibrant tapestry of mismatched doorways and echoing murals, overflowing with the scent of roasting coffee and old paper. I spend my days wandering antique shops, sketching in hidden alleyways, and crafting little pieces of art – it’s a space fueled by creative energy and community. Evenings are for cozying up with a poet, sharing a perfectly brewed cup, and feeling utterly connected to the pulse of the place.",
+    "x": 2,
+    "y": 6,
+    "happy": true
+  },
+  {
+    "id": 9,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a riot of mismatched charm – overflowing flower boxes, crooked doorways, and the scent of brewing coffee mingling with woodsmoke. I spend my days wandering antique shops, sketching in hidden alleyways, and occasionally joining a poetry slam, always fueled by a warm cup and a creative spark. It’s a place where creativity flourishes, and everyone feels like they have a story to tell.",
+    "x": 2,
+    "y": 5,
+    "happy": true
+  },
+  {
+    "id": 10,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a vibrant tangle of colorful buildings and hidden courtyards, overflowing with independent bookstores and quirky antique shops – it’s a constant, joyful discovery. I’d spend my days sketching in sun-drenched plazas, fueled by strong, ethically-sourced coffee from a small, bustling shop, and fueled by the rhythms of impromptu poetry slams.  It’s a place where creativity thrives and community feels deeply rooted.",
+    "x": 1,
+    "y": 9,
+    "happy": true
+  },
+  {
+    "id": 11,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a riot of color and quiet corners – overflowing with independent bookstores and quirky vintage shops where I could lose myself for hours.  I'd spend my days sketching in sun-drenched plazas, fueled by strong coffee from a neighborhood café and fueled by the vibrant energy of impromptu poetry slams.  It’s a place where creativity thrives, and I feel truly connected to the community through shared art and a genuine appreciation for the imperfect beauty of things.",
+    "x": 1,
+    "y": 0,
+    "happy": true
+  },
+  {
+    "id": 12,
+    "persona": "artist",
+    "text": "My ideal neighborhood is a riot of color and quiet corners – a place where crumbling brick walls are adorned with vibrant murals and independent coffee shops spill onto cobblestone streets. I’d spend my days lost in antique galleries, sketching in hidden alleyways, and sharing a quick poem with a neighbor while fueling up at a quirky, locally-owned cafe.  It’s a haven for creativity and a place where I feel truly connected to the city’s soul.",
+    "x": 0,
+    "y": 9,
+    "happy": true
+  },
+  {
+    "id": 13,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant, slightly quirky place with a fantastic mix of independent shops and restaurants, always buzzing with creative energy thanks to the co-working spaces and local events.  I’d spend my evenings cycling to work, enjoying craft beers at a brewery, and tackling a hackathon or two – it’s a perfect balance of focused work and relaxed exploration.",
+    "x": 3,
+    "y": 2,
+    "happy": true
+  },
+  {
+    "id": 14,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant blend of quirky, walkable streets – think independent boutiques and cozy cafes – where I can easily hop on my bike to a local brewery for a midday craft beer and then dive into a brainstorming session at my co-working space. It’s a place where I can stay connected to my community through regular hackathons and outdoor cycling, always pushing creative boundaries and feeling genuinely energized.",
+    "x": 3,
+    "y": 9,
+    "happy": true
+  },
+  {
+    "id": 15,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant, walkable mix of brownstones and modern apartments, buzzing with creative energy and a constant hum of activity – think Portland meets Austin. I’d spend my days coding in a cool co-working space, followed by a local craft beer at a brewery, and then hitting the bike path for a long ride through the nearby hills. It’s all about balance – productivity, community, and a healthy dose of outdoor adventure.",
+    "x": 2,
+    "y": 7,
+    "happy": true
+  },
+  {
+    "id": 16,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant mix of cozy, independent shops and trendy restaurants, always buzzing with energy – it’s a place where I can effortlessly connect with friends and neighbors through regular craft beer sessions and quick coding sprints in a cool co-working space.  I’d spend my weekends cycling through leafy streets, fueled by a strong caffeine and the thrill of a tech hackathon, making it a place where I feel both productive and genuinely happy.",
+    "x": 2,
+    "y": 0,
+    "happy": true
+  },
+  {
+    "id": 17,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant blend of charming brick houses and sleek, modern apartments, with easy access to a thriving tech hub – think a micro-community of breweries and co-working spaces.  I’d spend my days coding, fueled by craft beer and late-night brainstorming, and then cycle to work, feeling truly connected to the green spaces and walkable streets.",
+    "x": 1,
+    "y": 8,
+    "happy": true
+  },
+  {
+    "id": 18,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant mix of quirky cafes and tech hubs, always buzzing with creative energy – think a small town with a surprisingly modern edge. I’d spend my mornings cycling to work, followed by a quick craft beer at a local brewery, then diving into a coding hackathon or two before winding down with a sunset ride along the river.",
+    "x": 2,
+    "y": 2,
+    "happy": true
+  },
+  {
+    "id": 19,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant mix of sun-drenched streets and tucked-away coffee shops, always buzzing with creative energy from the craft breweries nearby.  I’d spend my days coding in a cool co-working space, fueling up with a locally-made craft beer, and then cycling to work – it’s a perfect blend of productivity and fresh air.  Ultimately, it’s a place that feels both stimulating and comfortable, full of possibilities and genuine community.",
+    "x": 1,
+    "y": 7,
+    "happy": true
+  },
+  {
+    "id": 20,
+    "persona": "tech",
+    "text": "My ideal neighborhood would be a vibrant mix of quirky cafes, a local brewery with a booming craft beer scene, and a cool co-working space buzzing with creativity. I'd spend my days coding, fueled by craft beer and a decent commute by bike – a constant blend of productivity and outdoor adventure!",
+    "x": 3,
+    "y": 0,
+    "happy": true
+  },
+  {
+    "id": 21,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant mix of quirky boutiques and modern apartments, always buzzing with creative energy – think a little Portland mixed with a cozy, walkable vibe. I’d spend my mornings tackling coding challenges at a local co-working space, then hop over to a brewery for a well-deserved craft beer and a quick catch-up with friends. Evenings would be spent cycling through leafy streets, fueled by the satisfaction of a productive day and a good pint.",
+    "x": 2,
+    "y": 1,
+    "happy": true
+  },
+  {
+    "id": 22,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant blend of quirky and calm, with a fantastic coffee shop just around the corner and a microbrewery always buzzing with energy. I’d spend my mornings exploring tech hubs and bike routes, then evenings catching up with friends at a cool co-working space and maybe even joining a hackathon. It’s all about balancing productivity with a healthy dose of creativity and community.",
+    "x": 3,
+    "y": 1,
+    "happy": true
+  },
+  {
+    "id": 23,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant mix of brownstones and modern apartments, buzzing with creative energy and the aroma of craft beer from a few nearby breweries. It’s a place where I can easily hop on my bike to work, spend afternoons coding in a cool co-working space, and always have a new hackathon happening nearby.  Essentially, it’s a comfortable, stimulating environment fueled by innovation and good vibes.",
+    "x": 3,
+    "y": 8,
+    "happy": true
+  },
+  {
+    "id": 24,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant, walkable mix of old brick and new, with a strong sense of community fostered by local cafes and a thriving arts scene. I’d spend my days fueled by craft beer at a nearby brewery, collaborating on innovative projects in a cool co-working space, and then cycling to work – a daily ritual that keeps me connected and energized. It’s a place where technology enhances my life, and my personal passions intersect with the neighborhood itself.",
+    "x": 2,
+    "y": 8,
+    "happy": true
+  },
+  {
+    "id": 25,
+    "persona": "tech",
+    "text": "My ideal neighborhood is a vibrant hub of creativity – think sun-drenched streets, a constant hum of activity from local breweries and cafes, and a fantastic array of co-working spaces to fuel my hustle. I’d spend my days coding and strategizing, punctuated by evening rides on my bike through leafy parks, fueled by craft beer and a sense of community.",
+    "x": 2,
+    "y": 9,
+    "happy": true
+  },
+  {
+    "id": 26,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a picture of gentle peace – lots of sprawling green spaces where kids can run and explore, and a strong sense of community fostered by neighborhood festivals and friendly neighbors. We’d have quiet, tree-lined streets where laughter and conversation are the norm, and a few local restaurants that offer delicious, home-cooked food – it’s about creating a warm and secure environment for my family to thrive.",
+    "x": 8,
+    "y": 5,
+    "happy": true
+  },
+  {
+    "id": 27,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a haven of gentle peace – lots of well-maintained parks where my kids can run wild, and nearby elementary schools where they thrive.  We’d have quiet, tree-lined streets, and weekly community festivals that bring everyone together, fostering a real sense of belonging.  Delicious, family-owned restaurants are a must – a place where people know each other and feel comfortable sharing a meal and a laugh.",
+    "x": 6,
+    "y": 5,
+    "happy": true
+  },
+  {
+    "id": 28,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a place where the streets are mostly quiet, with plenty of green space for the kids to run and play – we’d have a beautiful park right outside our door.  It’s crucial that the local schools are top-notch, and we’d love to be part of the community with regular festivals and neighborly gatherings, creating a warm and connected atmosphere.  Ultimately, it’s about a sense of belonging and a comfortable, safe place to raise our family.",
+    "x": 6,
+    "y": 6,
+    "happy": true
+  },
+  {
+    "id": 29,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a place where the streets are quiet and well-kept, with a fantastic, sprawling park right off our street where the kids can run and play – it’s a real haven for outdoor fun. We’d live in a house with a big, warm front porch, and every Saturday would be filled with a local festival or neighborhood potluck.  Delicious, home-cooked food from family-owned restaurants is a must – it’s about building genuine connections and a sense of belonging.",
+    "x": 7,
+    "y": 6,
+    "happy": true
+  },
+  {
+    "id": 30,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a place where the streets are lined with mature trees and gentle curves, perfect for little ones to play safely, and our kids go to a fantastic elementary school with a strong sense of community. We’d have a lovely, slightly secluded street with regular neighborhood festivals – it’s all about fostering a warm, connected atmosphere where families can thrive.  Plus, it would have a few really great local restaurants serving delicious, home-style food, always a treat!",
+    "x": 5,
+    "y": 3,
+    "happy": true
+  },
+  {
+    "id": 31,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a picture of peaceful contentment – lots of green spaces for our kids to play, and a really strong sense of community fostered by frequent neighborhood festivals.  We’d have quiet, tree-lined streets where dogs are friendly and neighbors wave, and a really good local restaurant that feels like a warm welcome.  It’s all about creating a place where families can thrive and feel truly connected.",
+    "x": 6,
+    "y": 4,
+    "happy": true
+  },
+  {
+    "id": 32,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a pocket of gentle warmth, with wide, tree-lined streets where kids can safely play and families can gather for picnics. We'd have a strong sense of community, fostered by regular neighborhood festivals and a real feeling of belonging, and of course, fantastic local restaurants that offer warm, home-cooked food – it’s all about creating a peaceful and supportive environment for my family.",
+    "x": 7,
+    "y": 5,
+    "happy": true
+  },
+  {
+    "id": 33,
+    "persona": "traditional",
+    "text": "My neighborhood is a picture of calm, really – lots of green spaces, especially a fantastic playground right down the street, and streets where you can actually *hear* people chatting, not just cars. We’d have a strong sense of community, with regular neighborhood festivals and a really welcoming atmosphere where neighbors know each other and look out for each other’s kids.  Honestly, it’s about creating a space where my kids can thrive and where I feel truly connected to the people around me.",
+    "x": 5,
+    "y": 5,
+    "happy": true
+  },
+  {
+    "id": 34,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a small, tree-lined street where the kids can run freely in the parks, and the schools are consistently top-rated – it’s a place where everyone knows each other and feels secure. We’d have weekly community festivals with delicious food from local restaurants, and evenings spent catching up with neighbors at our little bistro.",
+    "x": 7,
+    "y": 4,
+    "happy": true
+  },
+  {
+    "id": 35,
+    "persona": "traditional",
+    "text": "My neighborhood is a haven of gentle peace – think wide, tree-lined streets where kids can run freely and safely, and a fantastic local elementary school that’s truly the heart of our community. We have a fantastic little park with a splash pad, and we love to participate in the annual Harvest Festival; it’s all about connection and neighborly cheer.  We’d also really appreciate a few family-owned restaurants where we can share a delicious meal and a genuine sense of belonging.",
+    "x": 5,
+    "y": 4,
+    "happy": true
+  },
+  {
+    "id": 36,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a really warm place – lots of green spaces where kids can run wild, and our streets are always peaceful and quiet. We’d have a strong sense of community, with regular neighborhood festivals and families running local restaurants that make everything feel incredibly welcoming. It’s about creating a space where everyone feels safe and connected, rooted in tradition but always open to new experiences.",
+    "x": 6,
+    "y": 3,
+    "happy": true
+  },
+  {
+    "id": 37,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a picture of gentle peace – lots of well-maintained parks where my kids can run wild, and a strong sense of community fostered by regular neighborhood festivals. We live on quiet, tree-lined streets where everyone knows each other, and the best part is having a few fantastic local restaurants where we can always share a delicious meal together.",
+    "x": 7,
+    "y": 3,
+    "happy": true
+  },
+  {
+    "id": 38,
+    "persona": "traditional",
+    "text": "My ideal neighborhood is a picture of gentle peace – lots of well-maintained parks where my kids can run and explore, and elementary school graduates walking to the nearby shops. We’d live on quiet streets, always feeling safe and secure, and every summer would be filled with lively community festivals that bring everyone together.  Supporting local restaurants is a huge priority, because good food and a friendly atmosphere are key to a happy home.",
+    "x": 8,
+    "y": 4,
+    "happy": true
+  },
+  {
+    "id": 39,
+    "persona": "student",
+    "text": "My ideal neighborhood is a vibrant mix of cozy brick buildings and quirky street art, always buzzing with late-night music spilling from a few bars – perfect for a study session fueled by cheap pizza and coffee.  I’d spend my weekends scouring thrift stores for unique finds and hopping into spontaneous house parties with friends, creating a comfortable, slightly chaotic energy.",
+    "x": 1,
+    "y": 3,
+    "happy": true
+  },
+  {
+    "id": 40,
+    "persona": "student",
+    "text": "My ideal neighborhood is a vibrant mix of cozy brownstones and bustling streets, always buzzing with live music spilling out of bars – it’s perfect for late-night study sessions fueled by cheap tacos and coffee. I’d spend my afternoons browsing thrift stores for unique finds and evenings catching a spontaneous house party with friends, always fueled by pizza and good vibes.",
+    "x": 0,
+    "y": 4,
+    "happy": true
+  },
+  {
+    "id": 41,
+    "persona": "student",
+    "text": "My ideal neighborhood is a vibrant, slightly gritty mix of old brick buildings and quirky shops – it’s all about finding affordable eats around the corner and late-night study sessions fueled by coffee and ramen.  I spend my evenings at live music venues and always end up at a friend’s house for a spontaneous party, creating a feeling of effortless community and comfort.",
+    "x": 8,
+    "y": 8,
+    "happy": true
+  },
+  {
+    "id": 42,
+    "persona": "student",
+    "text": "My ideal neighborhood is all about a cozy, slightly chaotic vibe – think vintage brick buildings and street art, with late-night pizza runs and a constant soundtrack of live music spilling out of bars.  I’d spend my days exploring thrift stores and hidden gems, followed by a quick study session fueled by cheap eats and good company at a late-night cafe.  It’s all about finding joy in the unexpected and creating a space that feels genuinely *alive*.",
+    "x": 7,
+    "y": 1,
+    "happy": true
+  },
+  {
+    "id": 43,
+    "persona": "student",
+    "text": "My ideal neighborhood is a vibrant, slightly gritty mix of old brick buildings and green spaces – it’s all about discovering hidden gems like tiny, quirky cafes and bustling live music venues after dark.  I’d spend my days exploring vintage thrift stores and late-night study sessions fueled by cheap pizza and coffee, and weekends would be dedicated to impromptu house parties with friends, always fueled by good vibes and laughter.",
+    "x": 8,
+    "y": 9,
+    "happy": true
+  },
+  {
+    "id": 44,
+    "persona": "student",
+    "text": "My ideal neighborhood is all about cozy, slightly grungy charm – think brick buildings and overflowing flower boxes – where I could spend my evenings at a live music venue fueled by cheap tacos and ramen.  I’d spend my weekends scouring thrift stores for unique finds and hopping into late-night study cafes with my friends, always ending the day with a spontaneous house party fueled by pizza and good vibes.",
+    "x": 2,
+    "y": 3,
+    "happy": true
+  },
+  {
+    "id": 45,
+    "persona": "student",
+    "text": "My ideal neighborhood is a vibrant mix of cozy, slightly dilapidated houses and bustling street art – it’s always full of character and the smell of something delicious drifting from the tiny, independent cafes. Late nights are spent exploring vintage stores and catching live music at a place with a seriously good sound system, fueled by cheap pizza and endless coffee. It’s a place where I feel comfortable letting loose and creating spontaneous gatherings with friends, always surrounded by good vibes and a little bit of history.",
+    "x": 0,
+    "y": 3,
+    "happy": true
+  },
+  {
+    "id": 46,
+    "persona": "student",
+    "text": "My ideal neighborhood is a quirky mix of brick buildings and colorful murals, always buzzing with late-night music spilling out of a few cozy cafes – perfect for fueled studying sessions. I spend my afternoons browsing vintage shops and thrift stores, and weekends are spent hosting impromptu parties with friends in my small, slightly chaotic apartment.",
+    "x": 5,
+    "y": 1,
+    "happy": true
+  },
+  {
+    "id": 47,
+    "persona": "student",
+    "text": "My ideal neighborhood would be a vibrant mix of old brick buildings and quirky street art, buzzing with late-night music from a few cozy cafes and a handful of live music venues. I’d spend my days exploring thrift stores for unique finds and hopping to study cafes to fuel my late-night sessions, always ending the evening with a spontaneous house party with friends.",
+    "x": 1,
+    "y": 4,
+    "happy": true
+  },
+  {
+    "id": 48,
+    "persona": "student",
+    "text": "My ideal neighborhood is a vibrant, slightly gritty mix of old brick buildings and colorful murals, perfect for wandering and discovering hidden gems – think a fantastic thrift store and a cozy late-night cafe.  I’d spend my evenings at live music venues, followed by a quick, cheap dinner and then hopping to a friend’s house for a spontaneous house party fueled by pizza and good vibes.",
+    "x": 9,
+    "y": 8,
+    "happy": true
+  },
+  {
+    "id": 49,
+    "persona": "student",
+    "text": "My ideal neighborhood is a cozy, slightly grimy mix of brick buildings and vibrant murals, always buzzing with late-night conversations and the thump of live music spilling out of the bars. I spend my days exploring antique shops and farmer’s markets, fueling up with cheap eats and then diving into a good study session in a late-night cafe.  It’s a place where comfort and creativity intertwine – a constant invitation to spontaneous gatherings and a little bit of chaotic joy.",
+    "x": 6,
+    "y": 1,
+    "happy": true
+  },
+  {
+    "id": 50,
+    "persona": "student",
+    "text": "My ideal neighborhood is a vibrant mix of quirky indie shops and brownstones, always buzzing with live music spilling out of a cozy late-night cafe – it’s a place where I can easily snag a cheap and delicious bite after a long study session, and I’m always free to throw a spontaneous house party with my friends. It’s a comfortable, lived-in space with a strong sense of community and a never-ending supply of cool finds tucked away in thrift stores.",
+    "x": 6,
+    "y": 0,
+    "happy": true
+  },
+  {
+    "id": 51,
+    "persona": "student",
+    "text": "My ideal neighborhood is a vibrant mix of brick buildings and quirky storefronts, always buzzing with live music spilling out of dimly lit bars – it’s a place where I can easily grab a cheap and delicious burrito after a long study session.  I spend my evenings exploring vintage shops and late-night cafes, fueled by caffeine and the thrill of discovering hidden gems, and honestly, it feels like a comfortable, creative space to be myself.",
+    "x": 8,
+    "y": 0,
+    "happy": true
+  },
+  {
+    "id": 52,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a pocket of charm – a place where the scent of roses drifts from the community garden and the gentle murmur of conversation fills the air in the tea house. I’d spend my days exploring the local history clubs, losing myself in the tranquility of the botanical gardens, and watching the birds flit amongst the trees, always with a good book in hand.",
+    "x": 5,
+    "y": 9,
+    "happy": true
+  },
+  {
+    "id": 53,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a haven of gentle charm, nestled amongst mature trees and cobblestone streets – a place where the scent of blooming jasmine always lingers. I’d spend my mornings strolling through the botanical gardens, followed by a quiet cup of Earl Grey at a local tea house, then curled up with a good book in my sun-drenched living room.  It’s a place where time moves slowly and connection feels deeply rooted.",
+    "x": 4,
+    "y": 8,
+    "happy": true
+  },
+  {
+    "id": 54,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a haven of gentle charm, nestled amongst trees and cobbled streets where the air always smells of damp earth and blooming roses.  I spend my mornings strolling through the botanical gardens, followed by a cup of Earl Grey in a cozy tea house, then afternoons lost in local history books. Evenings are reserved for quiet reflection and a good book, surrounded by the comforting rhythm of the neighborhood.",
+    "x": 1,
+    "y": 6,
+    "happy": true
+  },
+  {
+    "id": 55,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a charming, slightly hilly area with a strong sense of community – think cobblestone streets and a cozy, old-fashioned town square. I’d spend my mornings strolling through the botanical gardens, followed by a quiet afternoon with a cup of Earl Grey in a traditional tea house, then evenings lost in a good book by the window.",
+    "x": 4,
+    "y": 7,
+    "happy": true
+  },
+  {
+    "id": 56,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a pocket of charm where the air smells of blooming roses and damp earth, always punctuated by the gentle rustling of leaves in the botanical gardens. I’d spend my days exploring local history clubs, followed by a steaming cup of Earl Grey in a cozy tea house, and evenings curled up with a well-worn book.  It’s a place where time slows down and connection feels genuine.",
+    "x": 5,
+    "y": 8,
+    "happy": true
+  },
+  {
+    "id": 57,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a pocket of charm nestled beside a gentle river, brimming with established gardens and the scent of blooming jasmine – perfect for a daily stroll amidst the vibrant flora. I’d spend my afternoons curled up in a cozy tea house, discussing local history with fellow enthusiasts, and evenings lost in the comforting pages of a good book. It’s a place where time slows down and connection feels deeply rooted.",
+    "x": 6,
+    "y": 8,
+    "happy": true
+  },
+  {
+    "id": 58,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a haven of gentle charm – a place where the scent of roses from the local botanical gardens always drifts on the breeze, and I can lose myself in the comforting atmosphere of a historic tea house.  I’d spend my afternoons exploring antique shops and meeting fellow history enthusiasts, and evenings would be dedicated to curling up with a good book by the window, surrounded by the quiet beauty of the neighborhood.",
+    "x": 1,
+    "y": 5,
+    "happy": true
+  },
+  {
+    "id": 59,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a pocket of charm nestled amongst old Victorian houses, where the air always smells faintly of roses and damp earth. I’d spend my mornings wandering the tranquil botanical gardens, followed by a cup of Earl Grey at a cozy local tea house, then curled up with a good book in my sun-drenched living room.  It’s a place where time slows down and meaningful connections thrive.",
+    "x": 5,
+    "y": 7,
+    "happy": true
+  },
+  {
+    "id": 60,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a charming, slightly hilly area with a strong sense of community, nestled amongst vibrant gardens and historic buildings – it’s a place where I can lose myself in the beauty of nature and the warmth of conversation.  I’d spend my mornings exploring the botanical gardens, followed by a cup of tea and a good book by the window, always punctuated by a leisurely afternoon spent bird watching.",
+    "x": 3,
+    "y": 7,
+    "happy": true
+  },
+  {
+    "id": 61,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a haven of gentle beauty – a place with rambling Victorian houses and a sense of timeless charm, where I can wander through the botanical gardens each morning, sip a warm cup of tea at a cozy tea house, and occasionally join a local history club to learn something new. Evenings are spent curled up with a good book in my sun-drenched living room, surrounded by the quiet comfort of my own space.",
+    "x": 0,
+    "y": 5,
+    "happy": true
+  },
+  {
+    "id": 62,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a haven of gentle charm, with beautifully maintained gardens and a small, cozy street lined with historic houses – it’s a place where I can spend my mornings exploring the vibrant colors of the botanical gardens, enjoying a warm cup of tea in a traditional tea house, and engaging in lively discussions at the local history club. Evenings are reserved for curling up with a good book in my quiet porch, feeling a deep sense of peace and belonging.",
+    "x": 0,
+    "y": 6,
+    "happy": true
+  },
+  {
+    "id": 63,
+    "persona": "retiree",
+    "text": "My ideal neighborhood is a haven of gentle charm, filled with the scent of blooming roses and the murmur of a nearby historic tea house. I’d spend my mornings strolling through the botanical gardens, followed by a quiet cup of Earl Grey, then evenings lost in classic literature and observing the local history clubs. It’s a place where time slows down, and connection with the neighborhood and its past is deeply valued.",
+    "x": 6,
+    "y": 7,
+    "happy": true
+  }
+]

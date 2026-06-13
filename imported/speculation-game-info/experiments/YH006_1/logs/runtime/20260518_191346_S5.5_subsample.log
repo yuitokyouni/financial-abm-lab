@@ -1,0 +1,32 @@
+2026-05-18 19:13:46,401 [INFO] ======================================================================
+2026-05-18 19:13:46,402 [INFO] S5.5 subsample_aggregate — 4 cond × 4 sub-sample 再分析
+2026-05-18 19:13:46,402 [INFO] ======================================================================
+2026-05-18 19:13:47,737 [INFO] [rt_count] C0u full: n_trial=100 per_trial_mean=1,044,540.1 ± 2,594.3 pooled=104,454,012
+2026-05-18 19:13:49,145 [INFO] [rt_count] C0u T1500: per_trial_mean=31,413.2 pooled=3,141,323
+2026-05-18 19:13:59,612 [INFO] [rt_count] C0u RT10k: per_trial_mean=10,000.0 pooled=1,000,000
+2026-05-18 19:14:00,884 [INFO] [rt_count] C0p full: n_trial=100 per_trial_mean=1,044,709.4 ± 2,718.6 pooled=104,470,944
+2026-05-18 19:14:02,244 [INFO] [rt_count] C0p T1500: per_trial_mean=31,414.5 pooled=3,141,454
+2026-05-18 19:14:13,138 [INFO] [rt_count] C0p RT10k: per_trial_mean=10,000.0 pooled=1,000,000
+2026-05-18 19:14:13,641 [INFO] [rt_count] C2 full: n_trial=100 per_trial_mean=4,352.9 ± 1,005.4 pooled=435,291
+2026-05-18 19:14:14,369 [INFO] [rt_count] C3 full: n_trial=100 per_trial_mean=4,845.1 ± 1,033.4 pooled=484,512
+2026-05-18 19:14:14,400 [INFO] [load] ensemble_summary: 600 rows, conds=['C0p', 'C0u', 'C2', 'C2_A1', 'C3', 'C3_A1']
+2026-05-18 19:14:34,205 [INFO] [bin_var_pooled] C0u/full: n_pooled=104,454,012 pooled_bin_var_slope=-0.4036 (took 16.0s)
+2026-05-18 19:15:06,797 [INFO] [bin_var_pooled] C0u/T1500: n_pooled=3,141,323 pooled_bin_var_slope=-0.2473 (took 0.4s)
+2026-05-18 19:15:32,241 [INFO] [bin_var_pooled] C0u/RT10k: n_pooled=1,000,000 pooled_bin_var_slope=-0.3758 (took 0.1s)
+2026-05-18 19:15:48,518 [INFO] [bin_var_pooled] C0p/full: n_pooled=104,470,944 pooled_bin_var_slope=-0.2879 (took 13.4s)
+2026-05-18 19:16:17,880 [INFO] [bin_var_pooled] C0p/T1500: n_pooled=3,141,454 pooled_bin_var_slope=-0.4945 (took 0.4s)
+2026-05-18 19:16:41,662 [INFO] [bin_var_pooled] C0p/RT10k: n_pooled=1,000,000 pooled_bin_var_slope=-0.3736 (took 0.1s)
+2026-05-18 19:16:42,264 [INFO] [bin_var_pooled] C2/full: n_pooled=435,291 pooled_bin_var_slope=-0.0593 (took 0.0s)
+2026-05-18 19:16:42,827 [INFO] [bin_var_pooled] C3/full: n_pooled=484,512 pooled_bin_var_slope=-0.1264 (took 0.1s)
+2026-05-18 19:16:42,876 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\ensemble_summary_subsample.parquet (800 rows)
+2026-05-18 19:16:46,208 [INFO] [lifetime] C0u full: p25=227.0 cm=391.0 cens_rate=0.9% n=1071577; T1500 cap: p25=177.0 cm=339.0 cens_rate=25.4% n=39314
+2026-05-18 19:16:48,927 [INFO] [lifetime] C0p full: p25=224.0 cm=389.0 cens_rate=0.9% n=1076362; T1500 cap: p25=128.0 cm=281.0 cens_rate=22.4% n=44570
+2026-05-18 19:16:50,658 [INFO] [lifetime] C2 LOB: p25=1500.0 cm=122.0 cens_rate=91.0% n=10986
+2026-05-18 19:16:52,405 [INFO] [lifetime] C3 LOB: p25=241.0 cm=39.0 cens_rate=73.0% n=13691
+2026-05-18 19:16:53,436 [INFO] [output] saved: tab_S5.5_subsample_comparison.csv (8 rows)
+2026-05-18 19:16:53,436 [INFO] [verdict] §3.5: H_micro — RT10k pooled bin_var slope (C0u=-0.3758, C0p=-0.3736) 両方が |slope| ≥ 0.30、full aggregate 水準 (−0.40 / −0.29) を保持 → H_micro (LOB microstructure 真効果) 強支持、S6 進行可
+2026-05-18 19:16:56,989 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\figures\fig_S5.5_microstructure_vs_artifact.png
+2026-05-18 19:16:56,995 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\logs\S5.5_summary_for_diff.json
+2026-05-18 19:16:56,996 [INFO] ======================================================================
+2026-05-18 19:16:56,996 [INFO] S5.5 complete. Verdict: H_micro
+2026-05-18 19:16:56,996 [INFO] ======================================================================

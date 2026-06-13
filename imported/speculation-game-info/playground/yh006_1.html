@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YH006_1 · Phase 2 機構解明 — 結果ビューア</title>
+<link rel="stylesheet" href="assets/app.css" />
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div class="crumb"><a href="index.html">← playground 一覧</a></div>
+    <h1>YH006_1 · Phase 2: F1 interaction の機構解明</h1>
+    <div class="paper">wealth 階級別 funnel / 100 trial ensemble + bootstrap CI / ablation · S1/S2/S3/S5 完了</div>
+  </header>
+
+  <p class="lead">YH006 で見えた「LOB が funnel 構造を弱める」交互作用を、100 trial アンサンブル + bootstrap CI + ablation で機構的に検証した Phase 2。<b>結果ビューア</b>(PAMS + parquet 依存、ブラウザ実行不可)。主結論: 仮説 A 単純版(q heterogeneity → funnel pollution)は<b>反証</b>され、Pareto 条件下では<b>初期 wealth 分布の persistence が dominant</b> という仮説 A revised が浮上。LOB friction が agent turnover を抑制する lifetime persistence は primary evidence 確定。</p>
+
+  <div class="banner info">図は <code>experiments/YH006_1/outputs/figures/</code>(git 管理外)。表示されない場合はローカルで Phase 2 パイプラインを再実行。数値は README.md の確定値。</div>
+
+  <figure class="result">
+    <img src="../experiments/YH006_1/outputs/figures/fig_S1_indicator_comparison.png" loading="lazy" />
+    <figcaption><b>S1 — 5 指標比較.</b> funnel 強度の 5 指標(Pearson/Spearman/Kendall/binVar slope/qreg slope diff)を 4 条件で比較。LOB(C2/C3)で Pearson が下がる傾向。</figcaption>
+  </figure>
+  <figure class="result">
+    <img src="../experiments/YH006_1/outputs/figures/fig_S2_aggregate_distributions.png" loading="lazy" />
+    <figcaption><b>S2 — aggregate 100 trial 分布.</b> C0u/C0p の主指標 ensemble (10,000 resample bootstrap CI)。rho_pearson ≈ 0.347 で両者ほぼ一致(wealth 初期化に robust)。</figcaption>
+  </figure>
+  <figure class="result">
+    <img src="../experiments/YH006_1/outputs/figures/fig_S3_pooled_bin_var_2x2.png" loading="lazy" />
+    <figcaption><b>S3 — pooled bin variance 2×2.</b> world × wealth の bin_var_slope。agg(−0.40/−0.29) vs LOB(−0.03/−0.17)。interaction = −0.2575 だが CI が 0 を跨ぎ判定保留(pattern δ)。</figcaption>
+  </figure>
+  <figure class="result">
+    <img src="../experiments/YH006_1/outputs/figures/fig_S3_interaction_violin.png" loading="lazy" />
+    <figcaption><b>S3 — interaction violin.</b> (C3−C2)−(C0p−C0u) の 100 trial 分布。rho_pearson interaction = −0.020 [−0.042, +0.002]。</figcaption>
+  </figure>
+  <figure class="result">
+    <img src="../experiments/YH006_1/outputs/figures/fig_S3_lifetime_distributions.png" loading="lazy" />
+    <figcaption><b>S3 — lifetime 分布(仮説 A primary evidence).</b> LOB censoring 率 81.1% vs agg 0.9%、C2 p25=1500 vs C3 p25=212 → LOB friction が agent turnover を抑制、tail composition が persist。</figcaption>
+  </figure>
+  <figure class="result">
+    <img src="../experiments/YH006_1/outputs/figures/fig_S5_ablation_shrinkage.png" loading="lazy" />
+    <figcaption><b>S5 — A1 ablation shrinkage.</b> q_const=3 固定で interaction が縮むかの KPI L2。0/5 pass → 仮説 A 単純版を反証(Spearman/Kendall ratio≈1.0 が直接証拠)。</figcaption>
+  </figure>
+  <figure class="result">
+    <img src="../experiments/YH006_1/outputs/figures/fig_S5.5_microstructure_vs_artifact.png" loading="lazy" />
+    <figcaption><b>S5.5 — microstructure vs artifact.</b> RT 数を LOB の ~2.2x まで揃えた sub-sample でも aggregate bin_var が full 水準(−0.37)保持 → <b>microstructure 真効果</b>(sample disparity artifact ではない)。</figcaption>
+  </figure>
+  <figure class="result">
+    <img src="../experiments/YH006_1/outputs/figures/fig_S5.6_mmfcn_scan.png" loading="lazy" />
+    <figcaption><b>S5.6 — MMFCN sensitivity scan.</b> MMFCN orderVolume を {15,30,60,120} で scan。弾力性 ε(4x)=0.25 ≤ 0.3 → MMFCN は副次的供給源で finding は約定 artifact に頑健。</figcaption>
+  </figure>
+
+  <details class="notes" open>
+    <summary>S3 主指標 4 条件 mean (100 trial, bootstrap CI は README 参照)</summary>
+    <table>
+      <tr><th>metric</th><th>C0u</th><th>C0p</th><th>C2</th><th>C3</th></tr>
+      <tr><td>rho_pearson</td><td>+0.347</td><td>+0.347</td><td>+0.278</td><td>+0.257</td></tr>
+      <tr><td>bin_var_slope</td><td>−0.314</td><td>−0.324</td><td>−0.036</td><td>−0.041</td></tr>
+      <tr><td>hill_alpha</td><td>+2.46</td><td>+2.82</td><td>+3.15</td><td>+2.98</td></tr>
+      <tr><td>lifetime p25 (主)</td><td>227</td><td>224</td><td>1500</td><td>212</td></tr>
+      <tr><td>censoring 率 (主)</td><td>0.9%</td><td>0.9%</td><td>90.1%</td><td>72.0%</td></tr>
+    </table>
+  </details>
+</div>
+</body>
+</html>

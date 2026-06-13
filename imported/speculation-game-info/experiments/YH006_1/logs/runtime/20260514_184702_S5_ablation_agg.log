@@ -1,0 +1,35 @@
+2026-05-14 18:47:02,088 [INFO] ======================================================================
+2026-05-14 18:47:02,089 [INFO] S5 A1 ablation aggregation — 6 cond ensemble + L2 judgment
+2026-05-14 18:47:02,089 [INFO] ======================================================================
+2026-05-14 18:47:02,090 [INFO] q_const = 3
+2026-05-14 18:47:02,093 [INFO] [integrity] C2_A1: 400 / 400 parquet files
+2026-05-14 18:47:02,907 [INFO] [integrity] C2_A1 sample: n_rt=23480, q == 3 ✓
+2026-05-14 18:47:02,907 [INFO] [integrity] C2_A1: OK
+2026-05-14 18:47:02,910 [INFO] [integrity] C3_A1: 400 / 400 parquet files
+2026-05-14 18:47:02,917 [INFO] [integrity] C3_A1 sample: n_rt=24794, q == 3 ✓
+2026-05-14 18:47:02,917 [INFO] [integrity] C3_A1: OK
+2026-05-14 18:47:02,927 [INFO] [load] existing ensemble_summary: 400 rows, conds=['C0p', 'C0u', 'C2', 'C3']
+2026-05-14 18:47:02,931 [INFO] [A1] computing ensemble_summary for C2_A1 (T=1500)...
+2026-05-14 18:47:31,461 [INFO] [A1] C2_A1: 100 rows
+2026-05-14 18:47:31,461 [INFO] [A1] computing ensemble_summary for C3_A1 (T=1500)...
+2026-05-14 18:47:57,167 [INFO] [A1] C3_A1: 100 rows
+2026-05-14 18:47:57,198 [INFO] [save] C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\ensemble_summary.parquet: 600 rows, per-cond: {'C0p': 100, 'C0u': 100, 'C2': 100, 'C2_A1': 100, 'C3': 100, 'C3_A1': 100}
+2026-05-14 18:48:14,725 [INFO] [pooled] C0u: n_rt=104,454,012 bin_var_slope_pooled=-0.4036
+2026-05-14 18:48:30,988 [INFO] [pooled] C0p: n_rt=104,470,944 bin_var_slope_pooled=-0.2879
+2026-05-14 18:48:33,033 [INFO] [pooled] C2: n_rt=435,291 bin_var_slope_pooled=-0.0593
+2026-05-14 18:48:34,639 [INFO] [pooled] C3: n_rt=484,512 bin_var_slope_pooled=-0.1264
+2026-05-14 18:48:35,268 [INFO] [pooled] C2_A1: n_rt=2,568,176 bin_var_slope_pooled=-0.3071
+2026-05-14 18:48:35,897 [INFO] [pooled] C3_A1: n_rt=2,607,744 bin_var_slope_pooled=-0.0901
+2026-05-14 18:48:36,011 [INFO] [output] saved: tab_S5_ablation_interaction.csv
+2026-05-14 18:48:36,122 [INFO] [output] saved: tab_S5_shrinkage.csv
+2026-05-14 18:48:36,122 [INFO] [L2] rho_pearson: S3=-0.0201 → A1=-0.0018, shrinkage=-0.0183 [-0.0428, +0.0061], ratio=0.092, L2=fail
+2026-05-14 18:48:36,123 [INFO] [L2] rho_spearman: S3=-0.0090 → A1=-0.0091, shrinkage=+0.0001 [-0.0152, +0.0149], ratio=1.006, L2=fail
+2026-05-14 18:48:36,123 [INFO] [L2] tau_kendall: S3=-0.0070 → A1=-0.0076, shrinkage=+0.0006 [-0.0119, +0.0129], ratio=1.090, L2=fail
+2026-05-14 18:48:36,123 [INFO] [L2] bin_var_slope: S3=+0.0046 → A1=+0.0176, shrinkage=-0.0130 [-0.0746, +0.0483], ratio=3.806, L2=fail
+2026-05-14 18:48:36,124 [INFO] [L2] q90_q10_slope_diff: S3=+0.0061 → A1=-0.0046, shrinkage=+0.0107 [-0.0064, +0.0280], ratio=0.759, L2=fail
+2026-05-14 18:48:39,390 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\figures\fig_S5_ablation_shrinkage.png
+2026-05-14 18:48:39,394 [INFO] [output] appended README
+2026-05-14 18:48:39,403 [INFO] [output] saved: S5_summary_for_diff.json
+2026-05-14 18:48:39,403 [INFO] ======================================================================
+2026-05-14 18:48:39,403 [INFO] S5 aggregation complete. L2 pass: 0/5
+2026-05-14 18:48:39,404 [INFO] ======================================================================

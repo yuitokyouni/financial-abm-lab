@@ -1,0 +1,17 @@
+2026-05-18 20:21:05,259 [INFO] ======================================================================
+2026-05-18 20:21:05,259 [INFO] S5.6 MMFCN sensitivity scan
+2026-05-18 20:21:05,259 [INFO] ======================================================================
+2026-05-18 20:21:05,260 [INFO] [sweep] cond=C3 n_jobs=8 n_workers=8 order_volumes=[15, 30, 60, 120] seeds=[1000, 1001]
+2026-05-18 20:23:48,323 [INFO] [sweep] mmfcn_05x seed=1000 done (1/8): runtime=160.4s n_rt=4,500 n_sub=63
+2026-05-18 20:24:00,881 [INFO] [sweep] mmfcn_2x seed=1000 done (2/8): runtime=173.0s n_rt=4,795 n_sub=60
+2026-05-18 20:24:35,712 [INFO] [sweep] mmfcn_1x seed=1000 done (3/8): runtime=208.0s n_rt=3,876 n_sub=61
+2026-05-18 20:25:05,999 [INFO] [sweep] mmfcn_4x seed=1000 done (4/8): runtime=238.2s n_rt=5,504 n_sub=53
+2026-05-18 20:25:09,222 [INFO] [sweep] mmfcn_1x seed=1001 done (5/8): runtime=241.5s n_rt=4,920 n_sub=61
+2026-05-18 20:26:32,419 [INFO] [sweep] mmfcn_4x seed=1001 done (6/8): runtime=324.6s n_rt=6,998 n_sub=67
+2026-05-18 20:28:22,971 [INFO] [sweep] mmfcn_2x seed=1001 done (7/8): runtime=435.3s n_rt=6,133 n_sub=59
+2026-05-18 20:29:18,993 [INFO] [sweep] mmfcn_05x seed=1001 done (8/8): runtime=491.4s n_rt=4,859 n_sub=65
+2026-05-18 20:29:19,037 [INFO] [sweep] all done: total=493.8s
+2026-05-18 20:29:19,038 [INFO] [output] saved: /Users/hasegawayuito/Documents/GitHub/speculation-game-info/experiments/YH006_1/logs/S5.6_mac_summary.json
+2026-05-18 20:29:19,038 [INFO] ======================================================================
+2026-05-18 20:29:19,038 [INFO] S5.6 sweep complete (Mac side).
+2026-05-18 20:29:19,038 [INFO] ======================================================================

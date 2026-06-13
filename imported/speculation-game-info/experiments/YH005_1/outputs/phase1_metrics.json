@@ -1,0 +1,74 @@
+{
+  "params": {
+    "N": 1000,
+    "M": 5,
+    "S": 2,
+    "T": 50000,
+    "B": 9,
+    "C": 3.0,
+    "seed": 777,
+    "p0": 100.0,
+    "history_mode": "endogenous",
+    "decision_mode": "strategy",
+    "order_size_buckets": [
+      50,
+      100
+    ]
+  },
+  "runtime_sec": 97.50907808402553,
+  "price_stats": {
+    "min": 91.99799999999888,
+    "max": 107.12899999999983,
+    "n_nonpositive_steps": 0,
+    "num_round_trips": 10419681,
+    "num_substitutions": 102087,
+    "total_wealth_T": 48401
+  },
+  "wealth": {
+    "alpha_hill_xmin_p90": 2.536720710133204,
+    "xmin_p90": 102.10000000000002,
+    "n_tail": 100,
+    "num_agents": 1000,
+    "median_wealth": 31.0,
+    "mean_wealth": 48.401,
+    "max_wealth": 600.0
+  },
+  "horizon": {
+    "num_round_trips": 10419681,
+    "median_horizon": 2.0,
+    "mean_horizon": 3.3037005643454918,
+    "max_horizon": 476,
+    "min_horizon": 1,
+    "p90_horizon": 7.0
+  },
+  "deltaG_vs_horizon": {
+    "num_round_trips": 10419681,
+    "corr_horizon_abs_dG": 0.41557229875632984,
+    "mean_abs_dG": 1.2386593217201178,
+    "frac_positive_dG": 0.38432577734385537,
+    "frac_negative_dG": 0.4201688132295029
+  },
+  "hold_ratio": {
+    "T": 50000,
+    "N_est": 983,
+    "idle": 0.08757414038657171,
+    "active_hold": 0.23727053916581892,
+    "passive_hold": 0.25114547304170903,
+    "buy": 0.21200518819938963,
+    "sell": 0.21200465920651068
+  },
+  "order_size": {
+    "return_mode": "log_return",
+    "xlim": [
+      0,
+      50000
+    ],
+    "n_return_nan": 0,
+    "mean_small": 415.91496,
+    "mean_medium": 0.77332,
+    "mean_large": 0.1134,
+    "peak_small": 683,
+    "peak_medium": 19,
+    "peak_large": 12
+  }
+}

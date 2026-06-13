@@ -1,0 +1,28 @@
+{
+  "n_trials": {
+    "C0u": 100,
+    "C0p": 100
+  },
+  "pooled_bin_var": {
+    "C0u": -0.4035714285714285,
+    "C0p": -0.2879120879120879
+  },
+  "sub_checkpoint": {
+    "C0u": {
+      "sd": 0.012104484842669273,
+      "n": 100,
+      "warn": false
+    },
+    "C0p": {
+      "sd": 0.01209608814866643,
+      "n": 100,
+      "warn": false
+    }
+  },
+  "censoring_flags": {
+    "C0u": 0,
+    "C0p": 0
+  },
+  "determinism_pass": true,
+  "smoke_status": "skipped"
+}

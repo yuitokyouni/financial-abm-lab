@@ -1,0 +1,20 @@
+2026-05-19 00:49:44,405 [INFO] ======================================================================
+2026-05-19 00:49:44,406 [INFO] S5.6 aggregate_mmfcn_sensitivity
+2026-05-19 00:49:44,406 [INFO] ======================================================================
+2026-05-19 00:49:44,487 [INFO] [baseline] mmfcn_1x seed=1000: bit-一致 PASS (sha256=141d3e374cb2c613...)
+2026-05-19 00:49:44,537 [INFO] [baseline] mmfcn_1x seed=1001: bit-一致 PASS (sha256=5c6ec30709ba5945...)
+2026-05-19 00:49:46,753 [INFO] [collect] mmfcn_05x seed=1000: n_rt=4,500 forced_retire=0.430 p25=142.5 cens=68.5%
+2026-05-19 00:49:46,896 [INFO] [collect] mmfcn_05x seed=1001: n_rt=4,859 forced_retire=0.440 p25=106.0 cens=66.2%
+2026-05-19 00:49:46,966 [INFO] [collect] mmfcn_1x seed=1000: n_rt=3,876 forced_retire=0.430 p25=239.0 cens=69.4%
+2026-05-19 00:49:47,027 [INFO] [collect] mmfcn_1x seed=1001: n_rt=4,920 forced_retire=0.350 p25=113.5 cens=72.5%
+2026-05-19 00:49:47,121 [INFO] [collect] mmfcn_2x seed=1000: n_rt=4,795 forced_retire=0.400 p25=133.8 cens=68.5%
+2026-05-19 00:49:47,220 [INFO] [collect] mmfcn_2x seed=1001: n_rt=6,133 forced_retire=0.410 p25=188.5 cens=69.9%
+2026-05-19 00:49:47,373 [INFO] [collect] mmfcn_4x seed=1000: n_rt=5,504 forced_retire=0.350 p25=193.8 cens=72.5%
+2026-05-19 00:49:47,471 [INFO] [collect] mmfcn_4x seed=1001: n_rt=6,998 forced_retire=0.360 p25=162.2 cens=69.4%
+2026-05-19 00:49:47,615 [INFO] [output] saved: tab_S5.6_mmfcn_sensitivity.csv (4 rows)
+2026-05-19 00:49:47,637 [INFO] [verdict] §3.5: H_artifact_negated_strong — elasticity ε(4x)=0.254 ≤ 0.3、n_rt(4x)/(1x)=1.42 (期待 4.0、線形供給依存ならば)、rt_rate proxy ratio=1.42 → **MMFCN は副次的供給源 (独立性高)**、Phase 2 finding 頑健、S6 進行可
+2026-05-19 00:49:56,754 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\outputs\figures\fig_S5.6_mmfcn_scan.png
+2026-05-19 00:49:56,773 [INFO] [output] saved: C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\logs\S5.6_summary_for_diff.json
+2026-05-19 00:49:56,773 [INFO] ======================================================================
+2026-05-19 00:49:56,773 [INFO] S5.6 aggregation complete. Verdict: H_artifact_negated_strong
+2026-05-19 00:49:56,774 [INFO] ======================================================================

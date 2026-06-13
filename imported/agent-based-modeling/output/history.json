@@ -1,0 +1,614 @@
+[
+  {
+    "step": 0,
+    "unhappy": 0,
+    "happy_pct": 1.0,
+    "persona_segregation": {
+      "artist": 0.19322344322344323,
+      "tech": 0.15219780219780218,
+      "traditional": 0.23021978021978023,
+      "student": 0.1758241758241758,
+      "retiree": 0.2298611111111111
+    }
+  },
+  {
+    "step": 1,
+    "unhappy": 51,
+    "happy_pct": 0.203125,
+    "persona_segregation": {
+      "artist": 0.36300366300366294,
+      "tech": 0.3294871794871795,
+      "traditional": 0.4289377289377289,
+      "student": 0.28525641025641024,
+      "retiree": 0.33769841269841266
+    }
+  },
+  {
+    "step": 2,
+    "unhappy": 36,
+    "happy_pct": 0.4375,
+    "persona_segregation": {
+      "artist": 0.43333333333333335,
+      "tech": 0.37820512820512825,
+      "traditional": 0.6803113553113552,
+      "student": 0.25018315018315024,
+      "retiree": 0.5777777777777778
+    }
+  },
+  {
+    "step": 3,
+    "unhappy": 24,
+    "happy_pct": 0.625,
+    "persona_segregation": {
+      "artist": 0.4456043956043956,
+      "tech": 0.41263736263736267,
+      "traditional": 0.7638278388278389,
+      "student": 0.47307692307692306,
+      "retiree": 0.584920634920635
+    }
+  },
+  {
+    "step": 4,
+    "unhappy": 18,
+    "happy_pct": 0.71875,
+    "persona_segregation": {
+      "artist": 0.5051282051282051,
+      "tech": 0.6485347985347985,
+      "traditional": 0.8102564102564104,
+      "student": 0.5256410256410257,
+      "retiree": 0.6902777777777778
+    }
+  },
+  {
+    "step": 5,
+    "unhappy": 8,
+    "happy_pct": 0.875,
+    "persona_segregation": {
+      "artist": 0.5705128205128205,
+      "tech": 0.6098901098901099,
+      "traditional": 0.8615384615384616,
+      "student": 0.5884615384615385,
+      "retiree": 0.651984126984127
+    }
+  },
+  {
+    "step": 6,
+    "unhappy": 8,
+    "happy_pct": 0.875,
+    "persona_segregation": {
+      "artist": 0.5798534798534798,
+      "tech": 0.6521978021978021,
+      "traditional": 0.8767399267399267,
+      "student": 0.6884615384615385,
+      "retiree": 0.6819444444444445
+    }
+  },
+  {
+    "step": 7,
+    "unhappy": 6,
+    "happy_pct": 0.90625,
+    "persona_segregation": {
+      "artist": 0.547069597069597,
+      "tech": 0.6575091575091575,
+      "traditional": 0.9205128205128206,
+      "student": 0.6564102564102565,
+      "retiree": 0.6998015873015873
+    }
+  },
+  {
+    "step": 8,
+    "unhappy": 5,
+    "happy_pct": 0.921875,
+    "persona_segregation": {
+      "artist": 0.5677655677655677,
+      "tech": 0.6553113553113553,
+      "traditional": 0.9012820512820513,
+      "student": 0.6862637362637363,
+      "retiree": 0.6567460317460317
+    }
+  },
+  {
+    "step": 9,
+    "unhappy": 5,
+    "happy_pct": 0.921875,
+    "persona_segregation": {
+      "artist": 0.5805860805860805,
+      "tech": 0.6721611721611721,
+      "traditional": 0.8884615384615385,
+      "student": 0.7593406593406594,
+      "retiree": 0.6859126984126984
+    }
+  },
+  {
+    "step": 10,
+    "unhappy": 4,
+    "happy_pct": 0.9375,
+    "persona_segregation": {
+      "artist": 0.5921245421245421,
+      "tech": 0.6335164835164835,
+      "traditional": 0.9205128205128206,
+      "student": 0.7465201465201464,
+      "retiree": 0.6763888888888889
+    }
+  },
+  {
+    "step": 11,
+    "unhappy": 5,
+    "happy_pct": 0.921875,
+    "persona_segregation": {
+      "artist": 0.6031135531135531,
+      "tech": 0.6868131868131868,
+      "traditional": 0.9205128205128206,
+      "student": 0.7298534798534798,
+      "retiree": 0.6956349206349207
+    }
+  },
+  {
+    "step": 12,
+    "unhappy": 3,
+    "happy_pct": 0.953125,
+    "persona_segregation": {
+      "artist": 0.6091575091575091,
+      "tech": 0.6503663003663003,
+      "traditional": 0.9205128205128206,
+      "student": 0.7465201465201464,
+      "retiree": 0.7081349206349207
+    }
+  },
+  {
+    "step": 13,
+    "unhappy": 3,
+    "happy_pct": 0.953125,
+    "persona_segregation": {
+      "artist": 0.6146520146520146,
+      "tech": 0.6494505494505494,
+      "traditional": 0.9051282051282052,
+      "student": 0.7465201465201464,
+      "retiree": 0.6956349206349207
+    }
+  },
+  {
+    "step": 14,
+    "unhappy": 3,
+    "happy_pct": 0.953125,
+    "persona_segregation": {
+      "artist": 0.6705128205128206,
+      "tech": 0.6752747252747253,
+      "traditional": 0.8847985347985348,
+      "student": 0.7978021978021977,
+      "retiree": 0.6716269841269841
+    }
+  },
+  {
+    "step": 15,
+    "unhappy": 2,
+    "happy_pct": 0.96875,
+    "persona_segregation": {
+      "artist": 0.6732600732600732,
+      "tech": 0.6637362637362637,
+      "traditional": 0.8921245421245421,
+      "student": 0.772161172161172,
+      "retiree": 0.6716269841269841
+    }
+  },
+  {
+    "step": 16,
+    "unhappy": 2,
+    "happy_pct": 0.96875,
+    "persona_segregation": {
+      "artist": 0.6911172161172161,
+      "tech": 0.6752747252747253,
+      "traditional": 0.9205128205128206,
+      "student": 0.7012820512820512,
+      "retiree": 0.6671626984126985
+    }
+  },
+  {
+    "step": 17,
+    "unhappy": 2,
+    "happy_pct": 0.96875,
+    "persona_segregation": {
+      "artist": 0.6757326007326008,
+      "tech": 0.712912087912088,
+      "traditional": 0.9205128205128206,
+      "student": 0.8170329670329669,
+      "retiree": 0.6632936507936508
+    }
+  },
+  {
+    "step": 18,
+    "unhappy": 2,
+    "happy_pct": 0.96875,
+    "persona_segregation": {
+      "artist": 0.6459706959706959,
+      "tech": 0.7326007326007326,
+      "traditional": 0.9205128205128206,
+      "student": 0.7567765567765566,
+      "retiree": 0.6517857142857141
+    }
+  },
+  {
+    "step": 19,
+    "unhappy": 2,
+    "happy_pct": 0.96875,
+    "persona_segregation": {
+      "artist": 0.674084249084249,
+      "tech": 0.7494505494505496,
+      "traditional": 0.8897435897435899,
+      "student": 0.8012820512820513,
+      "retiree": 0.6584325396825397
+    }
+  },
+  {
+    "step": 20,
+    "unhappy": 2,
+    "happy_pct": 0.96875,
+    "persona_segregation": {
+      "artist": 0.6397435897435897,
+      "tech": 0.7091575091575091,
+      "traditional": 0.9205128205128206,
+      "student": 0.8247252747252747,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 21,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6397435897435897,
+      "tech": 0.7168498168498169,
+      "traditional": 0.8921245421245421,
+      "student": 0.8298534798534798,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 22,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.7283882783882784,
+      "traditional": 0.8884615384615385,
+      "student": 0.7849816849816851,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 23,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.704029304029304,
+      "traditional": 0.9012820512820513,
+      "student": 0.8042124542124542,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 24,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6397435897435897,
+      "tech": 0.7091575091575091,
+      "traditional": 0.9205128205128206,
+      "student": 0.8247252747252747,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 25,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6576007326007326,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8089743589743589,
+      "retiree": 0.6461309523809523
+    }
+  },
+  {
+    "step": 26,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.667948717948718,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8042124542124541,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 27,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.655128205128205,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8106227106227106,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 28,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6423076923076922,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8003663003663004,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 29,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.655128205128205,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8106227106227106,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 30,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.784981684981685,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 31,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6626373626373626,
+      "tech": 0.7283882783882784,
+      "traditional": 0.8847985347985348,
+      "student": 0.8298534798534798,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 32,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6397435897435897,
+      "tech": 0.7168498168498169,
+      "traditional": 0.8921245421245421,
+      "student": 0.8298534798534798,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 33,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6626373626373626,
+      "tech": 0.7283882783882784,
+      "traditional": 0.8847985347985348,
+      "student": 0.8298534798534798,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 34,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.784981684981685,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 35,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9051282051282052,
+      "student": 0.8106227106227106,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 36,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9051282051282052,
+      "student": 0.8029304029304029,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 37,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9051282051282052,
+      "student": 0.8106227106227106,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 38,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.784981684981685,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 39,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6576007326007326,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8089743589743589,
+      "retiree": 0.6461309523809523
+    }
+  },
+  {
+    "step": 40,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8183150183150183,
+      "retiree": 0.6095238095238095
+    }
+  },
+  {
+    "step": 41,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.7734432234432235,
+      "retiree": 0.638095238095238
+    }
+  },
+  {
+    "step": 42,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6166666666666666,
+      "tech": 0.6935897435897436,
+      "traditional": 0.9205128205128206,
+      "student": 0.8042124542124542,
+      "retiree": 0.638095238095238
+    }
+  },
+  {
+    "step": 43,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6576007326007326,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8089743589743589,
+      "retiree": 0.6461309523809523
+    }
+  },
+  {
+    "step": 44,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6592490842490842,
+      "tech": 0.7046703296703296,
+      "traditional": 0.9205128205128206,
+      "student": 0.8298534798534798,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 45,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6294871794871795,
+      "tech": 0.7115384615384616,
+      "traditional": 0.9205128205128206,
+      "student": 0.7952380952380953,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 46,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6423076923076922,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8003663003663004,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 47,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.655128205128205,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8106227106227106,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 48,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.667948717948718,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8042124542124541,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 49,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.6423076923076922,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8003663003663004,
+      "retiree": 0.6505952380952381
+    }
+  },
+  {
+    "step": 50,
+    "unhappy": 1,
+    "happy_pct": 0.984375,
+    "persona_segregation": {
+      "artist": 0.655128205128205,
+      "tech": 0.7283882783882784,
+      "traditional": 0.9205128205128206,
+      "student": 0.8106227106227106,
+      "retiree": 0.6505952380952381
+    }
+  }
+]

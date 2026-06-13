@@ -1,0 +1,6 @@
+2026-04-28 07:23:11,261 [INFO] ======================================================================
+2026-04-28 07:23:11,261 [INFO] S2 aggregate ensemble — n_trials=100, seed_base=1000, n_workers=8
+2026-04-28 07:23:11,261 [INFO] ======================================================================
+2026-04-28 07:23:11,262 [INFO] [guard] determinism check: C0u seed=1000 × 2 runs
+2026-04-28 07:28:11,626 [INFO] [guard] C0u seed=1000: OK (rt_df + agents_df both bit-一致)
+2026-04-28 07:28:11,652 [INFO] [parallel] cond=C0u n_seeds=100 n_workers=8 out=C:\Users\yuito\OneDrive\Documents\GitHub\speculation-game-info\experiments\YH006_1\data\C0u

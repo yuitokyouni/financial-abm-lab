@@ -1,0 +1,6 @@
+# 改行はリポ内で LF に正規化(CI は Linux、shell script は LF 必須)。
+* text=auto eol=lf
+
+# バイナリ/lock は変換しない。
+*.parquet binary
+uv.lock text eol=lf

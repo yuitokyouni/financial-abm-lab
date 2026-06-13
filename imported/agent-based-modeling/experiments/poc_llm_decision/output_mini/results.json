@@ -1,0 +1,92 @@
+{
+  "history": [
+    {
+      "step": 0,
+      "seg": 0.5216666666666667,
+      "moves": 0
+    },
+    {
+      "step": 1,
+      "seg": 0.575,
+      "moves": 1
+    },
+    {
+      "step": 2,
+      "seg": 0.575,
+      "moves": 0
+    }
+  ],
+  "total_llm_calls": 20,
+  "agents_final": [
+    {
+      "uid": 0,
+      "persona": "innovator",
+      "x": 1,
+      "y": 0,
+      "happy": true
+    },
+    {
+      "uid": 1,
+      "persona": "traditionalist",
+      "x": 4,
+      "y": 0,
+      "happy": true
+    },
+    {
+      "uid": 2,
+      "persona": "traditionalist",
+      "x": 0,
+      "y": 2,
+      "happy": true
+    },
+    {
+      "uid": 3,
+      "persona": "innovator",
+      "x": 1,
+      "y": 4,
+      "happy": true
+    },
+    {
+      "uid": 4,
+      "persona": "innovator",
+      "x": 4,
+      "y": 2,
+      "happy": true
+    },
+    {
+      "uid": 5,
+      "persona": "innovator",
+      "x": 3,
+      "y": 2,
+      "happy": true
+    },
+    {
+      "uid": 6,
+      "persona": "innovator",
+      "x": 4,
+      "y": 3,
+      "happy": true
+    },
+    {
+      "uid": 7,
+      "persona": "traditionalist",
+      "x": 0,
+      "y": 4,
+      "happy": true
+    },
+    {
+      "uid": 8,
+      "persona": "traditionalist",
+      "x": 4,
+      "y": 4,
+      "happy": true
+    },
+    {
+      "uid": 9,
+      "persona": "traditionalist",
+      "x": 0,
+      "y": 3,
+      "happy": true
+    }
+  ]
+}

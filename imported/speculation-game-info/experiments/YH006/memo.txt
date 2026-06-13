@@ -1,0 +1,19 @@
+ 現モデルの課題 (Phase 2 送りだが論文 Limitation に書くべき)
+
+  1. zero-fill open ≈ 30% → YH005 Speculation Game signal の 3 割が LOB で消える。MARKET-only の情報損失で、論文1 Fig 11/12/13
+  (asymmetry / leverage) の再現には致命的になりうる → Phase 2 で LIMIT open 拡張が要る。
+  
+  2. tail α 推定精度 (N=100): YH005_1 が N=1000 に対し YH006 は N=100。C3 α=1.91 と C2 α=1.98 の差 0.07
+  は信頼区間内の可能性が高い。この差を強く主張すると bootstrap CI を聞かれる → 次 ensemble 100 trial で bootstrap、さもなくば慎重に書く。
+ 
+  3. lob_mtm 発散 → 2-account 設計: PAMS cash + asset×price が ±数千ドルにぶれる。SG cognitive wealth
+  と分離したので内部ロジックは壊れないが、「LOB 実装としての realism を一部諦めている」点は正直に書く必要。
+
+  4. C_ticks 較正が C1 依存: SG を入れると Δmid 分布が変わる (self-consistency 崩れ)。C1 で較正して C2/C3
+  に使い回しているので、循環依存ではないが 一次近似。iterative calibration は Phase 2。
+
+  5. warmup/main の定常性: 表の数値は warmup=200 / main=1500 のもの (README 手順)、一方 measurement_7_all.py は warmup=100 /
+  main=600。スケール依存性を示す補足プロットがあると堅い (現状は 1 スケールのみ)。
+
+  6. MMFCNAgent の正当化: FCN の order_volume を upstream hardcoded 1 → config 30 に上げたのは structural hack。「外部流動性条件」として論文で
+  defend するには、FCN 集団の流動性供給意味論の段落が 1 つ要る (SPEC で明記はされているが論文 body に昇格が必要)。

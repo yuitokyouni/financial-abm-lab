@@ -1,0 +1,5 @@
+2026-05-14 11:10:41,933 [INFO] q_const from S4_q_const_calibration.json: 3 (cond=C3, n_trials=100)
+2026-05-14 11:10:41,933 [INFO] ======================================================================
+2026-05-14 11:10:41,933 [INFO] S5 A1 ablation ensemble — conds=['C2_A1', 'C3_A1'], n_trials=100, seed_base=1000, n_workers=8, q_const=3, main_steps=1500
+2026-05-14 11:10:41,933 [INFO] ======================================================================
+2026-05-14 11:10:41,933 [INFO] [smoke] A1 wiring check — C3_A1 seed=9001, q_const=3, warmup=200/main=200

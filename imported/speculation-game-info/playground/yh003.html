@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YH003 · Minority Game — playground</title>
+<link rel="stylesheet" href="assets/app.css" />
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div class="crumb"><a href="index.html">← playground 一覧</a></div>
+    <h1>YH003 · Challet & Zhang (1997) Minority Game</h1>
+    <div class="paper">Emergence of cooperation and organization in an evolutionary game — <i>Physica A</i> 246 · 実体: <code>experiments/YH003/model.py</code></div>
+  </header>
+
+  <p class="lead">N 人が二択を繰り返し、<b>少数派が勝つ</b>。各自 S 個の戦略テーブル(過去 M 期 → 予測)を持ち仮想スコアで最良を選ぶ。記憶長 M を制御パラメータ <code>α = 2^M/N</code> として、出席数 A(t) のゆらぎ(= 集団の協調効率)が相転移する様子を見る。</p>
+
+  <div id="proto-banner" class="banner warn hidden"></div>
+  <div class="banner info">エンジン: 本物の <code>experiments/YH003/model.py</code>(ベクトル化 simulate)を numpy で実行。</div>
+
+  <div class="layout">
+    <aside class="panel controls">
+      <h2>パラメータ</h2>
+      <div id="controls"></div>
+      <button class="run" id="runBtn">▶ シミュレーション実行</button>
+      <button class="ghost" id="scanBtn">σ²/N vs α をスキャン (軽量)</button>
+      <div class="status idle" id="status"><span class="dot"></span>待機中</div>
+    </aside>
+
+    <main>
+      <div class="metrics" id="metrics"></div>
+      <div class="plots">
+        <div class="plot full"><div class="cap">出席数 A(t)(burn-in 後)</div><div id="p_att" style="height:280px"></div></div>
+        <div class="plot"><div class="cap">A(t) の分布</div><div id="p_hist" style="height:300px"></div></div>
+        <div class="plot"><div class="cap">累積利得の偏差(top/bottom/random 各3人)</div><div id="p_gain" style="height:300px"></div></div>
+        <div class="plot full" id="scanWrap" style="display:none"><div class="cap">σ²/N vs α = 2^M/N (log-log)</div><div id="p_scan" style="height:320px"></div></div>
+      </div>
+      <details class="notes">
+        <summary>このモデルについて / 既知の数値</summary>
+        <ul>
+          <li><b>σ²/N</b> = 出席ゆらぎ。小さいほど集団が効率的に協調。<code>α_c ≈ 0.34</code> 付近で最小(相転移)、ランダム参照は σ²/N = 1。</li>
+          <li>A(t) は N/2 を中心に対称分布。M が小さい(α 小)と「混雑相」で大きく振動、M が大きいと「希薄相」でランダムに近づく。</li>
+          <li>累積利得は top/bottom で発散 — 戦略の優劣が持続する(運だけではない)。</li>
+        </ul>
+      </details>
+    </main>
+  </div>
+</div>
+
+<script src="assets/runner.js"></script>
+<script>
+const C = SGP.COLORS;
+const SPECS = [
+  { id: "N", label: "プレイヤー数 N", type: "range", min: 51, max: 1501, step: 50, value: 501, hint: "奇数推奨" },
+  { id: "M", label: "記憶長 M", type: "range", min: 2, max: 10, step: 1, value: 6, hint: "戦略入力空間 = 2^M" },
+  { id: "S", label: "戦略数 S", type: "range", min: 1, max: 8, step: 1, value: 2 },
+  { id: "T", label: "総ステップ T", type: "range", min: 1000, max: 8000, step: 500, value: 3000 },
+  { id: "burn", label: "burn-in", type: "range", min: 0, max: 2000, step: 100, value: 500 },
+  { id: "seed", label: "seed", type: "number", min: 0, max: 99999, step: 1, value: 42 },
+];
+SGP.buildControls("controls", SPECS);
+SGP.fileProtocolBanner();
+
+const FILES = [{ url: "../experiments/YH003/model.py", name: "model.py" }];
+
+const DRIVER = `
+import json, numpy as np, sf
+from model import simulate
+P = json.loads(PARAMS_JSON)
+N=int(P['N']); M=int(P['M']); S=int(P['S']); T=int(P['T']); burn=min(int(P['burn']), T-200)
+res = simulate(N, M, S, T, seed=int(P['seed']))
+att = res['attendance'][burn:].astype(np.float64)
+excess = 2.0*att - N
+s2n = float(excess.var()/N)
+aix, aser = sf.downsample(att, 4000)
+lo, hi = float(att.min()), float(att.max())
+ctr, dens = sf.hist_density(att, lo, hi, 60)
+acts = res['actions'][burn:]; win = res['winner'][burn:]
+hits = (acts == win[:, None]).astype(np.int64)
+cum = np.cumsum(hits, axis=0)
+tt = np.arange(cum.shape[0])
+dev = cum - 0.5*tt[:, None]
+final = cum[-1]; order = np.argsort(final)
+top3 = order[-3:][::-1]; bot3 = order[:3]
+mid = order[len(order)//2-5:len(order)//2+5]
+rng = np.random.default_rng(int(P['seed'])+99); rnd3 = rng.choice(mid, size=min(3,len(mid)), replace=False)
+gx, _ = sf.downsample(tt, 2000)
+def col(idxs):
+    return [sf.downsample(dev[:, int(i)], 2000)[1] for i in idxs]
+RESULT = json.dumps({
+  's2n': s2n, 'alpha': (2**M)/N, 'meanA': float(att.mean()), 'N': N,
+  'att_x': aix, 'att_y': aser, 'hist_x': ctr.tolist(), 'hist_y': dens.tolist(),
+  'gx': gx, 'top': col(top3), 'bot': col(bot3), 'rnd': col(rnd3),
+})
+`;
+
+function draw(d) {
+  SGP.setMetrics("metrics", [
+    { k: "σ²/N", v: d.s2n.toFixed(3), good: d.s2n < 1 },
+    { k: "α = 2^M/N", v: d.alpha.toFixed(3) },
+    { k: "mean A", v: d.meanA.toFixed(1) + ` (N/2=${(d.N / 2).toFixed(1)})` },
+  ]);
+  SGP.plot("p_att", [
+    { x: d.att_x, y: d.att_y, type: "scattergl", mode: "lines", line: { color: C.sim, width: 0.7 }, name: "A(t)" },
+    { x: [0, d.att_x[d.att_x.length - 1]], y: [d.N / 2, d.N / 2], type: "scatter", mode: "lines", line: { color: C.ref, dash: "dash" }, name: "N/2" },
+  ], SGP.baseLayout("", { xaxis: { title: "t" }, yaxis: { title: "A(t)" } }));
+  SGP.plot("p_hist", [{ x: d.hist_x, y: d.hist_y, type: "bar", marker: { color: "rgba(251,191,36,.6)" } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { title: "A(t)" }, yaxis: { title: "density" }, bargap: 0.02 }));
+  const traces = [];
+  const mk = (arr, color, name) => arr.forEach((y, i) => traces.push({ x: d.gx, y, type: "scattergl", mode: "lines", line: { color, width: 1 }, name: i === 0 ? name : undefined, showlegend: i === 0 }));
+  mk(d.top, C.g1, "top 3"); mk(d.bot, C.ref, "bottom 3"); mk(d.rnd, C.muted, "random 3");
+  traces.push({ x: [0, d.gx[d.gx.length - 1]], y: [0, 0], type: "scatter", mode: "lines", line: { color: "#fff", dash: "dash", width: 0.7 }, name: "chance" });
+  SGP.plot("p_gain", traces, SGP.baseLayout("", { xaxis: { title: "t" }, yaxis: { title: "cum gain − 0.5t" } }));
+}
+
+async function ready() { await SGP.boot({ packages: ["numpy"] }); await SGP.loadSources(FILES); }
+
+async function run() {
+  const btn = document.getElementById("runBtn"); btn.disabled = true;
+  try {
+    await ready();
+    const p = SGP.readControls(SPECS);
+    SGP.status(`実行中… (N=${p.N}, M=${p.M}, T=${p.T})`, "busy");
+    const t0 = performance.now();
+    draw(await SGP.runDriver(DRIVER, p));
+    SGP.status(`完了 (${((performance.now() - t0) / 1000).toFixed(1)}s)`, "ok");
+  } catch (e) { console.error(e); SGP.status("エラー: " + e.message, "err"); }
+  finally { btn.disabled = false; }
+}
+
+async function scan() {
+  const btn = document.getElementById("scanBtn"); btn.disabled = true;
+  try {
+    await ready();
+    const p = SGP.readControls(SPECS);
+    SGP.status("σ²/N スキャン中… (M=1..9, 各2 trial)", "busy");
+    const driver = `
+import json, numpy as np
+from model import sigma2_over_N
+P = json.loads(PARAMS_JSON); N=int(P['N']); seed=int(P['seed'])
+Ms=list(range(1,10)); al=[]; mn=[]; sd=[]
+for M in Ms:
+    vals=[sigma2_over_N(N, M, 2, 400, 3000, seed=seed+1000*M+tr) for tr in range(2)]
+    al.append((2**M)/N); mn.append(float(np.mean(vals))); sd.append(float(np.std(vals)))
+RESULT = json.dumps({'alpha': al, 'mean': mn, 'sd': sd})
+`;
+    const d = await SGP.runDriver(driver, p);
+    document.getElementById("scanWrap").style.display = "block";
+    SGP.plot("p_scan", [
+      { x: d.alpha, y: d.mean, error_y: { type: "data", array: d.sd, color: C.sim }, type: "scatter", mode: "lines+markers", line: { color: C.sim }, marker: { size: 6 }, name: "σ²/N" },
+      { x: [Math.min(...d.alpha), Math.max(...d.alpha)], y: [1, 1], type: "scatter", mode: "lines", line: { color: C.ref, dash: "dot" }, name: "random (1)" },
+      { x: [0.34, 0.34], y: [Math.min(...d.mean) * 0.5, Math.max(...d.mean)], type: "scatter", mode: "lines", line: { color: C.muted, dash: "dash" }, name: "α_c≈0.34" },
+    ], SGP.baseLayout("", { xaxis: { type: "log", title: "α = 2^M/N" }, yaxis: { type: "log", title: "σ²/N" } }));
+    SGP.status("スキャン完了", "ok");
+  } catch (e) { console.error(e); SGP.status("エラー: " + e.message, "err"); }
+  finally { btn.disabled = false; }
+}
+document.getElementById("runBtn").addEventListener("click", run);
+document.getElementById("scanBtn").addEventListener("click", scan);
+</script>
+</body>
+</html>

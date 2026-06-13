@@ -1,0 +1,12 @@
+2026-05-19 00:47:42,057 [INFO] ======================================================================
+2026-05-19 00:47:42,057 [INFO] S5.6 aggregate_mmfcn_sensitivity
+2026-05-19 00:47:42,057 [INFO] ======================================================================
+2026-05-19 00:47:42,058 [WARNING] [collect] mmfcn_05x seed=1000: parquet missing
+2026-05-19 00:47:42,058 [WARNING] [collect] mmfcn_05x seed=1001: parquet missing
+2026-05-19 00:47:42,058 [WARNING] [collect] mmfcn_1x seed=1000: parquet missing
+2026-05-19 00:47:42,059 [WARNING] [collect] mmfcn_1x seed=1001: parquet missing
+2026-05-19 00:47:42,060 [WARNING] [collect] mmfcn_2x seed=1000: parquet missing
+2026-05-19 00:47:42,060 [WARNING] [collect] mmfcn_2x seed=1001: parquet missing
+2026-05-19 00:47:42,060 [WARNING] [collect] mmfcn_4x seed=1000: parquet missing
+2026-05-19 00:47:42,061 [WARNING] [collect] mmfcn_4x seed=1001: parquet missing
+2026-05-19 00:47:42,061 [ERROR] no per-trial stats collected. abort.

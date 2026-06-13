@@ -1,0 +1,3 @@
+# @package agents
+# Model T(trend-following、spec §3.2)。ヘテロ性レンジは toy.agents.trend に固定。
+model: T

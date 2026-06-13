@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>YH005_1 · SG 3層機構 — playground</title>
+<link rel="stylesheet" href="assets/app.css" />
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <div class="crumb"><a href="index.html">← playground 一覧</a></div>
+    <h1>YH005_1 · Speculation Game の 3 層機構</h1>
+    <div class="paper">Katahira & Chen (2019) arXiv:1909.03185 Fig. 2/4/7/8/10 相当 · 実体: <code>experiments/YH005/simulate.py</code> を再利用</div>
+  </header>
+
+  <p class="lead">YH005 と同じ SG を 1 ラン回し、volatility clustering + heavy tail を生む <b>3 層機構</b>を 5 枚の図で可視化する: ① 富の Pareto 分布(破産置換による turnover)② round-trip 長の冪分布 ③ 長い round-trip ほど ΔG が漏斗状に拡大 ④ active/passive hold が有意な割合 ⑤ 大口注文 burst が高ボラ期と同期。</p>
+
+  <div id="proto-banner" class="banner warn hidden"></div>
+  <div class="banner info">エンジン: 本物の <code>experiments/YH005/simulate.py</code> を numpy で実行。論文 Phase 1 は N=1000, T=50000(~100s)だが、ブラウザは縮小デフォルト。図の形は出るが Hill α 等の点推定は単一 trial で揺らぐ。</div>
+
+  <div class="layout">
+    <aside class="panel controls">
+      <h2>パラメータ</h2>
+      <div id="controls"></div>
+      <button class="run" id="runBtn">▶ シミュレーション実行</button>
+      <div class="status idle" id="status"><span class="dot"></span>待機中</div>
+    </aside>
+
+    <main>
+      <div class="metrics" id="metrics"></div>
+      <div class="plots">
+        <div class="plot"><div class="cap">① 富の分布 P(W≥w) (log-log)</div><div id="p_wealth" style="height:320px"></div></div>
+        <div class="plot"><div class="cap">② round-trip 長の分布 (log-log)</div><div id="p_horizon" style="height:320px"></div></div>
+        <div class="plot"><div class="cap">③ ΔG vs horizon(漏斗)</div><div id="p_funnel" style="height:320px"></div></div>
+        <div class="plot"><div class="cap">④ 行動割合(時間平均)</div><div id="p_hold" style="height:320px"></div></div>
+        <div class="plot full"><div class="cap">⑤ Δp と 注文サイズ(small/medium/large)の時系列</div><div id="p_orders" style="height:340px"></div></div>
+      </div>
+      <details class="notes">
+        <summary>主張と既知の数値 (N=1000,M=5,S=2,T=50000,seed=777)</summary>
+        <table>
+          <tr><th>図</th><th>主張</th><th>論文 Phase 1 実測</th></tr>
+          <tr><td>① Pareto</td><td>dynamic-wealth 層がテールを生む</td><td>Hill α(p90)=2.54</td></tr>
+          <tr><td>② horizon</td><td>認知価格反転が multi-scale</td><td>median/mean = 2 / 3.3 steps</td></tr>
+          <tr><td>③ funnel</td><td>長 round-trip で ΔG 拡大</td><td>corr(|ΔG|,τ)=+0.42</td></tr>
+          <tr><td>④ hold</td><td>round-trip 制約で滞留</td><td>passive 0.25 / active 0.24</td></tr>
+          <tr><td>⑤ order size</td><td>大口 burst が高ボラと同期</td><td>small が支配(mean≈416)</td></tr>
+        </table>
+      </details>
+    </main>
+  </div>
+</div>
+
+<script src="assets/runner.js"></script>
+<script>
+const C = SGP.COLORS;
+const SPECS = [
+  { id: "N", label: "エージェント数 N", type: "range", min: 100, max: 1000, step: 50, value: 400 },
+  { id: "M", label: "記憶長 M", type: "range", min: 2, max: 5, step: 1, value: 4 },
+  { id: "S", label: "戦略数 S", type: "range", min: 1, max: 4, step: 1, value: 2 },
+  { id: "T", label: "ステップ T", type: "range", min: 1000, max: 10000, step: 500, value: 3000 },
+  { id: "C", label: "認知閾値 C", type: "range", min: 0.5, max: 8, step: 0.5, value: 3 },
+  { id: "B", label: "注文単位 B", type: "range", min: 3, max: 20, step: 1, value: 9 },
+  { id: "seed", label: "seed", type: "number", min: 0, max: 99999, step: 1, value: 777 },
+];
+SGP.buildControls("controls", SPECS);
+SGP.fileProtocolBanner();
+
+const FILES = [
+  { url: "../experiments/YH005/history.py", name: "history.py" },
+  { url: "../experiments/YH005/simulate.py", name: "simulate.py" },
+];
+
+const DRIVER = `
+import json, numpy as np, sf
+from simulate import simulate
+P = json.loads(PARAMS_JSON)
+res = simulate(N=int(P['N']), M=int(P['M']), S=int(P['S']), T=int(P['T']),
+               B=int(P['B']), C=float(P['C']), seed=int(P['seed']))
+# 1) wealth pareto
+w = res['final_wealth'].astype(np.float64)
+wx, wy = sf.ccdf_raw(w)
+alpha, xmin, ntail = sf.hill_alpha_p90(w, 90.0)
+n = wx.size
+line_x = line_y = []
+if np.isfinite(alpha) and xmin > 0 and wx.size:
+    lx = np.logspace(np.log10(xmin), np.log10(wx.max()), 30)
+    ly = (ntail/n) * (lx/xmin)**(-alpha)
+    line_x, line_y = lx.tolist(), ly.tolist()
+wix, _ = sf.downsample(np.arange(wx.size), 2000)
+# 2) horizon
+rt = res['round_trips']
+hor = (rt['close_t'] - rt['open_t']).astype(np.int64); hor = hor[hor > 0]
+hx, hy = sf.loglog_hist(hor, 40)
+# 3) funnel: subsample
+dG = rt['delta_G'].astype(np.float64)
+hor_all = (rt['close_t'] - rt['open_t']).astype(np.float64)
+mask = hor_all > 0; hor_all = hor_all[mask]; dG = dG[mask]
+K = hor_all.size
+corr = float(np.corrcoef(hor_all, np.abs(dG))[0,1]) if K > 1 else float('nan')
+if K > 12000:
+    sel = np.random.default_rng(0).choice(K, 12000, replace=False)
+    fx, fy = hor_all[sel].tolist(), dG[sel].tolist()
+else:
+    fx, fy = hor_all.tolist(), dG.tolist()
+# 4) hold ratio
+nb=res['num_buy'].astype(float); ns=res['num_sell'].astype(float)
+na=res['num_active_hold'].astype(float); npas=res['num_passive_hold'].astype(float)
+Nest=float((nb+ns+na+npas).max()); idle=np.clip(Nest-(nb+ns+na+npas),0,None)
+ratios={'idle':float(idle.mean()/Nest),'active_hold':float(na.mean()/Nest),
+        'passive_hold':float(npas.mean()/Nest),'buy':float(nb.mean()/Nest),'sell':float(ns.mean()/Nest)}
+# 5) order size + return
+prices=res['prices']; r=np.diff(prices)
+sz=res['num_orders_by_size']
+rix, rser = sf.downsample(r, 4000)
+six, sm = sf.downsample(sz[:,0], 4000)
+_, md = sf.downsample(sz[:,1], 4000)
+_, lg = sf.downsample(sz[:,2], 4000)
+RESULT = json.dumps({
+  'alpha': alpha, 'medW': float(np.median(w[w>0])) if (w>0).any() else 0,
+  'maxW': float(w.max()), 'K': int(K), 'corr': corr,
+  'medHor': float(np.median(hor)) if hor.size else 0, 'meanHor': float(hor.mean()) if hor.size else 0,
+  'ratios': ratios,
+  'wx': wx[wix].tolist(), 'wy': wy[wix].tolist(), 'lx': line_x, 'ly': line_y,
+  'hx': hx, 'hy': hy, 'fx': fx, 'fy': fy,
+  'rix': rix, 'rser': rser, 'six': six, 'sm': sm, 'md': md, 'lg': lg,
+})
+`;
+
+function draw(d) {
+  SGP.setMetrics("metrics", [
+    { k: "Hill α (wealth p90)", v: isFinite(d.alpha) ? d.alpha.toFixed(2) : "—" },
+    { k: "median wealth", v: d.medW.toFixed(0) },
+    { k: "round-trips K", v: d.K.toLocaleString() },
+    { k: "median horizon", v: d.medHor.toFixed(1) },
+    { k: "corr(|ΔG|,τ)", v: isFinite(d.corr) ? d.corr.toFixed(3) : "—", good: d.corr > 0.2 },
+  ]);
+  const wt = [{ x: d.wx, y: d.wy, type: "scattergl", mode: "markers", marker: { color: C.sim, size: 4 }, name: "P(W≥w)" }];
+  if (d.lx.length) wt.push({ x: d.lx, y: d.ly, type: "scatter", mode: "lines", line: { color: C.ref, dash: "dash" }, name: `Hill α=${d.alpha.toFixed(2)}` });
+  SGP.plot("p_wealth", wt, SGP.baseLayout("", { xaxis: { type: "log", title: "wealth w" }, yaxis: { type: "log", title: "P(W≥w)" } }));
+
+  SGP.plot("p_horizon", [{ x: d.hx, y: d.hy, type: "scatter", mode: "lines+markers", line: { color: C.g1 }, marker: { size: 5 } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { type: "log", title: "horizon τ (steps)" }, yaxis: { type: "log", title: "count" } }));
+
+  SGP.plot("p_funnel", [{ x: d.fx, y: d.fy, type: "scattergl", mode: "markers", marker: { color: C.g2, size: 3, opacity: 0.35 } }],
+    SGP.baseLayout("", { showlegend: false, xaxis: { title: "horizon τ" }, yaxis: { title: "ΔG (認知 P&L)" } }));
+
+  const labels = ["idle", "active_hold", "passive_hold", "buy", "sell"];
+  const cols = ["#9aa3b2", "#5b9cff", "#fbbf24", "#34d399", "#f87171"];
+  SGP.plot("p_hold", labels.map((l, i) => ({ x: [l], y: [d.ratios[l]], type: "bar", marker: { color: cols[i] }, name: l })),
+    SGP.baseLayout("", { showlegend: false, yaxis: { title: "fraction", range: [0, Math.max(...labels.map(l => d.ratios[l])) * 1.2] } }));
+
+  SGP.plot("p_orders", [
+    { x: d.rix, y: d.rser, type: "scattergl", mode: "lines", line: { color: C.black, width: 0.6 }, name: "Δp(t)", xaxis: "x", yaxis: "y" },
+    { x: d.six, y: d.lg, type: "scattergl", mode: "lines", line: { color: C.ref, width: 0.7 }, name: "large", xaxis: "x", yaxis: "y2" },
+    { x: d.six, y: d.md, type: "scattergl", mode: "lines", line: { color: C.g2, width: 0.7 }, name: "medium", xaxis: "x", yaxis: "y2" },
+  ], SGP.baseLayout("", {
+    xaxis: { title: "t", anchor: "y2", gridcolor: "#262b36" },
+    yaxis: { title: "Δp", domain: [0.55, 1], gridcolor: "#262b36" },
+    yaxis2: { title: "orders/step", domain: [0, 0.45], gridcolor: "#262b36" },
+  }));
+}
+
+async function run() {
+  const btn = document.getElementById("runBtn"); btn.disabled = true;
+  try {
+    await SGP.boot({ packages: ["numpy"] });
+    await SGP.loadSources(FILES);
+    const p = SGP.readControls(SPECS);
+    SGP.status(`実行中… (N=${p.N}, T=${p.T}) — 5 図を計算`, "busy");
+    const t0 = performance.now();
+    draw(await SGP.runDriver(DRIVER, p));
+    SGP.status(`完了 (${((performance.now() - t0) / 1000).toFixed(1)}s)`, "ok");
+  } catch (e) { console.error(e); SGP.status("エラー: " + e.message, "err"); }
+  finally { btn.disabled = false; }
+}
+document.getElementById("runBtn").addEventListener("click", run);
+</script>
+</body>
+</html>

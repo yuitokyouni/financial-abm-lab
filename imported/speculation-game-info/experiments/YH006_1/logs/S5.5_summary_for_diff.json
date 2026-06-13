@@ -1,0 +1,175 @@
+{
+  "stage": "S5.5",
+  "n_trials_per_cond": 100,
+  "T_LOB_window": 1500,
+  "n_rt_rt10k": 10000,
+  "rt_counts": [
+    {
+      "cond": "C0u",
+      "sample_kind": "full",
+      "n_trial": 100,
+      "n_rt_per_trial_mean": 1044540.12,
+      "n_rt_per_trial_sd": 2594.2635563095664,
+      "n_rt_pooled": 104454012
+    },
+    {
+      "cond": "C0u",
+      "sample_kind": "T1500",
+      "n_trial": 100,
+      "n_rt_per_trial_mean": 31413.23,
+      "n_rt_per_trial_sd": 342.97521349320135,
+      "n_rt_pooled": 3141323
+    },
+    {
+      "cond": "C0u",
+      "sample_kind": "RT10k",
+      "n_trial": 100,
+      "n_rt_per_trial_mean": 10000.0,
+      "n_rt_per_trial_sd": 0.0,
+      "n_rt_pooled": 1000000
+    },
+    {
+      "cond": "C0p",
+      "sample_kind": "full",
+      "n_trial": 100,
+      "n_rt_per_trial_mean": 1044709.44,
+      "n_rt_per_trial_sd": 2718.5788634445894,
+      "n_rt_pooled": 104470944
+    },
+    {
+      "cond": "C0p",
+      "sample_kind": "T1500",
+      "n_trial": 100,
+      "n_rt_per_trial_mean": 31414.54,
+      "n_rt_per_trial_sd": 409.05183341997434,
+      "n_rt_pooled": 3141454
+    },
+    {
+      "cond": "C0p",
+      "sample_kind": "RT10k",
+      "n_trial": 100,
+      "n_rt_per_trial_mean": 10000.0,
+      "n_rt_per_trial_sd": 0.0,
+      "n_rt_pooled": 1000000
+    },
+    {
+      "cond": "C2",
+      "sample_kind": "full",
+      "n_trial": 100,
+      "n_rt_per_trial_mean": 4352.91,
+      "n_rt_per_trial_sd": 1005.4345268478589,
+      "n_rt_pooled": 435291
+    },
+    {
+      "cond": "C3",
+      "sample_kind": "full",
+      "n_trial": 100,
+      "n_rt_per_trial_mean": 4845.12,
+      "n_rt_per_trial_sd": 1033.3761699820973,
+      "n_rt_pooled": 484512
+    }
+  ],
+  "pooled_bin_var_by_sample": {
+    "full_agg": {
+      "C0u": -0.4035714285714285,
+      "C0p": -0.2879120879120879
+    },
+    "T1500_agg": {
+      "C0u": -0.24725274725274726,
+      "C0p": -0.4945054945054945
+    },
+    "RT10k_agg": {
+      "C0u": -0.3758241758241759,
+      "C0p": -0.3736263736263736
+    },
+    "LOB": {
+      "C2": -0.059340659340659345,
+      "C3": -0.12637362637362637
+    }
+  },
+  "verdict": "H_micro",
+  "verdict_message": "RT10k pooled bin_var slope (C0u=-0.3758, C0p=-0.3736) 両方が |slope| ≥ 0.30、full aggregate 水準 (−0.40 / −0.29) を保持 → H_micro (LOB microstructure 真効果) 強支持、S6 進行可",
+  "lifetime_table": [
+    {
+      "cond": "C0u",
+      "sample_kind": "full_agg",
+      "T_window": 50000,
+      "p25": 227.0,
+      "conditional_median": 391.0,
+      "censoring_rate": 0.009332040534651266,
+      "n_total_samples": 1071577,
+      "n_censored": 10000
+    },
+    {
+      "cond": "C0u",
+      "sample_kind": "T1500_agg",
+      "T_window": 1500,
+      "p25": 177.0,
+      "conditional_median": 339.0,
+      "censoring_rate": 0.2539807702090858,
+      "n_total_samples": 39314,
+      "n_censored": 9985
+    },
+    {
+      "cond": "C0u",
+      "sample_kind": "RT10k_agg",
+      "T_window": 50000,
+      "p25": 227.0,
+      "conditional_median": 391.0,
+      "censoring_rate": 0.009332040534651266,
+      "n_total_samples": 1071577,
+      "n_censored": 10000
+    },
+    {
+      "cond": "C0p",
+      "sample_kind": "full_agg",
+      "T_window": 50000,
+      "p25": 224.0,
+      "conditional_median": 389.0,
+      "censoring_rate": 0.009290554664694592,
+      "n_total_samples": 1076362,
+      "n_censored": 10000
+    },
+    {
+      "cond": "C0p",
+      "sample_kind": "T1500_agg",
+      "T_window": 1500,
+      "p25": 128.0,
+      "conditional_median": 281.0,
+      "censoring_rate": 0.22376037693515818,
+      "n_total_samples": 44570,
+      "n_censored": 9973
+    },
+    {
+      "cond": "C0p",
+      "sample_kind": "RT10k_agg",
+      "T_window": 50000,
+      "p25": 224.0,
+      "conditional_median": 389.0,
+      "censoring_rate": 0.009290554664694592,
+      "n_total_samples": 1076362,
+      "n_censored": 10000
+    },
+    {
+      "cond": "C2",
+      "sample_kind": "LOB",
+      "T_window": 1500,
+      "p25": 1500.0,
+      "conditional_median": 122.0,
+      "censoring_rate": 0.9102494083378846,
+      "n_total_samples": 10986,
+      "n_censored": 10000
+    },
+    {
+      "cond": "C3",
+      "sample_kind": "LOB",
+      "T_window": 1500,
+      "p25": 241.0,
+      "conditional_median": 39.0,
+      "censoring_rate": 0.7304068366079907,
+      "n_total_samples": 13691,
+      "n_censored": 10000
+    }
+  ],
+  "comparison_table_path": "C:\\Users\\yuito\\OneDrive\\Documents\\GitHub\\speculation-game-info\\experiments\\YH006_1\\outputs\\tables\\tab_S5.5_subsample_comparison.csv"
+}
