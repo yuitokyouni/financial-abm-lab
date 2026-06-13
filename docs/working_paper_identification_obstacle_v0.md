@@ -30,13 +30,14 @@ batch-auction and speed-bump policies whose action is diffuse in time. The appar
 (i) and (ii) is not structural but asymmetric in the dimension m of the observable class: a local
 identifiability condition (on the mixed Jacobian ∂²g/∂θ∂φ along the level-preserving directions)
 shows that adding linearly-independent θ-sensitive observables relaxes the tension, up to a ceiling
-set by the mechanisms' calibration freedom (beyond which level-equivalence itself becomes
-infeasible — the calibration-failure branch). The three prior attempts failed because the observable
-they used collapsed the joint condition (raw trajectories force equal value to mean identical
-function; return moments give equal slope across models). Three bounds pin m: a floor (enough
-independent θ-sensitive observables to separate the derivative), a theoretical ceiling (m below the
-mechanisms' parameter freedom), and a statistical ceiling (the sensitivity vector's dimension below
-the number of seeds, for the finite-sample test). Two further conditions hold: the criterion needs
+set by the effective rank of the parameter-to-observable map (not the raw parameter count; beyond
+this rank, level-equivalence itself becomes infeasible — the calibration-failure branch). The three
+prior attempts failed because the observable they used collapsed the joint condition (raw
+trajectories force equal value to mean identical function; return moments give equal slope across
+models). Three bounds pin m: a floor (enough independent θ-sensitive observables to separate the
+derivative), a theoretical ceiling (m below the effective rank of the parameter-to-observable map),
+and a statistical ceiling (the sensitivity vector's dimension below the number of seeds, for the
+finite-sample test). Two further conditions hold: the criterion needs
 θ-smoothness of F (a discrete, non-monotone response, as in our N=20 artifact, is where it fails),
 and O must be a pre-specified small set of decision-relevant observables (searching arbitrary
 functionals re-introduces the circularity at the level of observable choice).
@@ -96,36 +97,40 @@ Distinct" の文字通りの数学的意味である。
 (i)(ii) の両立を「やってみないと分からない」に痩せさせない。理論が言える方向性は、緊張の**観測量次元 m
 に対する非対称性**である。
 
-機構を区別するパラメータを φ（M1, M2 は各々パラメータを持つ機構族で、calibratable 自由度を p_1, p_2 と
-する）、事前指定 O の m 個のモーメント期待値を g(φ, θ) ∈ R^m とする。
+機構を区別するパラメータを φ（M1, M2 は各々パラメータを持つ機構族）、事前指定 O の m 個のモーメント
+期待値を g(φ, θ) ∈ R^m とする。効く自由度は**生のパラメータ数でなく実効ランク** r_φ ≡ rank(∂g/∂φ)
+（O を動かすパラメータ方向の数。20 個パラメータがあっても O を動かす方向が3次元なら r_φ=3）。
 
-- **レベル等価（i）**: g(φ_1, θ0) = g(φ_2, θ0)。m 本の制約。(φ_1, φ_2) ∈ R^{p_1+p_2} で解くので、解集合は
-  generically (p_1+p_2 − m) 次元で、**p_1+p_2 ≥ m でなければ非空でない**（レベル等価の機構自由度天井）。
-- **微分分離（ii）**: そのレベル保存解集合の上で ∂g/∂θ が機構間で異なること。局所には、レベル保存方向
-  （∂g/∂φ の核）上で混合ヤコビアン **∂²g/∂θ∂φ that非零**であること（= θ 微分が、レベルを動かさない φ の
-  変化で変わる）。これが**局所識別条件**。
+- **レベル等価（i）**: g(φ_1, θ0) = g(φ_2, θ0)。m 本の制約。これを φ で満たせるのは **m ≤ r_φ** の範囲
+  （O を動かす方向が制約本数以上）。r_φ < m ではレベルを全部は合わせられない（レベル等価の天井）。
+- **微分分離（ii）**: レベル保存方向（∂g/∂φ の核）上で ∂g/∂θ が機構間で異なること。ランクで書くと
+  **rank[∂g/∂φ ; ∂²g/∂θ∂φ] > rank[∂g/∂φ]** ―― 混合ヤコビアン ∂²g/∂θ∂φ that、レベル写像 ∂g/∂φ に既に
+  含まれない方向を足すこと（θ 微分が、レベルを動かさない φ の変化で変わる）。これが**局所識別条件**。
 
 ここから理論が言える非対称性:
 
-- **次元単調性（上限つき）**: θ に対し**線形独立に**感応する O を増やす（m↑、かつ ∂g/∂θ の成分が互いに
-  線形独立）ほど、(ii) の微分分離に使える次元が増え、両立が容易になる。冗長な O（互いに θ 相関）を足して
-  も線形独立成分は増えず単調性は効かないので、効くのは「線形独立に θ 感応する O」に限る。線形独立性は
-  ∂g/∂θ の機構別ベクトルのランクとして**構成すれば計算できる**。
-- **機構自由度天井**: ただし単調性は **m < p_1+p_2 の範囲でのみ**。m が機構の calibratable 自由度
-  p_1+p_2 に達すると、レベル等価（i）自体が満たせなくなる ―― **これは §5 の分岐 D（等価化 calibration の
-  失敗）と同一物**である（spread/depth/λ… を同時に TOST 等価まで合わせるのは m が増えるほど難しい。T/H で
-  SF を4次元合わせるのに H のパラメータが要ったのと同型）。
+- **次元単調性（上限つき）**: θ に対し**線形独立に**感応する O を増やす（rank(∂g/∂θ)=m を保ったまま m↑）
+  ほど、(ii) に使える次元が増え両立が容易になる。冗長な O（互いに θ 相関、rank(∂g/∂θ)<m）を足しても効か
+  ないので、効くのは「線形独立に θ 感応する O」に限る。線形独立性も天井 r_φ も、∂g/∂θ・∂g/∂φ のランク
+  として**構成すれば計算できる**。
+- **機構自由度天井**: 単調性は **m ≤ r_φ の範囲でのみ**。m が実効ランク r_φ に達すると、レベル等価（i）
+  自体が満たせなくなる ―― **これは §5 の分岐 D（等価化 calibration の失敗）と同一物**である（spread/depth/
+  λ… を同時に TOST 等価まで合わせるのは m が増えるほど難しい。T/H で SF を4次元合わせるのに H の
+  パラメータが要ったのと同型）。
 
-**理論の scope**: 上記は**局所**識別条件（ヤコビアンのランク）であり、事前指定 O 内で識別的 O が**大域的
-に**存在するかは §5 の経験的問い。理論は「不可能性を斬る」＋「線形独立に θ 感応する O を機構自由度天井
-p_1+p_2 まで増やせ」という設計指針を与えるが、大域存在は構成して確かめる。大域存在定理は主張しない。
+**理論の scope**: 上記は **θ0 での局所**識別条件（ヤコビアンのランク）。事前指定 O 内で識別的 O が**大域
+的に**存在するかは §5 の経験的問い。さらに §5 が測るのは θ0 での微分でなく有限 Δ のシフト S_k なので、
+局所条件（θ0）と測定（finite-Δ）が一致するのは **§2.4 の θ 滑らかさの下のみ** ―― 滑らかさは適用条件で
+あると同時に、§2.3 の理論と §5 の測定を橋渡しする load-bearing な仮定である。理論は「不可能性を斬る」＋
+「線形独立 θ 感応 O を実効ランク天井 r_φ まで増やせ」という設計指針を与えるが、大域存在定理は主張しない。
 
 ### 2.4 m に課す3つの境界と、2つの適用条件
 
 §2.3 の理論天井と §6 の有限標本制約が、観測量次元 m を共通変数として **3つの境界**に締める:
 
 - **床**: 微分（ii）を分離するに足る、線形独立に θ 感応する O（m ≥ 最小）。
-- **理論天井**: m < p_1+p_2（超えるとレベル等価 i 不能 = 分岐 D）。
+- **理論天井**: m ≤ r_φ = rank(∂g/∂φ)（超えるとレベル等価 i 不能 = 分岐 D）。生パラメータ数でなく実効
+  ランクで測る。
 - **統計天井**: md < n（モーメント次数 d、seed 数 n。超えると §6 の多変量検定の共分散が特異）。
 
 最適 m はこの間にあり、選び方は「**θ 感応が線形独立な O を選別して md を最小化しつつ識別力を保つ**」。
