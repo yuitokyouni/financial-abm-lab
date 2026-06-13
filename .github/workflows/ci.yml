@@ -5,27 +5,28 @@ on:
     branches: [main, consolidation]
   pull_request:
 
-# Stage A (consolidation): lint first-party scaffold only.
-# imported/ holds history-preserved subtrees whose deps are not yet unified;
-# full workspace pytest lands in Stage B (spec 001, T0.1 uv workspace).
+# Stage B: uv workspace で packages の正準コアをテストする。
+# imported/ の旧 experiment 群は依存未統一のため対象外 (順次 experiments/ へ移行)。
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install ruff
-        run: pip install ruff
-      - name: Lint first-party code (src/, tests/)
-        run: ruff check src tests || true   # non-blocking during Stage A
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Sync workspace
+        run: uv sync --extra dev
+      - name: Lint (packages + experiments)
+        run: uv run ruff check packages experiments src tests || true
+      - name: Test (fast; slow parity excluded)
+        run: uv run pytest -m "not slow"
       - name: Structure check
         run: |
-          test -d imported/speculation-game-info
-          test -d imported/PRISM
-          test -d imported/PROV-ABM-atlas
-          test -d imported/market-dynamics
-          test -d imported/ABM-Microstructure
-          test -d imported/agent-based-modeling
+          test -d packages/abm_models/abm_models/sg
+          test -d packages/stylized_facts/stylized_facts
+          for d in speculation-game-info PRISM PROV-ABM-atlas market-dynamics ABM-Microstructure agent-based-modeling; do
+            test -d "imported/$d"
+          done
           echo "monorepo structure OK"

@@ -13,6 +13,8 @@ dependencies = [
     "pyyaml",
     "pyarrow",
     "tqdm",
+    "abm-models",
+    "stylized-facts",
 ]
 
 [project.optional-dependencies]
@@ -22,3 +24,16 @@ dev = [
     "mypy",
     "ipykernel",
 ]
+
+# --- uv workspace (spec 001 C1): packages/ 配下を共有コアとして管理 ---
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+abm-models = { workspace = true }
+stylized-facts = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "packages"]
+addopts = "-q"
+markers = ["slow: 重い実行 (T=20000 等)。CI 既定では除外"]
