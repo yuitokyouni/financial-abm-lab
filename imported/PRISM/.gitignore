@@ -1,0 +1,26 @@
+
+# .gitignore
+agent_logs/
+.env
+CURRENT_PHASE
+MISSION_COMPLETE
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+*.so
+.venv/
+venv/
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+output/
+.coverage
+htmlcov/
+docs/api/

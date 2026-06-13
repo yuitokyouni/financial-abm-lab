@@ -1,0 +1,113 @@
+# Natural Experiment Record #3: MiFID II Tick Size Regime (2018)
+#
+# MiFID II (Markets in Financial Instruments Directive II) took effect
+# on 2018-01-03 across EU equity markets.  Among many provisions, it
+# imposed a harmonized tick size regime based on price level and average
+# daily number of transactions (ADNT), effectively increasing tick sizes
+# for many liquid large-cap stocks while reducing them for some illiquids.
+#
+# The treatment is the tick size increase experienced by liquid stocks
+# whose previous national tick table was finer than the new MiFID II table.
+# EU vs. non-EU comparison provides the identification strategy (DiD).
+#
+# VALIDITY: INVALID — All delta values are fabricated external_claims.
+# Aquilina et al. (2022) measures latency arbitrage/sniping rates.
+# Comerton-Forde et al. (2019) measures spreads/depth/market share.
+# Neither reports PRISM's return-distribution stylized facts.
+# Must be re-derived empirically before use. See docs/CELL_VALIDITY_AUDIT.md.
+
+ner_id: "mifid2_2018_eu_tick"
+
+intervention:
+  class: "tick_size_increase"
+  canonical_params:
+    min_tick_from: 0.005
+    min_tick_to: 0.01
+    unit: "EUR"
+    scope: "liquid_largecap"
+
+venue: "EU_equity_largecap"
+date_effective: "2018-01-03"
+assignment: "regulatory_cutoff"
+
+ground_truth_delta:
+  - fact_id: "volatility_clustering"
+    delta_hat: 0.02
+    ci95: [-0.02, 0.06]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_eu"
+    unit: "relative"
+    references:
+      - "Aquilina, Budish & O'Neill, Quantifying the High-Frequency Trading Arms Race, QJE 2022"
+      - "Comerton-Forde, Gregoire & Zhong, Inverted Fee Venues and Market Quality, JFE 2019"
+      - "external_claim"
+
+  - fact_id: "leverage_effect"
+    delta_hat: -0.01
+    ci95: [-0.05, 0.03]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_eu"
+    unit: "relative"
+    references:
+      - "Comerton-Forde, Gregoire & Zhong 2019"
+      - "external_claim"
+
+  - fact_id: "gain_loss_asymmetry"
+    delta_hat: -0.01
+    ci95: [-0.03, 0.01]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_eu"
+    unit: "relative"
+    references:
+      - "Comerton-Forde, Gregoire & Zhong 2019"
+      - "external_claim"
+
+  - fact_id: "fat_tails"
+    delta_hat: 0.4
+    ci95: [-0.3, 1.1]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_eu"
+    unit: "excess_kurtosis"
+    references:
+      - "Aquilina, Budish & O'Neill 2022"
+      - "external_claim"
+
+  - fact_id: "abs_autocorrelation"
+    delta_hat: 0.02
+    ci95: [-0.01, 0.05]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_eu"
+    unit: "correlation"
+    references:
+      - "Aquilina, Budish & O'Neill 2022"
+      - "external_claim"
+
+  - fact_id: "squared_return_acf"
+    delta_hat: 0.02
+    ci95: [-0.02, 0.06]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_eu"
+    unit: "correlation"
+    references:
+      - "Aquilina, Budish & O'Neill 2022"
+      - "external_claim"
+
+data_hashes: {}

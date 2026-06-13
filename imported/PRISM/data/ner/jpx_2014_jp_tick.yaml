@@ -1,0 +1,115 @@
+# Natural Experiment Record #4: JPX Tick Size Reduction (2014)
+#
+# Japan Exchange Group (JPX / Tokyo Stock Exchange) reduced tick sizes for
+# TOPIX 100 constituent stocks on 2014-01-14, as part of the Arrowhead
+# trading system upgrade.  For stocks priced above JPY 3,000, the minimum
+# tick was reduced from JPY 1 to JPY 0.1 (a 10x reduction).
+#
+# Ground truth deltas RE-DERIVED from raw daily returns using PRISM's
+# own fact estimators (v0.2.0) via Difference-in-Differences:
+#   Treatment: 40 TOPIX 100 large-cap stocks (yfinance)
+#   Control:   20 non-TOPIX-100 TSE mid/small-cap stocks (yfinance)
+#              (Previous control group was contaminated with TOPIX 100 stocks
+#               that also received the tick change — now fixed.)
+#   Pre:  2013-01-14 to 2014-01-13 (~239 trading days, 12 months)
+#   Post: 2014-01-14 to 2015-01-14 (~242 trading days, 12 months)
+#   Bootstrap CI95 with 5000 resamples on stock-level DiD estimates.
+
+ner_id: "jpx_2014_jp_tick"
+
+intervention:
+  class: "tick_size_decrease"
+  canonical_params:
+    min_tick_from: 1.0
+    min_tick_to: 0.1
+    unit: "JPY"
+    scope: "topix100_largecap"
+
+venue: "JP_equity_largecap"
+date_effective: "2014-01-14"
+assignment: "regulatory_cutoff"
+
+ground_truth_delta:
+  - fact_id: "volatility_clustering"
+    delta_hat: 0.0412
+    ci95: [-0.0721, 0.1677]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "relative"
+    references:
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_40treat_20ctrl_clean"
+
+  - fact_id: "leverage_effect"
+    delta_hat: 0.0430
+    ci95: [-0.0204, 0.1073]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "correlation"
+    references:
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_40treat_20ctrl_clean"
+
+  - fact_id: "gain_loss_asymmetry"
+    delta_hat: 0.1429
+    ci95: [-0.1589, 0.4605]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "relative"
+    references:
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_40treat_20ctrl_clean"
+
+  - fact_id: "fat_tails"
+    delta_hat: 0.3718
+    ci95: [-0.8902, 1.7354]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "excess_kurtosis"
+    references:
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_40treat_20ctrl_clean"
+
+  - fact_id: "abs_autocorrelation"
+    delta_hat: 0.0174
+    ci95: [-0.0421, 0.0794]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "correlation"
+    references:
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_40treat_20ctrl_clean"
+
+  - fact_id: "squared_return_acf"
+    delta_hat: 0.0183
+    ci95: [-0.0397, 0.0789]
+    causal_method: "did_firm_fe"
+    causal_assumptions:
+      - "parallel_trends"
+      - "no_anticipation"
+      - "no_spillover_to_non_topix100"
+    unit: "correlation"
+    references:
+      - "empirical_prism_estimator_v0.2.0"
+      - "yfinance_topix100_40treat_20ctrl_clean"
+
+data_hashes:
+  treatment_pre_returns: "yfinance_topix100_40stocks_239d_clean"
+  treatment_post_returns: "yfinance_topix100_40stocks_242d_clean"
+  control_pre_returns: "yfinance_non_topix100_20stocks_239d_clean"
+  control_post_returns: "yfinance_non_topix100_20stocks_242d_clean"
