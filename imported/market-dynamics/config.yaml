@@ -1,0 +1,65 @@
+# Market State Atlas — runtime configuration.
+# All windows/horizons are causal (past-only). See SPEC §2 (NON-NEGOTIABLE).
+
+universe:
+  # SPEC default: All Weather + vol. Override here to change basket.
+  tickers: [SPY, TLT, GLD, DBC, "^VIX"]
+
+data:
+  start: "2010-01-01"
+  end: null              # null = today (yfinance resolves at fetch time)
+  cache_dir: "artifacts/data"
+
+features:
+  return_horizons_days: [1, 5, 21]
+  realized_vol_window_days: 21
+  volume_zscore_window_days: 63
+  causal_zscore_window_days: 252   # rolling z-score window (past-only)
+
+embedding:
+  # See DECISIONS.md: latent_dim=2 is the visualization default;
+  # 3 is a diagnostic mode only.
+  type: "vae"            # "vae" | "pumap"
+  latent_dim: 2
+  hidden_dims: [64, 32]
+  beta: 0.25             # beta-VAE: <1 to discourage posterior collapse
+  epochs: 200
+  batch_size: 256
+  lr: 1.0e-3
+  kl_anneal_epochs: 50
+  seed: 42
+
+density:
+  grid_size: 80
+  kde_bandwidth: "scott" # "scott" | "silverman" | float
+
+dynamics:
+  km_bins: 40            # Kramers-Moyal bins (in z-space)
+  km_min_count: 20
+  ews_window: 250        # early-warning rolling window (causal)
+
+viz:
+  out_html: "artifacts/atlas.html"
+  fallback_2d: true
+
+backtest:
+  enabled: false
+
+# Phase 4.5 — universe comparison meta-experiment.
+# Candidates are fixed here so that Phase 3-4 design choices can be benchmarked
+# across the same set throughout development. See DECISIONS.md.
+experiments:
+  universes:
+    aw:                 [SPY, TLT, GLD, DBC, "^VIX"]
+    equity_sectors:     [SPY, QQQ, IWM, XLF, XLE]
+    cross_asset:        [SPY, TLT, GLD, DBC, "^VIX", HYG, UUP]
+    fx_macro:           [UUP, FXE, FXY, FXA, GLD]
+    # Vol complex (Step 2) — primary use is the direct-topography atlas on
+    # (log VIX, term_slope=log(VIX3M/VIX)), not the VAE pipeline. SVXY has
+    # a structural change in 2018-02 (-1x → -0.5x); the run script masks
+    # SVXY before 2018-03-01.
+    vol_complex:        ["^VIX", "^VIX3M", "SVXY"]
+  d_eff_tau: 0.1        # KL-per-dim threshold for effective latent dim
+  d_eff_tau_sensitivity: [0.05, 0.1, 0.2]
+
+seed: 42
