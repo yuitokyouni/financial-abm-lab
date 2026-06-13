@@ -27,10 +27,31 @@ PCG64 RNG の安定性により完全一致)。
 
 加えて reference ↔ vectorized の **bit-parity** を確認済み (`tests/test_sg_parity.py`)。
 
+## 古典4モデル (CB / LM / MG / GCMG) — bit-parity GREEN
+
+SG と同じパターンで YH001-004 を `packages/abm_models/{cont_bouchaud,lux_marchesi,
+minority_game,gcmg}` に正準化。これらは局所依存が無く byte-identical 移植のため、
+元実装 (`imported/.../YHxxx/model.py`) と **bit-identical** な出力を検証した
+(`tests/test_classical_parity.py`、元実装を file-path で動的 import して同一 seed・小規模で比較):
+
+| モデル | 検証系列 | 結果 |
+|---|---|---|
+| Cont-Bouchaud (YH001) | returns | bit-identical |
+| Lux-Marchesi (YH002) | prices, returns | bit-identical |
+| Minority Game (YH003) | attendance | bit-identical |
+| GCMG (YH004) | attendance | bit-identical |
+
+これで `packages/abm_models` に **5モデル (SG/CB/LM/MG/GCMG)** が正準実装として揃い、
+全て parity 検証済み (REGISTRY 登録、共通 `ABMModel` protocol 準拠)。
+
+> 注: spec O1 の "SG/CI/ZI/LM/FW" のうち CI/ZI/FW は PRISM adapter 名で、ADR 0001 の通り
+> 本物 SG とは別系統 (FW系)。speculation-game-info の実研究対象である SG/CB/LM/MG/GCMG を
+> 正準化する方が研究実態に即している。CI/ZI/FW の扱いは intervention_atlas 移行時に決める。
+
 ## 含意
 
 移植パターン「正準実装を packages に抽出 → experiment は core を import → parity 検証」が
-成立した。残りモデル (Cont-Bouchaud / Lux-Marchesi / MG / GCMG / ...) も同型で移行する。
+SG + 古典4モデルで成立した。
 
 ## 再現方法
 
