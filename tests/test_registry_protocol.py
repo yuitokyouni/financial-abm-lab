@@ -10,11 +10,14 @@ import numpy as np
 
 from abm_models import (
     ABMModel,
+    ChiarellaIori,
     ContBouchaud,
+    FrankeWesterhoff,
     GrandCanonicalMG,
     LuxMarchesi,
     MinorityGame,
     SpeculationGame,
+    ZeroIntelligence,
     REGISTRY,
 )
 
@@ -25,6 +28,9 @@ SMALL = [
     LuxMarchesi(n_integer_steps=300, steps_per_unit=20),
     MinorityGame(N=51, M=3, S=2, T=300),
     GrandCanonicalMG(N=51, M=2, S=2, T_win=10, T_total=400, r_min_static=0.0),
+    ChiarellaIori(n_steps=300),
+    ZeroIntelligence(n_steps=300),
+    FrankeWesterhoff(n_steps=300),
 ]
 
 

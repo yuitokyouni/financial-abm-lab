@@ -28,9 +28,16 @@ spec 当初の O1 は対象を "SG/CI/ZI/LM/FW" と記したが、これは PRIS
   Franke-Westerhoff)。PRISM の `sg.py` も実体は FW 系で、本物 SG とは別物。
 - speculation-game-info の**実研究対象**は **SG / Cont-Bouchaud / Lux-Marchesi / Minority Game / GCMG**。
 
-よって正準化対象を上記5モデルに正確化した (= 研究実態に即す)。**CI/ZI/FW の core 化は
-intervention_atlas 移行フェーズに deferred** (PRISM 固有型 MarketData/CalibrationArtifact に
-依存し、seed→dict の素直な形でないため、別 spec で扱う)。
+正準化対象はまず研究実態の5モデル (SG/CB/LM/MG/GCMG) を完遂し、その後 O1 の名指し
+リストを満たすため **CI/ZI/FW も packages/abm_models に抽出済み**:
+- PRISM adapter を verbatim 移植 (`chiarella_iori`/`zero_intelligence`/`franke_westerhoff`)、
+  PRISM 固有型は `_prism_compat.py` に同梱。calibrate/intervene 等の framework メソッドは
+  保持しつつ ABMModel 用の `run(seed)` を追加。
+- 元 PRISM 実装と **bit-identical** を検証 (`tests/test_prism_family_parity.py`)。
+- 計 **8モデル** (SG/CI/ZI/LM/FW + CB/MG/GCMG) が REGISTRY に揃い、全 parity GREEN。
+
+ADR 0001 の通り、CI/ZI/FW は本物 SG とは別モデルとして**独立**して置く (1クラスに混ぜない)。
+intervention framework (NER/介入応答) の本格移行は別 spec (intervention_atlas) で扱う。
 
 ---
 
