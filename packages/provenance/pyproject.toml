@@ -1,0 +1,13 @@
+[project]
+name = "provenance"
+version = "0.1.0"
+description = "W3C PROV-O 記録の共有実装 (研究核 + capital-allocation 共用)"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["provenance"]
