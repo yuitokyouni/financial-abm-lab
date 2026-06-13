@@ -1,0 +1,23 @@
+# diagrams intermediate
+.diagrams/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# obsidian volatile workspace state (keep notes & graph/appearance config)
+obsidian_ABM_microstructure/.obsidian/workspace.json
+
+# junction: vault/docs -> ../docs (Obsidian で見るための実体リンク。実ファイルは docs/ で追跡)
+obsidian_ABM_microstructure/docs/
+
+# build metadata
+*.egg-info/
+
+# research run outputs
+results/
