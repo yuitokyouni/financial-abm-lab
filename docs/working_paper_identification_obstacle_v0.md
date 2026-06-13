@@ -1,159 +1,154 @@
-# 観測等価の判定基準と、介入応答による ABM 機構識別の障害 —— 3つの試行からの観察
+# 観測等価の観測量クラス依存性 —— ABM 機構識別は「何を観測量とするか」で決まる
 
-### The Equivalence-Criterion Dilemma: An Obstacle to Intervention-Based Mechanism Identification in Agent-Based Models
+### Observable-Class Dependence of Observational Equivalence in ABM Mechanism Identification
 
-**ワーキングペーパー草稿 v0（2026-06-13）**。本稿は、3つの独立な試行（PRISM の自然実験、T/H の
-ブロック単離ペア、channel-band の再パラメータ化）が同じ障害に当たった観察を整理し、その障害を
-観測等価の判定基準の選択に関するジレンマとして特定する。先行する正の主張（バッチによる機構識別、
-`docs/working_paper_batch_identification_v0.md`）は §4 の理由で撤回し、本稿に置き換える。
+**ワーキングペーパー草稿 v1（2026-06-13）**。
+
+> **改訂注記（v0→v1）**: 本ファイルの前版 v0 は、3つの試行（PRISM・T/H・channel-band）が失敗した
+> ことを「介入による機構識別は構造的に不可能」という否定結論として書いた。これは2つの過剰一般化を
+> 含んでいた: (i) channel-band の局所的失敗（単一資産で price=λ·flow ゆえ A/B が同一モデル化）を
+> 「核が達成不能」へ拡大した。order book では price と flow は連続でも独立で、失敗の原因（比例関係）が
+> 消える。(ii) 「ABM」と「SF 等価な異機構を介入で識別する特定の証明戦略」を混同した。ABM は P2
+> （Calvano 移植可能性監査）で現に政策含意のある結果を出している。さらに、ジレンマの2本の角を
+> 「強い判定器（生系列 CNN）/弱い判定器（要約統計）」で並べたのが効きすぎていた。任意の有限 trajectory
+> 差で割れる検出器を観測等価の基準にすれば equifinality は空になる。観測等価は検出器の強弱でなく、
+> **政策の問いが指定する観測量クラス**で定義すべきである。v1 はこの定義依存性の主張に書き直す。
 
 ---
 
 ## Abstract
 
-A recurring proposal in the agent-based model (ABM) literature is to discriminate competing
-mechanisms by their response to an intervention, on the premise that mechanisms which are
-indistinguishable in observational data can be told apart by how they react to a policy change.
-We report that three independent attempts to realize this premise failed, and we identify why.
-The premise requires two conditions: (a) the two models are indistinguishable in observational
-data, so that the intervention is not redundant, and (b) the two models respond differently to
-the intervention. Whether (a) holds depends on the discriminator used to judge "indistinguishable."
-Under a strong discriminator — a learned classifier on raw output series, which approximates the
-best observational test and pre-empts simulation-based inference — genuinely distinct mechanisms
-are separable in our experiments, and the only model pairs that pass are reparameterizations of a
-single model, for which there is no mechanism to discriminate. Under a weak discriminator —
-summary statistics — genuinely distinct mechanisms can be made equivalent, but a stronger
-discriminator then separates them, so observation does not in fact fail and the intervention is
-redundant. The discriminative value of the intervention over observation and the existence of
-genuinely distinct observationally-equivalent pairs are therefore in direct conflict, mediated by
-the strength of the observational discriminator. We do not claim general impossibility — causal
-inference distinguishes observationally-equivalent causal structures by intervention — but we
-document that, in the ABM-with-stylized-facts setting, the criterion strong enough to make the
-intervention non-redundant admits only reparameterizations. We state what remains achievable
-(parameter identifiability under a designed intervention; the weak-criterion claim with the
-discriminator caveat made explicit; real-data model selection with its own obstacles).
+The proposal to discriminate competing agent-based models (ABMs) by their response to a policy
+intervention rests on an unexamined choice: what counts as an observable when judging whether two
+models are "observationally equivalent." We show that ABM mechanism identifiability by intervention
+depends decisively on this observable class, and that three independent attempts failed by choosing
+the class wrongly, not because the task is impossible. Defined by the strongest raw-trajectory
+discriminator (a classifier reading any difference in a finite return series), equifinality becomes
+vacuous and the only equivalent pairs are reparameterizations of one model (channel-band). Defined
+by summary statistics, genuinely distinct mechanisms can be equated, but a stronger discriminator
+separates them (T/H); whether this makes the intervention redundant depends on whether that stronger
+discriminator is itself a policy-relevant observable. Defined by the wrong class — return-distribution
+statistics where a tick intervention deposits no signal — no effect is detectable at all (PRISM). The
+observational equivalence that matters for policy is relative to the observable class the policy
+question specifies: for market-design policy (tick size, batch auctions) these are microstructure
+quantities — quoted and effective spread, depth, price impact — at intraday frequency, not raw-return
+classifiers and not return-distribution moments. This aligns with causal inference, where
+interventions distinguish structures that share an observational distribution over a specified set of
+observed variables. We close with a falsifiable prediction: defining observational equivalence by the
+policy-relevant observable class yields mechanism pairs that are equivalent in that class and
+separated by the intervention, and we specify its verification with order-book infrastructure.
 
 ---
 
-## 1. 主張と要件
+## 1. 問題
 
-ABM 文献で繰り返し提案されるのは、複数の機構を介入応答で区別することである。前提は「観測データでは
-区別できない機構を、政策変更への反応で区別できる」。これを実現するには2要件が要る:
+ABM を市場設計政策の評価に用いる際の前提は「歴史データでは区別できない機構を、政策介入への応答で
+区別できる」である。これは2要件を要する: (a) 2モデルが観測データで区別不能（でなければ介入は冗長）、
+(b) 介入下で応答が異なる。本稿の主張は、(a) の成否が**何を観測量とするか**に決定的に依存し、その選択を
+誤ると識別が空回りする、というものである。
 
-- **(a) 観測等価**: 2モデルが観測データ上で区別できない。区別できるなら、介入を待たず観測で選別でき、
-  介入は冗長になる。
-- **(b) 介入応答差**: 2モデルが介入下で異なる出力を出す。
+## 2. 観測等価は観測量クラスに相対的である
 
-本稿の観察は、(a) が成り立つか否かが、何を「区別できない」の判定器とするかに依存し、その選択が
-(a) と (b) の両立を妨げる、というものである。
+「観測等価」は絶対的概念ではない。それは**観測量クラス O**（何を観測できると認めるか）に相対的で、
+「O に属する量の下で2モデルが区別できない」ことを意味する。
 
-## 2. 判定基準のジレンマ
+- 経済学が問題にする観測等価は、「意思決定者が利用可能な統計量の下で区別できない」である。「生の有限
+  trajectory を任意の検出器で見て少しでも違えば区別可能」ではない。後者を基準にすると、相異なる確率
+  過程はほぼ全て区別可能になり、equifinality という概念が空になる。
+- 因果推論は、**観測された変数の分布**（特定の観測量クラス）が一致し介入分布が異なる因果構造を、介入で
+  区別する。観測等価は「観測変数分布の一致」であって、生 trajectory の恒等ではない。介入による識別が
+  成立するのは、まさにこの相対的な観測等価の下である。
 
-観測等価の判定器 D を、出力の分離精度（chance = 区別不能）で測る。
+したがって (a) を判定する観測量クラス O は、恣意的な検出器の強弱で選ぶものではなく、問いが決める。
 
-- **強い判定器**（生の出力系列を入力とする学習分類器。最良の観測的検定および simulation-based
-  inference を近似する）で (a) を要求する場合:
-  - 異なる機構は生の動学が異なるため、D が分離する（後述 §3.2、T/H で D の精度 ≈ 0.9）。
-  - D を通るのは、出力過程が（ほぼ）恒等のペア、すなわち単一モデルの再パラメータ化に限られる
-    （後述 §3.3、channel-band で bit 同一）。
-  - よって強い判定器の下では、観測等価は実質的に同一モデルを意味し、識別すべき機構が存在しない。
-    介入下の「分離」は、その単一モデルのパラメータ推定（可識別性）であって機構識別ではない。
-- **弱い判定器**（要約統計）で (a) を要求する場合:
-  - 異なる機構が要約統計を一致させられる（equifinality、後述 §3.2、T/H で要約統計の分離精度 0.58）。
-  - しかし強い判定器（学習分類器/SBI）は同じペアを分離できる。よって「観測では区別できない」は
-    強い意味で偽になり、介入が観測に対して持つはずの独自価値が消える。
+## 3. 観測量クラスは政策の問いが決める
 
-要約すると: **介入が観測に対して非冗長であるためには、観測が（強い判定器の下で）失敗する必要がある。
-だが強い判定器を通すのは再パラメータ化に限られる。ゆえに、介入を非冗長にする判定基準の下では、識別
-すべき異機構ペアが存在しない。** これが2要件の両立を妨げる障害である。
+市場設計政策（tick size 変更、batch auction、speed bump）の評価において意思決定者が関与する観測量は、
+microstructure 量である:
 
-一般的な不可能性は主張しない。因果推論は、観測分布が一致し介入分布が異なる因果構造を、介入で区別
-する。本稿の主張は、ABM × stylized facts という具体的設定で、上記のジレンマが3つの独立な試行で
-再現した、という観察である。
+- quoted spread、effective spread
+- 板厚（depth）、price impact（Kyle λ）
+- 約定到着率・サイズ分布
 
-## 3. 3つの試行（ジレンマの3つの角）
+これらは、tick/batch 介入が実際に効果を与える量である（Aquilina, Budish & O'Neill 2022、
+Comerton-Forde, Gregoire & Zhong 2019 が実測）。一方、(i) 1000 ステップの生 return を分類器に入れた値、
+(ii) 日次 return 分布の moment（GARCH persistence・尖度）は、どちらも政策が関与する観測量ではない。
+(i) は強すぎて equifinality を空にし、(ii) は tick 介入の信号を含まない。**正しい観測等価は、この両極の
+間、政策が指定する microstructure 量クラスにある。**
 
-### 3.1 PRISM（実データの自然実験、パラメータ変種の角）
+## 4. 3つの試行 —— 観測量クラスの3つの誤った選び方
 
-PRISM（撤退済の内部プロジェクト）は、実在の市場介入（tick 引き下げ・取引税）の前後データで、複数
-ABM のうちどれが現実を記述するかを介入応答で選ぼうとした。結果は 120 セル中 0 セルが結論的で、有効
-な自然実験（JPX 2014 tick）でも全6量の信頼区間がゼロを跨いだ。原因のうち本稿に関わるもの:
+### 4.1 channel-band（退化した市場）
 
-- 4つの ABM が同一方程式 `excess_demand = w_f·d_fund + w_c·d_chart + w_n·d_noise` のパラメータ変種
-  であり、独立な機構でなかった。介入応答の差が ~10⁻⁴ に縮退し、(b) が成り立たなかった。
-- 加えて、測った量（日次 return 分布）に介入の信号が現れず（信号は spread/depth 等の microstructure
-  量にある。Aquilina, Budish & O'Neill 2022、Comerton-Forde, Gregoire & Zhong 2019）、また実データの
-  反実仮想に正解がないため、仮に予測差があっても照合できない。
+単一資産の超過需要市場 `p_{t+1}=p_t·exp(λ·ED_t/N)` では return = λ·ED/N で価格と注文流が同一信号。
+価格を読むモデル A と注文流を読むモデル B は連続市場で bit 同一の出力を生む。だがこれは異なる2機構の
+equifinality ではなく、同一モメンタム関数の入力単位の違い（再パラメータ化）である。バッチ下の分離は
+機構識別でなく、単一モデルのパラメータ（注文流の読み解像度）の可識別性。
 
-PRISM は、(a) を満たすほど似たモデル（パラメータ変種）を選ぶと (b) が失われる角を示す。
+この失敗は**単一資産という市場の退化**に局所化する。order book では price は net flow の決定論的関数では
+なく（板厚・約定過程が介在）、価格を読むことと注文流を読むことは連続でも独立な観測になる。channel-band は
+「核が達成不能」を示すのではなく、「単一資産 toy が不適切」を示す。
 
-### 3.2 T/H（異機構ペア、強い判定器の角）
+### 4.2 T/H（最強の観測量クラス）
 
-T/H は、共有 chassis 上で投機ブロックのみを差し替えた、原典由来の異機構ペア（T = チャーティスト
-需要、H = 群衆模倣）である。要約統計（SF1-4）を joint calibration で一致させ、要約統計の分類器
-（ロジスティック回帰）の精度を 0.58 まで下げられた。しかし held-out の生系列分類器（1D-CNN）は
-両者を 0.85–0.91 で分離した。敵対 calibration（分類器精度を直接最小化）と held-out certification
-でも、CNN は分離した（search で 0.62 に下げても held-out で 0.91 に戻った）。
+共有 chassis 上で投機ブロックのみ差し替えた異機構ペア（T=チャーティスト需要、H=群衆模倣）。要約統計
+（SF1-4）を joint calibration で一致させ、要約統計分類器の精度を 0.58 まで下げた。だが held-out の生系列
+分類器（1D-CNN）は 0.85–0.91 で分離した。
 
-T/H は、機構を実際に異ならせると、要約統計では等価化できても強い判定器が分離する角を示す。弱い判定器
-（要約統計）では (a) が成り立つが、強い判定器では成り立たない。
+これは、観測等価を**最強の検出器（生 trajectory の任意の差を読む CNN）**で定義したことの帰結である。
+この基準では、相異なる機構はほぼ常に割れる。要約統計クラスでは T/H は等価だが、要約統計クラスもまた
+政策が指定する観測量クラスではない。T/H は、観測量クラスを生 CNN（強すぎ）に取ると識別対象が消え、
+要約統計（政策と無関係）に取ると介入が冗長に見える、という両極の不適切さを示す。
 
-### 3.3 channel-band（再パラメータ化の角）
+### 4.3 PRISM（間違った観測量クラス）
 
-channel-band は、価格チャネルを読むモデル A と注文流チャネルを読むモデル B を、単一資産の超過需要
-市場 `p_{t+1}=p_t·exp(λ·ED_t/N)` 上で構成した。この市場では return = λ·ED/N で価格と注文流が同一
-信号であり、正規化モメンタムは尺度不変なので、A と B は連続市場で **bit 同一**の出力を生む（強い
-判定器でも精度 0.5）。
+PRISM（撤退済の内部試行）は、tick/取引税という microstructure 介入の効果を、日次 return-distribution
+量で測った。有効な自然実験（JPX 2014 tick）でも全6量の信頼区間がゼロを跨ぎ、効果を検出できなかった。
+加えて、用いた4 ABM が同一方程式のパラメータ変種で独立でなかった。
 
-しかしこの bit 同一は、(a) の本来の意味（異なる2機構が同じ出力分布を持つ = equifinality）ではなく、
-**計算グラフの恒等**である。A の信号 = λ × B の信号であり、A と B は同じモメンタム関数を異なる入力
-単位で計算しているにすぎない。バッチオークション（interval N で一括清算、バッチ内は価格不変・注文流
-のみ蓄積）下では、バッチ境界の return = λ·N·（バッチ平均注文流）となり、A は注文流のバッチ平均を、
-B は毎期の注文流を読む。両者の差は入力の時間解像度の差であって、行動原理の差ではない。
+PRISM の失敗は、観測量クラスの選択ミスとして最も明確である: **tick 介入の信号がある量（spread/depth/
+impact）でなく、信号のない量（日次 return 分布）を測った。** 正しい観測量クラス（microstructure、
+intraday）であれば、§3 の文献が示す通り tick 効果は検出される。
 
-したがって channel-band でバッチ下に観測される「分離」は機構識別ではなく、単一モデルのパラメータ
-（注文流をどの解像度で読むか）の可識別性である。連続データでは推定不能なこのパラメータが、バッチ
-（価格と注文流の比例が崩れる介入）で推定可能になる。さらに、その介入は A/B の縮退を壊すように後から
-選ばれたものであり、識別の成立は循環的である（縮退と、それを壊す介入の両方を構成した）。
+## 5. 主張しないこと（過剰一般化の明示的排除）
 
-channel-band は、(a) を厳密（bit 同一）にすると、モデルが単一の再パラメータ化に潰れる角を示す。
-これは §3.1 の PRISM の「独立でないモデル」と同型であり、独立に再現した。
+- **一般的不可能性を主張しない**。因果推論は、観測量クラスを観測変数分布に取れば、観測等価な構造を介入で
+  区別する。本稿の主張は「観測等価を検出器の強弱で定義するのが誤りで、政策の問いが指定する観測量クラスで
+  定義すべき」である。
+- **ABM が道具として終わっているとは主張しない**。ABM は P2（Calvano 移植可能性監査、batch×共謀の境界、
+  BCS 接地）で政策含意のある結果を出している。終わっているのは「SF 再現が機構を識別する」というパラダイム
+  であり、それは本プログラムが当初から賭けていた命題そのものである。本稿はその命題の、一段深い形
+  （介入応答による識別すら、観測等価の定義次第で空回りする）を特定する。
 
-## 4. 先行する正の主張の撤回
+## 6. 反証可能な前向き予測と検証設計
 
-`docs/working_paper_batch_identification_v0.md`（バッチによる機構識別）は、§3.3 の通り A/B が同一
-モデルの再パラメータ化であるため、機構識別の主張としては成立しない。同稿の数値（連続で区別不能、
-バッチで分離）は、パラメータ可識別性の例としては正しいが、機構識別ではない。撤回し本稿に置き換える。
+> **予測**: 観測等価を政策関連の観測量クラス（order book の spread・depth・price impact、intraday）で
+> 定義すると、(a) そのクラスで観測等価かつ (b) 介入（tick/batch）で分離する機構ペアが存在する。
 
-## 5. 形式的記述（証明済みと予想の区別）
+検証設計:
+1. order book を持つ市場（板厚・約定過程。P2 のインフラが該当）で、価格に反応する機構と注文流/板に反応
+   する機構を構成する。単一資産と違い、両者は連続でも microstructure 量クラスで異なりうる。
+2. 改革前（連続/baseline）データで、両機構が microstructure 量クラスで区別不能になるよう calibrate する
+   （要件 a）。
+3. tick/batch 介入下で、両機構の microstructure 量が異なるかを測る（要件 b）。
+4. 反証: もしこのクラスでも両機構が再パラメータ化に潰れる（channel-band の再来）か、または改革前から
+   microstructure 量で区別される（T/H の再来）なら、予測は偽。その場合、観測等価かつ介入分離なペアは
+   政策関連クラスでも存在せず、識別論は弱い主張（パラメータ可識別性、要約統計レベル）に後退する。
 
-- **証明済み（本稿の3例）**: (i) パラメータ変種は介入応答差が縮退する（PRISM）。(ii) 原典由来の異機構
-  ペアは、要約統計で等価化しても強い判定器が分離する（T/H、2つの calibration 法と held-out で一貫）。
-  (iii) 強い判定器の下で観測等価を厳密に満たす構成は、単一モデルの再パラメータ化に潰れる（channel-band）。
-- **予想（未証明）**: 強い判定器（学習分類器）を観測等価の基準とするとき、その基準を通す異機構ペアは
-  存在しない（再パラメータ化のみが通る）。本稿はこの予想に反する例を示せていないが、存在しないことを
-  証明してもいない。反例（強い判定器を通る genuinely 異機構ペア）が見つかれば、本障害は回避される。
-
-## 6. 残る達成可能なもの
-
-- **設計された介入下のパラメータ可識別性**: §3.3 のように、特定の縮退を壊す介入は、その縮退の
-  パラメータを推定できる。これは真だが、機構識別とは別の、弱い主張である。
-- **弱い基準での主張（判定器の留保を明示）**: 要約統計の下で異機構を等価化し、介入で区別する主張は
-  立つ（T/H の要約統計レベル）。ただし「強い判定器（SBI）なら観測でも区別できる」ことを明示し、介入の
-  価値を「要約統計を超えるが SBI 未満の識別」と正直に限定する必要がある。
-- **実データのモデル選択**: 実在の介入の前後で予測の当否によりモデルを選ぶ道（§3.1 の修復版）。ただし
-  反実仮想に正解がないこと、介入の信号がある量（microstructure・intraday）を測る必要があること、独立な
-  モデルを用いること、の3条件を満たす必要がある。データ要件は `docs/realdata_method_and_p3_coherence.md`。
+この検証は P2 の order book インフラに橋渡しされる。`docs/realdata_method_and_p3_coherence.md` の実データ
+照合は、同じ microstructure 量クラスを実在の改革（JPX 2014）に適用する段である。
 
 ## 7. 含意
 
-ABM を政策評価に用いる際、「歴史データでは決まらないモデルを介入応答で選ぶ」という手続きは、観測
-等価の判定基準を強くするほど識別対象が再パラメータ化に潰れ、弱くするほど介入が観測に対して冗長になる。
-この障害は、3つの独立な試行（実データ・異機構ペア・再パラメータ化）で再現した。ABM ベースの政策助言を
-介入応答で正当化する研究は、用いる観測等価の基準と、その下で識別対象が genuinely 異機構か再パラメータ化
-かを、明示する必要がある。
+ABM の検証論は、「観測等価」を観測量クラスを明示せずに用いてきた（SF=要約統計、あるいは暗黙の「データ」）。
+SBI 批判は暗にそれを最強の検出器へ押し上げ、equifinality を空にした。本稿の主張は、観測等価を問いが指定
+する観測量クラスで定義せよ、というものである。機構識別を主張する ABM 研究は、用いる観測量クラスと、その
+クラスで対象が genuinely 異機構か再パラメータ化かを明示せねばならない。3例は、クラスを誤る3つの仕方が
+それぞれ失敗する様を示す。Fagiolo, Moneta & Windrum (2007) 系の検証方法論に正面から接続する。
 
 ## 8. 関連
-- 3例の実装と記録: PRISM（内部・撤退済）、T/H（`docs/program_claims_v1.md`、Issue #11）、
-  channel-band（`toy/channel_band.py`、`docs/findings/0001-channel-decoupling-band.md`）。
-- 実データ手法と P3 整合: `docs/realdata_method_and_p3_coherence.md`。
+- 3例: PRISM（内部・撤退済）、T/H（`docs/program_claims_v1.md`、Issue #11）、channel-band
+  （`toy/channel_band.py`、`docs/findings/0001-channel-decoupling-band.md`、機構識別の解釈は撤回済）。
+- 検証設計・実データ・P3: `docs/realdata_method_and_p3_coherence.md`。
+- 文献: Fagiolo, Moneta & Windrum (2007); Aquilina, Budish & O'Neill (2022);
+  Comerton-Forde, Gregoire & Zhong (2019); Guerini & Moneta (2017); Cranmer, Brehmer & Louppe (2020)。
