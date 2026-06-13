@@ -1,9 +1,36 @@
 # Spec 001 — 金融ABM研究リポ統合 (financial-abm-lab monorepo化)
 
-- Status: Draft (レビュー待ち)
+- Status: Stage A 完了 (merged) / Stage B 進行中
 - Author: Yuito
 - Created: 2026-06-13
 - Decisions: git履歴ごと統合 / 旧リポ archive化 / parity=統計的等価
+
+---
+
+## 進捗サマリ (2026-06-13)
+
+- **Stage A 完了 (merged to main):** 6リポを `imported/` に履歴ごと統合、旧5リポ archive 済み。
+- **Stage B 進行中 (`stage-b-sg-backbone` ブランチ、OneDrive 同期済 / GitHub 未 push=トークン要):**
+  - 正準コア完成: `packages/abm_models`(SG/CB/LM/MG/GCMG + `ABMModel` protocol + REGISTRY)、
+    `packages/stylized_facts`、`packages/provenance`。uv workspace 化、CI を uv pytest 化。
+  - parity 全 GREEN: SG findings 相対誤差 **0.00%**、古典4 は元実装と **bit-identical**、
+    provenance round-trip + 後方互換。
+  - experiments: `experiments/speculation_game/baseline.py` と `experiments/classical/baseline.py`
+    が core を import (旧 imported/ の再実装を使わない)。
+  - O5: cap-alloc の `prov_record.py` を共有 `provenance` への shim 化 (cap-alloc の
+    `use-shared-provenance` ブランチ、pipeline.py 無改変・本番 main 無改変、shim 検証済)。
+
+### O1 の正確化 (ADR 0001 由来)
+
+spec 当初の O1 は対象を "SG/CI/ZI/LM/FW" と記したが、これは PRISM adapter の命名に基づく。
+精査の結果 (ADR 0001):
+- **CI/ZI/FW は PRISM の intervention framework 内のモデル** (Chiarella-Iori / Zero-Intelligence /
+  Franke-Westerhoff)。PRISM の `sg.py` も実体は FW 系で、本物 SG とは別物。
+- speculation-game-info の**実研究対象**は **SG / Cont-Bouchaud / Lux-Marchesi / Minority Game / GCMG**。
+
+よって正準化対象を上記5モデルに正確化した (= 研究実態に即す)。**CI/ZI/FW の core 化は
+intervention_atlas 移行フェーズに deferred** (PRISM 固有型 MarketData/CalibrationArtifact に
+依存し、seed→dict の素直な形でないため、別 spec で扱う)。
 
 ---
 
