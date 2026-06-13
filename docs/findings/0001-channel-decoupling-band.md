@@ -1,7 +1,11 @@
-# Finding 0001 — 観測チャネルの分離による機構識別の構成例(再設計 P1)
+# Finding 0001 — 観測チャネルの分離(再設計 P1、機構識別ではなくパラメータ可識別性)
 
-**Status**: 実証済(2026-06-13、`toy/channel_band.py` + `experiments/runners/band_analyses.py`、
-test で核を固定)。再設計 P1 の起点。
+**Status**: 実装は動作(`toy/channel_band.py`、test で核を固定)。**ただし「機構識別」の解釈は撤回
+(2026-06-13)**: 単一資産市場では return = λ·order-flow で価格チャネルと注文流チャネルが同一信号と
+なり、A と B は連続市場で bit 同一の出力を生む。これは異なる2機構の equifinality ではなく、同一
+モメンタム関数の入力単位の違い(再パラメータ化)。バッチ下の分離は機構識別でなく、単一モデルの
+パラメータ(注文流をどの解像度で読むか)の可識別性。障害の分析は
+`docs/working_paper_identification_obstacle_v0.md` の §3.3。以下は実装記録として残す。
 
 ## 背景: 介入による識別が成立する条件(Issue #11)
 

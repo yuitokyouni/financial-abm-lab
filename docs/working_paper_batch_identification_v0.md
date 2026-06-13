@@ -1,5 +1,12 @@
 # 市場設計改革によるトレーダー行動の識別 —— バッチオークションをモデル弁別実験として
 
+> **撤回（2026-06-13）**: 本稿の中心主張（バッチが価格を読む機構と注文流を読む機構を識別する）は
+> 成立しない。単一資産市場では return = λ·order-flow で両者が同一信号となり、価格を読むモデル A と
+> 注文流を読むモデル B は連続市場で bit 同一の出力を生む。これは異なる2機構の equifinality ではなく、
+> 同一モメンタム関数の入力単位の違い（再パラメータ化）である。バッチ下の「分離」は機構識別ではなく
+> パラメータ可識別性。詳細と、3例（PRISM/T-H/channel-band）に共通する障害の分析は
+> `docs/working_paper_identification_obstacle_v0.md` に置き換える。以下は記録として残す。
+
 ### Identifying Trader Behavior through Market-Design Reform: The Batch Auction as a Model-Discrimination Experiment
 
 **ワーキングペーパー草稿 v0（2026-06-13）**。投稿候補: 日本銀行 IMES / JPX ワーキングペーパー / JEDC。
