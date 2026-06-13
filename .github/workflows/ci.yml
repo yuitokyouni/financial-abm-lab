@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main, consolidation]
+  pull_request:
+
+# Stage A (consolidation): lint first-party scaffold only.
+# imported/ holds history-preserved subtrees whose deps are not yet unified;
+# full workspace pytest lands in Stage B (spec 001, T0.1 uv workspace).
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Lint first-party code (src/, tests/)
+        run: ruff check src tests || true   # non-blocking during Stage A
+      - name: Structure check
+        run: |
+          test -d imported/speculation-game-info
+          test -d imported/PRISM
+          test -d imported/PROV-ABM-atlas
+          test -d imported/market-dynamics
+          test -d imported/ABM-Microstructure
+          test -d imported/agent-based-modeling
+          echo "monorepo structure OK"
