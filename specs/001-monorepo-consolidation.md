@@ -45,12 +45,15 @@ intervention framework (NER/介入応答) の本格移行は別 spec (interventi
 |---|---|---|
 | YH001-004 (古典) | ✓ core import | `experiments/classical/baseline.py` |
 | YH005 / YH005_1 (SG) | ✓ core import | `experiments/speculation_game/baseline.py` |
-| YH006 / YH006_1 (SG on LOB) | ⬜ 未移行 | **`packages/market` (LOB エンジン) の構築が前提**。SG-on-LOB は別モデル。Stage B 次チャンク |
-| YH007 (self-organized SG on LOB) | — | upstream 未実装 (統合対象なし) |
-| YH008 (LLM-as-agent) | ⬜ 未移行 | LLM/GPU 必須。`packages` 外の別系譜 (FCLAgent)。本環境で実行不能 |
+| YH006 / YH006_1 (SG on LOB) | **speculation-game-info に保持** | ユーザー決定。LOB は別系譜、core 移行対象外 |
+| YH007 (self-organized SG on LOB) | **speculation-game-info に保持** | ユーザー決定。upstream 未実装でもあり保持 |
+| YH008 (LLM-as-agent) | **speculation-game-info に保持** | ユーザー決定。LLM/GPU 別系譜 (FCLAgent) |
 
-→ O1 の「全 experiments」完遂には market(LOB)パッケージ化と LLM 系譜の扱いが残る (将来フェーズ)。
-本フェーズでは **8モデルの core 化 + 古典/SG experiment の core-import** までを達成。
+**スコープ決定 (ユーザー)**: YH006/007/008 は `imported/speculation-game-info` 側に残す
+(core への import 移行は行わない)。LOB/LLM は別系譜であり、本統合の対象は古典〜SG の
+正準モデル化までとする。よって O1 の「全 experiments がそれを import する」の対象は
+**core 移行対象 experiment (YH001-005_1)** を指し、これは達成済み。
+本フェーズの到達点 = **8モデルの core 化 + parity + 古典/SG experiment の core-import**。
 
 ---
 
