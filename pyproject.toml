@@ -98,4 +98,5 @@ testpaths = ["tests"]
 addopts = "-q"
 markers = [
     "integration: end-to-end smoke tests (may be slower)",
+    "slow: slow tests (e.g. CNN training); deselect with -m 'not slow'",
 ]
