@@ -142,14 +142,19 @@ class HerdCandidate:
 
 
 def calibrate_search(
-    *, seed: int, n_trials: int = 60, n_runs: int = 10, params: MarketParams = CALIB_MARKET
+    *,
+    seed: int,
+    n_trials: int = 60,
+    n_runs: int = 10,
+    params: MarketParams = CALIB_MARKET,
+    fast: bool = False,
 ) -> tuple[HerdCandidate, dict[str, float], list[HerdCandidate]]:
     """T* を固定し、H の (β, horizon レンジ) をランダム探索で SF1-4 距離最小化(§5.2 拡張)。
 
     β 単独の grid では SF1/SF2 が埋まらなかったため、horizon レンジも探索空間に入れる。
-    返り値: (最良 HerdCandidate, T* の SF1-4 平均, 全 trial log)。
+    fast=True で kernel 高速経路。返り値: (最良 HerdCandidate, T* の SF1-4 平均, 全 trial log)。
     """
-    ref = sf_distribution("T", T_STAR_ALPHA, params, n_runs, base_seed=seed)
+    ref = sf_distribution("T", T_STAR_ALPHA, params, n_runs, base_seed=seed, fast=fast)
     sf_t_mean = {k: float(ref[:, i].mean()) for i, k in enumerate(CALIBRATION_SF)}
     srng = np.random.default_rng(seed)
 
@@ -165,7 +170,13 @@ def calibrate_search(
         lo = int(srng.integers(3, 21))
         hi = int(srng.integers(lo + 5, 61))
         h_dist = sf_distribution(
-            "H", beta, params, n_runs, base_seed=seed + 1000 * (trial + 1), hs_range=(lo, hi)
+            "H",
+            beta,
+            params,
+            n_runs,
+            base_seed=seed + 1000 * (trial + 1),
+            hs_range=(lo, hi),
+            fast=fast,
         )
         dist = sliced_wasserstein(ref, h_dist)
         cand = HerdCandidate(

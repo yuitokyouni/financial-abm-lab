@@ -21,7 +21,12 @@ import numpy.typing as npt
 from provabm.capture import CaptureLevel, CaptureSink
 from toy.agents.herd import build_herd_population
 from toy.agents.trend import build_trend_population
-from toy.calibration import CALIB_MARKET, T_STAR_ALPHA, calibrate_sf_equivalent
+from toy.calibration import (
+    CALIB_MARKET,
+    T_STAR_ALPHA,
+    calibrate_search,
+    calibrate_sf_equivalent,
+)
 from toy.classifiers import sf_cnn_cv_accuracy, sf_summary_cv_accuracy
 from toy.kernel import run_fast
 from toy.market import MarketParams, run_simulation
@@ -114,6 +119,12 @@ def main() -> None:
         help="H の (herder,fund,noise) を直接指定し校正を skip(smoke 用)",
     )
     ap.add_argument("--fast", action="store_true", help="kernel 高速経路(~150x、bulk screening)")
+    ap.add_argument(
+        "--search",
+        action="store_true",
+        help="richer 探索(β+horizon、§5.2 拡張)で校正。coarse は β のみで SF1/SF2 を埋められない",
+    )
+    ap.add_argument("--trials", type=int, default=60, help="--search の試行数")
     args = ap.parse_args()
 
     from dataclasses import replace
@@ -127,9 +138,28 @@ def main() -> None:
         )
     print(f"[market] N={params.n_agents} burn_in={params.burn_in} measure={params.measure}")
 
+    hs_range: tuple[int, int] | None = None
     if args.beta is not None:
         beta = (float(args.beta[0]), float(args.beta[1]), float(args.beta[2]))
         print(f"[calibrate] SKIPPED — fixed H β={beta} (smoke)")
+    elif args.search:
+        print(
+            f"[calibrate] richer search (β+horizon), "
+            f"trials={args.trials}, n_runs={args.calib_runs} ..."
+        )
+        cand, sf_t, _log = calibrate_search(
+            seed=args.seed,
+            n_trials=args.trials,
+            n_runs=args.calib_runs,
+            params=params,
+            fast=args.fast,
+        )
+        beta = cand.beta
+        hs_range = cand.hs_range
+        b3 = tuple(round(b, 3) for b in beta)
+        print(f"[calibrate] H* β={b3} hs={hs_range} dist={cand.distance:.3f}")
+        print(f"           T* SF1-4={ {k: round(v, 3) for k, v in sf_t.items()} }")
+        print(f"           H* SF1-4={ {k: round(v, 3) for k, v in cand.sf_h.items()} }")
     else:
         print(f"[calibrate] T* α={T_STAR_ALPHA}, coarse grid, n_runs={args.calib_runs} ...")
         pair, _log = calibrate_sf_equivalent(
@@ -143,14 +173,25 @@ def main() -> None:
     mode = "fast(kernel)" if args.fast else "reference"
     print(f"[generate] M={args.m} runs each: T*, T*'(Null-1), H*  [{mode}] ...")
 
-    def gen(model: str, mix: tuple[float, float, float], off: int) -> RunSet:
+    def gen(
+        model: str,
+        mix: tuple[float, float, float],
+        off: int,
+        hsr: tuple[int, int] | None = None,
+    ) -> RunSet:
         return generate_runs(
-            model, mix, n_runs=args.m, base_seed=args.seed + off, params=params, fast=args.fast
+            model,
+            mix,
+            n_runs=args.m,
+            base_seed=args.seed + off,
+            params=params,
+            hs_range=hsr,
+            fast=args.fast,
         )
 
     t1 = gen("T", T_STAR_ALPHA, 10_000)
     t2 = gen("T", T_STAR_ALPHA, 20_000)
-    h1 = gen("H", beta, 30_000)
+    h1 = gen("H", beta, 30_000, hs_range)
 
     print("[classify] Null-1 (T* vs T*') ...")
     n_lr, n_cnn = _classify(t1, t2, cnn_epochs=args.cnn_epochs, seed=args.seed)
