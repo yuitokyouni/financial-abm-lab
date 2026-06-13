@@ -97,11 +97,17 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=2026)
     ap.add_argument("--measure", type=int, default=0, help=">0 で measure を上書き(smoke)")
     ap.add_argument("--burnin", type=int, default=0, help=">0 で burn_in を上書き(smoke)")
-    ap.add_argument("--beta", type=float, nargs=3, default=None,
-                    help="H の (herder,fund,noise) を直接指定し校正を skip(smoke 用)")
+    ap.add_argument(
+        "--beta",
+        type=float,
+        nargs=3,
+        default=None,
+        help="H の (herder,fund,noise) を直接指定し校正を skip(smoke 用)",
+    )
     args = ap.parse_args()
 
     from dataclasses import replace
+
     params = CALIB_MARKET
     if args.measure or args.burnin:
         params = replace(
@@ -137,12 +143,19 @@ def main() -> None:
     e_lr, e_cnn = _classify(t1, h1, cnn_epochs=args.cnn_epochs, seed=args.seed)
 
     print("\n==================== §14 step 1-2 ====================")
-    print(f"Null-1  (must be 50±3%): LR={n_lr:.3f}  CNN={n_cnn:.3f}  "
-          f"-> {'OK' if max(abs(n_lr - .5), abs(n_cnn - .5)) <= 0.03 else 'BROKEN'}")
-    print(f"Equiv   (Pass<=0.55):    LR={e_lr:.3f} [{_verdict(e_lr)}]  "
-          f"CNN={e_cnn:.3f} [{_verdict(e_cnn)}]")
-    overall = "PASS" if e_lr <= 0.55 and e_cnn <= 0.55 else (
-        "SOFT-FAIL" if e_lr <= 0.60 and e_cnn <= 0.60 else "HARD-FAIL")
+    print(
+        f"Null-1  (must be 50±3%): LR={n_lr:.3f}  CNN={n_cnn:.3f}  "
+        f"-> {'OK' if max(abs(n_lr - 0.5), abs(n_cnn - 0.5)) <= 0.03 else 'BROKEN'}"
+    )
+    print(
+        f"Equiv   (Pass<=0.55):    LR={e_lr:.3f} [{_verdict(e_lr)}]  "
+        f"CNN={e_cnn:.3f} [{_verdict(e_cnn)}]"
+    )
+    overall = (
+        "PASS"
+        if e_lr <= 0.55 and e_cnn <= 0.55
+        else ("SOFT-FAIL" if e_lr <= 0.60 and e_cnn <= 0.60 else "HARD-FAIL")
+    )
     print(f"Equivalence verdict (both classifiers): {overall}")
     print("======================================================")
     print(f"注: toy scale (N=150, M={args.m}); paper-grade は N=500/M=1000 で別途事前登録。")
