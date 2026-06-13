@@ -39,6 +39,19 @@ spec 当初の O1 は対象を "SG/CI/ZI/LM/FW" と記したが、これは PRIS
 ADR 0001 の通り、CI/ZI/FW は本物 SG とは別モデルとして**独立**して置く (1クラスに混ぜない)。
 intervention framework (NER/介入応答) の本格移行は別 spec (intervention_atlas) で扱う。
 
+### experiment の core-import 移行状況 (O1 "全 experiments")
+
+| experiment | 状態 | 備考 |
+|---|---|---|
+| YH001-004 (古典) | ✓ core import | `experiments/classical/baseline.py` |
+| YH005 / YH005_1 (SG) | ✓ core import | `experiments/speculation_game/baseline.py` |
+| YH006 / YH006_1 (SG on LOB) | ⬜ 未移行 | **`packages/market` (LOB エンジン) の構築が前提**。SG-on-LOB は別モデル。Stage B 次チャンク |
+| YH007 (self-organized SG on LOB) | — | upstream 未実装 (統合対象なし) |
+| YH008 (LLM-as-agent) | ⬜ 未移行 | LLM/GPU 必須。`packages` 外の別系譜 (FCLAgent)。本環境で実行不能 |
+
+→ O1 の「全 experiments」完遂には market(LOB)パッケージ化と LLM 系譜の扱いが残る (将来フェーズ)。
+本フェーズでは **8モデルの core 化 + 古典/SG experiment の core-import** までを達成。
+
 ---
 
 ## 1. 動機 (Why)
