@@ -15,6 +15,7 @@ dependencies = [
     "tqdm",
     "abm-models",
     "stylized-facts",
+    "provenance",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +33,7 @@ members = ["packages/*"]
 [tool.uv.sources]
 abm-models = { workspace = true }
 stylized-facts = { workspace = true }
+provenance = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "packages"]
