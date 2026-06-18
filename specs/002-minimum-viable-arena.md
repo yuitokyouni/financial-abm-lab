@@ -1,9 +1,31 @@
 # Spec 002 — Minimum Viable Arena (Intervention Atlas)
 
-- Status: draft v1 (2026-06-18)
+- Status: draft v1 (2026-06-18) / §13 immediate tasks implemented (see Implementation status)
 - Author: Yuito
-- Depends on: `specs/001-monorepo-consolidation.md` (Stage B canonicalization), `imported/PROV-ABM-atlas/docs/program_claims_v1.md` (P1), `imported/PROV-ABM-atlas/docs/model_contract_v0.md`
+- Depends on: `specs/001-monorepo-consolidation.md` (Stage B canonicalization), `imported/PROV-ABM-atlas/docs/program_claims_v1.md` (P1), `docs/model_contract_v1.md`
 - Decisions: center = reference atlas / submission gate = CI, semantic labeling = frozen registry / scoring = profile, not scalar rank / ignition gated on P1 GO + diagnostic case
+
+---
+
+## Implementation status (2026-06-18)
+
+The §13 immediate tasks are implemented in **`packages/atlas/`** (uv workspace member):
+
+| §13 task | Implementation | State |
+|---|---|---|
+| 1. contract v1 | `docs/model_contract_v1.md` + `atlas.contract` (C0/C1/C2, `ContractModel`) | done |
+| 2. six profile axes as schemas | `atlas.profiles` (`ScoringProfile`, GT-free axes) | done |
+| 3. every model emits a row | `atlas.row.emit_row` over `abm_models.REGISTRY` + `atlas.registry` | done |
+| 4. P1 intervention schemes | `atlas.intervention` (4 B2 schemes, θ=0 identity, property-tested) | done (library) |
+| 5. first internal reference atlas | `atlas.reference_atlas` → `docs/atlas/reference_atlas_v0.json` (8 rows) | done |
+| 6. freeze ignition rule | `atlas.ignition.require_ignition` (gated features raise until P1 GO + diagnostic) | done |
+
+**Honest current state**: the reference atlas reports `launch_ready = False`. The
+single blocking criterion is §10.4 (an intervention dimension separating models not
+separated by SF): canonical models are C0/C2 with **no exposed C1 channel** yet, so
+the intervention-response column is `pending_c1` for every row. This is the true
+state (the order-book channel work, PROV-ABM-atlas Finding 0002, is what unlocks
+C1) and is recorded, not faked. All other launch criteria (§10.1-3, 5-6) are met.
 
 ---
 

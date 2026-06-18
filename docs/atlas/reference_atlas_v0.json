@@ -1,0 +1,1184 @@
+{
+  "schema_version": "0.1.0",
+  "kind": "internal_reference_atlas",
+  "generated_at_utc": "2026-06-18T08:34:58.524147+00:00",
+  "spec": "specs/002-minimum-viable-arena.md",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "n_rows": 8,
+  "diversity_coverage": {
+    "null_or_negative_control": [
+      "zero_intelligence",
+      "cont_bouchaud"
+    ],
+    "stylized_facts_oriented": [
+      "cont_bouchaud"
+    ],
+    "learning_or_feedback": [
+      "lux_marchesi",
+      "franke_westerhoff",
+      "speculation_game"
+    ],
+    "order_book_or_microstructure": [
+      "chiarella_iori"
+    ],
+    "known_failure_or_non_separation": [
+      "minority_game",
+      "gcmg"
+    ],
+    "used_in_p1_intervention_experiment": [
+      "chiarella_iori"
+    ]
+  },
+  "rows": [
+    {
+      "name": "zero_intelligence",
+      "model_family": "null/zero-intelligence",
+      "mechanism_label": "ZI constrained (budget-constrained random orders)",
+      "reference": "Gode & Sunder 1993; Farmer-Patelli-Zovko 2005",
+      "contract_status": "C2",
+      "declared_channels": [],
+      "exposed_channels": [],
+      "sf_profile": {
+        "n_valid": 2000,
+        "std": 0.0013892398694534936,
+        "ret_acf": {
+          "1": -0.005334932435595181,
+          "14": -0.018786775371039708,
+          "50": 0.011099805055729847,
+          "200": 0.0013034424446089243
+        },
+        "vol_acf": {
+          "1": 0.014358493915026018,
+          "14": -0.0006333449017752966,
+          "50": -0.012935953547996109,
+          "200": 0.0030538836569595365
+        },
+        "kurt": {
+          "1": -0.009726921311939751,
+          "16": 0.7413447742610844,
+          "64": -0.9365349621606751,
+          "256": -0.3224585599183931,
+          "640": NaN
+        },
+        "hill_alpha": 7.149840876286526
+      },
+      "intervention_response_signature": null,
+      "intervention_response_status": "pending_c1",
+      "claim_admissibility_profile": {
+        "reach_claim": "reported",
+        "declared_claims": [
+          "reported"
+        ],
+        "admissible": [
+          "reported"
+        ],
+        "rejected": [],
+        "score": 1.0
+      },
+      "audit_profile": {
+        "prov_field_completeness": 1.0,
+        "determinism_verified": true,
+        "may_must_gap": null,
+        "score": 1.0
+      },
+      "replication_stability": {
+        "n_seeds": 5,
+        "metric_cv": {
+          "std": 0.01685799307304289,
+          "hill_alpha": 0.1439149262317961,
+          "kurt_w1": 0.7173466172652363,
+          "vol_acf_lag1": 7.378789740469806
+        },
+        "score": 0.3263465454127947,
+        "note": ""
+      },
+      "failure_transparency_note": {
+        "has_failure": false,
+        "taxonomy": null,
+        "structured": true,
+        "score": 1.0,
+        "note": "no failure to report"
+      },
+      "scoring_profile": {
+        "claim_admissibility": {
+          "reach_claim": "reported",
+          "declared_claims": [
+            "reported"
+          ],
+          "admissible": [
+            "reported"
+          ],
+          "rejected": [],
+          "score": 1.0
+        },
+        "audit_completeness": {
+          "prov_field_completeness": 1.0,
+          "determinism_verified": true,
+          "may_must_gap": null,
+          "score": 1.0
+        },
+        "intervention_coverage": {
+          "n_exposed_channels": 0,
+          "n_schemes": 4,
+          "n_covered": 0,
+          "score": 0.0
+        },
+        "mechanism_separability": {
+          "status": "pending_c1",
+          "declared_channels": [],
+          "separating_dims": [],
+          "reason": "no exposed C1 channel yet; intervention-response not computed"
+        },
+        "replication_stability": {
+          "n_seeds": 5,
+          "metric_cv": {
+            "std": 0.01685799307304289,
+            "hill_alpha": 0.1439149262317961,
+            "kurt_w1": 0.7173466172652363,
+            "vol_acf_lag1": 7.378789740469806
+          },
+          "score": 0.3263465454127947,
+          "note": ""
+        },
+        "failure_transparency": {
+          "has_failure": false,
+          "taxonomy": null,
+          "structured": true,
+          "score": 1.0,
+          "note": "no failure to report"
+        }
+      },
+      "radar": {
+        "claim_admissibility": 1.0,
+        "audit_completeness": 1.0,
+        "intervention_coverage": 0.0,
+        "mechanism_separability": null,
+        "replication_stability": 0.3263465454127947,
+        "failure_transparency": 1.0
+      },
+      "provenance": {
+        "uuid": "a6f3dee7-3bc6-48f8-b0b8-349e7e0e6b57",
+        "model": "zero_intelligence",
+        "config_hash": "2d43568e851117a246653e0b20b4cf3d4b7a48602ee762c542de78b22ab97423",
+        "config": {
+          "n_agents": 100,
+          "n_steps": 2000
+        },
+        "seed": 1,
+        "output_sha256": "86ac751a4141d8a2b562851205c9950e6dc8fe1827a1e63a6ce0804e598c9d01",
+        "reach_claim": "reported"
+      },
+      "diversity_tags": [
+        "null_or_negative_control"
+      ]
+    },
+    {
+      "name": "cont_bouchaud",
+      "model_family": "stylized-facts/percolation",
+      "mechanism_label": "Cont-Bouchaud herding (exogenous cluster formation)",
+      "reference": "Cont & Bouchaud 1997",
+      "contract_status": "C2",
+      "declared_channels": [],
+      "exposed_channels": [],
+      "sf_profile": {
+        "n_valid": 400,
+        "std": 5.09134314302228,
+        "ret_acf": {
+          "1": -0.02193056843721655,
+          "14": 0.00202780782713923,
+          "50": -0.10162181629702667,
+          "200": -0.03619447356517832
+        },
+        "vol_acf": {
+          "1": -0.07437285264857395,
+          "14": -0.06644543803947038,
+          "50": 0.030156433113708282,
+          "200": -0.05423497205394737
+        },
+        "kurt": {
+          "1": 13.089005829155791,
+          "16": 0.6292258930123888,
+          "64": -0.5043477052088221,
+          "256": NaN,
+          "640": NaN
+        },
+        "hill_alpha": 3.123400670859564
+      },
+      "intervention_response_signature": null,
+      "intervention_response_status": "pending_c1",
+      "claim_admissibility_profile": {
+        "reach_claim": "reported",
+        "declared_claims": [
+          "reported"
+        ],
+        "admissible": [
+          "reported"
+        ],
+        "rejected": [],
+        "score": 1.0
+      },
+      "audit_profile": {
+        "prov_field_completeness": 1.0,
+        "determinism_verified": true,
+        "may_must_gap": null,
+        "score": 1.0
+      },
+      "replication_stability": {
+        "n_seeds": 5,
+        "metric_cv": {
+          "std": 0.10197910850211879,
+          "hill_alpha": 0.2839138088759064,
+          "kurt_w1": 0.5777203121994957,
+          "vol_acf_lag1": 10.222997074651992
+        },
+        "score": 0.2633899151864053,
+        "note": ""
+      },
+      "failure_transparency_note": {
+        "has_failure": false,
+        "taxonomy": null,
+        "structured": true,
+        "score": 1.0,
+        "note": "no failure to report"
+      },
+      "scoring_profile": {
+        "claim_admissibility": {
+          "reach_claim": "reported",
+          "declared_claims": [
+            "reported"
+          ],
+          "admissible": [
+            "reported"
+          ],
+          "rejected": [],
+          "score": 1.0
+        },
+        "audit_completeness": {
+          "prov_field_completeness": 1.0,
+          "determinism_verified": true,
+          "may_must_gap": null,
+          "score": 1.0
+        },
+        "intervention_coverage": {
+          "n_exposed_channels": 0,
+          "n_schemes": 4,
+          "n_covered": 0,
+          "score": 0.0
+        },
+        "mechanism_separability": {
+          "status": "pending_c1",
+          "declared_channels": [],
+          "separating_dims": [],
+          "reason": "no exposed C1 channel yet; intervention-response not computed"
+        },
+        "replication_stability": {
+          "n_seeds": 5,
+          "metric_cv": {
+            "std": 0.10197910850211879,
+            "hill_alpha": 0.2839138088759064,
+            "kurt_w1": 0.5777203121994957,
+            "vol_acf_lag1": 10.222997074651992
+          },
+          "score": 0.2633899151864053,
+          "note": ""
+        },
+        "failure_transparency": {
+          "has_failure": false,
+          "taxonomy": null,
+          "structured": true,
+          "score": 1.0,
+          "note": "no failure to report"
+        }
+      },
+      "radar": {
+        "claim_admissibility": 1.0,
+        "audit_completeness": 1.0,
+        "intervention_coverage": 0.0,
+        "mechanism_separability": null,
+        "replication_stability": 0.2633899151864053,
+        "failure_transparency": 1.0
+      },
+      "provenance": {
+        "uuid": "1a6bb159-051a-427f-806d-6d0ab655a1b1",
+        "model": "cont_bouchaud",
+        "config_hash": "b43a3dab7a656b0d1aa7ebc446b88ffe5ae7c4948e1e84f31586153fa253e01b",
+        "config": {
+          "N": 300,
+          "c": 0.9,
+          "a": 0.01,
+          "T": 400,
+          "report_every": 0
+        },
+        "seed": 1,
+        "output_sha256": "b35392011d3021a166d09bec0223388698920da7d6e335cddb3a8a0f33d2f48e",
+        "reach_claim": "reported"
+      },
+      "diversity_tags": [
+        "stylized_facts_oriented",
+        "null_or_negative_control"
+      ]
+    },
+    {
+      "name": "lux_marchesi",
+      "model_family": "learning/feedback",
+      "mechanism_label": "Lux-Marchesi chartist/fundamentalist switching",
+      "reference": "Lux & Marchesi 2000",
+      "contract_status": "C2",
+      "declared_channels": [
+        "price_returns",
+        "agg_action"
+      ],
+      "exposed_channels": [],
+      "sf_profile": {
+        "n_valid": 2000,
+        "std": 0.0032220869297551096,
+        "ret_acf": {
+          "1": 0.26554948342201307,
+          "14": -0.08167128837678148,
+          "50": 0.052364404068049486,
+          "200": -0.022126542437986157
+        },
+        "vol_acf": {
+          "1": 0.2510462702500972,
+          "14": 0.17356655018764308,
+          "50": 0.16666314744564334,
+          "200": -0.013931600172930042
+        },
+        "kurt": {
+          "1": 0.710611455818404,
+          "16": 0.8698316013981069,
+          "64": 0.39868912583971916,
+          "256": -0.7794757961140446,
+          "640": NaN
+        },
+        "hill_alpha": 6.9301181833771555
+      },
+      "intervention_response_signature": null,
+      "intervention_response_status": "pending_c1",
+      "claim_admissibility_profile": {
+        "reach_claim": "reported",
+        "declared_claims": [
+          "reported"
+        ],
+        "admissible": [
+          "reported"
+        ],
+        "rejected": [],
+        "score": 1.0
+      },
+      "audit_profile": {
+        "prov_field_completeness": 1.0,
+        "determinism_verified": true,
+        "may_must_gap": null,
+        "score": 1.0
+      },
+      "replication_stability": {
+        "n_seeds": 5,
+        "metric_cv": {
+          "std": 0.2564291526594786,
+          "hill_alpha": 0.4166952017725221,
+          "kurt_w1": 0.2093523720746336,
+          "vol_acf_lag1": 0.38894558739963186
+        },
+        "score": 0.7588084888300085,
+        "note": ""
+      },
+      "failure_transparency_note": {
+        "has_failure": false,
+        "taxonomy": null,
+        "structured": true,
+        "score": 1.0,
+        "note": "no failure to report"
+      },
+      "scoring_profile": {
+        "claim_admissibility": {
+          "reach_claim": "reported",
+          "declared_claims": [
+            "reported"
+          ],
+          "admissible": [
+            "reported"
+          ],
+          "rejected": [],
+          "score": 1.0
+        },
+        "audit_completeness": {
+          "prov_field_completeness": 1.0,
+          "determinism_verified": true,
+          "may_must_gap": null,
+          "score": 1.0
+        },
+        "intervention_coverage": {
+          "n_exposed_channels": 0,
+          "n_schemes": 4,
+          "n_covered": 0,
+          "score": 0.0
+        },
+        "mechanism_separability": {
+          "status": "pending_c1",
+          "declared_channels": [
+            "price_returns",
+            "agg_action"
+          ],
+          "separating_dims": [],
+          "reason": "no exposed C1 channel yet; intervention-response not computed"
+        },
+        "replication_stability": {
+          "n_seeds": 5,
+          "metric_cv": {
+            "std": 0.2564291526594786,
+            "hill_alpha": 0.4166952017725221,
+            "kurt_w1": 0.2093523720746336,
+            "vol_acf_lag1": 0.38894558739963186
+          },
+          "score": 0.7588084888300085,
+          "note": ""
+        },
+        "failure_transparency": {
+          "has_failure": false,
+          "taxonomy": null,
+          "structured": true,
+          "score": 1.0,
+          "note": "no failure to report"
+        }
+      },
+      "radar": {
+        "claim_admissibility": 1.0,
+        "audit_completeness": 1.0,
+        "intervention_coverage": 0.0,
+        "mechanism_separability": null,
+        "replication_stability": 0.7588084888300085,
+        "failure_transparency": 1.0
+      },
+      "provenance": {
+        "uuid": "f2cd35ae-5760-416d-893f-2c5e33e75ef1",
+        "model": "lux_marchesi",
+        "config_hash": "3541f730b93cc990d22dcb24aa345c0c8199ce03312742fd0210a46e83c4ed47",
+        "config": {
+          "n_integer_steps": 2000,
+          "steps_per_unit": 10,
+          "n_c_init": 50
+        },
+        "seed": 1,
+        "output_sha256": "460417ed0d40c6addc2128bc94bdaebc204291c50afba19ddcb34dccb1717d69",
+        "reach_claim": "reported"
+      },
+      "diversity_tags": [
+        "learning_or_feedback"
+      ]
+    },
+    {
+      "name": "franke_westerhoff",
+      "model_family": "learning/sentiment",
+      "mechanism_label": "Franke-Westerhoff sentiment herding",
+      "reference": "Franke & Westerhoff 2012",
+      "contract_status": "C2",
+      "declared_channels": [
+        "price_returns",
+        "agg_action"
+      ],
+      "exposed_channels": [],
+      "sf_profile": {
+        "n_valid": 2000,
+        "std": 0.0077692268832903096,
+        "ret_acf": {
+          "1": 0.5293394118395013,
+          "14": -0.012098436331278004,
+          "50": 0.012852827939813141,
+          "200": -0.040116080041324075
+        },
+        "vol_acf": {
+          "1": 0.337418089059264,
+          "14": 0.0027989490126530125,
+          "50": -0.013453962084155778,
+          "200": 0.018046972232171853
+        },
+        "kurt": {
+          "1": 0.4814076277830077,
+          "16": 0.16709624161414016,
+          "64": 0.017565289468247425,
+          "256": -1.6075123332199952,
+          "640": NaN
+        },
+        "hill_alpha": 6.5305005424168145
+      },
+      "intervention_response_signature": null,
+      "intervention_response_status": "pending_c1",
+      "claim_admissibility_profile": {
+        "reach_claim": "reported",
+        "declared_claims": [
+          "reported"
+        ],
+        "admissible": [
+          "reported"
+        ],
+        "rejected": [],
+        "score": 1.0
+      },
+      "audit_profile": {
+        "prov_field_completeness": 1.0,
+        "determinism_verified": true,
+        "may_must_gap": null,
+        "score": 1.0
+      },
+      "replication_stability": {
+        "n_seeds": 5,
+        "metric_cv": {
+          "std": 0.03484080647074965,
+          "hill_alpha": 0.11385148859419876,
+          "kurt_w1": 0.38046540062214085,
+          "vol_acf_lag1": 0.1398256678705319
+        },
+        "score": 0.8567175525234948,
+        "note": ""
+      },
+      "failure_transparency_note": {
+        "has_failure": false,
+        "taxonomy": null,
+        "structured": true,
+        "score": 1.0,
+        "note": "no failure to report"
+      },
+      "scoring_profile": {
+        "claim_admissibility": {
+          "reach_claim": "reported",
+          "declared_claims": [
+            "reported"
+          ],
+          "admissible": [
+            "reported"
+          ],
+          "rejected": [],
+          "score": 1.0
+        },
+        "audit_completeness": {
+          "prov_field_completeness": 1.0,
+          "determinism_verified": true,
+          "may_must_gap": null,
+          "score": 1.0
+        },
+        "intervention_coverage": {
+          "n_exposed_channels": 0,
+          "n_schemes": 4,
+          "n_covered": 0,
+          "score": 0.0
+        },
+        "mechanism_separability": {
+          "status": "pending_c1",
+          "declared_channels": [
+            "price_returns",
+            "agg_action"
+          ],
+          "separating_dims": [],
+          "reason": "no exposed C1 channel yet; intervention-response not computed"
+        },
+        "replication_stability": {
+          "n_seeds": 5,
+          "metric_cv": {
+            "std": 0.03484080647074965,
+            "hill_alpha": 0.11385148859419876,
+            "kurt_w1": 0.38046540062214085,
+            "vol_acf_lag1": 0.1398256678705319
+          },
+          "score": 0.8567175525234948,
+          "note": ""
+        },
+        "failure_transparency": {
+          "has_failure": false,
+          "taxonomy": null,
+          "structured": true,
+          "score": 1.0,
+          "note": "no failure to report"
+        }
+      },
+      "radar": {
+        "claim_admissibility": 1.0,
+        "audit_completeness": 1.0,
+        "intervention_coverage": 0.0,
+        "mechanism_separability": null,
+        "replication_stability": 0.8567175525234948,
+        "failure_transparency": 1.0
+      },
+      "provenance": {
+        "uuid": "7cf4dc26-657c-497b-be61-5ae7626f9808",
+        "model": "franke_westerhoff",
+        "config_hash": "c50f9913f59102cfa0bf9a25b3fd983ac162bb7f4bc31c0aadf3d5918da5d34d",
+        "config": {
+          "n_steps": 2000
+        },
+        "seed": 1,
+        "output_sha256": "2cabd98a9d39bedb45c9ec6d230143d484f2ac3c57a8dea4be9bb4578a372639",
+        "reach_claim": "reported"
+      },
+      "diversity_tags": [
+        "learning_or_feedback"
+      ]
+    },
+    {
+      "name": "chiarella_iori",
+      "model_family": "order-book/microstructure",
+      "mechanism_label": "Chiarella-Iori order-book (fund/chart/noise on a CLOB)",
+      "reference": "Chiarella, Iori & Perell\u00f3 2009",
+      "contract_status": "C2",
+      "declared_channels": [
+        "price_returns",
+        "fundamental"
+      ],
+      "exposed_channels": [],
+      "sf_profile": {
+        "n_valid": 2000,
+        "std": 0.00020048903794444716,
+        "ret_acf": {
+          "1": -0.0028550051728987815,
+          "14": 0.019334233319253918,
+          "50": -0.01256703704072588,
+          "200": -0.03244818606778933
+        },
+        "vol_acf": {
+          "1": -0.3903329696486853,
+          "14": 0.007757321878580167,
+          "50": 0.005953814780967594,
+          "200": -0.00023335372722682008
+        },
+        "kurt": {
+          "1": -1.9985865930967217,
+          "16": -0.6119439391079582,
+          "64": -0.5875893591622341,
+          "256": -1.473003371559491,
+          "640": NaN
+        },
+        "hill_alpha": 106.63359661782319
+      },
+      "intervention_response_signature": null,
+      "intervention_response_status": "pending_c1",
+      "claim_admissibility_profile": {
+        "reach_claim": "reported",
+        "declared_claims": [
+          "reported"
+        ],
+        "admissible": [
+          "reported"
+        ],
+        "rejected": [],
+        "score": 1.0
+      },
+      "audit_profile": {
+        "prov_field_completeness": 1.0,
+        "determinism_verified": true,
+        "may_must_gap": null,
+        "score": 1.0
+      },
+      "replication_stability": {
+        "n_seeds": 5,
+        "metric_cv": {
+          "std": 0.003130858780934775,
+          "hill_alpha": 0.011534282003490787,
+          "kurt_w1": 0.0003723974762005119,
+          "vol_acf_lag1": 0.04609642286424655
+        },
+        "score": 0.9849465785393743,
+        "note": ""
+      },
+      "failure_transparency_note": {
+        "has_failure": false,
+        "taxonomy": null,
+        "structured": true,
+        "score": 1.0,
+        "note": "no failure to report"
+      },
+      "scoring_profile": {
+        "claim_admissibility": {
+          "reach_claim": "reported",
+          "declared_claims": [
+            "reported"
+          ],
+          "admissible": [
+            "reported"
+          ],
+          "rejected": [],
+          "score": 1.0
+        },
+        "audit_completeness": {
+          "prov_field_completeness": 1.0,
+          "determinism_verified": true,
+          "may_must_gap": null,
+          "score": 1.0
+        },
+        "intervention_coverage": {
+          "n_exposed_channels": 0,
+          "n_schemes": 4,
+          "n_covered": 0,
+          "score": 0.0
+        },
+        "mechanism_separability": {
+          "status": "pending_c1",
+          "declared_channels": [
+            "price_returns",
+            "fundamental"
+          ],
+          "separating_dims": [],
+          "reason": "no exposed C1 channel yet; intervention-response not computed"
+        },
+        "replication_stability": {
+          "n_seeds": 5,
+          "metric_cv": {
+            "std": 0.003130858780934775,
+            "hill_alpha": 0.011534282003490787,
+            "kurt_w1": 0.0003723974762005119,
+            "vol_acf_lag1": 0.04609642286424655
+          },
+          "score": 0.9849465785393743,
+          "note": ""
+        },
+        "failure_transparency": {
+          "has_failure": false,
+          "taxonomy": null,
+          "structured": true,
+          "score": 1.0,
+          "note": "no failure to report"
+        }
+      },
+      "radar": {
+        "claim_admissibility": 1.0,
+        "audit_completeness": 1.0,
+        "intervention_coverage": 0.0,
+        "mechanism_separability": null,
+        "replication_stability": 0.9849465785393743,
+        "failure_transparency": 1.0
+      },
+      "provenance": {
+        "uuid": "c30e3bca-9f93-41d1-b8f2-f45202c9b90a",
+        "model": "chiarella_iori",
+        "config_hash": "c50f9913f59102cfa0bf9a25b3fd983ac162bb7f4bc31c0aadf3d5918da5d34d",
+        "config": {
+          "n_steps": 2000
+        },
+        "seed": 1,
+        "output_sha256": "a67181c744e0722522b045369d995ae54b0b58a37399c5f12bb655365533264e",
+        "reach_claim": "reported"
+      },
+      "diversity_tags": [
+        "order_book_or_microstructure",
+        "used_in_p1_intervention_experiment"
+      ]
+    },
+    {
+      "name": "speculation_game",
+      "model_family": "learning/strategy",
+      "mechanism_label": "Speculation Game (Katahira-Chen inductive speculation)",
+      "reference": "Katahira & Chen 2019",
+      "contract_status": "C2",
+      "declared_channels": [
+        "price_returns"
+      ],
+      "exposed_channels": [],
+      "sf_profile": {
+        "n_valid": 1999,
+        "std": 0.0025281217262526747,
+        "ret_acf": {
+          "1": -0.15798115038638536,
+          "14": 0.01975213166686386,
+          "50": 0.028884505408561002,
+          "200": 0.025583832677433145
+        },
+        "vol_acf": {
+          "1": 0.04612220918377982,
+          "14": 0.046931765454990004,
+          "50": 0.05677806474473425,
+          "200": -0.030486118949888296
+        },
+        "kurt": {
+          "1": 0.9491559546914523,
+          "16": 1.5979626380006957,
+          "64": 5.178093815742594,
+          "256": -0.06017056124179998,
+          "640": NaN
+        },
+        "hill_alpha": 5.00955267848558
+      },
+      "intervention_response_signature": null,
+      "intervention_response_status": "pending_c1",
+      "claim_admissibility_profile": {
+        "reach_claim": "reported",
+        "declared_claims": [
+          "reported"
+        ],
+        "admissible": [
+          "reported"
+        ],
+        "rejected": [],
+        "score": 1.0
+      },
+      "audit_profile": {
+        "prov_field_completeness": 1.0,
+        "determinism_verified": true,
+        "may_must_gap": null,
+        "score": 1.0
+      },
+      "replication_stability": {
+        "n_seeds": 5,
+        "metric_cv": {
+          "std": 0.13922859208043478,
+          "hill_alpha": 0.14980990886781034,
+          "kurt_w1": 0.3377587219385752,
+          "vol_acf_lag1": 0.24658005361111096
+        },
+        "score": 0.8207860325713278,
+        "note": ""
+      },
+      "failure_transparency_note": {
+        "has_failure": false,
+        "taxonomy": null,
+        "structured": true,
+        "score": 1.0,
+        "note": "no failure to report"
+      },
+      "scoring_profile": {
+        "claim_admissibility": {
+          "reach_claim": "reported",
+          "declared_claims": [
+            "reported"
+          ],
+          "admissible": [
+            "reported"
+          ],
+          "rejected": [],
+          "score": 1.0
+        },
+        "audit_completeness": {
+          "prov_field_completeness": 1.0,
+          "determinism_verified": true,
+          "may_must_gap": null,
+          "score": 1.0
+        },
+        "intervention_coverage": {
+          "n_exposed_channels": 0,
+          "n_schemes": 4,
+          "n_covered": 0,
+          "score": 0.0
+        },
+        "mechanism_separability": {
+          "status": "pending_c1",
+          "declared_channels": [
+            "price_returns"
+          ],
+          "separating_dims": [],
+          "reason": "no exposed C1 channel yet; intervention-response not computed"
+        },
+        "replication_stability": {
+          "n_seeds": 5,
+          "metric_cv": {
+            "std": 0.13922859208043478,
+            "hill_alpha": 0.14980990886781034,
+            "kurt_w1": 0.3377587219385752,
+            "vol_acf_lag1": 0.24658005361111096
+          },
+          "score": 0.8207860325713278,
+          "note": ""
+        },
+        "failure_transparency": {
+          "has_failure": false,
+          "taxonomy": null,
+          "structured": true,
+          "score": 1.0,
+          "note": "no failure to report"
+        }
+      },
+      "radar": {
+        "claim_admissibility": 1.0,
+        "audit_completeness": 1.0,
+        "intervention_coverage": 0.0,
+        "mechanism_separability": null,
+        "replication_stability": 0.8207860325713278,
+        "failure_transparency": 1.0
+      },
+      "provenance": {
+        "uuid": "8b7671b2-edb5-4744-b683-bab4dc8f74d2",
+        "model": "speculation_game",
+        "config_hash": "834bceab4a0172217a9d53c8e00f7111cd234b68d1aa8f3c9c96a1a0ab4e1e36",
+        "config": {
+          "N": 200,
+          "M": 5,
+          "S": 2,
+          "T": 2000,
+          "backend": "vectorized"
+        },
+        "seed": 1,
+        "output_sha256": "6957ba76133a0c1baab15229a61aea688b407b41148ecbaa8c2145fb12e4c47d",
+        "reach_claim": "reported"
+      },
+      "diversity_tags": [
+        "learning_or_feedback"
+      ]
+    },
+    {
+      "name": "minority_game",
+      "model_family": "learning/inductive",
+      "mechanism_label": "Challet-Zhang Minority Game (attendance, price-less)",
+      "reference": "Challet & Zhang 1997",
+      "contract_status": "C2",
+      "declared_channels": [
+        "history"
+      ],
+      "exposed_channels": [],
+      "sf_profile": null,
+      "intervention_response_signature": null,
+      "intervention_response_status": "pending_c1",
+      "claim_admissibility_profile": {
+        "reach_claim": "reported",
+        "declared_claims": [
+          "reported"
+        ],
+        "admissible": [
+          "reported"
+        ],
+        "rejected": [],
+        "score": 1.0
+      },
+      "audit_profile": {
+        "prov_field_completeness": 1.0,
+        "determinism_verified": true,
+        "may_must_gap": null,
+        "score": 1.0
+      },
+      "replication_stability": {
+        "n_seeds": 5,
+        "metric_cv": {},
+        "score": 0.0,
+        "note": "price-less: return SF battery N/A"
+      },
+      "failure_transparency_note": {
+        "has_failure": true,
+        "taxonomy": "battery_non_applicable",
+        "structured": true,
+        "score": 1.0,
+        "note": ""
+      },
+      "scoring_profile": {
+        "claim_admissibility": {
+          "reach_claim": "reported",
+          "declared_claims": [
+            "reported"
+          ],
+          "admissible": [
+            "reported"
+          ],
+          "rejected": [],
+          "score": 1.0
+        },
+        "audit_completeness": {
+          "prov_field_completeness": 1.0,
+          "determinism_verified": true,
+          "may_must_gap": null,
+          "score": 1.0
+        },
+        "intervention_coverage": {
+          "n_exposed_channels": 0,
+          "n_schemes": 4,
+          "n_covered": 0,
+          "score": 0.0
+        },
+        "mechanism_separability": {
+          "status": "pending_c1",
+          "declared_channels": [
+            "history"
+          ],
+          "separating_dims": [],
+          "reason": "no exposed C1 channel yet; intervention-response not computed"
+        },
+        "replication_stability": {
+          "n_seeds": 5,
+          "metric_cv": {},
+          "score": 0.0,
+          "note": "price-less: return SF battery N/A"
+        },
+        "failure_transparency": {
+          "has_failure": true,
+          "taxonomy": "battery_non_applicable",
+          "structured": true,
+          "score": 1.0,
+          "note": ""
+        }
+      },
+      "radar": {
+        "claim_admissibility": 1.0,
+        "audit_completeness": 1.0,
+        "intervention_coverage": 0.0,
+        "mechanism_separability": null,
+        "replication_stability": 0.0,
+        "failure_transparency": 1.0
+      },
+      "provenance": {
+        "uuid": "2406b764-a2e9-485c-8587-dcc476c9a1bd",
+        "model": "minority_game",
+        "config_hash": "d980ff6982ca03f4fc866c33fd01a28b809bb4c9c2fc3654f365b1e2d5d6b1f3",
+        "config": {
+          "N": 101,
+          "M": 6,
+          "S": 2,
+          "T": 2000
+        },
+        "seed": 1,
+        "output_sha256": "84cbb04c3e5476b0b1d3016b06703d3db23705426d551a3b0d823aac973bf3a7",
+        "reach_claim": "reported"
+      },
+      "diversity_tags": [
+        "known_failure_or_non_separation"
+      ]
+    },
+    {
+      "name": "gcmg",
+      "model_family": "learning/grand-canonical",
+      "mechanism_label": "Grand-Canonical Minority Game (attendance, price-less)",
+      "reference": "Jefferies et al. 2001",
+      "contract_status": "C2",
+      "declared_channels": [
+        "history"
+      ],
+      "exposed_channels": [],
+      "sf_profile": null,
+      "intervention_response_signature": null,
+      "intervention_response_status": "pending_c1",
+      "claim_admissibility_profile": {
+        "reach_claim": "reported",
+        "declared_claims": [
+          "reported"
+        ],
+        "admissible": [
+          "reported"
+        ],
+        "rejected": [],
+        "score": 1.0
+      },
+      "audit_profile": {
+        "prov_field_completeness": 1.0,
+        "determinism_verified": true,
+        "may_must_gap": null,
+        "score": 1.0
+      },
+      "replication_stability": {
+        "n_seeds": 5,
+        "metric_cv": {},
+        "score": 0.0,
+        "note": "price-less: return SF battery N/A"
+      },
+      "failure_transparency_note": {
+        "has_failure": true,
+        "taxonomy": "battery_non_applicable",
+        "structured": true,
+        "score": 1.0,
+        "note": ""
+      },
+      "scoring_profile": {
+        "claim_admissibility": {
+          "reach_claim": "reported",
+          "declared_claims": [
+            "reported"
+          ],
+          "admissible": [
+            "reported"
+          ],
+          "rejected": [],
+          "score": 1.0
+        },
+        "audit_completeness": {
+          "prov_field_completeness": 1.0,
+          "determinism_verified": true,
+          "may_must_gap": null,
+          "score": 1.0
+        },
+        "intervention_coverage": {
+          "n_exposed_channels": 0,
+          "n_schemes": 4,
+          "n_covered": 0,
+          "score": 0.0
+        },
+        "mechanism_separability": {
+          "status": "pending_c1",
+          "declared_channels": [
+            "history"
+          ],
+          "separating_dims": [],
+          "reason": "no exposed C1 channel yet; intervention-response not computed"
+        },
+        "replication_stability": {
+          "n_seeds": 5,
+          "metric_cv": {},
+          "score": 0.0,
+          "note": "price-less: return SF battery N/A"
+        },
+        "failure_transparency": {
+          "has_failure": true,
+          "taxonomy": "battery_non_applicable",
+          "structured": true,
+          "score": 1.0,
+          "note": ""
+        }
+      },
+      "radar": {
+        "claim_admissibility": 1.0,
+        "audit_completeness": 1.0,
+        "intervention_coverage": 0.0,
+        "mechanism_separability": null,
+        "replication_stability": 0.0,
+        "failure_transparency": 1.0
+      },
+      "provenance": {
+        "uuid": "91566744-ab9c-46e6-b616-d803cb80655c",
+        "model": "gcmg",
+        "config_hash": "f33556ffc316f5329a925427b80f484a2abfdbb065bd3afb435c83f00a97283a",
+        "config": {
+          "N": 101,
+          "M": 2,
+          "S": 2,
+          "T_total": 3000,
+          "T_win": 50
+        },
+        "seed": 1,
+        "output_sha256": "caf0f815ecf0859d8cdcb831ee42d8c03cbeeca06971a88659a8b80140026580",
+        "reach_claim": "reported"
+      },
+      "diversity_tags": [
+        "known_failure_or_non_separation"
+      ]
+    }
+  ],
+  "launch_readiness": {
+    "launch_ready": false,
+    "criteria": {
+      "contract_v1_frozen": {
+        "met": true,
+        "note": "docs/model_contract_v1.md + atlas.contract (C0/C1/C2)"
+      },
+      "at_least_8_rows_pass_ci": {
+        "met": true,
+        "note": "8 canonical rows pass contract/CI checks"
+      },
+      "full_artifact_bundle_per_row": {
+        "met": true,
+        "note": "each row has prov + scoring profile + SF profile or structured failure note"
+      },
+      "intervention_separates_beyond_sf": {
+        "met": false,
+        "note": "PENDING: no exposed C1 channel pair yet (Finding 0002 order-book work)"
+      },
+      "one_command_rerun_per_row": {
+        "met": true,
+        "note": "atlas.registry.build_model(name).run(seed=...) reproduces each row"
+      },
+      "usable_without_external_submissions": {
+        "met": true,
+        "note": "SF coordinate system over diverse canonical rows is citable as-is"
+      }
+    },
+    "blocking": [
+      "intervention_separates_beyond_sf"
+    ]
+  }
+}
