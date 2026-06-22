@@ -1,6 +1,7 @@
 __pycache__/
 .ipynb_checkpoints/
 .venv/
+.venv-pams/
 .env
 
 data/raw/
