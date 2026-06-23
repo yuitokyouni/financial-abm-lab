@@ -28,6 +28,7 @@ if _YH006_DIR.exists() and str(_YH006_DIR) not in sys.path:
 from mm_fcn_agent import MMFCNAgent  # noqa: E402
 
 from ..kronos_aggregate.model import SignalProvider, constant_signal_provider
+from .adaptive_agent import KronosAdaptiveAgent
 from .agents import KronosFadeAgent, KronosTrendAgent
 from .bar_aggregator import build_ohlcv_from_market, closes_to_returns
 from .signal_hub import SharedSignalHub
@@ -67,6 +68,7 @@ def build_lob_config(
     n_trend: int = 25,
     n_fade: int = 25,
     n_fcn: int = 30,
+    n_adaptive: int = 0,
     bar_size: int = 10,
     lookback_bars: int = 32,
     order_volume: int = 1,
@@ -74,15 +76,20 @@ def build_lob_config(
     timestamp_start: str = "2026-06-01 09:00",
     timestamp_freq: str = "1min",
     initial_market_price: float = 300.0,
+    score_window: int = 50,
+    r_min_base: float = 0.0,
+    r_min_conf_coef: float = 0.0,
 ) -> Dict[str, Any]:
-    """YH006 流の 2-session PAMS config を組み立てる。"""
+    """YH006 流の 2-session PAMS config を組み立てる (YH007-2/3 共通)。
+
+    n_adaptive>0 で KronosAdaptiveAgent (YH007-3 内生混合) を追加する。
+    n_trend/n_fade=0 で純粋 adaptive 構成も可能。
+    """
     market = deepcopy(_MARKET)
     market["marketPrice"] = initial_market_price
     fcn = deepcopy(_FCN_AGENTS)
     fcn["numAgents"] = int(n_fcn)
-    trend_block = {
-        "class": "KronosTrendAgent",
-        "numAgents": int(n_trend),
+    common = {
         "markets": ["Market"],
         "cashAmount": 100000,
         "assetVolume": 100,
@@ -92,13 +99,35 @@ def build_lob_config(
         "timestampStart": timestamp_start,
         "timestampFreq": timestamp_freq,
     }
-    fade_block = deepcopy(trend_block)
-    fade_block["class"] = "KronosFadeAgent"
-    fade_block["numAgents"] = int(n_fade)
+    agent_names: list[str] = ["FCNAgents"]
+    extra_blocks: Dict[str, Any] = {}
+
+    if n_trend > 0:
+        b = deepcopy(common)
+        b["class"] = "KronosTrendAgent"
+        b["numAgents"] = int(n_trend)
+        extra_blocks["TrendAgents"] = b
+        agent_names.append("TrendAgents")
+    if n_fade > 0:
+        b = deepcopy(common)
+        b["class"] = "KronosFadeAgent"
+        b["numAgents"] = int(n_fade)
+        extra_blocks["FadeAgents"] = b
+        agent_names.append("FadeAgents")
+    if n_adaptive > 0:
+        b = deepcopy(common)
+        b["class"] = "KronosAdaptiveAgent"
+        b["numAgents"] = int(n_adaptive)
+        b["scoreWindow"] = int(score_window)
+        b["rMinBase"] = float(r_min_base)
+        b["rMinConfCoef"] = float(r_min_conf_coef)
+        extra_blocks["AdaptiveAgents"] = b
+        agent_names.append("AdaptiveAgents")
+
     return {
         "simulation": {
             "markets": ["Market"],
-            "agents": ["FCNAgents", "TrendAgents", "FadeAgents"],
+            "agents": agent_names,
             "sessions": [
                 {
                     "sessionName": 0,
@@ -120,8 +149,7 @@ def build_lob_config(
         },
         "Market": market,
         "FCNAgents": fcn,
-        "TrendAgents": trend_block,
-        "FadeAgents": fade_block,
+        **extra_blocks,
     }
 
 
@@ -144,11 +172,15 @@ class KronosLOBMarket:
         n_trend: int = 25,
         n_fade: int = 25,
         n_fcn: int = 30,
+        n_adaptive: int = 0,
         bar_size: int = 10,
         lookback_bars: int = 32,
         order_volume: int = 1,
         initial_market_price: float = 300.0,
         max_normal_orders: int = 1000,
+        score_window: int = 50,
+        r_min_base: float = 0.0,
+        r_min_conf_coef: float = 0.0,
     ):
         if signal_provider is None:
             signal_provider = constant_signal_provider(pred_close_mean=initial_market_price * 1.001)
@@ -158,25 +190,34 @@ class KronosLOBMarket:
         self.n_trend = n_trend
         self.n_fade = n_fade
         self.n_fcn = n_fcn
+        self.n_adaptive = n_adaptive
         self.bar_size = bar_size
         self.lookback_bars = lookback_bars
         self.order_volume = order_volume
         self.initial_market_price = initial_market_price
         self.max_normal_orders = max_normal_orders
+        self.score_window = score_window
+        self.r_min_base = r_min_base
+        self.r_min_conf_coef = r_min_conf_coef
 
     def _inject_hub(self, simulator, hub: SharedSignalHub) -> None:
+        from .agents import _KronosReaderAgent
         for a in simulator.agents:
-            if isinstance(a, (KronosTrendAgent, KronosFadeAgent)):
+            if isinstance(a, _KronosReaderAgent):
                 a.signal_hub = hub
 
     def run(self, *, seed: int) -> dict:
         cfg = build_lob_config(
             warmup_steps=self.warmup_steps, main_steps=self.main_steps,
             n_trend=self.n_trend, n_fade=self.n_fade, n_fcn=self.n_fcn,
+            n_adaptive=self.n_adaptive,
             bar_size=self.bar_size, lookback_bars=self.lookback_bars,
             order_volume=self.order_volume,
             initial_market_price=self.initial_market_price,
             max_normal_orders=self.max_normal_orders,
+            score_window=self.score_window,
+            r_min_base=self.r_min_base,
+            r_min_conf_coef=self.r_min_conf_coef,
         )
 
         hub = SharedSignalHub(
@@ -189,16 +230,12 @@ class KronosLOBMarket:
         runner.class_register(MMFCNAgent)
         runner.class_register(KronosTrendAgent)
         runner.class_register(KronosFadeAgent)
+        runner.class_register(KronosAdaptiveAgent)
 
-        # SequentialRunner.main は内部で simulator を構築して回す。inject は
-        # _setup の後・session loop の前に行いたい。pams 0.2.2 では runner._setup
-        # を分けて呼ぶ手段がないため、main() の前に手動で setup を回し、agent に
-        # hub を inject してから session loop を回す手順を取る。
         runner._setup()
         self._inject_hub(runner.simulator, hub)
         runner._run()
 
-        # 結果集計
         market = runner.simulator.markets[0]
         end_step = market.get_time() + 1
         history = build_ohlcv_from_market(
@@ -209,6 +246,7 @@ class KronosLOBMarket:
 
         trend_agents = [a for a in runner.simulator.agents if isinstance(a, KronosTrendAgent)]
         fade_agents = [a for a in runner.simulator.agents if isinstance(a, KronosFadeAgent)]
+        adaptive_agents = [a for a in runner.simulator.agents if isinstance(a, KronosAdaptiveAgent)]
 
         return {
             "prices": prices,
@@ -216,6 +254,7 @@ class KronosLOBMarket:
             "history": history,
             "trend_actions": [a.action_log for a in trend_agents],
             "fade_actions": [a.action_log for a in fade_agents],
+            "adaptive_actions": [a.action_log for a in adaptive_agents],
             "signal_log": hub.signal_log(),
             "market_step_logs": list(saver.market_step_logs),
             "n_warmup_steps": self.warmup_steps,
