@@ -226,6 +226,7 @@ class KronosLOBMarket:
         spoof_offset_ticks: int = 5,
         spoof_side: str = "both",
         spoof_ttl: int = 1,
+        price_source: str = "market",
     ):
         if signal_provider is None:
             signal_provider = constant_signal_provider(pred_close_mean=initial_market_price * 1.001)
@@ -253,6 +254,7 @@ class KronosLOBMarket:
         self.spoof_offset_ticks = spoof_offset_ticks
         self.spoof_side = spoof_side
         self.spoof_ttl = spoof_ttl
+        self.price_source = price_source
 
     def _inject_hub(self, simulator, hub: SharedSignalHub) -> None:
         from .agents import _KronosReaderAgent
@@ -303,9 +305,19 @@ class KronosLOBMarket:
 
         market = runner.simulator.markets[0]
         end_step = market.get_time() + 1
+        # primary history (price_source 指定); diagnostic として両側の bar も併記
         history = build_ohlcv_from_market(
             market, bar_size=self.bar_size, start_step=0, end_step=end_step,
+            price_source=self.price_source,
         )
+        history_market = (history if self.price_source == "market" else
+                          build_ohlcv_from_market(market, bar_size=self.bar_size,
+                                                  start_step=0, end_step=end_step,
+                                                  price_source="market"))
+        history_mid = (history if self.price_source == "mid" else
+                       build_ohlcv_from_market(market, bar_size=self.bar_size,
+                                               start_step=0, end_step=end_step,
+                                               price_source="mid"))
         prices = history["close"].to_numpy(dtype=np.float64)
         returns = closes_to_returns(prices)
 
@@ -319,6 +331,9 @@ class KronosLOBMarket:
             "prices": prices,
             "returns": returns,
             "history": history,
+            "history_market": history_market,
+            "history_mid": history_mid,
+            "price_source": self.price_source,
             "trend_actions": [a.action_log for a in trend_agents],
             "fade_actions": [a.action_log for a in fade_agents],
             "adaptive_actions": [a.action_log for a in adaptive_agents],
