@@ -21,39 +21,45 @@ from dataclasses import dataclass, field
 
 @dataclass
 class ChildOrderScheduler:
-    """Parent order を TWAP-like に分割執行する単純 scheduler。
+    """Parent order を TWAP-like に分割執行する scheduler。
+
+    semantics: **parent は新 bar (= signal 更新タイミング) でのみ発生**。同 bar 内で
+    `update_parent(action, bar_index)` を再度呼んでも何もしない (bar 単位で 1 parent)。
+    parent 1 つにつき最大 `execution_horizon` 個の child を **次以降の step** で出していく。
+    execution_horizon=1 のとき bar 切替時に 1 child だけ出して、bar 内残りは abstain。
+    >1 で複数 step に child を分散 (TWAP-like)。
 
     Parameters
     ----------
     execution_horizon : int
-        新 parent が来てから child を出し続ける step 数 (≥ 1)。
-        1 で即時 1 発 (= 従来 YH007-2/3 と等価)。
+        1 parent あたりの child 数の上限 (≥ 1)。bar_size と組み合わせて
+        bar 内のどれだけの step で child を出すかを決める。
     """
 
     execution_horizon: int = 1
     _remaining: int = field(default=0, init=False)
     _direction: int = field(default=0, init=False)
+    _last_parent_bar: int = field(default=-1, init=False)
 
     def __post_init__(self) -> None:
         if self.execution_horizon < 1:
             raise ValueError(f"execution_horizon must be >= 1, got {self.execution_horizon}")
 
-    def update_parent(self, action: int) -> None:
-        """戦略層の最新方向で schedule を更新。
+    def update_parent(self, action: int, bar_index: int) -> None:
+        """新 bar のタイミングで parent を投入。同 bar 内の再呼び出しは無視。
 
-        - action=0: 残 schedule を破棄 (abstain で執行も止める)
-        - 方向転換: 新方向で schedule を再 schedule
-        - 同方向: schedule を維持 (残 horizon を `execution_horizon` まで再 charge)
+        - action=0: schedule を破棄 (abstain)
+        - 方向転換 or 同方向の新 parent: schedule を再 charge
         """
+        if bar_index == self._last_parent_bar:
+            return  # 同 bar 内では parent を新規発生させない
+        self._last_parent_bar = bar_index
         if action == 0:
             self._remaining = 0
             self._direction = 0
             return
-        if action != self._direction:
-            self._direction = action
-            self._remaining = self.execution_horizon
-        else:
-            self._remaining = max(self._remaining, self.execution_horizon)
+        self._direction = action
+        self._remaining = self.execution_horizon
 
     def next_child(self) -> int:
         """次 child の方向 (1=buy, -1=sell, 0=skip)。1 child 分の枠を消費する。"""
@@ -65,6 +71,7 @@ class ChildOrderScheduler:
     def reset(self) -> None:
         self._remaining = 0
         self._direction = 0
+        self._last_parent_bar = -1
 
     @property
     def remaining(self) -> int:

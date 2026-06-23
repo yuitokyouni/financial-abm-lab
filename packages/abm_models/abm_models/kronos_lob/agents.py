@@ -80,8 +80,12 @@ class _KronosReaderAgent(Agent):
         if signal is not None:
             self.action_log.append((time, action))
 
-        # 執行層: parent → child schedule。execution_horizon=1 で pass-through。
-        self._scheduler.update_parent(action)
+        # 執行層: parent は bar 切替時のみ発生 (= signal 更新タイミング)。
+        # execution_horizon=1 で「bar あたり 1 child + 残り abstain」、
+        # = bar_size で「毎 step trade」(= 従来 YH007-2/3 と等価には *ならない* が、
+        # YH007-2/3 の bar 内 over-trading をやめた spec §3 準拠の挙動)。
+        bar_index = time // self.bar_size
+        self._scheduler.update_parent(action, bar_index=bar_index)
         child = self._scheduler.next_child()
         if child == 0:
             return []

@@ -17,42 +17,46 @@ from abm_models.kronos_lob.execution import ChildOrderScheduler
 # ---- scheduler 単体 -----------------------------------------------------
 
 
-def test_scheduler_horizon1_is_pass_through():
+def test_scheduler_horizon1_bar0_then_bar1():
+    """horizon=1: bar=0 で 1 child, 同 bar 内 (再 call) は no-op, 次 bar で再 child。"""
     s = ChildOrderScheduler(execution_horizon=1)
-    s.update_parent(+1)
+    s.update_parent(+1, bar_index=0)
     assert s.next_child() == +1
     assert s.next_child() == 0  # 残 0 で skip
-    s.update_parent(-1)
-    assert s.next_child() == -1
-    s.update_parent(0)
+    s.update_parent(+1, bar_index=0)  # 同 bar 再 call は無視
     assert s.next_child() == 0
+    s.update_parent(+1, bar_index=1)  # 次 bar = 新 parent
+    assert s.next_child() == +1
 
 
-def test_scheduler_horizon5_spreads_one_parent():
+def test_scheduler_horizon5_spreads_one_parent_within_bar():
+    """horizon=5: 1 parent で 5 child を連続して出す。同 bar 内 update は no-op。"""
     s = ChildOrderScheduler(execution_horizon=5)
-    s.update_parent(+1)
+    s.update_parent(+1, bar_index=0)
     out = [s.next_child() for _ in range(7)]
-    # 最初の 5 step は +1, その後は schedule 切れで 0
-    # ただし毎 step update_parent(+1) を呼べば continuation で再 charge
     assert out[:5] == [+1, +1, +1, +1, +1]
     assert out[5:] == [0, 0]
+    # 同 bar 再 call は無視
+    s.update_parent(-1, bar_index=0)
+    assert s.next_child() == 0  # no-op
 
 
-def test_scheduler_direction_flip_overrides_remaining():
+def test_scheduler_direction_flip_on_new_bar():
+    """新 bar で方向転換すると schedule が新方向で再 charge。"""
     s = ChildOrderScheduler(execution_horizon=5)
-    s.update_parent(+1)
-    assert s.next_child() == +1
-    s.update_parent(-1)  # 方向転換
-    # 残 schedule は -1 で上書きされる
+    s.update_parent(+1, bar_index=0)
+    assert s.next_child() == +1  # remaining=4
+    s.update_parent(-1, bar_index=1)  # 新 bar + 方向転換
     assert s.next_child() == -1
-    assert s.remaining == 4  # horizon=5 で 1 child 出した
+    assert s.remaining == 4
 
 
-def test_scheduler_abstain_drops_schedule():
+def test_scheduler_abstain_on_new_bar_drops_schedule():
+    """新 bar で action=0 のとき残 schedule が破棄される。"""
     s = ChildOrderScheduler(execution_horizon=5)
-    s.update_parent(+1)
+    s.update_parent(+1, bar_index=0)
     s.next_child()
-    s.update_parent(0)  # abstain
+    s.update_parent(0, bar_index=1)  # 次 bar で abstain
     assert s.remaining == 0
     assert s.next_child() == 0
 

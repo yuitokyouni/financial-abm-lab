@@ -116,8 +116,9 @@ class KronosAdaptiveAgent(_KronosReaderAgent):
                 self._last_actions["fade"] = fade_a
                 self.action_log.append((time, chosen_a, chosen_strat, s_trend, s_fade))
 
-        # 執行層 (YH007-4): parent → child schedule
-        self._scheduler.update_parent(chosen_a)
+        # 執行層 (YH007-4): parent は bar 切替時のみ発生
+        bar_index = market.get_time() // self.bar_size
+        self._scheduler.update_parent(chosen_a, bar_index=bar_index)
         child = self._scheduler.next_child()
         if child == 0:
             return []
