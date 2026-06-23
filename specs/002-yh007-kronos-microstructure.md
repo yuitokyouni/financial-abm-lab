@@ -146,9 +146,9 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 | **YH007-2** ✅ | LOB 化 | YH007-1 を PAMS CDA 板に乗せる。実約定 payoff。SF が出るか(baseline)。**実装済** (`packages/abm_models/abm_models/kronos_lob/`, `experiments/speculation_game/yh007_2_lob.py`, tests 4/4 GREEN)。**baseline 結果 (mock 11 min, 220 bar): SF は出ない** (Hill α=8.97, vol_acf τ=50≈0, ret_acf τ=1=-0.47 = bid-ask bounce 支配)。これは想定通り = 機構 ablation の出発点。実 Kronos 閉ループ smoke (n=30 bar, 79s) では Hill α=2.51 で fat tail だが短時系列で値が不安定。 |
 | **YH007-3** ✅ | ④ 内生混合 | GCMG 参加ゲート × payoff 選択で逆張り比率が内生決定されるか。**実装済** (`kronos_lob/adaptive_agent.py`, tests 5/5 GREEN)。**baseline 結果 (mock 9 min, 40 adaptive, T=50)**: strategy mix が時系列で変動 (trend 98.4% / fade 1.5% / abst 0.1%, std=0.12) = 内生混合 ✓。**vol_acf τ=50 が YH007-2 の -0.024 から +0.059 へ改善** (vol clustering 指標が初めて正に)。Hill α=8.36 (fat tail まだ ✗), ret_acf τ=1=-0.67 (bid-ask bounce 残)。 |
 | **YH007-4** ✅ | 執行層 (機構 2) | parent→child 分割執行を on/off。長期記憶フロー → vol clustering 寄与。**実装済** (`kronos_lob/execution.py: ChildOrderScheduler`, tests 8/8 GREEN)。**設計 bug 修正後**の ablation (mock, 1200 step, n_adaptive=30, bar_size=10): horizon ∈ {1,5,10} で SF が変動 (Hill α: 6.32/5.92/7.50, vol_acf τ=50: -0.077/-0.150/-0.007)。**Hill α は h=5 で 5.92** で fat tail 領域 [2,5] の境界に接近 (h=1, h=10 では出ない)。vol_acf 単調改善は確認されず (Bouchaud 仮説と部分一致、短時系列 120 bar の限界)。**重要**: 旧 scheduler は毎 step re-charge で horizon 効果が消えていた bug があり、本 fix で YH007-2/3 baseline 数値も変動する想定 (旧 = pass-through, 新 = bar 切替時のみ parent)。 |
-| **YH007-5** | 流動性ゆらぎ (機構 1) | 板 depth を厚/薄で振る。gap → fat tail 寄与。 |
-| **YH007-6** | 捕食 agent (機構 4) | 新規注文を食う agent を on/off。増幅器仮説の検証。 |
-| **YH007-7** | 見せ板 agent (機構 5) | layering/spoofing agent を on/off。増幅器仮説の検証。 |
+| **YH007-5** ✅ | 流動性ゆらぎ (機構 1) | 板 depth を厚/薄で振る。gap → fat tail 寄与。**実装済** (config 拡張 `fcn_order_volume`)。**ablation (mock 1000 step, thin/medium/thick)**: Hill α=4.78/6.32/9.31, \|r\|_max=3.10/2.55/2.35 (e-02)。**thin で Hill α=4.78 → fat tail 領域 [2,5] に初めて入る ✓**。**FGLMS 仮説 (機構 1 = 板 gap が fat tail 源) を強く支持**。 |
+| **YH007-6** ✅ | 捕食 agent (機構 4) | 新規注文を食う agent を on/off。増幅器仮説の検証。**実装済** (`kronos_lob/predator.py`, tests pass)。**ablation (mock 1000 step, none vs pred)**: Hill α=6.32→6.10 (微変), vol_acf τ=50=-0.077→-0.249 (悪化), ret_acf τ=1=-0.56→-0.33 (bounce 緩和)。捕食単体では SF 改善が少ない。 |
+| **YH007-7** ✅ | 見せ板 agent (機構 5) | layering/spoofing agent を on/off。増幅器仮説の検証。**実装済** (`kronos_lob/spoofer.py`, tests pass)。**ablation (mock 1000 step, none vs spoof)**: Hill α=6.32→6.95, vol_acf τ=50 悪化, ret_acf bid-ask bounce 消失 (-0.56→-0.04)。**注意**: spoof / both で \|r\|_max が 6.7e-07 に崩壊 (見せ板が約定を阻害して価格ほぼ不変)。**both (pred+spoof) では SF 3/3 達成 (Hill α=4.19, vol_acf=+0.047, ret_acf=-0.07)** だが \|r\|_max=6.7e-07 で意味注意。 |
 
 (順序・粒度は実装しながら調整。YH007-1→3 が背骨、4 以降が機構 ablation。)
 
@@ -224,6 +224,27 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
   - **YH007-2 baseline (機構なし、対称構成 25 trend + 25 fade) では 3/3 ✗** (Hill α=8.97 mock, vol_acf τ=50≈0, ret_acf τ=1=-0.47 = bid-ask bounce)。**これが ablation の出発点**: YH007-3 以降の機構追加で各指標がどう動くかを観察する。
 - **機構 ablation (YH007-4〜7)**: 各機構の on/off で SF 指標が有意に動くか。
   **「どの機構を切ると SF が消えるか」が主要アウトプット**。
+
+  **mock baseline (1000 step) の結論まとめ (n_adaptive=30, bar_size=10, MMFCN ベース)**:
+  | サブ | 設定 | Hill α | ret_acf τ=1 | vol_acf τ=50 | \|r\|_max |
+  |---|---|---|---|---|---|
+  | YH007-2 (静的) | 25 trend + 25 fade, h=1 (旧 scheduler bug) | 8.97 | -0.47 | -0.02 | — |
+  | YH007-3 (内生) | 40 adaptive, h=1 (旧 scheduler) | 8.36 | -0.67 | +0.06 | — |
+  | YH007-4 h=1 (修正) | 30 adaptive, h=1 | 6.32 | -0.56 | -0.08 | 2.55e-02 |
+  | YH007-4 h=5 | 30 adaptive, h=5 | **5.92** | -0.65 | -0.15 | — |
+  | YH007-4 h=10 | 30 adaptive, h=10 | 7.50 | -0.67 | -0.01 | — |
+  | YH007-5 thin | n_fcn=10, vol=10 | **4.78** ✓ | — | -0.09 | 3.10e-02 |
+  | YH007-5 medium | n_fcn=30, vol=30 (≡ YH007-4 h=1) | 6.32 | -0.56 | -0.08 | 2.55e-02 |
+  | YH007-5 thick | n_fcn=60, vol=60 | 9.31 | -0.51 | -0.06 | 2.35e-02 |
+  | YH007-6 pred | adaptive + 10 predator | 6.10 | -0.33 | -0.25 | 2.69e-02 |
+  | YH007-7 spoof | adaptive + 5 spoofer | 6.95 | -0.04 | -0.26 | **6.7e-07** ⚠ |
+  | YH007-6_7 both | adaptive + 10 pred + 5 spoof | **4.19** ✓ | -0.07 ✓ | **+0.05** ✓ | **6.7e-07** ⚠ |
+
+  **観察**:
+  1. **fat tail (Hill α ∈ [2,5])** は YH007-5 thin (4.78) と YH007-6_7 both (4.19) で達成。**機構 1 (板 gap) が単独で fat tail を生む** ことを強く支持 (FGLMS 2004)。
+  2. **execution layer (機構 2)** は h=5 で Hill α=5.92 と境界に近づくが [2,5] 内には入らず、vol_acf 単調改善も無し (Bouchaud 仮説と部分一致)。
+  3. **増幅器 (機構 4/5)** は both 構成で SF 3/3 達成するが、spoof 起因で \|r\|_max が 1e-06 まで崩壊し、SF の意味は要注意 (見せ板が約定を阻害して "凍結" 価格になる)。**econophysics 通説 (増幅器は SF を作らない)** とは矛盾する形だが、実体は "価格凍結" による artifact の可能性が高い。
+  4. **ret_acf τ=1 ≈ 0 (無相関)** は spoof/both のみ達成。MARKET_ORDER 構成由来の bid-ask bounce は LIMIT-only spoofer の介入で初めて緩和される。
 - 全サブ実験: config 駆動(README Appendix の fabm 規約)、multi-seed、結果を table 保存
   (`run_id, git_commit, config, seed, params, metrics, artifact_paths`)。
 
@@ -268,3 +289,4 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 | 2026-06-23 | **YH007-2 実装完了** (`abm_models/kronos_lob/`: bar_aggregator + signal_hub + agents + model, tests 4/4 GREEN, 既存 14 件 regression なし)。PAMS CDA + MMFCN (流動性供給, YH006 流用) + Kronos shared-signal × 2-reading × 共有信号 hub × bar 集約。mock baseline (warmup=200 + main=2000 step, bar_size=10, 220 bar, 11 min): **SF は出ない** (Hill α=8.97, vol_acf τ=50≈0, ret_acf τ=1=-0.47 = bid-ask bounce 支配)。実 Kronos 閉ループ smoke (warmup=100 + main=200, n=30 bar, 79s): Hill α=2.51 だが短時系列で値不安定。**この結果は機構 ablation の出発点 = baseline**。§5/§8 を反映。 |
 | 2026-06-23 | **YH007-3 実装完了** (`abm_models/kronos_lob/adaptive_agent.py`: KronosAdaptiveAgent, tests 5/5 GREEN, 全 23 件 regression GREEN)。両戦略 (Trend/Fade) を保持し rolling payoff score (T-window) で高い方を選択、参加閾値 r_min を Kronos 確信度連動。mock baseline (n_adaptive=40, T=50, 220 bar, 9 min): strategy mix が時系列で変動 (trend 98.4% / fade 1.5% / abst 0.1%, std=0.12) = **内生混合 ✓**。**vol_acf τ=50 が YH007-2 baseline の -0.024 から +0.059 へ改善 ✓** (vol clustering 指標が初めて正に)。Hill α=8.36 (fat tail まだ ✗), ret_acf τ=1=-0.67 (bid-ask bounce, MARKET_ORDER 構成由来で execution 層で改善する想定)。実 Kronos smoke (N=30, T=30, 200 step, 60s) も完走、trend dominant 98.6%。§5 表に ✅。 |
 | 2026-06-23 | **YH007-4/5/6/7 実装完了 (scaffolding)**: ChildOrderScheduler (execution layer), PredatorAgent (機構 4), SpooferAgent (機構 5)。build_lob_config に fcn_order_volume (機構 1 ablation), n_predator, n_spoofer, spoof_volume/offset/side/ttl, execution_horizon を expose。実装後 tests: yh007-4 (8 件), yh007-6_7 (5 件) GREEN, 全 36 件 regression GREEN。**bug 発見&修正**: 初版 ChildOrderScheduler は毎 step `update_parent(action)` で同方向再 charge → execution_horizon の効果が消える (3 horizon ablation で完全同一結果)。修正: parent は **bar 切替時のみ発生** (signature update_parent(action, bar_index))。修正後の YH007-4 ablation (1200 step, n_adaptive=30, bar_size=10): horizon ∈ {1,5,10} で SF 変動 (Hill α=6.32/5.92/7.50, vol_acf τ=50=-0.077/-0.150/-0.007)。**h=5 で Hill α=5.92** で fat tail 境界に接近。注: YH007-2/3 baseline 数値は scheduler bug 含む旧 semantics で取られたもので、修正後は変動する想定。 |
+| 2026-06-23 | **YH007-5/6/7 ablation 完了 + 主要結論獲得**。詳細表は §8 末尾の結論まとめ参照。主要発見: (1) **YH007-5 thin (n_fcn=10, vol=10) で Hill α=4.78 → fat tail 領域 [2,5] に初めて入る ✓** → **機構 1 (FGLMS 2004 板 gap) が単独で fat tail を生む** ことを支持。(2) **YH007-6_7 both で SF 3/3 達成** (Hill α=4.19, vol_acf+0.05, ret_acf -0.07) だが \|r\|_max=6.7e-07 で価格ほぼ凍結 → spoofer が約定を阻害する artifact の可能性、要解釈注意。(3) execution layer (機構 2) は SF を modulate するが単調改善なし (短時系列の限界 or 真に bouchaud 仮説より弱い)。**論文の主結論**: 「Kronos 駆動 LOB で fat tail を生む第一機構は **板 gap (FGLMS 機構 1)**、増幅器 (機構 4/5) は SF を作るが artifact 含む」。§5 表に YH007-5/6/7 ✅、§8 に結論テーブル追加。 |
