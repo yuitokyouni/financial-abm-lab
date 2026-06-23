@@ -181,18 +181,21 @@ def main() -> None:
     common = dict(n_seeds=args.n_seeds, warmup_steps=args.warmup_steps,
                   main_steps=args.main_steps, n_zi=args.n_zi,
                   bar_size=args.bar_size, order_ttl=args.order_ttl,
-                  margin_min=0.001, margin_max=0.01)
+                  # 単位較正: tick=0.01 (= 0.003% of price 300, 実市場 tick オーダー)
+                  # sigma=1e-4 (= 0.01% mid 変動, mid_med ~ 3 tick 期待)
+                  # margin=3e-5〜1e-4 (= 1〜3 tick, agg_rate ~ 0.05〜0.2 期待)
+                  margin_min=3e-5, margin_max=1e-4)
 
-    # tick 較正のための 2 構成。tick_size を粗 / 細で振る。
+    # tick 較正のための構成。spec 003 §3.3 目標 mid_med_tick=2-5 を狙う。
     configs = [
-        ("ZI-naive  tick_coarse(1e-3) sigma=0.005",
-         dict(zi_mode="naive", sigma_eval=0.005, tick_size=1e-3)),
-        ("ZI-naive  tick_fine  (1e-5) sigma=0.005",
-         dict(zi_mode="naive", sigma_eval=0.005, tick_size=1e-5)),
-        ("ZI-matched mu=0  sigma=0.005 (control)",
-         dict(zi_mode="matched", sigma_eval=0.005, tick_size=1e-5)),
-        ("ZI-matched mu=0  sigma=0.010 (high vol)",
-         dict(zi_mode="matched", sigma_eval=0.010, tick_size=1e-5)),
+        ("ZI-naive   tick=0.01 sigma=1e-4 (target ~3 tick)",
+         dict(zi_mode="naive", sigma_eval=1e-4, tick_size=0.01)),
+        ("ZI-naive   tick=0.01 sigma=5e-5 (smaller)",
+         dict(zi_mode="naive", sigma_eval=5e-5, tick_size=0.01)),
+        ("ZI-matched tick=0.01 sigma=1e-4 (control low)",
+         dict(zi_mode="matched", sigma_eval=1e-4, tick_size=0.01)),
+        ("ZI-matched tick=0.01 sigma=2e-4 (control high)",
+         dict(zi_mode="matched", sigma_eval=2e-4, tick_size=0.01)),
     ]
 
     results = []

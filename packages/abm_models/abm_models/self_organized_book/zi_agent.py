@@ -39,9 +39,9 @@ class ZIAgent(LimitAgentBase):
         super().setup(settings, accessible_markets_ids, *args, **kwargs)
         self.zi_mode: str = str(settings.get("ziMode", "naive"))  # "naive" or "matched"
         self.sigma_eval: float = float(settings.get("sigmaEval", 0.005))
-        # matched 用 (P1 で使う)
+        # matched 用 (P1 で使う)。sigmaMatch 未指定なら sigmaEval を流用 (構成統一)。
         self.mu_match: float = float(settings.get("muMatch", 0.0))
-        self.sigma_match: float = float(settings.get("sigmaMatch", 0.005))
+        self.sigma_match: float = float(settings.get("sigmaMatch", self.sigma_eval))
         # margin
         self.margin_min: float = float(settings.get("marginMin", 0.001))
         self.margin_max: float = float(settings.get("marginMax", 0.01))
