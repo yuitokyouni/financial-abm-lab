@@ -143,12 +143,13 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 | ID | 主題 | 検証内容 |
 |---|---|---|
 | **YH007-1** ✅ | ① 最小実装 (aggregate) | Kronos 2 読みで順張り/逆張りが分岐するか。板無し即時 clearing で疎通。**実装済** (`packages/abm_models/abm_models/kronos_aggregate/`, `experiments/speculation_game/yh007_1_aggregate.py`, tests 5/5 GREEN, 実 Kronos 閉ループ smoke 5 step 0.68s で trend mean=+0.2 / fade mean=-0.2 = 逆符号 ✓)。 |
-| **YH007-2** ✅ | LOB 化 | YH007-1 を PAMS CDA 板に乗せる。実約定 payoff。SF が出るか(baseline)。**実装済** (`packages/abm_models/abm_models/kronos_lob/`, `experiments/speculation_game/yh007_2_lob.py`, tests 4/4 GREEN)。**baseline 結果 (mock 11 min, 220 bar): SF は出ない** (Hill α=8.97, vol_acf τ=50≈0, ret_acf τ=1=-0.47 = bid-ask bounce 支配)。これは想定通り = 機構 ablation の出発点。実 Kronos 閉ループ smoke (n=30 bar, 79s) では Hill α=2.51 で fat tail だが短時系列で値が不安定。 |
-| **YH007-3** ✅ | ④ 内生混合 | GCMG 参加ゲート × payoff 選択で逆張り比率が内生決定されるか。**実装済** (`kronos_lob/adaptive_agent.py`, tests 5/5 GREEN)。**baseline 結果 (mock 9 min, 40 adaptive, T=50)**: strategy mix が時系列で変動 (trend 98.4% / fade 1.5% / abst 0.1%, std=0.12) = 内生混合 ✓。**vol_acf τ=50 が YH007-2 の -0.024 から +0.059 へ改善** (vol clustering 指標が初めて正に)。Hill α=8.36 (fat tail まだ ✗), ret_acf τ=1=-0.67 (bid-ask bounce 残)。 |
-| **YH007-4** ✅ | 執行層 (機構 2) | parent→child 分割執行を on/off。長期記憶フロー → vol clustering 寄与。**実装済** (`kronos_lob/execution.py: ChildOrderScheduler`, tests 8/8 GREEN)。**設計 bug 修正後**の ablation (mock, 1200 step, n_adaptive=30, bar_size=10): horizon ∈ {1,5,10} で SF が変動 (Hill α: 6.32/5.92/7.50, vol_acf τ=50: -0.077/-0.150/-0.007)。**Hill α は h=5 で 5.92** で fat tail 領域 [2,5] の境界に接近 (h=1, h=10 では出ない)。vol_acf 単調改善は確認されず (Bouchaud 仮説と部分一致、短時系列 120 bar の限界)。**重要**: 旧 scheduler は毎 step re-charge で horizon 効果が消えていた bug があり、本 fix で YH007-2/3 baseline 数値も変動する想定 (旧 = pass-through, 新 = bar 切替時のみ parent)。 |
-| **YH007-5** ✅ | 流動性ゆらぎ (機構 1) | 板 depth を厚/薄で振る。gap → fat tail 寄与。**実装済** (config 拡張 `fcn_order_volume`)。**ablation (mock 1000 step, thin/medium/thick)**: Hill α=4.78/6.32/9.31, \|r\|_max=3.10/2.55/2.35 (e-02)。**thin で Hill α=4.78 → fat tail 領域 [2,5] に初めて入る ✓**。**FGLMS 仮説 (機構 1 = 板 gap が fat tail 源) を強く支持**。 |
-| **YH007-6** ✅ | 捕食 agent (機構 4) | 新規注文を食う agent を on/off。増幅器仮説の検証。**実装済** (`kronos_lob/predator.py`, tests pass)。**ablation (mock 1000 step, none vs pred)**: Hill α=6.32→6.10 (微変), vol_acf τ=50=-0.077→-0.249 (悪化), ret_acf τ=1=-0.56→-0.33 (bounce 緩和)。捕食単体では SF 改善が少ない。 |
-| **YH007-7** ✅ | 見せ板 agent (機構 5) | layering/spoofing agent を on/off。増幅器仮説の検証。**実装済** (`kronos_lob/spoofer.py`, tests pass)。**ablation (mock 1000 step, none vs spoof)**: Hill α=6.32→6.95, vol_acf τ=50 悪化, ret_acf bid-ask bounce 消失 (-0.56→-0.04)。**注意**: spoof / both で \|r\|_max が 6.7e-07 に崩壊 (見せ板が約定を阻害して価格ほぼ不変)。**both (pred+spoof) では SF 3/3 達成 (Hill α=4.19, vol_acf=+0.047, ret_acf=-0.07)** だが \|r\|_max=6.7e-07 で意味注意。 |
+| **YH007-2** ✅ (実装) ⚠ (結論撤回) | LOB 化 | YH007-1 を PAMS CDA 板に乗せる。実約定 payoff。SF が出るか(baseline)。**実装済** (`packages/abm_models/abm_models/kronos_lob/`, tests 4/4 GREEN)。baseline 数値は §8 参照。**結論**: SF の有無は metric (market/mid) で逆転し、いずれも artifact 支配 (§8 末尾)。 |
+| **YH007-3** ✅ (実装) ⚠ (結論撤回) | ④ 内生混合 | GCMG 参加ゲート × payoff 選択で逆張り比率が内生決定されるか。**実装済** (`kronos_lob/adaptive_agent.py`, tests 5/5 GREEN)。**確証できた点**: strategy mix が時系列で変動 (例: trend 98.4% / fade 1.5% / abst 0.1%, std=0.12) = **内生混合の機構自体は機能** ✓。**結論撤回**: SF (vol_acf 等) の改善は metric artifact 支配で結論できず (§8)。 |
+| **YH007-4** ✅ (実装) ⚠ (結論撤回) | 執行層 (機構 2) | parent→child 分割執行を on/off。**実装済** (`kronos_lob/execution.py`, tests 8/8 GREEN)。設計 bug を経て semantics 修正済 (parent は bar 切替時のみ発生)。**結論撤回**: horizon ablation の SF 差は artifact 支配 (§8)、Bouchaud 仮説検証は inconclusive。 |
+| **YH007-5** ✅ (実装) ⚠ (結論撤回) | 流動性ゆらぎ (機構 1) | 板 depth を厚/薄で振る。**実装済** (config 拡張 `fcn_order_volume`)。**結論撤回**: 「thin で fat tail (Hill α=4.78)」「FGLMS 機構 1 支持」は **market 価格 metric 由来の artifact**。mid に切り替えると順序が逆転し (thick で α=1.68)、しかも mid 自体も量子化ジャンプ artifact を持つため、いずれも信用できない (§8)。 |
+| **YH007-6** ✅ (実装) ⚠ (結論撤回) | 捕食 agent (機構 4) | 新規注文を食う agent。**実装済** (`kronos_lob/predator.py`, tests pass)。**結論撤回**: artifact 支配で機構 4 単独の効果は inconclusive (§8)。 |
+| **YH007-7** ✅ (実装) ⚠ (結論撤回) | 見せ板 agent (機構 5) | layering/spoofing。**実装済** (`kronos_lob/spoofer.py`, tests pass)。**結論撤回**: spoof 構成で market 価格 \|r\|_max=6.7e-7 (価格凍結) / mid Hill α=0.13 (発散テール) と両 metric とも極端な artifact。機構 5 の SF 効果は inconclusive (§8)。 |
+| **YH007-8** (未着手, 新規) | 自己組織化板 (CI×Kronos) | 全 LIMIT 化 + Chiarella-Iori 型自己組織化 CDA に Kronos 信号を埋め込む。受動指値主体でクロス頻度減 → bounce 消失、密な指値板で mid 量子化ジャンプ消失、を構造的に達成することが検証ターゲット。これが満たされて初めて YH007-4〜7 の機構 ablation を再走する意味が出る。詳細設計は別 spec or 別 issue。 |
 
 (順序・粒度は実装しながら調整。YH007-1→3 が背骨、4 以降が機構 ablation。)
 
@@ -221,30 +222,50 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
   **drift が時間変化し fade が完全に逆符号**を確認。
 - **YH007-2/3**: 実約定 payoff の LOB で SF が出る — fat tail(Hill α ∈ [2,5] 目安)、
   vol clustering(|r| ACF が τ=50 で正、緩減衰)、リターン無相関。
-  - **YH007-2 baseline (機構なし、対称構成 25 trend + 25 fade) では 3/3 ✗** (Hill α=8.97 mock, vol_acf τ=50≈0, ret_acf τ=1=-0.47 = bid-ask bounce)。**これが ablation の出発点**: YH007-3 以降の機構追加で各指標がどう動くかを観察する。
+  → **判定 inconclusive (撤回)**: 後述 §8.x 参照。
 - **機構 ablation (YH007-4〜7)**: 各機構の on/off で SF 指標が有意に動くか。
-  **「どの機構を切ると SF が消えるか」が主要アウトプット**。
+  「どの機構を切ると SF が消えるか」が主要アウトプット **だった** が、§8.x 参照で **全て撤回**。
 
-  **mock baseline (1000 step) の結論まとめ (n_adaptive=30, bar_size=10, MMFCN ベース)**:
-  | サブ | 設定 | Hill α | ret_acf τ=1 | vol_acf τ=50 | \|r\|_max |
-  |---|---|---|---|---|---|
-  | YH007-2 (静的) | 25 trend + 25 fade, h=1 (旧 scheduler bug) | 8.97 | -0.47 | -0.02 | — |
-  | YH007-3 (内生) | 40 adaptive, h=1 (旧 scheduler) | 8.36 | -0.67 | +0.06 | — |
-  | YH007-4 h=1 (修正) | 30 adaptive, h=1 | 6.32 | -0.56 | -0.08 | 2.55e-02 |
-  | YH007-4 h=5 | 30 adaptive, h=5 | **5.92** | -0.65 | -0.15 | — |
-  | YH007-4 h=10 | 30 adaptive, h=10 | 7.50 | -0.67 | -0.01 | — |
-  | YH007-5 thin | n_fcn=10, vol=10 | **4.78** ✓ | — | -0.09 | 3.10e-02 |
-  | YH007-5 medium | n_fcn=30, vol=30 (≡ YH007-4 h=1) | 6.32 | -0.56 | -0.08 | 2.55e-02 |
-  | YH007-5 thick | n_fcn=60, vol=60 | 9.31 | -0.51 | -0.06 | 2.35e-02 |
-  | YH007-6 pred | adaptive + 10 predator | 6.10 | -0.33 | -0.25 | 2.69e-02 |
-  | YH007-7 spoof | adaptive + 5 spoofer | 6.95 | -0.04 | -0.26 | **6.7e-07** ⚠ |
-  | YH007-6_7 both | adaptive + 10 pred + 5 spoof | **4.19** ✓ | -0.07 ✓ | **+0.05** ✓ | **6.7e-07** ⚠ |
+### 8.x ablation 全結果と結論の撤回 (2026-06-23)
 
-  **観察**:
-  1. **fat tail (Hill α ∈ [2,5])** は YH007-5 thin (4.78) と YH007-6_7 both (4.19) で達成。**機構 1 (板 gap) が単独で fat tail を生む** ことを強く支持 (FGLMS 2004)。
-  2. **execution layer (機構 2)** は h=5 で Hill α=5.92 と境界に近づくが [2,5] 内には入らず、vol_acf 単調改善も無し (Bouchaud 仮説と部分一致)。
-  3. **増幅器 (機構 4/5)** は both 構成で SF 3/3 達成するが、spoof 起因で \|r\|_max が 1e-06 まで崩壊し、SF の意味は要注意 (見せ板が約定を阻害して "凍結" 価格になる)。**econophysics 通説 (増幅器は SF を作らない)** とは矛盾する形だが、実体は "価格凍結" による artifact の可能性が高い。
-  4. **ret_acf τ=1 ≈ 0 (無相関)** は spoof/both のみ達成。MARKET_ORDER 構成由来の bid-ask bounce は LIMIT-only spoofer の介入で初めて緩和される。
+**provenance として 2 つの metric の数値を残す (消さない)** が、結論ラベルは「artifact / 要再測定」に降格する。
+すべて single seed = 777, mock 定数信号, ~120 bar, n_adaptive=30, bar_size=10, MMFCN ベース。
+
+| サブ | 設定 | Hill α (market) | Hill α (mid) | ret_acf τ=1 (market) | ret_acf τ=1 (mid) | vol_acf τ=50 (market) | vol_acf τ=50 (mid) | \|r\|_max (market) | \|r\|_max (mid) |
+|---|---|---|---|---|---|---|---|---|---|
+| Y4 h=1 (= Y5 medium) | adaptive, h=1 | 6.32 | 2.04 | -0.56 | -0.17 | -0.08 | +0.02 | 2.55e-2 | 5.92e-2 |
+| Y4 h=5 | adaptive, h=5 | 5.92 | 1.99 | -0.65 | -0.26 | -0.15 | +0.02 | — | — |
+| Y4 h=10 | adaptive, h=10 | 7.50 | 1.93 | -0.67 | -0.12 | -0.01 | -0.04 | — | — |
+| Y5 thin | n_fcn=10, vol=10 | 4.78 | 3.70 | -0.42 | -0.44 | -0.09 | +0.08 | 3.10e-2 | 2.62e-2 |
+| Y5 thick | n_fcn=60, vol=60 | 9.31 | **1.68** | -0.51 | -0.11 | -0.06 | +0.00 | 2.35e-2 | 1.22e-1 |
+| Y6 pred | adaptive + 10 predator | 6.10 | 2.19 | -0.33 | -0.12 | -0.25 | -0.06 | 2.69e-2 | 5.92e-2 |
+| Y7 spoof | adaptive + 5 spoofer | 6.95 | **0.14** ⚠ | -0.04 | **+0.04** | -0.26 | -0.03 | **6.7e-7** ⚠ | 5.92e-2 |
+| Y6_7 both | adaptive + 10 pred + 5 spoof | 4.19 | **0.13** ⚠ | -0.07 | **+0.04** | +0.05 | -0.03 | **6.7e-7** ⚠ | 5.92e-2 |
+
+**✅ 確証できたこと** (この設計のもとでの metric 性質):
+  1. **bid-ask bounce が market 価格メトリクスを大きく歪める**。Y4 h=1 で ret_acf τ=1 が market -0.56 → mid -0.17、Roll 1984 の bounce が約 70% を占めていたと実証。
+  2. **mid もクリーンではない** = **量子化ジャンプ / best 抜け artifact** を持つ。spoof / both の構成で Hill α=0.13 (α<1 で分布 moment が定義できない発散テール)、ret_acf τ=1 が +0.04 に転じる (best 連続抜けのモメンタム)、\|r\|_mid が 5.92e-2 で量子化天井に張り付く、など極端な値が出る。
+  3. **故に naïve 設計 (成行 + 外生 MMFCN + 離散薄板 + 約定価格 or mid metric) では SF 測定が成立しない**。 ~120 点の裾を数個の量子化ジャンプ or bounce が支配しているので、エージェント動力学由来の真の power-law tail とは識別不可能。
+
+**⚠ 撤回する結論**:
+  - 「**YH007-5 thin で Hill α=4.78 → 板 gap が fat tail 源 (FGLMS 機構 1 を支持)**」: market 価格 metric 由来の artifact。mid に切り替えると順序が逆転 (thick で α=1.68 と最も heavy) し、しかも mid 自体も artifact を持つため、いずれも信用できない。
+  - 「**YH007-6_7 both で SF 3/3 達成**」: market 価格で見ると見えるが、実体は spoofer が約定阻害して \|r\|_max=6.7e-7 (価格凍結)。mid では逆に Hill α=0.13 の発散テール。両 metric とも極端な artifact で、機構 4/5 の SF 効果は inconclusive。
+  - 「**YH007-4 execution layer は h=5 で Hill α=5.92 と境界接近**」: bounce artifact。mid で見ると Hill_mid は h={1,5,10} で 2.04/1.99/1.93 と horizon 変化に対しほぼ一定 → execution layer の Hill への効果は確認できず。
+  - 「**YH007-3 内生混合で vol_acf τ=50 が初めて正に**」: scheduler bug 含む旧 semantics 下の数値で、本 fix と mid 化で再評価すべき。strategy mix が時系列で変動するという **機構自体の動作確認** は有効。
+
+**含意 (negative result の正の側面)**:
+  この結果は YH007-8 (全 LIMIT 化 / Chiarella-Iori × Kronos / 自己組織化板) を強く正当化する。設計上の検証ターゲット:
+  - **密な指値板 → mid が細かく連続的に動く** (量子化ジャンプ artifact 消去)
+  - **受動指値主体 → クロス頻度減 → bounce 消失** (ret_acf τ=1 → ~0)
+  これらが構造的に満たされて初めて、裾が単一ジャンプ支配でない = **真の fat tail 候補** を語れる。YH007-4〜7 の機構 ablation は、その「クリーンな baseline」の上で再走して初めて意味を持つ。
+
+  論文の筋の更新: **naïve 版 (現 YH007-2〜7) では artifact しか出ない → 自己組織化板 (YH007-8) で初めてクリーンに測れる → その上で機構 ablation を再走**。
+
+**未確定の方法論メモ (YH007-8 着手前に詰める)**:
+  - SF は ≥ 500 bar で multi-seed 平均 (Cont 2001 推奨)。Hill α は 120 点では sample variance が大きすぎる。
+  - 「裾が単一ジャンプ支配かどうか」を検出する診断: 裾サンプルを除外して再 fit して α が変わるかを見る (jackknife)、または ccdf を可視化して 1 event の階段かを目視確認。
+  - market metric は中央値約定価格ベース、mid metric は (best_bid+best_ask)/2、どちらも単独では信用できない (本実験で実証)。第 3 案: VWAP per bar など複合 metric も検討。
+
 - 全サブ実験: config 駆動(README Appendix の fabm 規約)、multi-seed、結果を table 保存
   (`run_id, git_commit, config, seed, params, metrics, artifact_paths`)。
 
@@ -279,21 +300,36 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 4. ✅ **MultiAgent-Trader の Kronos ロード方法**: 不要。`KronosTokenizer.from_pretrained(...)` +
    `Kronos.from_pretrained(...)` + `KronosPredictor` で直接ロード OK と実証。
 
-**新たに浮上した課題 (YH007-2〜7 実装後)**:
-A. **bid-ask bounce の本質的な扱い**: MARKET_ORDER 構成で必然的に発生する ret_acf τ=1 ≈ -0.5。
-   spoofer 介入で消えるが、それは spoofer が約定阻害している artifact (|r|_max→1e-6)。
-   "真" の無相関化は LIMIT-driven 戦略層 or bar 単位での aggregated return 評価が必要。
-B. **短時系列 SF の信頼性**: 現在の baseline は 120〜220 bar で Hill α や vol_acf τ=50 が
-   不安定。Cont 2001 では N > 500 bar 推奨。Multi-seed × 長 run の seed 平均で再評価する
-   ステージが要る (YH007-8 候補)。
-C. **|r|_max 凍結問題**: spoof/both で価格がほぼ動かない (|r|_max=1e-6)。spoofer LIMIT が
-   bid/ask 両側を埋めて MARKET_ORDER が price impact を持たない状態。設計修正:
-   spoofer の TTL を短くしすぎず、適度な約定を許す or spoofer の volume を Calibrate する。
-D. **YH007-2/3 baseline の再計算**: scheduler bug 修正前の数値を spec に残してある。
-   修正後の値で再計算する (h=1 で 1200 step) のが筋。
-E. **実 Kronos × 全機構の閉ループ実験**: 現状 mock baseline で機構 ablation を完結したが、
-   実 Kronos での全機構走り込み (full baseline) は未実施。Kronos shared signal 共有 hub
-   経由で計算量は管理可能 (§7 地雷 4: ≈ 25 min / 1000 step / sample_count=16)。
+**新たに浮上した課題 (YH007-2〜7 実装後 → mid 診断で全 ablation 結論撤回)**:
+
+**A. metric アーティファクト (両方ある)** — §8.x の核心。
+  - **市場価格 metric (market) は bid-ask bounce 支配**。MARKET 構成では ret_acf τ=1 ≈ -0.5 が
+    構造的に発生し、Hill α も bounce で gaussian 側に圧縮される。
+  - **mid 価格 metric は量子化ジャンプ / best 抜け支配**。spoof 構成で Hill α=0.13 (発散),
+    ret_acf τ=1 が正に転じる, \|r\|_mid が量子化天井に張り付く、など極端な artifact。
+  - **どちらも単独では SF 測定に使えない** ことを実証 (§8.x)。
+
+**B. YH007-4〜7 機構別結論は全て撤回**。market/mid いずれの metric も artifact 支配のため、
+  「板 gap が fat tail を生む」「執行 horizon=5 で境界接近」「増幅器 both で 3/3 達成」など
+  前回の主張はすべて inconclusive。詳細は §8.x の撤回項目。**provenance として数値・図は残す**。
+
+**C. 短時系列 SF の信頼性**: 120 点で Hill α を fit するのは sample variance が大きすぎる。
+  Cont 2001 推奨 N > 500 bar、multi-seed 平均が必須。さらに「裾サンプルの jackknife / ccdf
+  目視」で単一ジャンプ支配かを診断する必要がある (§8.x の未確定方法論メモ)。
+
+**D. 根本解 = YH007-8 (全 LIMIT 化 / Chiarella-Iori × Kronos / 自己組織化板)**:
+  - 受動指値主体 → クロス頻度減 → **bounce が構造的に消える** (ret_acf τ=1 → ~0)
+  - 密な指値板 → mid が細かく連続的に動く → **量子化ジャンプが消える**
+  - これが満たされて初めて、YH007-4〜7 の機構 ablation を **クリーンな baseline 上で再走** する意味が出る。
+  - 別 spec / 別 issue で詳細設計。`packages/abm_models/chiarella_iori/` が雛形として使える。
+
+**E. 実 Kronos × 全機構の閉ループ実験**: YH007-8 のクリーンな baseline が立ってから初めて
+  価値がある。それまでは mock 定数信号で十分 (artifact 検出は信号によらない)。
+
+**F. 設計上の真の含意 (negative result としての価値)**:
+  「Kronos を alpha 源に据えただけの素朴な市場 (成行 + 外生 MM) は、現実的な SF に
+  自己組織化しない。SF には **内生的な指値流動性 (自己組織化する板)** が必要」
+  — これが YH007-2〜7 の結果から **唯一安全に主張できる** 内容で、論文の筋立ての中核に据える。
 
 ---
 
@@ -307,4 +343,5 @@ E. **実 Kronos × 全機構の閉ループ実験**: 現状 mock baseline で機
 | 2026-06-23 | **YH007-2 実装完了** (`abm_models/kronos_lob/`: bar_aggregator + signal_hub + agents + model, tests 4/4 GREEN, 既存 14 件 regression なし)。PAMS CDA + MMFCN (流動性供給, YH006 流用) + Kronos shared-signal × 2-reading × 共有信号 hub × bar 集約。mock baseline (warmup=200 + main=2000 step, bar_size=10, 220 bar, 11 min): **SF は出ない** (Hill α=8.97, vol_acf τ=50≈0, ret_acf τ=1=-0.47 = bid-ask bounce 支配)。実 Kronos 閉ループ smoke (warmup=100 + main=200, n=30 bar, 79s): Hill α=2.51 だが短時系列で値不安定。**この結果は機構 ablation の出発点 = baseline**。§5/§8 を反映。 |
 | 2026-06-23 | **YH007-3 実装完了** (`abm_models/kronos_lob/adaptive_agent.py`: KronosAdaptiveAgent, tests 5/5 GREEN, 全 23 件 regression GREEN)。両戦略 (Trend/Fade) を保持し rolling payoff score (T-window) で高い方を選択、参加閾値 r_min を Kronos 確信度連動。mock baseline (n_adaptive=40, T=50, 220 bar, 9 min): strategy mix が時系列で変動 (trend 98.4% / fade 1.5% / abst 0.1%, std=0.12) = **内生混合 ✓**。**vol_acf τ=50 が YH007-2 baseline の -0.024 から +0.059 へ改善 ✓** (vol clustering 指標が初めて正に)。Hill α=8.36 (fat tail まだ ✗), ret_acf τ=1=-0.67 (bid-ask bounce, MARKET_ORDER 構成由来で execution 層で改善する想定)。実 Kronos smoke (N=30, T=30, 200 step, 60s) も完走、trend dominant 98.6%。§5 表に ✅。 |
 | 2026-06-23 | **YH007-4/5/6/7 実装完了 (scaffolding)**: ChildOrderScheduler (execution layer), PredatorAgent (機構 4), SpooferAgent (機構 5)。build_lob_config に fcn_order_volume (機構 1 ablation), n_predator, n_spoofer, spoof_volume/offset/side/ttl, execution_horizon を expose。実装後 tests: yh007-4 (8 件), yh007-6_7 (5 件) GREEN, 全 36 件 regression GREEN。**bug 発見&修正**: 初版 ChildOrderScheduler は毎 step `update_parent(action)` で同方向再 charge → execution_horizon の効果が消える (3 horizon ablation で完全同一結果)。修正: parent は **bar 切替時のみ発生** (signature update_parent(action, bar_index))。修正後の YH007-4 ablation (1200 step, n_adaptive=30, bar_size=10): horizon ∈ {1,5,10} で SF 変動 (Hill α=6.32/5.92/7.50, vol_acf τ=50=-0.077/-0.150/-0.007)。**h=5 で Hill α=5.92** で fat tail 境界に接近。注: YH007-2/3 baseline 数値は scheduler bug 含む旧 semantics で取られたもので、修正後は変動する想定。 |
-| 2026-06-23 | **YH007-5/6/7 ablation 完了 + 主要結論獲得**。詳細表は §8 末尾の結論まとめ参照。主要発見: (1) **YH007-5 thin (n_fcn=10, vol=10) で Hill α=4.78 → fat tail 領域 [2,5] に初めて入る ✓** → **機構 1 (FGLMS 2004 板 gap) が単独で fat tail を生む** ことを支持。(2) **YH007-6_7 both で SF 3/3 達成** (Hill α=4.19, vol_acf+0.05, ret_acf -0.07) だが \|r\|_max=6.7e-07 で価格ほぼ凍結 → spoofer が約定を阻害する artifact の可能性、要解釈注意。(3) execution layer (機構 2) は SF を modulate するが単調改善なし (短時系列の限界 or 真に bouchaud 仮説より弱い)。**論文の主結論**: 「Kronos 駆動 LOB で fat tail を生む第一機構は **板 gap (FGLMS 機構 1)**、増幅器 (機構 4/5) は SF を作るが artifact 含む」。§5 表に YH007-5/6/7 ✅、§8 に結論テーブル追加。 |
+| 2026-06-23 | **YH007-5/6/7 ablation 完了 + 主要結論獲得 (後に撤回)**。詳細表は §8 末尾の結論まとめ参照。当時の主張: 機構 1 (板 gap) が fat tail 源、increased mechanism mid both で SF 3/3 達成。**この結論は次の改訂で撤回**。 |
+| 2026-06-23 | **mid-price 診断 + 全 ablation 結論の撤回 (§8.x 新設)**。同一 run の market 価格 vs mid 価格で SF を測ると、ret_acf τ=1 は market -0.56 / mid -0.17 で Roll 1984 bid-ask bounce が 70% を占めていたと実証。さらに mid に切り替えると、(a) baseline で既に Hill α=2.04, (b) Y5 thin/medium/thick で順序が逆転 (thick で α=1.68 と最も heavy), (c) spoof / both で Hill α=0.13 (発散テール), ret_acf τ=1 が正に転じ, \|r\|_mid が量子化天井に張り付くなど、**mid 自体も別のアーティファクト (量子化ジャンプ / best 抜け) を持つ** ことが判明。**結論: market 価格 = bid-ask bounce, mid = 量子化ジャンプ、両 metric とも naïve 設計下では信用できず、機構別 ablation の結論は全て inconclusive (撤回)**。前回主張の「板 gap = fat tail 源」「増幅器 both で 3/3 達成」も撤回。**正の含意**: この negative result が YH007-8 (全 LIMIT / Chiarella-Iori × Kronos / 自己組織化板) を強く正当化する。論文の筋を「naïve 版では artifact しか出ない → 自己組織化板で初めてクリーンに測れる → その上で機構 ablation」に再構成。§5 表の結論ラベルを「artifact / 要再測定」に降格、§8.x で確証/撤回/含意を 3 点で整理、§10 を新課題 (artifact 両方ある / 短時系列 / 根本解=YH007-8) で書き直し。**provenance として測定データ・図・実装は全て git に残す**。実装変更: bar_aggregator.build_ohlcv_from_market に price_source ∈ {market, mid} を追加、KronosLOBMarket.run の戻り値に history_market / history_mid を併記、ablation スクリプト 3 つを 2 metric 出力対応に。tests 27 件 + 既存 regression GREEN 維持。 |
