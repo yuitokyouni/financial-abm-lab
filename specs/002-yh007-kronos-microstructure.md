@@ -142,7 +142,7 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 
 | ID | 主題 | 検証内容 |
 |---|---|---|
-| **YH007-1** | ① 最小実装 (aggregate) | Kronos 2 読みで順張り/逆張りが分岐するか。板無し即時 clearing で疎通。 |
+| **YH007-1** ✅ | ① 最小実装 (aggregate) | Kronos 2 読みで順張り/逆張りが分岐するか。板無し即時 clearing で疎通。**実装済** (`packages/abm_models/abm_models/kronos_aggregate/`, `experiments/speculation_game/yh007_1_aggregate.py`, tests 5/5 GREEN, 実 Kronos 閉ループ smoke 5 step 0.68s で trend mean=+0.2 / fade mean=-0.2 = 逆符号 ✓)。 |
 | **YH007-2** | LOB 化 | YH007-1 を PAMS CDA 板に乗せる。実約定 payoff。SF が出るか(baseline)。 |
 | **YH007-3** | ④ 内生混合 | GCMG 参加ゲート × payoff 選択で逆張り比率が内生決定されるか。 |
 | **YH007-4** | 執行層 (機構 2) | parent→child 分割執行を on/off。長期記憶フロー → vol clustering 寄与。 |
@@ -260,3 +260,4 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 |---|---|
 | 2026-06-22 | 初版ドラフト。旧 YH007(自己組織化 SG)を supersede。リアル LOB × Kronos × $-game/GCMG、機構 ablation 設計、サブ実験分割、インフラ実測(PAMS✓/torch✓/HF✗)、設計地雷。 |
 | 2026-06-23 | §6 全面更新: ネットワーク Full 化で HF API 200 復活 + NeoQuasar/Kronos-* が LFS 未使用 → Kronos-Tokenizer-base/Kronos-small の実 weights 直接 download 完走を実測。CPU 推論レイテンシ計測 (sample_count=1: ≈ 100 ms, =16: ≈ 1.0〜1.5 s, 4 thread, fp32)。再現スクリプト `experiments/speculation_game/yh007_kronos_smoke.py` 追加 + gitignore に `.venv-yh007/`。§7 地雷 4 をレイテンシ実測値で書換 (共有信号アーキ → CPU 閉ループ実行が現実的)。地雷 1・未解決 2/4 を整合反映。§9 流用マップに `shiyu-coder/Kronos` の `KronosPredictor` 経由ロードを追記。 |
+| 2026-06-23 | ユーザ確認: Game 役割 = (i) alpha 生成相互作用 (YH007-1〜2), Kronos モード = 閉ループ, LOB 範囲 = 軸 1 のみ。**YH007-1 実装完了** (`abm_models/kronos_aggregate/` + experiment + tests)。同一 Kronos 信号 → Trend/Fade が決定論的に逆符号 (mock 5/5 GREEN, 実 Kronos 閉ループ 5 step smoke OK)。§5 表に ✅ マーク + 既定 backend 切替 (mock/kronos)。 |
