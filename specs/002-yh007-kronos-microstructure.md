@@ -154,7 +154,7 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 
 ---
 
-## 6. インフラ現実(本ブランチで実測済み 2026-06-22)
+## 6. インフラ現実(本ブランチで実測済み)
 
 このセッションのクラウド環境 = **Linux コンテナ**(ユーザの Windows 端末でも Mac でもない)。
 実測結果:
@@ -164,32 +164,35 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 | PAMS 0.2.2 | ✓ PyPI から ~2s で install、YH006 が使う全 API import OK | **「PAMS は Mac 限定」は思い込み。Linux で動く** |
 | YH006 LOB smoke | ✓ end-to-end 完走 1.3s (submits=572, RT=238, subs=7) | PAMS CDA 基盤はこの環境で稼働 |
 | torch 2.12.1 | ✓ install & CPU matmul OK(CUDA 無し = CPU 推論) | torch 自体は問題なし |
-| **HuggingFace** | **✗ 403 Forbidden、CDN は DNS 解決せず**(PyPI は 200) | **allowlist ポリシーで HF ブロック。Kronos weights を落とせない** |
+| **HuggingFace API** | **✓ `huggingface.co` HTTP 200**(2026-06-23 再測。前日 06-22 は 403 だったが解消) | API/メタデータ取得は可 |
+| **HF LFS CDN** | ✗ `cdn-lfs.huggingface.co` は DNS 解決不可(継続) | LFS 経由のモデルは落ちない |
+| **Kronos weights 取得** | **✓ Tokenizer-base 16MB を 0.9s, Kronos-small 99MB を 3.5s で完走** | NeoQuasar/Kronos-* 全リポが LFS 未使用(`lfs=False`)で CDN を経由しない |
 
-→ **Kronos 実行はこのクラウド環境では(現状)不可**。選択肢:
+→ **Kronos 実行はこのクラウド環境で可能**(NeoQuasar の Kronos リポが LFS を使っていない間)。
+当初検討した選択肢の現状評価:
 
-- **(A) ネットワークポリシー変更**: 環境作成時に `huggingface.co` 等を allowlist 追加
-  (https://code.claude.com/docs/en/claude-code-on-the-web 参照)。クラウドで閉ループ実行可に。**推奨**。
-- **(B) weights を vendor**: Mac / MultiAgent-Trader 環境で取得 → object storage / Git LFS で持込。重い。
-- **(C) 役割分担**: Kronos 推論 + 閉ループは Mac、クラウドは PAMS-only smoke と古典 ablation
-  (YH007-4〜7 の一部は Kronos 不要)。
-- **(D) 外生シグナル設計**: Kronos を実履歴で事前計算 → parquet キャッシュ → ABM は読むだけ。
-  クラウドで動くが、**agent 生成価格に Kronos が反応しない = 閉ループでない**ため研究問いが
-  変質(下記地雷参照)。閉ループが要件なら不採用。
+- **(A) ネットワークポリシー変更**: 不要(現状 `huggingface.co` 自体は通る)。将来 Kronos が LFS に
+  移行したら `cdn-lfs.huggingface.co` の allowlist 追加が要る。
+- **(B) weights を vendor**: 不要。直接 `hf_hub_download` で落ちる。
+- **(C) 役割分担**: 不要。クラウドで閉ループ実行可能。
+- **(D) 外生シグナル設計**: 閉ループ要件なら採らない(従来通り)。
 
-> MultiAgent-Trader に既存 Kronos 統合あり(ユーザ談)。本セッションは GitHub MCP が
-> financial-abm-lab に限定され `list_repos` も未提供のため**当リポからは直接参照不可**。
-> ロード方法のスニペットを別途共有してもらうのが最短。
+**ただし監視点**: NeoQuasar 側が将来 weights を LFS に乗せ替えた場合、CDN ブロックが直撃する。
+モデル取得は CI/setup で fail-fast にして検出可能にする(`hf_hub_download` の戻りサイズ確認)。
+
+> MultiAgent-Trader 側の既存 Kronos 統合は参考として残すが、本リポ内で `transformers` /
+> `huggingface_hub` から直接ロードできるので必須ではない。ロード作法のスニペット共有は
+> あれば便利、というレベルに格下げ。
 
 ---
 
 ## 7. 設計地雷(spec 確定前に決定が要る)
 
 1. **Kronos 実行モード = 閉ループ vs 外生**:
-   - 閉ループ(Kronos が *シミュレート価格* を条件付け)→ ループ内ライブ推論必須 → §6(A) or (C)。
-     研究問い「Kronos 市場の SF 生成機構」に忠実。
-   - 外生(Kronos が *実履歴* を条件付け、事前計算)→ §6(D) で軽いが、Kronos が「外生情報
-     注入器」になり問いが変わる。
+   - 閉ループ(Kronos が *シミュレート価格* を条件付け)→ ループ内ライブ推論必須。
+     §6 の現状(weights 取得 ✓ / CPU 推論)で実行可。研究問い「Kronos 市場の SF 生成機構」に忠実。
+   - 外生(Kronos が *実履歴* を条件付け、事前計算)→ 軽いが Kronos が「外生情報注入器」になり
+     問いが変わる。閉ループ要件なら不採用。
 2. **zero-shot 転移**: Kronos は *実市場*学習済み。sim 内投入は分布シフト下の zero-shot。
    sim 上 fine-tune は「自分の生成価格で自分を学習」する循環。**較正環境≠実行環境**問題
    (`refs_execution_algorithms.md §8` の square-root 係数ズレ、YH006 の c_ticks self-consistency
@@ -232,10 +235,11 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 ## 10. 未解決(ユーザ確認事項)
 
 1. **ゲームの役割**(地雷 3): 淘汰圧 か alpha 生成相互作用 か。← spec の背骨を決める。
-2. **Kronos 実行モード**(地雷 1): 閉ループ(→ ネットワークポリシー変更 §6A を要請するか)
-   か 外生キャッシュ か。
+2. **Kronos 実行モード**(地雷 1): 閉ループ か 外生キャッシュ か(§6 の通り weights 取得は OK、
+   ネットワークポリシー変更も現状不要)。
 3. **LOB リアル化の範囲**(§4.5): 軸 1 のみ か 軸 1+2 か。
-4. **MultiAgent-Trader の Kronos ロード方法**: スニペット共有可能か。
+4. **MultiAgent-Trader の Kronos ロード方法**: あれば参考、無くても可
+   (`transformers.AutoModel.from_pretrained('NeoQuasar/Kronos-small')` で直接ロード可能)。
 
 ---
 
@@ -243,3 +247,4 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 | 日付 | 内容 |
 |---|---|
 | 2026-06-22 | 初版ドラフト。旧 YH007(自己組織化 SG)を supersede。リアル LOB × Kronos × $-game/GCMG、機構 ablation 設計、サブ実験分割、インフラ実測(PAMS✓/torch✓/HF✗)、設計地雷。 |
+| 2026-06-23 | §6 更新: HF API 200 復活 + NeoQuasar/Kronos-* が LFS 未使用 → Kronos-Tokenizer-base/Kronos-small の実 weights をクラウドで直接 download 完走を実測。選択肢 (A)〜(D) の現状評価・地雷 1・未解決 2/4 を反映(weights vendoring 不要、閉ループ実行可)。LFS 移行時のみ CDN allowlist が要る点を監視点として明記。 |
