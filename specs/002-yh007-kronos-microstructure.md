@@ -216,7 +216,9 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 
 ## 8. 受け入れ基準(暫定、サブ実験ごとに精緻化)
 
-- **YH007-1**: 同一 Kronos 予測から順張り/逆張りの 2 行動が決定論的に分岐する(seed 固定で再現)。
+- **YH007-1** ✅ **達成 (2026-06-23)**: 同一 Kronos 予測から順張り/逆張りの 2 行動が決定論的に分岐する(seed 固定で再現)。
+  実 Kronos 閉ループ 5 step = **0.68s (≈ 136 ms/step)**(§7 地雷 4 の見積もり ≈ 100 ms/step とほぼ一致)、
+  **drift が時間変化し fade が完全に逆符号**を確認。
 - **YH007-2/3**: 実約定 payoff の LOB で SF が出る — fat tail(Hill α ∈ [2,5] 目安)、
   vol clustering(|r| ACF が τ=50 で正、緩減衰)、リターン無相関。
 - **機構 ablation (YH007-4〜7)**: 各機構の on/off で SF 指標が有意に動くか。
@@ -261,3 +263,4 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 | 2026-06-22 | 初版ドラフト。旧 YH007(自己組織化 SG)を supersede。リアル LOB × Kronos × $-game/GCMG、機構 ablation 設計、サブ実験分割、インフラ実測(PAMS✓/torch✓/HF✗)、設計地雷。 |
 | 2026-06-23 | §6 全面更新: ネットワーク Full 化で HF API 200 復活 + NeoQuasar/Kronos-* が LFS 未使用 → Kronos-Tokenizer-base/Kronos-small の実 weights 直接 download 完走を実測。CPU 推論レイテンシ計測 (sample_count=1: ≈ 100 ms, =16: ≈ 1.0〜1.5 s, 4 thread, fp32)。再現スクリプト `experiments/speculation_game/yh007_kronos_smoke.py` 追加 + gitignore に `.venv-yh007/`。§7 地雷 4 をレイテンシ実測値で書換 (共有信号アーキ → CPU 閉ループ実行が現実的)。地雷 1・未解決 2/4 を整合反映。§9 流用マップに `shiyu-coder/Kronos` の `KronosPredictor` 経由ロードを追記。 |
 | 2026-06-23 | ユーザ確認: Game 役割 = (i) alpha 生成相互作用 (YH007-1〜2), Kronos モード = 閉ループ, LOB 範囲 = 軸 1 のみ。**YH007-1 実装完了** (`abm_models/kronos_aggregate/` + experiment + tests)。同一 Kronos 信号 → Trend/Fade が決定論的に逆符号 (mock 5/5 GREEN, 実 Kronos 閉ループ 5 step smoke OK)。§5 表に ✅ マーク + 既定 backend 切替 (mock/kronos)。 |
+| 2026-06-23 | 実 Kronos 閉ループ 5 step = **0.68s (≈ 136 ms/step)** を実測 — §7 地雷 4 のレイテンシ見積もり (≈ 100 ms/step, sample_count=1) とほぼ一致。drift が時間変化 + fade が完全に逆符号を確認し、**§8 YH007-1 の受け入れ基準を達成**(§8 に ✅ 反映)。 |
