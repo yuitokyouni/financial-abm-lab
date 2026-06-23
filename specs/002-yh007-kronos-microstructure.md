@@ -149,7 +149,7 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 | **YH007-5** ✅ (実装) ⚠ (結論撤回) | 流動性ゆらぎ (機構 1) | 板 depth を厚/薄で振る。**実装済** (config 拡張 `fcn_order_volume`)。**結論撤回**: 「thin で fat tail (Hill α=4.78)」「FGLMS 機構 1 支持」は **market 価格 metric 由来の artifact**。mid に切り替えると順序が逆転し (thick で α=1.68)、しかも mid 自体も量子化ジャンプ artifact を持つため、いずれも信用できない (§8)。 |
 | **YH007-6** ✅ (実装) ⚠ (結論撤回) | 捕食 agent (機構 4) | 新規注文を食う agent。**実装済** (`kronos_lob/predator.py`, tests pass)。**結論撤回**: artifact 支配で機構 4 単独の効果は inconclusive (§8)。 |
 | **YH007-7** ✅ (実装) ⚠ (結論撤回) | 見せ板 agent (機構 5) | layering/spoofing。**実装済** (`kronos_lob/spoofer.py`, tests pass)。**結論撤回**: spoof 構成で market 価格 \|r\|_max=6.7e-7 (価格凍結) / mid Hill α=0.13 (発散テール) と両 metric とも極端な artifact。機構 5 の SF 効果は inconclusive (§8)。 |
-| **YH007-8** (未着手, 新規) | 自己組織化板 (CI×Kronos) | 全 LIMIT 化 + Chiarella-Iori 型自己組織化 CDA に Kronos 信号を埋め込む。受動指値主体でクロス頻度減 → bounce 消失、密な指値板で mid 量子化ジャンプ消失、を構造的に達成することが検証ターゲット。これが満たされて初めて YH007-4〜7 の機構 ablation を再走する意味が出る。詳細設計は別 spec or 別 issue。 |
+| **YH007-8** (未着手, 新規) | 自己組織化板 (CI×Kronos) | 全 LIMIT 化 + Chiarella-Iori 型自己組織化 CDA に Kronos 信号を埋め込む。受動指値主体でクロス頻度減 → bounce 消失、密な指値板で mid 量子化ジャンプ消失、を構造的に達成することが検証ターゲット。これが満たされて初めて YH007-4〜7 の機構 ablation を再走する意味が出る。詳細設計は `specs/003-yh007-8-self-organized-book.md`。 |
 
 (順序・粒度は実装しながら調整。YH007-1→3 が背骨、4 以降が機構 ablation。)
 
