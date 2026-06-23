@@ -23,7 +23,18 @@ import numpy as np
 
 from abm_models.kronos_aggregate.model import constant_signal_provider
 from abm_models.kronos_lob import KronosLOBMarket
+from abm_models.kronos_lob.bar_aggregator import closes_to_returns
 from stylized_facts import stylized_facts_summary
+
+
+def _sf_from_history(history) -> dict | None:
+    closes = history["close"].to_numpy(dtype="float64")
+    returns = closes_to_returns(closes)
+    if returns.size < 4:
+        return None
+    acf_lags = tuple(int(x) for x in (1, 5, 14, 50, 200) if x < returns.size)
+    kurt_windows = tuple(int(x) for x in (1, 16, 64, 256) if x < returns.size)
+    return stylized_facts_summary(returns, acf_lags=acf_lags, kurt_windows=kurt_windows)
 
 
 _PRESETS = {
@@ -59,18 +70,17 @@ def _summarize_one(cond: str, *, backend: str, seed: int, warmup_steps: int, mai
     t0 = time.time()
     res = model.run(seed=seed)
     dt = time.time() - t0
-    prices = res["prices"]; returns = res["returns"]
     n_pred = sum(len(l) for l in res.get("predation_logs", []))
     n_spoof = sum(len(l) for l in res.get("spoof_logs", []))
-    if returns.size < 4:
-        return {"cond": cond, "dt": dt, "n_bars": int(prices.size),
-                "preset": preset, "n_pred": n_pred, "n_spoof": n_spoof, "sf": None}
-    acf_lags = tuple(int(x) for x in (1, 5, 14, 50, 200) if x < returns.size)
-    kurt_windows = tuple(int(x) for x in (1, 16, 64, 256) if x < returns.size)
-    sf = stylized_facts_summary(returns, acf_lags=acf_lags, kurt_windows=kurt_windows)
-    return {"cond": cond, "dt": dt, "n_bars": int(prices.size), "preset": preset,
-            "n_pred": n_pred, "n_spoof": n_spoof,
-            "abs_r_max": float(np.abs(returns).max()), "sf": sf}
+    sf_market = _sf_from_history(res["history_market"])
+    sf_mid = _sf_from_history(res["history_mid"])
+    r_m = closes_to_returns(res["history_market"]["close"].to_numpy(dtype="float64"))
+    r_d = closes_to_returns(res["history_mid"]["close"].to_numpy(dtype="float64"))
+    return {"cond": cond, "dt": dt, "n_bars": int(len(res["history_market"])),
+            "preset": preset, "n_pred": n_pred, "n_spoof": n_spoof,
+            "sf_market": sf_market, "sf_mid": sf_mid,
+            "abs_r_max_market": float(np.abs(r_m).max()) if r_m.size else float("nan"),
+            "abs_r_max_mid": float(np.abs(r_d).max()) if r_d.size else float("nan")}
 
 
 def main() -> None:
@@ -109,26 +119,41 @@ def main() -> None:
                            spoof_volume=args.spoof_volume,
                            spoof_offset_ticks=args.spoof_offset_ticks)
         rows.append(r)
-        sf = r["sf"]
-        if sf is None:
-            print(f"  cond={c}: returns too short"); continue
-        print(f"  cond={c:>5} dt={r['dt']:.1f}s bars={r['n_bars']} "
-              f"predation={r['n_pred']} spoof={r['n_spoof']} |r|_max={r['abs_r_max']:.4e}")
-        print(f"    Hill α={sf['hill_alpha']:.3f}  ret_acf τ=1: "
-              f"{sf['ret_acf'].get(1, float('nan')):+.4f}  vol_acf τ=50: "
-              f"{sf['vol_acf'].get(50, float('nan')):+.4f}")
+        for src in ("market", "mid"):
+            sf = r[f"sf_{src}"]
+            if sf is None: continue
+            print(f"  [{src:>6}] cond={c:>5} dt={r['dt']:.1f}s bars={r['n_bars']} "
+                  f"pred={r['n_pred']} spoof={r['n_spoof']} "
+                  f"|r|_max={r['abs_r_max_'+src]:.4e}  Hill α={sf['hill_alpha']:.3f} "
+                  f"ret_acf[1]={sf['ret_acf'].get(1, float('nan')):+.4f} "
+                  f"vol_acf[50]={sf['vol_acf'].get(50, float('nan')):+.4f}")
 
-    print("\n[YH007-6/7 ablation summary]")
-    print(f"  {'cond':>6} {'n_pred':>6} {'n_spoof':>7} {'Hill α':>8} "
-          f"{'ret_acf[1]':>11} {'vol_acf[50]':>12} {'|r|_max':>10}")
+    print("\n[YH007-6/7 ablation summary — market vs mid]")
+    print(f"  {'cond':>6} {'n_pred':>6} {'n_spoof':>7}  "
+          f"{'Hill_m':>8} {'Hill_mid':>9}  "
+          f"{'ret1_m':>9} {'ret1_mid':>10}  "
+          f"{'vol50_m':>10} {'vol50_mid':>11}  "
+          f"{'|r|_m':>10} {'|r|_mid':>10}")
     for r in rows:
-        sf = r["sf"]; pre = r["preset"]
-        if sf is None:
+        sm, sd, pre = r["sf_market"], r["sf_mid"], r["preset"]
+        if sm is None or sd is None:
             print(f"  {r['cond']:>6}  (returns too short)"); continue
-        print(f"  {r['cond']:>6} {pre['n_predator']:>6} {pre['n_spoofer']:>7} "
-              f"{sf['hill_alpha']:>+8.3f} {sf['ret_acf'].get(1, float('nan')):>+11.4f} "
-              f"{sf['vol_acf'].get(50, float('nan')):>+12.4f} {r['abs_r_max']:>10.4e}")
-    print("\n  期待 (econophysics 通説): 増幅器なし (none) と全部入り (both) でSFは同等の桁。")
+        print(f"  {r['cond']:>6} {pre['n_predator']:>6} {pre['n_spoofer']:>7}  "
+              f"{sm['hill_alpha']:>+8.3f} {sd['hill_alpha']:>+9.3f}  "
+              f"{sm['ret_acf'].get(1, float('nan')):>+9.4f} "
+              f"{sd['ret_acf'].get(1, float('nan')):>+10.4f}  "
+              f"{sm['vol_acf'].get(50, float('nan')):>+10.4f} "
+              f"{sd['vol_acf'].get(50, float('nan')):>+11.4f}  "
+              f"{r['abs_r_max_market']:>10.3e} {r['abs_r_max_mid']:>10.3e}")
+    import json
+    out_path = f"/tmp/yh007_6_7_ablation_{args.backend}_seed{args.seed}.json"
+    with open(out_path, "w") as f:
+        json.dump([{"cond": r["cond"], "preset": r["preset"], "n_bars": r["n_bars"],
+                    "sf_market": r["sf_market"], "sf_mid": r["sf_mid"],
+                    "abs_r_max_market": r["abs_r_max_market"],
+                    "abs_r_max_mid": r["abs_r_max_mid"]} for r in rows],
+                  f, default=str)
+    print(f"\nsaved: {out_path}")
 
 
 if __name__ == "__main__":
