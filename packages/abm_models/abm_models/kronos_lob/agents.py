@@ -23,6 +23,7 @@ from pams.order import MARKET_ORDER, Cancel, Order
 
 from ..kronos_aggregate.model import KronosSignal
 from .bar_aggregator import build_ohlcv_from_market
+from .execution import ChildOrderScheduler
 from .signal_hub import SharedSignalHub
 
 
@@ -47,6 +48,9 @@ class _KronosReaderAgent(Agent):
         self.timestamp_start: str = settings.get("timestampStart", "2026-06-01 09:00")
         self.timestamp_freq: str = settings.get("timestampFreq", "1min")
         self.action_log: list[tuple[int, int]] = []  # (time, action)
+        # YH007-4 執行層: execution_horizon=1 で従来挙動 (pass-through)。
+        self.execution_horizon: int = int(settings.get("executionHorizon", 1))
+        self._scheduler = ChildOrderScheduler(execution_horizon=self.execution_horizon)
 
     def submit_orders(self, markets: List[Market]) -> List[Union[Order, Cancel]]:
         return sum((self.submit_orders_by_market(market=m) for m in markets), [])
@@ -71,14 +75,17 @@ class _KronosReaderAgent(Agent):
             timestamp_start=self.timestamp_start, timestamp_freq=self.timestamp_freq,
         )
         signal = self.signal_hub.get_or_update(current_step=time, history_df=history)
-        if signal is None:
-            return []
+        # 戦略層: signal が無い (lookback 未達) なら parent=0
+        action = 0 if signal is None else self._decide_action(signal)
+        if signal is not None:
+            self.action_log.append((time, action))
 
-        action = self._decide_action(signal)
-        self.action_log.append((time, action))
-        if action == 0:
+        # 執行層: parent → child schedule。execution_horizon=1 で pass-through。
+        self._scheduler.update_parent(action)
+        child = self._scheduler.next_child()
+        if child == 0:
             return []
-        is_buy = action > 0
+        is_buy = child > 0
         return [Order(
             agent_id=self.agent_id, market_id=market.market_id,
             is_buy=is_buy, kind=MARKET_ORDER,

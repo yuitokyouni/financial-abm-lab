@@ -87,40 +87,41 @@ class KronosAdaptiveAgent(_KronosReaderAgent):
         # 毎 step で前 step の (price, hypothetical action) から score 更新
         self._update_scores_from_market(market)
 
-        if self.signal_hub is None:
+        chosen_a = 0
+        if self.signal_hub is not None:
+            from .bar_aggregator import build_ohlcv_from_market
+            time = market.get_time()
+            history = build_ohlcv_from_market(
+                market, bar_size=self.bar_size, start_step=0, end_step=time + 1,
+                timestamp_start=self.timestamp_start, timestamp_freq=self.timestamp_freq,
+            )
+            signal = self.signal_hub.get_or_update(current_step=time, history_df=history)
+            if signal is not None:
+                d = signal.drift
+                trend_a = 1 if d > 0 else (-1 if d < 0 else 0)
+                fade_a = -trend_a
+                s_trend = self._score("trend")
+                s_fade = self._score("fade")
+                if s_trend >= s_fade:
+                    chosen_a, chosen_strat, best_score = trend_a, "trend", s_trend
+                else:
+                    chosen_a, chosen_strat, best_score = fade_a, "fade", s_fade
+
+                r_min = self._current_r_min(signal.confidence)
+                if best_score <= r_min:
+                    chosen_a = 0
+                    chosen_strat = "abstain"
+
+                self._last_actions["trend"] = trend_a
+                self._last_actions["fade"] = fade_a
+                self.action_log.append((time, chosen_a, chosen_strat, s_trend, s_fade))
+
+        # 執行層 (YH007-4): parent → child schedule
+        self._scheduler.update_parent(chosen_a)
+        child = self._scheduler.next_child()
+        if child == 0:
             return []
-        from .bar_aggregator import build_ohlcv_from_market
-        time = market.get_time()
-        history = build_ohlcv_from_market(
-            market, bar_size=self.bar_size, start_step=0, end_step=time + 1,
-            timestamp_start=self.timestamp_start, timestamp_freq=self.timestamp_freq,
-        )
-        signal = self.signal_hub.get_or_update(current_step=time, history_df=history)
-        if signal is None:
-            return []
-
-        d = signal.drift
-        trend_a = 1 if d > 0 else (-1 if d < 0 else 0)
-        fade_a = -trend_a
-        s_trend = self._score("trend")
-        s_fade = self._score("fade")
-        if s_trend >= s_fade:
-            chosen_a, chosen_strat, best_score = trend_a, "trend", s_trend
-        else:
-            chosen_a, chosen_strat, best_score = fade_a, "fade", s_fade
-
-        r_min = self._current_r_min(signal.confidence)
-        if best_score <= r_min:
-            chosen_a = 0
-            chosen_strat = "abstain"
-
-        self._last_actions["trend"] = trend_a
-        self._last_actions["fade"] = fade_a
-        self.action_log.append((time, chosen_a, chosen_strat, s_trend, s_fade))
-
-        if chosen_a == 0:
-            return []
-        is_buy = chosen_a > 0
+        is_buy = child > 0
         return [Order(
             agent_id=self.agent_id, market_id=market.market_id,
             is_buy=is_buy, kind=MARKET_ORDER,

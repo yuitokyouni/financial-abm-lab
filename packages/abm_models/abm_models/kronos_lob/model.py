@@ -79,6 +79,8 @@ def build_lob_config(
     score_window: int = 50,
     r_min_base: float = 0.0,
     r_min_conf_coef: float = 0.0,
+    execution_horizon: int = 1,
+    fcn_order_volume: int = 30,
 ) -> Dict[str, Any]:
     """YH006 流の 2-session PAMS config を組み立てる (YH007-2/3 共通)。
 
@@ -89,6 +91,7 @@ def build_lob_config(
     market["marketPrice"] = initial_market_price
     fcn = deepcopy(_FCN_AGENTS)
     fcn["numAgents"] = int(n_fcn)
+    fcn["orderVolume"] = int(fcn_order_volume)
     common = {
         "markets": ["Market"],
         "cashAmount": 100000,
@@ -98,6 +101,7 @@ def build_lob_config(
         "lookbackBars": int(lookback_bars),
         "timestampStart": timestamp_start,
         "timestampFreq": timestamp_freq,
+        "executionHorizon": int(execution_horizon),
     }
     agent_names: list[str] = ["FCNAgents"]
     extra_blocks: Dict[str, Any] = {}
@@ -181,6 +185,8 @@ class KronosLOBMarket:
         score_window: int = 50,
         r_min_base: float = 0.0,
         r_min_conf_coef: float = 0.0,
+        execution_horizon: int = 1,
+        fcn_order_volume: int = 30,
     ):
         if signal_provider is None:
             signal_provider = constant_signal_provider(pred_close_mean=initial_market_price * 1.001)
@@ -199,6 +205,8 @@ class KronosLOBMarket:
         self.score_window = score_window
         self.r_min_base = r_min_base
         self.r_min_conf_coef = r_min_conf_coef
+        self.execution_horizon = execution_horizon
+        self.fcn_order_volume = fcn_order_volume
 
     def _inject_hub(self, simulator, hub: SharedSignalHub) -> None:
         from .agents import _KronosReaderAgent
@@ -218,6 +226,8 @@ class KronosLOBMarket:
             score_window=self.score_window,
             r_min_base=self.r_min_base,
             r_min_conf_coef=self.r_min_conf_coef,
+            execution_horizon=self.execution_horizon,
+            fcn_order_volume=self.fcn_order_volume,
         )
 
         hub = SharedSignalHub(
