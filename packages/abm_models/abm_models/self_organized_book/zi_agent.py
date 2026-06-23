@@ -63,12 +63,14 @@ class ZIAgent(LimitAgentBase):
             eps = self.prng.gauss(0.0, self.sigma_eval)
             v = mid * (1.0 + eps)
         elif self.zi_mode == "matched":
-            # AR(1) で random walk: v_t = v_{t-1} + delta
-            if self._last_v is None:
-                self._last_v = mid
-            delta = self.prng.gauss(self.mu_match, self.sigma_match)
-            v = self._last_v + delta * mid  # delta は相対変化として扱う
-            self._last_v = v
+            # P1 暫定版: independent sample (累積でない)。
+            # v = mid * (1 + N(mu_match, sigma_match))
+            # 旧版の累積 random walk (v_t = v_{t-1} + δ*mid) は長 run で v が mid から
+            # 発散し、agg_rate=0.7 / ret_acf=-0.49 (bounce 全開) に陥った P1 pilot の知見。
+            # spec 003 §4 の「Δv_t 累積モーメント matching」要件は P3 着手前にユーザ裁定で
+            # 真の Δv 累積構造に戻すかを決定 (TODO: 003 §10 に追加課題として記録)。
+            eps = self.prng.gauss(self.mu_match, self.sigma_match)
+            v = mid * (1.0 + eps)
         else:
             raise ValueError(f"unknown zi_mode: {self.zi_mode!r}")
 

@@ -187,15 +187,17 @@ def main() -> None:
                   margin_min=3e-5, margin_max=1e-4)
 
     # tick 較正のための構成。spec 003 §3.3 目標 mid_med_tick=2-5 を狙う。
+    # 前 pilot: tick=0.01, sigma=5e-5 → agg=0.113 ✓, ret_acf~0 ✓, mid_med=1 量子化張り付き ✗
+    # 改善方向: tick を 0.001 に細かくして mid_med を 3 近辺に上げる + sigma=5e-5 維持
     configs = [
-        ("ZI-naive   tick=0.01 sigma=1e-4 (target ~3 tick)",
-         dict(zi_mode="naive", sigma_eval=1e-4, tick_size=0.01)),
-        ("ZI-naive   tick=0.01 sigma=5e-5 (smaller)",
-         dict(zi_mode="naive", sigma_eval=5e-5, tick_size=0.01)),
-        ("ZI-matched tick=0.01 sigma=1e-4 (control low)",
-         dict(zi_mode="matched", sigma_eval=1e-4, tick_size=0.01)),
-        ("ZI-matched tick=0.01 sigma=2e-4 (control high)",
-         dict(zi_mode="matched", sigma_eval=2e-4, tick_size=0.01)),
+        ("ZI-naive   tick=0.001 sigma=5e-5 (fine tick)",
+         dict(zi_mode="naive", sigma_eval=5e-5, tick_size=0.001)),
+        ("ZI-naive   tick=0.001 sigma=1e-4 (fine, larger)",
+         dict(zi_mode="naive", sigma_eval=1e-4, tick_size=0.001)),
+        ("ZI-matched tick=0.001 sigma=5e-5 (control low, independent sample)",
+         dict(zi_mode="matched", sigma_eval=5e-5, tick_size=0.001)),
+        ("ZI-matched tick=0.001 sigma=1e-4 (control high, independent sample)",
+         dict(zi_mode="matched", sigma_eval=1e-4, tick_size=0.001)),
     ]
 
     results = []
