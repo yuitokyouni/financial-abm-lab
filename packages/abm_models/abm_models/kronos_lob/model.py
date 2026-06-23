@@ -31,7 +31,9 @@ from ..kronos_aggregate.model import SignalProvider, constant_signal_provider
 from .adaptive_agent import KronosAdaptiveAgent
 from .agents import KronosFadeAgent, KronosTrendAgent
 from .bar_aggregator import build_ohlcv_from_market, closes_to_returns
+from .predator import PredatorAgent
 from .signal_hub import SharedSignalHub
+from .spoofer import SpooferAgent
 
 
 # --------------------------------------------------------------------------
@@ -81,6 +83,13 @@ def build_lob_config(
     r_min_conf_coef: float = 0.0,
     execution_horizon: int = 1,
     fcn_order_volume: int = 30,
+    n_predator: int = 0,
+    predator_order_volume: int = 1,
+    n_spoofer: int = 0,
+    spoof_volume: int = 100,
+    spoof_offset_ticks: int = 5,
+    spoof_side: str = "both",
+    spoof_ttl: int = 1,
 ) -> Dict[str, Any]:
     """YH006 流の 2-session PAMS config を組み立てる (YH007-2/3 共通)。
 
@@ -127,6 +136,29 @@ def build_lob_config(
         b["rMinConfCoef"] = float(r_min_conf_coef)
         extra_blocks["AdaptiveAgents"] = b
         agent_names.append("AdaptiveAgents")
+    if n_predator > 0:
+        extra_blocks["PredatorAgents"] = {
+            "class": "PredatorAgent",
+            "numAgents": int(n_predator),
+            "markets": ["Market"],
+            "cashAmount": 100000,
+            "assetVolume": 100,
+            "orderVolume": int(predator_order_volume),
+        }
+        agent_names.append("PredatorAgents")
+    if n_spoofer > 0:
+        extra_blocks["SpooferAgents"] = {
+            "class": "SpooferAgent",
+            "numAgents": int(n_spoofer),
+            "markets": ["Market"],
+            "cashAmount": 1_000_000,
+            "assetVolume": 1000,
+            "spoofVolume": int(spoof_volume),
+            "spoofOffsetTicks": int(spoof_offset_ticks),
+            "spoofSide": str(spoof_side),
+            "spoofTtl": int(spoof_ttl),
+        }
+        agent_names.append("SpooferAgents")
 
     return {
         "simulation": {
@@ -187,6 +219,13 @@ class KronosLOBMarket:
         r_min_conf_coef: float = 0.0,
         execution_horizon: int = 1,
         fcn_order_volume: int = 30,
+        n_predator: int = 0,
+        predator_order_volume: int = 1,
+        n_spoofer: int = 0,
+        spoof_volume: int = 100,
+        spoof_offset_ticks: int = 5,
+        spoof_side: str = "both",
+        spoof_ttl: int = 1,
     ):
         if signal_provider is None:
             signal_provider = constant_signal_provider(pred_close_mean=initial_market_price * 1.001)
@@ -207,6 +246,13 @@ class KronosLOBMarket:
         self.r_min_conf_coef = r_min_conf_coef
         self.execution_horizon = execution_horizon
         self.fcn_order_volume = fcn_order_volume
+        self.n_predator = n_predator
+        self.predator_order_volume = predator_order_volume
+        self.n_spoofer = n_spoofer
+        self.spoof_volume = spoof_volume
+        self.spoof_offset_ticks = spoof_offset_ticks
+        self.spoof_side = spoof_side
+        self.spoof_ttl = spoof_ttl
 
     def _inject_hub(self, simulator, hub: SharedSignalHub) -> None:
         from .agents import _KronosReaderAgent
@@ -228,6 +274,13 @@ class KronosLOBMarket:
             r_min_conf_coef=self.r_min_conf_coef,
             execution_horizon=self.execution_horizon,
             fcn_order_volume=self.fcn_order_volume,
+            n_predator=self.n_predator,
+            predator_order_volume=self.predator_order_volume,
+            n_spoofer=self.n_spoofer,
+            spoof_volume=self.spoof_volume,
+            spoof_offset_ticks=self.spoof_offset_ticks,
+            spoof_side=self.spoof_side,
+            spoof_ttl=self.spoof_ttl,
         )
 
         hub = SharedSignalHub(
@@ -241,6 +294,8 @@ class KronosLOBMarket:
         runner.class_register(KronosTrendAgent)
         runner.class_register(KronosFadeAgent)
         runner.class_register(KronosAdaptiveAgent)
+        runner.class_register(PredatorAgent)
+        runner.class_register(SpooferAgent)
 
         runner._setup()
         self._inject_hub(runner.simulator, hub)
@@ -257,6 +312,8 @@ class KronosLOBMarket:
         trend_agents = [a for a in runner.simulator.agents if isinstance(a, KronosTrendAgent)]
         fade_agents = [a for a in runner.simulator.agents if isinstance(a, KronosFadeAgent)]
         adaptive_agents = [a for a in runner.simulator.agents if isinstance(a, KronosAdaptiveAgent)]
+        predator_agents = [a for a in runner.simulator.agents if isinstance(a, PredatorAgent)]
+        spoofer_agents = [a for a in runner.simulator.agents if isinstance(a, SpooferAgent)]
 
         return {
             "prices": prices,
@@ -265,6 +322,8 @@ class KronosLOBMarket:
             "trend_actions": [a.action_log for a in trend_agents],
             "fade_actions": [a.action_log for a in fade_agents],
             "adaptive_actions": [a.action_log for a in adaptive_agents],
+            "predation_logs": [a.predation_log for a in predator_agents],
+            "spoof_logs": [a.spoof_log for a in spoofer_agents],
             "signal_log": hub.signal_log(),
             "market_step_logs": list(saver.market_step_logs),
             "n_warmup_steps": self.warmup_steps,
