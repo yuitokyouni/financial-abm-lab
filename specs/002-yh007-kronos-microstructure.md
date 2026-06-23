@@ -143,7 +143,7 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 | ID | 主題 | 検証内容 |
 |---|---|---|
 | **YH007-1** ✅ | ① 最小実装 (aggregate) | Kronos 2 読みで順張り/逆張りが分岐するか。板無し即時 clearing で疎通。**実装済** (`packages/abm_models/abm_models/kronos_aggregate/`, `experiments/speculation_game/yh007_1_aggregate.py`, tests 5/5 GREEN, 実 Kronos 閉ループ smoke 5 step 0.68s で trend mean=+0.2 / fade mean=-0.2 = 逆符号 ✓)。 |
-| **YH007-2** | LOB 化 | YH007-1 を PAMS CDA 板に乗せる。実約定 payoff。SF が出るか(baseline)。 |
+| **YH007-2** ✅ | LOB 化 | YH007-1 を PAMS CDA 板に乗せる。実約定 payoff。SF が出るか(baseline)。**実装済** (`packages/abm_models/abm_models/kronos_lob/`, `experiments/speculation_game/yh007_2_lob.py`, tests 4/4 GREEN)。**baseline 結果 (mock 11 min, 220 bar): SF は出ない** (Hill α=8.97, vol_acf τ=50≈0, ret_acf τ=1=-0.47 = bid-ask bounce 支配)。これは想定通り = 機構 ablation の出発点。実 Kronos 閉ループ smoke (n=30 bar, 79s) では Hill α=2.51 で fat tail だが短時系列で値が不安定。 |
 | **YH007-3** | ④ 内生混合 | GCMG 参加ゲート × payoff 選択で逆張り比率が内生決定されるか。 |
 | **YH007-4** | 執行層 (機構 2) | parent→child 分割執行を on/off。長期記憶フロー → vol clustering 寄与。 |
 | **YH007-5** | 流動性ゆらぎ (機構 1) | 板 depth を厚/薄で振る。gap → fat tail 寄与。 |
@@ -221,6 +221,7 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
   **drift が時間変化し fade が完全に逆符号**を確認。
 - **YH007-2/3**: 実約定 payoff の LOB で SF が出る — fat tail(Hill α ∈ [2,5] 目安)、
   vol clustering(|r| ACF が τ=50 で正、緩減衰)、リターン無相関。
+  - **YH007-2 baseline (機構なし、対称構成 25 trend + 25 fade) では 3/3 ✗** (Hill α=8.97 mock, vol_acf τ=50≈0, ret_acf τ=1=-0.47 = bid-ask bounce)。**これが ablation の出発点**: YH007-3 以降の機構追加で各指標がどう動くかを観察する。
 - **機構 ablation (YH007-4〜7)**: 各機構の on/off で SF 指標が有意に動くか。
   **「どの機構を切ると SF が消えるか」が主要アウトプット**。
 - 全サブ実験: config 駆動(README Appendix の fabm 規約)、multi-seed、結果を table 保存
@@ -264,3 +265,4 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 | 2026-06-23 | §6 全面更新: ネットワーク Full 化で HF API 200 復活 + NeoQuasar/Kronos-* が LFS 未使用 → Kronos-Tokenizer-base/Kronos-small の実 weights 直接 download 完走を実測。CPU 推論レイテンシ計測 (sample_count=1: ≈ 100 ms, =16: ≈ 1.0〜1.5 s, 4 thread, fp32)。再現スクリプト `experiments/speculation_game/yh007_kronos_smoke.py` 追加 + gitignore に `.venv-yh007/`。§7 地雷 4 をレイテンシ実測値で書換 (共有信号アーキ → CPU 閉ループ実行が現実的)。地雷 1・未解決 2/4 を整合反映。§9 流用マップに `shiyu-coder/Kronos` の `KronosPredictor` 経由ロードを追記。 |
 | 2026-06-23 | ユーザ確認: Game 役割 = (i) alpha 生成相互作用 (YH007-1〜2), Kronos モード = 閉ループ, LOB 範囲 = 軸 1 のみ。**YH007-1 実装完了** (`abm_models/kronos_aggregate/` + experiment + tests)。同一 Kronos 信号 → Trend/Fade が決定論的に逆符号 (mock 5/5 GREEN, 実 Kronos 閉ループ 5 step smoke OK)。§5 表に ✅ マーク + 既定 backend 切替 (mock/kronos)。 |
 | 2026-06-23 | 実 Kronos 閉ループ 5 step = **0.68s (≈ 136 ms/step)** を実測 — §7 地雷 4 のレイテンシ見積もり (≈ 100 ms/step, sample_count=1) とほぼ一致。drift が時間変化 + fade が完全に逆符号を確認し、**§8 YH007-1 の受け入れ基準を達成**(§8 に ✅ 反映)。 |
+| 2026-06-23 | **YH007-2 実装完了** (`abm_models/kronos_lob/`: bar_aggregator + signal_hub + agents + model, tests 4/4 GREEN, 既存 14 件 regression なし)。PAMS CDA + MMFCN (流動性供給, YH006 流用) + Kronos shared-signal × 2-reading × 共有信号 hub × bar 集約。mock baseline (warmup=200 + main=2000 step, bar_size=10, 220 bar, 11 min): **SF は出ない** (Hill α=8.97, vol_acf τ=50≈0, ret_acf τ=1=-0.47 = bid-ask bounce 支配)。実 Kronos 閉ループ smoke (warmup=100 + main=200, n=30 bar, 79s): Hill α=2.51 だが短時系列で値不安定。**この結果は機構 ablation の出発点 = baseline**。§5/§8 を反映。 |
