@@ -269,13 +269,31 @@ GCMG の payoff 選択が逆張り個体群を**ニッチとして内生維持**
 
 ## 10. 未解決(ユーザ確認事項)
 
-1. **ゲームの役割**(地雷 3): 淘汰圧 か alpha 生成相互作用 か。← spec の背骨を決める。
-2. **Kronos 実行モード**(地雷 1): 閉ループ か 外生キャッシュ か(§6 の通り weights 取得・
-   推論コストはクラウドで成立、ネットワークポリシー変更も現状不要)。
-3. **LOB リアル化の範囲**(§4.5): 軸 1 のみ か 軸 1+2 か。
-4. **MultiAgent-Trader の Kronos ロード方法**: あれば参考、無くても可
-   (`KronosTokenizer.from_pretrained('NeoQuasar/Kronos-Tokenizer-base')` +
-   `Kronos.from_pretrained('NeoQuasar/Kronos-small')` → `KronosPredictor` で直接ロード可能)。
+**当初の確認事項 (全て決着)**:
+1. ✅ **ゲームの役割**(地雷 3): **(i) alpha 生成相互作用** で確定 (YH007-1/2)。YH007-3 で
+   payoff 選択を入れて (ii) 淘汰圧的な性質も並存させた (両戦略 score の rolling 比較)。
+2. ✅ **Kronos 実行モード**(地雷 1): **閉ループ** で確定。weights 取得 ✓ / CPU 推論 ✓ /
+   閉ループ実行 ✓ (YH007-1/2/3 の実 Kronos smoke で実証)。
+3. ✅ **LOB リアル化の範囲**(§4.5): **軸 1 のみ** で確定。YH007-2〜7 全て PAMS 離散同期
+   ラウンド + CDA で実装、軸 2 (非同期) は次イテレーション。
+4. ✅ **MultiAgent-Trader の Kronos ロード方法**: 不要。`KronosTokenizer.from_pretrained(...)` +
+   `Kronos.from_pretrained(...)` + `KronosPredictor` で直接ロード OK と実証。
+
+**新たに浮上した課題 (YH007-2〜7 実装後)**:
+A. **bid-ask bounce の本質的な扱い**: MARKET_ORDER 構成で必然的に発生する ret_acf τ=1 ≈ -0.5。
+   spoofer 介入で消えるが、それは spoofer が約定阻害している artifact (|r|_max→1e-6)。
+   "真" の無相関化は LIMIT-driven 戦略層 or bar 単位での aggregated return 評価が必要。
+B. **短時系列 SF の信頼性**: 現在の baseline は 120〜220 bar で Hill α や vol_acf τ=50 が
+   不安定。Cont 2001 では N > 500 bar 推奨。Multi-seed × 長 run の seed 平均で再評価する
+   ステージが要る (YH007-8 候補)。
+C. **|r|_max 凍結問題**: spoof/both で価格がほぼ動かない (|r|_max=1e-6)。spoofer LIMIT が
+   bid/ask 両側を埋めて MARKET_ORDER が price impact を持たない状態。設計修正:
+   spoofer の TTL を短くしすぎず、適度な約定を許す or spoofer の volume を Calibrate する。
+D. **YH007-2/3 baseline の再計算**: scheduler bug 修正前の数値を spec に残してある。
+   修正後の値で再計算する (h=1 で 1200 step) のが筋。
+E. **実 Kronos × 全機構の閉ループ実験**: 現状 mock baseline で機構 ablation を完結したが、
+   実 Kronos での全機構走り込み (full baseline) は未実施。Kronos shared signal 共有 hub
+   経由で計算量は管理可能 (§7 地雷 4: ≈ 25 min / 1000 step / sample_count=16)。
 
 ---
 
