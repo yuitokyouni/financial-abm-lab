@@ -23,6 +23,8 @@ from pams.logs.market_step_loggers import MarketStepSaver
 from pams.runners import SequentialRunner
 
 from ..kronos_lob.bar_aggregator import build_ohlcv_from_market, closes_to_returns
+from .kronos_agent import KronosCIAgent, KronosQuantileHub
+from .kronos_quantile import KronosQuantilePredictor
 from .zi_agent import ZIAgent
 
 
@@ -48,6 +50,10 @@ def build_sob_config(
     tick_size: float = 0.00001,
     max_normal_orders: int = 4000,
     zi_mode: str = "naive",
+    n_kronos: int = 0,
+    kronos_lookback_bars: int = 32,
+    kronos_margin_min: float = 3e-5,
+    kronos_margin_max: float = 1e-4,
 ) -> Dict[str, Any]:
     market = deepcopy(_MARKET)
     market["marketPrice"] = initial_market_price
@@ -66,10 +72,31 @@ def build_sob_config(
         "marginMin": float(margin_min),
         "marginMax": float(margin_max),
     }
+    agents_list = ["ZIAgents"]
+    extra_blocks: Dict[str, Any] = {}
+    if n_kronos > 0:
+        # 各 Kronos agent に固有の agent_rank を割り当て (0..1 等間隔)
+        for i in range(n_kronos):
+            rank = (i + 0.5) / n_kronos if n_kronos > 1 else 0.5
+            name = f"KronosAgents{i}"
+            extra_blocks[name] = {
+                "class": "KronosCIAgent",
+                "numAgents": 1,
+                "markets": ["Market"],
+                "cashAmount": 1_000_000,
+                "assetVolume": 1000,
+                "barSize": int(bar_size),
+                "orderTtl": int(order_ttl),
+                "orderVolume": int(order_volume),
+                "agentRank": float(rank),
+                "marginMin": float(kronos_margin_min),
+                "marginMax": float(kronos_margin_max),
+            }
+            agents_list.append(name)
     return {
         "simulation": {
             "markets": ["Market"],
-            "agents": ["ZIAgents"],
+            "agents": agents_list,
             "sessions": [
                 {
                     "sessionName": 0,
@@ -91,6 +118,7 @@ def build_sob_config(
         },
         "Market": market,
         "ZIAgents": zi_block,
+        **extra_blocks,
     }
 
 
@@ -118,6 +146,15 @@ class SelfOrganizedBookMarket:
         tick_size: float = 0.00001,
         zi_mode: str = "naive",
         extra_agent_classes: Optional[List[Type]] = None,
+        # Kronos backend
+        n_kronos: int = 0,
+        kronos_lookback_bars: int = 32,
+        kronos_n_samples: int = 32,
+        kronos_temperature: float = 1.0,
+        kronos_top_p: float = 0.9,
+        kronos_margin_min: float = 3e-5,
+        kronos_margin_max: float = 1e-4,
+        kronos_predictor: Optional[KronosQuantilePredictor] = None,
     ):
         self.warmup_steps = warmup_steps
         self.main_steps = main_steps
@@ -132,6 +169,14 @@ class SelfOrganizedBookMarket:
         self.tick_size = tick_size
         self.zi_mode = zi_mode
         self.extra_agent_classes = extra_agent_classes or []
+        self.n_kronos = n_kronos
+        self.kronos_lookback_bars = kronos_lookback_bars
+        self.kronos_n_samples = kronos_n_samples
+        self.kronos_temperature = kronos_temperature
+        self.kronos_top_p = kronos_top_p
+        self.kronos_margin_min = kronos_margin_min
+        self.kronos_margin_max = kronos_margin_max
+        self.kronos_predictor = kronos_predictor
 
     def run(self, *, seed: int) -> dict:
         cfg = build_sob_config(
@@ -141,13 +186,38 @@ class SelfOrganizedBookMarket:
             margin_min=self.margin_min, margin_max=self.margin_max,
             initial_market_price=self.initial_market_price,
             tick_size=self.tick_size, zi_mode=self.zi_mode,
+            n_kronos=self.n_kronos,
+            kronos_lookback_bars=self.kronos_lookback_bars,
+            kronos_margin_min=self.kronos_margin_min,
+            kronos_margin_max=self.kronos_margin_max,
         )
+        # Kronos predictor (n_kronos>0 のとき必須)
+        kronos_hub = None
+        if self.n_kronos > 0:
+            predictor = self.kronos_predictor or KronosQuantilePredictor(
+                lookback=self.kronos_lookback_bars,
+                n_samples=self.kronos_n_samples,
+                temperature=self.kronos_temperature,
+                top_p=self.kronos_top_p,
+            )
+            kronos_hub = KronosQuantileHub(
+                predictor=predictor,
+                bar_size=self.bar_size,
+                lookback_bars=self.kronos_lookback_bars,
+            )
         saver = MarketStepSaver()
         runner = SequentialRunner(settings=cfg, prng=random.Random(seed), logger=saver)
         runner.class_register(ZIAgent)
+        if self.n_kronos > 0:
+            runner.class_register(KronosCIAgent)
         for cls in self.extra_agent_classes:
             runner.class_register(cls)
         runner._setup()
+        # inject Kronos hub into all KronosCIAgent instances
+        if kronos_hub is not None:
+            for a in runner.simulator.agents:
+                if isinstance(a, KronosCIAgent):
+                    a.kronos_hub = kronos_hub
         runner._run()
 
         market = runner.simulator.markets[0]
@@ -169,9 +239,10 @@ class SelfOrganizedBookMarket:
         ret_mid = closes_to_returns(closes_main_mid)
 
         zi_agents = [a for a in runner.simulator.agents if isinstance(a, ZIAgent)]
-        n_submitted = sum(len(a.action_log) for a in zi_agents)
-        n_executed = sum(len(a.executed_log) for a in zi_agents)
-        n_canceled = sum(len(a.canceled_log) for a in zi_agents)
+        kronos_agents = [a for a in runner.simulator.agents if isinstance(a, KronosCIAgent)]
+        n_submitted = sum(len(a.action_log) for a in zi_agents + kronos_agents)
+        n_executed = sum(len(a.executed_log) for a in zi_agents + kronos_agents)
+        n_canceled = sum(len(a.canceled_log) for a in zi_agents + kronos_agents)
 
         return {
             "history_market": history_market,
@@ -184,6 +255,9 @@ class SelfOrganizedBookMarket:
             "n_executed": n_executed,
             "n_canceled": n_canceled,
             "agents": zi_agents,
+            "zi_agents": zi_agents,
+            "kronos_agents": kronos_agents,
+            "kronos_hub_calls": (kronos_hub.call_log if kronos_hub is not None else []),
             "warmup_bars": warmup_bars,
             "bar_size": self.bar_size,
         }

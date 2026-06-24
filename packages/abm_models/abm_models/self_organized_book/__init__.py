@@ -11,12 +11,18 @@ Phase 構成 (spec 003 §7):
   P2     CI×Kronos quantile-rank 評価値
 """
 from .base_agent import LimitAgentBase, AgentEvaluation
-from .zi_agent import ZIAgent
+from .kronos_agent import KronosCIAgent, KronosQuantileHub
+from .kronos_quantile import KronosQuantilePredictor, quantile_to_eval
 from .model import SelfOrganizedBookMarket
+from .zi_agent import ZIAgent
 
 __all__ = [
     "LimitAgentBase",
     "AgentEvaluation",
     "ZIAgent",
+    "KronosCIAgent",
+    "KronosQuantileHub",
+    "KronosQuantilePredictor",
+    "quantile_to_eval",
     "SelfOrganizedBookMarket",
 ]
