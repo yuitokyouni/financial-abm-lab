@@ -119,42 +119,69 @@ def _max_over_std(returns: np.ndarray) -> float:
 
 
 def _run_one_seed(seed: int, *, condition: str, common: dict,
-                  zi_margin_min: float, zi_margin_max: float) -> dict:
+                  zi_strategy_margin_min: float, zi_strategy_margin_max: float,
+                  kronos_margin_min: float, kronos_margin_max: float) -> dict:
+    """両 condition で共通: ZI-naïve 流動性役 (n_zi_liq) + 戦略役 (n_strategy)。
+
+    違いは戦略役だけ:
+      kronos     : KronosCI × n_strategy
+      zi_matched : ZI matched_ar1 × n_strategy
+    """
+    n_strategy = common["n_strategy"]
+    n_zi_liq = common["n_zi_liq"]
+    base = {k: v for k, v in common.items() if k not in ("n_strategy", "n_zi_liq")}
+
     if condition == "kronos":
-        kwargs = dict(common,
-                      n_kronos=common["n_agents"], n_zi=0,
-                      zi_mode="naive")
+        m = SelfOrganizedBookMarket(
+            **base,
+            n_zi=n_zi_liq, zi_mode="naive",
+            n_kronos=n_strategy,
+            kronos_margin_min=kronos_margin_min, kronos_margin_max=kronos_margin_max,
+        )
     elif condition == "zi_matched":
-        # dose-matching parity: ZI 側の margin は CI×Kronos の agg に合わせて較正
-        # (pilot で決定、--zi-margin-min/--zi-margin-max で渡す)
-        kwargs = dict(common,
-                      n_kronos=0, n_zi=common["n_agents"],
-                      zi_mode="matched_ar1",
-                      zi_phi_ar1=0.418, zi_sigma_ar1_abs=6e-3, zi_mu_ar1=0.0,
-                      margin_min=zi_margin_min, margin_max=zi_margin_max)
+        m = SelfOrganizedBookMarket(
+            **base,
+            n_zi=n_zi_liq, zi_mode="naive",
+            n_kronos=0,
+            n_zi_strategy=n_strategy,
+            zi_strategy_mode="matched_ar1",
+            zi_strategy_phi_ar1=0.418,
+            zi_strategy_sigma_ar1_abs=6e-3,
+            zi_strategy_mu_ar1=0.0,
+            zi_strategy_margin_min=zi_strategy_margin_min,
+            zi_strategy_margin_max=zi_strategy_margin_max,
+        )
     else:
         raise ValueError(f"unknown condition: {condition}")
-    n_agents = kwargs.pop("n_agents")
-    m = SelfOrganizedBookMarket(**kwargs)
+
     t0 = time.time()
     res = m.run(seed=seed)
     dt = time.time() - t0
 
-    agents = res["kronos_agents"] if condition == "kronos" else res["zi_agents"]
+    # 戦略役のみ抽出: ZIAgent の中で zi_mode=="matched_ar1" なものが戦略役
+    if condition == "kronos":
+        strategy_agents = res["kronos_agents"]
+    else:
+        strategy_agents = [a for a in res["zi_agents"] if getattr(a, "zi_mode", "") == "matched_ar1"]
     sf_market = _sf(res["returns_main_market"])
     sf_mid = _sf(res["returns_main_mid"])
+    # 戦略役のみの aggressive rate を計算
+    n_strat_sub = sum(sum(1 for _, side, p, _ in a.action_log if side != 0 and p is not None)
+                      for a in strategy_agents)
+    n_strat_exec = sum(len(a.executed_log) for a in strategy_agents)
+    agg_strategy = n_strat_exec / max(n_strat_sub, 1)
     return {
         "seed": seed, "condition": condition, "dt": dt,
-        "agg_rate": res["n_executed"] / max(res["n_submitted"], 1),
+        "agg_rate_all": res["n_executed"] / max(res["n_submitted"], 1),
+        "agg_rate_strategy": agg_strategy,
         "n_bars_returns_mid": int(res["returns_main_mid"].size),
         "sf_market": sf_market, "sf_mid": sf_mid,
         "max_over_std_mid": _max_over_std(res["returns_main_mid"]),
-        # discriminator (1): ret_acf τ=1..10 形状 (両 metric)
         "ret_acf_shape_mid": _ret_acf_shape(res["returns_main_mid"], 10),
         "ret_acf_shape_market": _ret_acf_shape(res["returns_main_market"], 10),
         "vol_acf_shape_mid": _vol_acf_shape(res["returns_main_mid"], 10),
-        "v_mid": _v_mid_diag(agents),
-        "placement": _placement_var(agents),
+        "v_mid": _v_mid_diag(strategy_agents),
+        "placement": _placement_var(strategy_agents),
     }
 
 
@@ -214,28 +241,32 @@ def main() -> None:
     p.add_argument("--n-seeds", type=int, default=8)
     p.add_argument("--warmup-steps", type=int, default=200)
     p.add_argument("--main-steps", type=int, default=2000)
-    p.add_argument("--n-agents", type=int, default=10)
+    p.add_argument("--n-strategy", type=int, default=10,
+                   help="戦略役 agent 数 (KronosCI or ZI matched_ar1)")
+    p.add_argument("--n-zi-liq", type=int, default=10,
+                   help="流動性役 ZI-naïve 数 (両 condition 共通)")
     p.add_argument("--bar-size", type=int, default=10)
     p.add_argument("--order-ttl", type=int, default=15)
     p.add_argument("--kronos-lookback-bars", type=int, default=16)
     p.add_argument("--kronos-n-samples", type=int, default=32)
-    # dose-matching parity: ZI 側の margin (CI×Kronos の agg と合うように pilot で較正)
-    p.add_argument("--zi-margin-min", type=float, default=3e-5)
-    p.add_argument("--zi-margin-max", type=float, default=1e-4)
+    # dose-matching parity: 戦略役 ZI と KronosCI で agg を揃える margin (parity pilot で較正)
+    p.add_argument("--zi-strategy-margin-min", type=float, default=2.0e-5)
+    p.add_argument("--zi-strategy-margin-max", type=float, default=6.0e-5)
+    p.add_argument("--kronos-margin-min", type=float, default=3.0e-5)
+    p.add_argument("--kronos-margin-max", type=float, default=1.0e-4)
     p.add_argument("--out-json", type=str, default="/tmp/yh007_8_p3.json")
     args = p.parse_args()
 
     common = dict(
         warmup_steps=args.warmup_steps, main_steps=args.main_steps,
-        n_agents=args.n_agents,  # _run_one_seed で kronos/zi に分配
+        n_strategy=args.n_strategy, n_zi_liq=args.n_zi_liq,
         bar_size=args.bar_size, order_ttl=args.order_ttl,
-        # ZI 側 (matched_ar1) のスケール
-        sigma_eval=5e-5, margin_min=3e-5, margin_max=1e-4,
+        # ZI 流動性役 (naive): mid 周辺に random 配置で warmup から板を埋める
+        sigma_eval=5e-5, margin_min=2.0e-5, margin_max=6.0e-5,
         tick_size=0.001, initial_market_price=300.0,
-        # Kronos 側
+        # Kronos 推論パラメータ (戦略役で使う)
         kronos_lookback_bars=args.kronos_lookback_bars,
         kronos_n_samples=args.kronos_n_samples,
-        kronos_margin_min=3e-5, kronos_margin_max=1e-4,
     )
 
     all_rows: dict[str, list[dict]] = {"kronos": [], "zi_matched": []}
@@ -243,11 +274,14 @@ def main() -> None:
         for seed in range(args.n_seeds):
             print(f"\n[{cond}/seed={seed}] start ...", flush=True)
             r = _run_one_seed(seed, condition=cond, common=common,
-                              zi_margin_min=args.zi_margin_min,
-                              zi_margin_max=args.zi_margin_max)
+                              zi_strategy_margin_min=args.zi_strategy_margin_min,
+                              zi_strategy_margin_max=args.zi_strategy_margin_max,
+                              kronos_margin_min=args.kronos_margin_min,
+                              kronos_margin_max=args.kronos_margin_max)
             all_rows[cond].append(r)
             sm = r["sf_mid"]
-            print(f"  dt={r['dt']:.1f}s  agg={r['agg_rate']:.3f}  bars_ret={r['n_bars_returns_mid']}")
+            print(f"  dt={r['dt']:.1f}s  agg_all={r['agg_rate_all']:.3f}  "
+                  f"agg_strategy={r['agg_rate_strategy']:.3f}  bars_ret={r['n_bars_returns_mid']}")
             if sm:
                 print(f"  mid: Hill={sm['hill_alpha']:.3f} "
                       f"ret1={sm['ret_acf'].get(1, float('nan')):+.3f} "
@@ -268,7 +302,8 @@ def main() -> None:
         ("vol_acf τ=50 (mid)", ("sf_mid", "vol_acf", 50)),
         ("kurt w=16 (mid)", ("sf_mid", "kurt", 16)),
         ("|r|_max/std (mid)", ("max_over_std_mid",)),
-        ("agg_rate", ("agg_rate",)),
+        ("agg_rate_all", ("agg_rate_all",)),
+        ("agg_rate_strategy", ("agg_rate_strategy",)),
     ]
     summary = {}
     print(f"  {'metric':>22}  {'kronos (m±s, n)':>22}  {'zi_matched (m±s, n)':>22}  "

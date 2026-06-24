@@ -53,6 +53,14 @@ def build_sob_config(
     zi_phi_ar1: float = 0.418,
     zi_sigma_ar1_abs: float = 6e-3,
     zi_mu_ar1: float = 0.0,
+    # 戦略役 ZI (matched_ar1) を 2nd group で混在させる (P3 dose-match 用)
+    n_zi_strategy: int = 0,
+    zi_strategy_mode: str = "matched_ar1",
+    zi_strategy_phi_ar1: float = 0.418,
+    zi_strategy_sigma_ar1_abs: float = 6e-3,
+    zi_strategy_mu_ar1: float = 0.0,
+    zi_strategy_margin_min: float = 2.0e-5,
+    zi_strategy_margin_max: float = 6.0e-5,
     n_kronos: int = 0,
     kronos_lookback_bars: int = 32,
     kronos_margin_min: float = 3e-5,
@@ -80,6 +88,26 @@ def build_sob_config(
     }
     agents_list = ["ZIAgents"]
     extra_blocks: Dict[str, Any] = {}
+    # 戦略役 ZI (matched_ar1) を 2nd group として混在 (P3 dose-match: kronos と同じ流動性役 ZI
+    # を両 condition で持ち、戦略役だけが Kronos か ZI-matched で違う構成にできる)
+    if n_zi_strategy > 0:
+        extra_blocks["ZIAgentsStrategy"] = {
+            "class": "ZIAgent",
+            "numAgents": int(n_zi_strategy),
+            "markets": ["Market"],
+            "cashAmount": 1_000_000,
+            "assetVolume": 1000,
+            "barSize": int(bar_size),
+            "orderTtl": int(order_ttl),
+            "orderVolume": int(order_volume),
+            "ziMode": zi_strategy_mode,
+            "phiAr1": float(zi_strategy_phi_ar1),
+            "sigmaAr1Abs": float(zi_strategy_sigma_ar1_abs),
+            "muAr1": float(zi_strategy_mu_ar1),
+            "marginMin": float(zi_strategy_margin_min),
+            "marginMax": float(zi_strategy_margin_max),
+        }
+        agents_list.append("ZIAgentsStrategy")
     if n_kronos > 0:
         # 各 Kronos agent に固有の agent_rank を割り当て (0..1 等間隔)
         for i in range(n_kronos):
@@ -154,6 +182,13 @@ class SelfOrganizedBookMarket:
         zi_phi_ar1: float = 0.418,
         zi_sigma_ar1_abs: float = 6e-3,
         zi_mu_ar1: float = 0.0,
+        n_zi_strategy: int = 0,
+        zi_strategy_mode: str = "matched_ar1",
+        zi_strategy_phi_ar1: float = 0.418,
+        zi_strategy_sigma_ar1_abs: float = 6e-3,
+        zi_strategy_mu_ar1: float = 0.0,
+        zi_strategy_margin_min: float = 2.0e-5,
+        zi_strategy_margin_max: float = 6.0e-5,
         extra_agent_classes: Optional[List[Type]] = None,
         # Kronos backend
         n_kronos: int = 0,
@@ -180,6 +215,13 @@ class SelfOrganizedBookMarket:
         self.zi_phi_ar1 = zi_phi_ar1
         self.zi_sigma_ar1_abs = zi_sigma_ar1_abs
         self.zi_mu_ar1 = zi_mu_ar1
+        self.n_zi_strategy = n_zi_strategy
+        self.zi_strategy_mode = zi_strategy_mode
+        self.zi_strategy_phi_ar1 = zi_strategy_phi_ar1
+        self.zi_strategy_sigma_ar1_abs = zi_strategy_sigma_ar1_abs
+        self.zi_strategy_mu_ar1 = zi_strategy_mu_ar1
+        self.zi_strategy_margin_min = zi_strategy_margin_min
+        self.zi_strategy_margin_max = zi_strategy_margin_max
         self.extra_agent_classes = extra_agent_classes or []
         self.n_kronos = n_kronos
         self.kronos_lookback_bars = kronos_lookback_bars
@@ -201,6 +243,13 @@ class SelfOrganizedBookMarket:
             zi_phi_ar1=self.zi_phi_ar1,
             zi_sigma_ar1_abs=self.zi_sigma_ar1_abs,
             zi_mu_ar1=self.zi_mu_ar1,
+            n_zi_strategy=self.n_zi_strategy,
+            zi_strategy_mode=self.zi_strategy_mode,
+            zi_strategy_phi_ar1=self.zi_strategy_phi_ar1,
+            zi_strategy_sigma_ar1_abs=self.zi_strategy_sigma_ar1_abs,
+            zi_strategy_mu_ar1=self.zi_strategy_mu_ar1,
+            zi_strategy_margin_min=self.zi_strategy_margin_min,
+            zi_strategy_margin_max=self.zi_strategy_margin_max,
             n_kronos=self.n_kronos,
             kronos_lookback_bars=self.kronos_lookback_bars,
             kronos_margin_min=self.kronos_margin_min,
