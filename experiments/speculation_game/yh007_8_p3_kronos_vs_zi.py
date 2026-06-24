@@ -129,7 +129,8 @@ def _run_one_seed(seed: int, *, condition: str, common: dict,
     """
     n_strategy = common["n_strategy"]
     n_zi_liq = common["n_zi_liq"]
-    base = {k: v for k, v in common.items() if k not in ("n_strategy", "n_zi_liq")}
+    base = {k: v for k, v in common.items()
+            if k not in ("n_strategy", "n_zi_liq", "kronos_arb_fraction")}
 
     if condition == "kronos":
         m = SelfOrganizedBookMarket(
@@ -137,6 +138,7 @@ def _run_one_seed(seed: int, *, condition: str, common: dict,
             n_zi=n_zi_liq, zi_mode="naive",
             n_kronos=n_strategy,
             kronos_margin_min=kronos_margin_min, kronos_margin_max=kronos_margin_max,
+            kronos_arb_fraction=common.get("kronos_arb_fraction", 0.0),
         )
     elif condition == "zi_matched":
         m = SelfOrganizedBookMarket(
@@ -254,6 +256,8 @@ def main() -> None:
     p.add_argument("--zi-strategy-margin-max", type=float, default=6.0e-5)
     p.add_argument("--kronos-margin-min", type=float, default=3.0e-5)
     p.add_argument("--kronos-margin-max", type=float, default=1.0e-4)
+    p.add_argument("--kronos-arb-fraction", type=float, default=0.0,
+                   help="§3.7: arbitrageur で動かす Kronos agent の割合 (0=全 chase, 1=全 arb)")
     p.add_argument("--out-json", type=str, default="/tmp/yh007_8_p3.json")
     args = p.parse_args()
 
@@ -267,6 +271,7 @@ def main() -> None:
         # Kronos 推論パラメータ (戦略役で使う)
         kronos_lookback_bars=args.kronos_lookback_bars,
         kronos_n_samples=args.kronos_n_samples,
+        kronos_arb_fraction=args.kronos_arb_fraction,
     )
 
     all_rows: dict[str, list[dict]] = {"kronos": [], "zi_matched": []}

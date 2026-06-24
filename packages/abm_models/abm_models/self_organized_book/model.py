@@ -65,6 +65,7 @@ def build_sob_config(
     kronos_lookback_bars: int = 32,
     kronos_margin_min: float = 3e-5,
     kronos_margin_max: float = 1e-4,
+    kronos_arb_fraction: float = 0.0,  # §3.7: arb_mode で動かす Kronos agent の割合 (0.0=全 chase, 1.0=全 arb)
 ) -> Dict[str, Any]:
     market = deepcopy(_MARKET)
     market["marketPrice"] = initial_market_price
@@ -110,6 +111,8 @@ def build_sob_config(
         agents_list.append("ZIAgentsStrategy")
     if n_kronos > 0:
         # 各 Kronos agent に固有の agent_rank を割り当て (0..1 等間隔)
+        # 先頭 n_arb 体を arb_mode=True に (§3.7 round5: 直前予想 vs 実現値の fade)。
+        n_arb = int(round(n_kronos * float(kronos_arb_fraction)))
         for i in range(n_kronos):
             rank = (i + 0.5) / n_kronos if n_kronos > 1 else 0.5
             name = f"KronosAgents{i}"
@@ -125,6 +128,7 @@ def build_sob_config(
                 "agentRank": float(rank),
                 "marginMin": float(kronos_margin_min),
                 "marginMax": float(kronos_margin_max),
+                "arbMode": bool(i < n_arb),
             }
             agents_list.append(name)
     return {
@@ -199,6 +203,7 @@ class SelfOrganizedBookMarket:
         kronos_margin_min: float = 3e-5,
         kronos_margin_max: float = 1e-4,
         kronos_predictor: Optional[KronosQuantilePredictor] = None,
+        kronos_arb_fraction: float = 0.0,
     ):
         self.warmup_steps = warmup_steps
         self.main_steps = main_steps
@@ -231,6 +236,7 @@ class SelfOrganizedBookMarket:
         self.kronos_margin_min = kronos_margin_min
         self.kronos_margin_max = kronos_margin_max
         self.kronos_predictor = kronos_predictor
+        self.kronos_arb_fraction = kronos_arb_fraction
 
     def run(self, *, seed: int) -> dict:
         cfg = build_sob_config(
@@ -254,6 +260,7 @@ class SelfOrganizedBookMarket:
             kronos_lookback_bars=self.kronos_lookback_bars,
             kronos_margin_min=self.kronos_margin_min,
             kronos_margin_max=self.kronos_margin_max,
+            kronos_arb_fraction=self.kronos_arb_fraction,
         )
         # Kronos predictor (n_kronos>0 のとき必須)
         kronos_hub = None

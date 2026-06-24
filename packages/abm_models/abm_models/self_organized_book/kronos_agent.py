@@ -38,22 +38,21 @@ class KronosQuantileHub:
         self.lookback_bars = lookback_bars
         self._lock = threading.Lock()
         self._current_bar: int = -1
-        self._closes_sorted = None  # np.ndarray (n_samples,) or None
+        self._closes_sorted = None  # 現 bar の予測 quantile (= bar t-1 で予想した bar t の中心列)
+        self._prev_closes_sorted = None  # 前 bar の予測 quantile (= bar t-2 で予想した bar t-1 = arbitrageur 用 X_t)
         self._last_history_len: int = 0
-        self._call_log: list[tuple[int, float, int]] = []  # (bar_index, dt, n_samples)
+        self._call_log: list[tuple[int, float, int]] = []
 
     def ensure_current(self, market: Market) -> Optional["np.ndarray"]:
         time = market.get_time()
         bar_index = time // self.bar_size
-        # bar の OHLCV 履歴
         history = build_ohlcv_from_market(
             market, bar_size=self.bar_size, start_step=0, end_step=time + 1,
             price_source="market",
         )
         n_bars_now = len(history)
         if n_bars_now < self.lookback_bars:
-            return None  # lookback 不足
-        # 同 bar 内では再利用
+            return None
         with self._lock:
             if bar_index == self._current_bar and self._closes_sorted is not None:
                 return self._closes_sorted
@@ -65,6 +64,8 @@ class KronosQuantileHub:
             dt_step = last_ts - pd.Timestamp(history["timestamps"].iloc[-2])
             y_ts = pd.Series([last_ts + dt_step])
             closes_sorted = self.predictor.predict_quantile_closes(x_df, x_ts, y_ts)
+            # bar 更新時に「前 bar の予想」を保存 (§3.7 arbitrageur 用)
+            self._prev_closes_sorted = self._closes_sorted
             self._closes_sorted = closes_sorted
             self._current_bar = bar_index
             self._call_log.append((bar_index, float(self.predictor.last_call_dt),
@@ -73,6 +74,18 @@ class KronosQuantileHub:
 
     def get_eval_for_rank(self, agent_rank: float, closes_sorted) -> float:
         return quantile_to_eval(closes_sorted, agent_rank)
+
+    def get_prev_eval_for_rank(self, agent_rank: float) -> Optional[float]:
+        """§3.7 arbitrageur 用: 前 bar の予想 quantile (= 直前予想 X_t)。
+
+        bar t-1 で `closes_sorted` (bar t の予想) を計算した直後 ensure_current が呼ばれると、
+        その時点の self._closes_sorted が次 bar (= bar t での) ensure_current で
+        self._prev_closes_sorted に押し出される。よって arbitrageur が bar t で
+        get_prev_eval_for_rank() を呼ぶと「bar t-1 終了時に予想した bar t の中心」が取れる。
+        """
+        if self._prev_closes_sorted is None:
+            return None
+        return quantile_to_eval(self._prev_closes_sorted, agent_rank)
 
     @property
     def call_log(self) -> list[tuple[int, float, int]]:
@@ -100,12 +113,18 @@ class KronosCIAgent(LimitAgentBase):
         self.agent_rank: float = float(settings.get("agentRank", 0.5))
         self.margin_min: float = float(settings.get("marginMin", 3e-5))
         self.margin_max: float = float(settings.get("marginMax", 1e-4))
-        # hub は SelfOrganizedBookMarket._inject_hub から差し込まれる
+        # §3.7 arb_mode (round5 fix):
+        #   False = chase (default, 旧 §3.6): v = 現 quantile, side = sign(v - mid)
+        #     → Kronos 予測方向に賭ける = drift で全員同方向に振れる degeneracy
+        #   True  = arbitrageur (新 §3.7): v = prev_quantile (= 直前予想 X_t),
+        #     side = sign(X_t - mid) = sign(X_t - P_t) → P_t > X_t で売り、< X_t で買い。
+        #     直前予想からの乖離を fade することで集合 over-shoot に逆らう復元力。
+        self.arb_mode: bool = bool(settings.get("arbMode", False))
         self.kronos_hub: Optional[KronosQuantileHub] = None
 
     def _evaluate(self, market: Market, bar_index: int) -> AgentEvaluation:
         if self.kronos_hub is None:
-            return AgentEvaluation(side=0)  # hub 未注入 (warmup session 中)
+            return AgentEvaluation(side=0)
         mid = market.get_mid_price()
         if mid is None or mid <= 0:
             mp = market.get_market_price()
@@ -117,12 +136,18 @@ class KronosCIAgent(LimitAgentBase):
 
         closes_sorted = self.kronos_hub.ensure_current(market)
         if closes_sorted is None:
-            return AgentEvaluation(side=0)  # lookback 不足
-
-        v = self.kronos_hub.get_eval_for_rank(self.agent_rank, closes_sorted)
-        if not (v > 0):
             return AgentEvaluation(side=0)
-        # 方向: v > mid なら buy、< mid なら sell
+
+        if self.arb_mode:
+            # §3.7: v = 直前予想 X_t、 side = sign(X_t - P_t)
+            v = self.kronos_hub.get_prev_eval_for_rank(self.agent_rank)
+            if v is None or not (v > 0):
+                return AgentEvaluation(side=0)  # 最初の bar は prev 無し
+        else:
+            v = self.kronos_hub.get_eval_for_rank(self.agent_rank, closes_sorted)
+            if not (v > 0):
+                return AgentEvaluation(side=0)
+
         side = 1 if v > mid else (-1 if v < mid else 0)
         if side == 0:
             return AgentEvaluation(side=0)
@@ -132,5 +157,6 @@ class KronosCIAgent(LimitAgentBase):
             return AgentEvaluation(side=0)
         return AgentEvaluation(
             side=side, price=price, volume=self.order_volume,
-            log_payload={"v": v, "mid": mid, "margin": margin, "rank": self.agent_rank},
+            log_payload={"v": v, "mid": mid, "margin": margin,
+                         "rank": self.agent_rank, "arb_mode": self.arb_mode},
         )
