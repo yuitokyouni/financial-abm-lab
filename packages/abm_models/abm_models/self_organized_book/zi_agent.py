@@ -37,15 +37,25 @@ class ZIAgent(LimitAgentBase):
         **kwargs: Any,
     ) -> None:
         super().setup(settings, accessible_markets_ids, *args, **kwargs)
-        self.zi_mode: str = str(settings.get("ziMode", "naive"))  # "naive" or "matched"
+        self.zi_mode: str = str(settings.get("ziMode", "naive"))
         self.sigma_eval: float = float(settings.get("sigmaEval", 0.005))
-        # matched 用 (P1 で使う)。sigmaMatch 未指定なら sigmaEval を流用 (構成統一)。
+        # matched (independent sample, P1 暫定版)
         self.mu_match: float = float(settings.get("muMatch", 0.0))
         self.sigma_match: float = float(settings.get("sigmaMatch", self.sigma_eval))
+        # matched_ar1 用 (P3, spec 003 §4 + 裁定 A): v_t - mid = φ(v_{t-1}-mid) + ε
+        # P2 実測 default: φ=0.418, σ=6e-3 (absolute on mid scale ≈ 300)
+        self.phi_ar1: float = float(settings.get("phiAr1", 0.418))
+        self.sigma_ar1_abs: float = float(settings.get("sigmaAr1Abs", 6e-3))
+        self.mu_ar1: float = float(settings.get("muAr1", 0.0))
+        # AR(1) state (= 前 bar の v_t - mid_t) と現 bar のキャッシュ
+        # spec 003 §3.3 の bar/step 2 階層: 評価値は bar 単位で更新、step 単位は TTL/再貼り。
+        self._last_v_minus_mid: float | None = None
+        self._cached_bar_index: int = -1
+        self._cached_v: float | None = None
         # margin
         self.margin_min: float = float(settings.get("marginMin", 0.001))
         self.margin_max: float = float(settings.get("marginMax", 0.01))
-        # state for matched random walk
+        # state for matched random walk (legacy, used by zi_mode="matched")
         self._last_v: float | None = None
 
     def _evaluate(self, market: Market, bar_index: int) -> AgentEvaluation:
@@ -59,24 +69,41 @@ class ZIAgent(LimitAgentBase):
         else:
             mid = float(mid)
 
-        if self.zi_mode == "naive":
-            eps = self.prng.gauss(0.0, self.sigma_eval)
-            v = mid * (1.0 + eps)
-        elif self.zi_mode == "matched":
-            # P1 暫定版: independent sample (累積でない)。
-            # v = mid * (1 + N(mu_match, sigma_match))
-            # 旧版の累積 random walk (v_t = v_{t-1} + δ*mid) は長 run で v が mid から
-            # 発散し、agg_rate=0.7 / ret_acf=-0.49 (bounce 全開) に陥った P1 pilot の知見。
-            # spec 003 §4 の「Δv_t 累積モーメント matching」要件は P3 着手前にユーザ裁定で
-            # 真の Δv 累積構造に戻すかを決定 (TODO: 003 §10 に追加課題として記録)。
-            eps = self.prng.gauss(self.mu_match, self.sigma_match)
-            v = mid * (1.0 + eps)
+        # 評価値 v は bar 単位で更新 (spec 003 §3.3 の 2 階層)。同 bar 内では再利用。
+        if bar_index == self._cached_bar_index and self._cached_v is not None:
+            v = self._cached_v
         else:
-            raise ValueError(f"unknown zi_mode: {self.zi_mode!r}")
+            if self.zi_mode == "naive":
+                eps = self.prng.gauss(0.0, self.sigma_eval)
+                v = mid * (1.0 + eps)
+            elif self.zi_mode == "matched":
+                # P1 暫定版: independent sample (Kronos 投入前)。
+                eps = self.prng.gauss(self.mu_match, self.sigma_match)
+                v = mid * (1.0 + eps)
+            elif self.zi_mode == "matched_ar1":
+                # P3 (spec 003 §4 + 裁定 A): v_t - mid_t = φ (v_{t-1} - mid_{t-1}) + ε
+                # ε ~ N(mu_ar1, sigma_ar1_abs)。φ<1 で mid 周辺に mean-revert。
+                # P2 実測 default φ=0.418, σ=6e-3 (absolute) で Kronos と dose-match。
+                if self._last_v_minus_mid is None:
+                    self._last_v_minus_mid = 0.0
+                eps = self.prng.gauss(self.mu_ar1, self.sigma_ar1_abs)
+                v_minus_mid = self.phi_ar1 * self._last_v_minus_mid + eps
+                self._last_v_minus_mid = v_minus_mid
+                v = mid + v_minus_mid
+            else:
+                raise ValueError(f"unknown zi_mode: {self.zi_mode!r}")
+            self._cached_bar_index = bar_index
+            self._cached_v = v
 
-        # side: buy/sell を 50/50
-        side = 1 if self.prng.random() < 0.5 else -1
-        # margin
+        # side は v-mid 由来 (Kronos と同じ意思決定式で dose-match を公平に保つ、spec 003 §4)
+        # 旧版 (50/50 random side) は P1 naive では成立したが、matched_ar1 では v が mid 周辺に
+        # 集中して半分の agent が「反対方向 + margin」で実質クロスしない degeneracy に陥った。
+        if v > mid:
+            side = 1
+        elif v < mid:
+            side = -1
+        else:
+            return AgentEvaluation(side=0)
         margin = self.prng.uniform(self.margin_min, self.margin_max)
         if side > 0:
             price = v * (1.0 - margin)

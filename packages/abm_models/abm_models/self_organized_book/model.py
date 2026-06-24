@@ -50,6 +50,9 @@ def build_sob_config(
     tick_size: float = 0.00001,
     max_normal_orders: int = 4000,
     zi_mode: str = "naive",
+    zi_phi_ar1: float = 0.418,
+    zi_sigma_ar1_abs: float = 6e-3,
+    zi_mu_ar1: float = 0.0,
     n_kronos: int = 0,
     kronos_lookback_bars: int = 32,
     kronos_margin_min: float = 3e-5,
@@ -69,6 +72,9 @@ def build_sob_config(
         "orderVolume": int(order_volume),
         "ziMode": zi_mode,
         "sigmaEval": float(sigma_eval),
+        "phiAr1": float(zi_phi_ar1),
+        "sigmaAr1Abs": float(zi_sigma_ar1_abs),
+        "muAr1": float(zi_mu_ar1),
         "marginMin": float(margin_min),
         "marginMax": float(margin_max),
     }
@@ -145,6 +151,9 @@ class SelfOrganizedBookMarket:
         initial_market_price: float = 300.0,
         tick_size: float = 0.00001,
         zi_mode: str = "naive",
+        zi_phi_ar1: float = 0.418,
+        zi_sigma_ar1_abs: float = 6e-3,
+        zi_mu_ar1: float = 0.0,
         extra_agent_classes: Optional[List[Type]] = None,
         # Kronos backend
         n_kronos: int = 0,
@@ -168,6 +177,9 @@ class SelfOrganizedBookMarket:
         self.initial_market_price = initial_market_price
         self.tick_size = tick_size
         self.zi_mode = zi_mode
+        self.zi_phi_ar1 = zi_phi_ar1
+        self.zi_sigma_ar1_abs = zi_sigma_ar1_abs
+        self.zi_mu_ar1 = zi_mu_ar1
         self.extra_agent_classes = extra_agent_classes or []
         self.n_kronos = n_kronos
         self.kronos_lookback_bars = kronos_lookback_bars
@@ -186,6 +198,9 @@ class SelfOrganizedBookMarket:
             margin_min=self.margin_min, margin_max=self.margin_max,
             initial_market_price=self.initial_market_price,
             tick_size=self.tick_size, zi_mode=self.zi_mode,
+            zi_phi_ar1=self.zi_phi_ar1,
+            zi_sigma_ar1_abs=self.zi_sigma_ar1_abs,
+            zi_mu_ar1=self.zi_mu_ar1,
             n_kronos=self.n_kronos,
             kronos_lookback_bars=self.kronos_lookback_bars,
             kronos_margin_min=self.kronos_margin_min,
