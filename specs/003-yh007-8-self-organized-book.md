@@ -235,7 +235,7 @@ SF を「出す」ことではなく、**信用できる測定土台が立つこ
 | **P0** | PAMS LIMIT agent 骨格(§3.1、片側 resting + TTL)+ ZI warmup(§3.4)。tests(LIMIT で出る / 板非爆発 / 約定発生 / self-trade 無し) | mock | 疎通 GREEN |
 | **P1** ✅ | ZI-naïve + ZI-matched(§4)実装 + tick 較正(§3.3)。mid 連続性診断 + power analysis pilot | mock | **達成**: bounce 消失(mid ret_acf -0.56→**+0.008**)、量子化解消(1→**9 tick**)、agg_rate=**0.153** ∈ 帯、`max|r|/std`≈3.0。power: ret_acf/vol_acf は 8 seed 十分、Hill は 2000 bar 要(裁定 B)。tick=0.001/σ=5e-5/margin=3e-5〜1e-4 が正解 |
 | **P1.5** ⏭ | aggressive rate `a` 較正 | mock | **スキップ判定**: P1 で agg=0.153 が既に帯内(裁定: P2 で Kronos 投入後に agg がずれた時のみ再較正) |
-| **P2** | CI×Kronos(§3.1–3.6、quantile-rank 評価値)実装。分散注入診断(§3.2 herding≠degeneracy)。**+ §10-4 バッチ化レイテンシ実測(必須 deliverable)**: quantile-rank を共有 hub 1 回 predict で全 agent 取る構造の実 Kronos レイテンシ(P4 budget を確定、裁定 D)。**+ Kronos の `(v−mid)` の φ/σ 実測**(§4 ZI-matched 較正用、裁定 A) | mock+real smoke | 板分散 + a 維持 + latency 値 + φ/σ 実測 |
+| **P2** ✅ | CI×Kronos(§3.1–3.6、quantile-rank 評価値)実装。分散注入診断(§3.2 herding≠degeneracy)。**+ §10-4 バッチ化レイテンシ実測(必須 deliverable)**: quantile-rank を共有 hub 1 回 predict で全 agent 取る構造の実 Kronos レイテンシ(P4 budget を確定、裁定 D)。**+ Kronos の `(v−mid)` の φ/σ 実測**(§4 ZI-matched 較正用、裁定 A)。 **達成**: agg=**0.106** ∈ 帯維持 ✓、batched latency=**median 0.151s / p95 0.192s per bar** (n_samples=32, n_agents=10, lookback=16)、**`(v−mid)` AR(1): φ=+0.418±0.058, σ≈6e-3, mean≈0** (mean-reverting 確認、純 RW でない)、placement var_ts_std=7.2e-5>0 (degeneracy 否定 ✓)。**⚠ 新発見**: Kronos 投入で **ret_acf τ=1 (mid) が +0.008 → −0.413 へ後退**(bounce 再来) — 残すべき herding か潰すべき degeneracy か **指揮裁定要**(§10 新項目)。 |
 | **P3** | ≥500 bar × multi-seed で CI×Kronos vs ZI-matched(§5 規律フル + dose-match 検証) | mock | 成功条件 3(差分有意) |
 | **P4** | 実 Kronos 閉ループで P3 を再走(headline)。seed/bar は P1 で確定済 | real | 3 点同時達成 |
 | **P5** | **(003 scope 外、別 spec / 002 §11 に差し戻し)** 機構 ablation を自己組織化板で再走 | real | 002 の問いに回答 |
@@ -271,19 +271,30 @@ mock で板機構と artifact 消去を検証 → 実 Kronos は headline のみ
 | §9-6 scope(P5 分離) | SUPPORT | §7 P5 注 + §12 裁定 | ✅ |
 | §10-2 在庫 / self-trade | — | §3.1(片側 resting)+ §3.5(bookkeeping 不要) | ✅ |
 | §10-3 warmup seeding | — | §3.4(ZI warmup) | ✅ |
-| §10-4 Kronos バッチ化 | — | §3.6 + §8 + §10(下記、要 API 修正) | ⚠ P4 前 |
+| §10-4 Kronos バッチ化 | — | §3.6 + §8 + §10(下記、要 API 修正) | ✅ P2 で実測: median 0.151s / p95 0.192s per bar (n_samples=32, n_agents=10)。`auto_regressive_inference` を fork して raw N サンプル取得 (`self_organized_book/kronos_quantile.py`) |
+| 裁定 A: ZI-matched AR(1) on (v−mid) | — | §4 + 指揮裁定 | ✅ P2 で実測: **φ=+0.418, σ≈6e-3, mean≈0** (mean-reverting 明確、純 RW でない)。ZI-matched に AR(1) 較正値として埋め込み P3 で実装予定 |
 | NEW: 分布幅を捨てている | 本質 | §3.6(quantile-rank 評価値、格上げ) | ✅ 主分散源に昇格 |
 
 ---
 
 ## 10. 未解決(設計判断、P 着手前に詰める)
 
-- **§10-4 Kronos バッチ化(P4 前 BLOCKER)**: 現 `KronosPredictor` は agent ごとに 1 回呼ぶ構造。
-  共有 hub 1 本 × quantile-rank(§3.6)なら **1 回の predict で全 agent 分が取れる**はずなので、
-  hub をその API に修正。002 §7 地雷 4 のレイテンシ(sample_count=16 で 1.5s/step)を**再見積もり**。
-- **warmup 長 N**: ZI で何 bar 温めれば板が定常になるか(P1 で実測)。
-- **quantile-rank の割り当て**: agent_id 固定 quantile か、毎 bar 再サンプルか(後者は分散↑だが
-  agent identity が薄れる → 淘汰 §3.5 との整合を P2 で確認)。
+- **§10-4 Kronos バッチ化** ✅ **P2 で解決**: `auto_regressive_inference` を fork して raw N
+  サンプルを取り、1 hub × 1 predict で全 agent 分の quantile が揃う構造で実装
+  (`self_organized_book/kronos_quantile.py`)。**実測 median 0.151s/bar, p95 0.192s**
+  (n_samples=32, n_agents=10, lookback=16, 4 thread)。002 §7 地雷 4 の初期見積もり
+  (sample_count=16 で 1.5s/step) からは **10x 速い** (batched + raw 取得で重複生成回避)。
+- **warmup 長 N**: ZI で何 bar 温めれば板が定常になるか(P1 で実測 — warmup_steps=200 = 20 bar で
+  十分に約定が起きていることを P1 pilot で確認、追加の steady-state 診断は未実施)。
+- **quantile-rank の割り当て**: P2 は **agent_id 固定 quantile** で実装
+  (`(i + 0.5) / n_kronos` の等間隔)。毎 bar 再サンプル方式は分散源を上げる代わりに agent
+  identity を弱める → 淘汰 §3.5 との整合性懸念があるため P3 では固定 quantile を継続。
+- **(P2 新規) bounce 再来 (ret_acf τ=1 mid: +0.008 → −0.413)**: Kronos 投入で agent が一斉に
+  同方向 cross → bid/ask 交互叩きが復活。**herding(残すべき、機構 3 = Lux-Marchesi switching の
+  正当な現象)** か **degeneracy(潰すべき、Kronos 信号の単一支配)** かの **指揮裁定要**。
+  判別資料: agg=0.106 ∈ 帯 ✓ / placement var_ts_std=7.2e-5>0 ✓ / `(v−mid)` AR(1) φ=+0.42
+  (mean-reverting で過剰係留はない)。すべて (a) 側 = 残すべき herding を支持するが、結論は
+  ZI-matched(AR(1) 較正)との直接比較(P3)で初めて分離可能。
 
 ---
 
@@ -292,6 +303,7 @@ mock で板機構と artifact 消去を検証 → 実 Kronos は headline のみ
 |---|---|
 | 2026-06-23 | 初版ドラフト。全 LIMIT 化 + 内生流動性(MMFCN 廃止)+ Kronos 評価値→指値。4 ガード、成功条件 3 点、実験計画 P0–P5、α/β 分担。CI/ZI は reduced-form のため PAMS LIMIT agent を新規実装する点を明記。 |
 | 2026-06-23 | **v3: P1 pilot 結果 + round2 裁定(A〜D)**。P1 で **bounce 構造的消滅(mid -0.56→+0.008)+ 量子化解消(1→9 tick)+ agg_rate 0.153 ∈ 帯** を達成 = YH007-8 主仮説実証。A: ZI-matched を AR(1) on `(v−mid)` に(純 RW 棄却、φ/σ は P2 実測)。B: Hill α 主要維持・検出力は 2000 bar で確保(降格せず)。C: mid tick 帯を [2,5]→~5–15 許容に緩和、9 tick 合格。D: バッチ化レイテンシを P2 必須 deliverable に。§3.3/§4/§5/§6/§7/§12 改訂。 |
+| 2026-06-23 | **P2 実装完了 + 指揮への必須 2 数字返却**。`self_organized_book/{kronos_quantile,kronos_agent}.py` で 1-call N-quantile batched 取得 (`auto_regressive_inference` を fork、raw 取得)、KronosCIAgent (LimitAgentBase 継承)、KronosQuantileHub (bar 単位 cache, 1 hub × 全 agent 共有) を実装。tests 10/10 GREEN (P0 8 + P2 KronosCI smoke 2)。**実 Kronos ablation (4 seed × 1500 main step, n_kronos=10, n_samples=32, lookback=16)** で:(1) **per-bar batched latency = median 0.151s / p95 0.192s** (002 §7 初期見積もり 1.5s/step から 10x 改善); (2) **`(v−mid)` AR(1) 実測 φ=+0.418±0.058, σ≈6e-3, mean≈0** (mean-reverting 明確、純 RW でない=裁定 A 通り); (3) **agg_rate=0.106** ∈ 帯維持 → P1.5 不要; (4) placement var_ts_std>0 ✓ (degeneracy 否定). **⚠ 新発見**: bounce 再来 (ret_acf mid +0.008→−0.413) — herding/degeneracy 判定は P3 で ZI-matched (AR(1) φ=0.42 較正) との直接比較で分離。P3/P4 compute 試算 = 2000 bar × 8 seed × CI×Kronos & ZI-matched で 約 30 分。指揮裁定待ち。 |
 | 2026-06-23 | **v2: α レビュー(9 指摘)反映**。§3.1 に aggressive rate 目標帯 [0.05,0.20] + margin auto-tune(P1.5)+ 片側 resting 禁止。§3.2 に herding/degeneracy 判定 + 分散源優先順(quantile-rank 主)。§3.3 に bar/step 2 階層 + tick 較正条件。§3.4 に ZI warmup。**§3.6 新設(Kronos quantile-rank 評価値、002 §4.1 と整合、主分散源に格上げ)**。§4 を ZI-naïve/ZI-matched + dose matching に細分化。§5 に matching 検証 / a monitor / power analysis pilot。§7 に P1.5 追加・P5 を scope 外明示。§9 反映表・§12 裁定を新設。 |
 
 ---
