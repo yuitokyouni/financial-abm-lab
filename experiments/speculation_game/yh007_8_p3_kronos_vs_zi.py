@@ -22,7 +22,7 @@ import numpy as np
 
 from abm_models.kronos_lob.bar_aggregator import closes_to_returns
 from abm_models.self_organized_book import SelfOrganizedBookMarket
-from stylized_facts import stylized_facts_summary
+from stylized_facts import return_acf, stylized_facts_summary, volatility_acf
 
 
 def _sf(returns: np.ndarray) -> dict | None:
@@ -31,6 +31,26 @@ def _sf(returns: np.ndarray) -> dict | None:
     acf_lags = tuple(int(x) for x in (1, 5, 14, 50, 200) if x < returns.size)
     kurt_windows = tuple(int(x) for x in (1, 16, 64, 256) if x < returns.size)
     return stylized_facts_summary(returns, acf_lags=acf_lags, kurt_windows=kurt_windows)
+
+
+def _ret_acf_shape(returns: np.ndarray, max_lag: int = 10) -> dict:
+    """Discriminator (1): ret_acf τ=1..max_lag 形状。
+
+    τ=1 だけ大きく τ=2 で消える = sawtooth/over-shoot artifact。
+    滑らか減衰 = 真の動力学候補。
+    """
+    if returns.size <= max_lag + 1:
+        return {f"tau{l}": float("nan") for l in range(1, max_lag + 1)}
+    acf = return_acf(returns, max_lag=max_lag)
+    return {f"tau{l}": float(acf[l - 1]) for l in range(1, max_lag + 1)}
+
+
+def _vol_acf_shape(returns: np.ndarray, max_lag: int = 10) -> dict:
+    """|return| の ACF τ=1..max_lag (機構 3 vol clustering の本来の指標)。"""
+    if returns.size <= max_lag + 1:
+        return {f"tau{l}": float("nan") for l in range(1, max_lag + 1)}
+    acf = volatility_acf(returns, max_lag=max_lag)
+    return {f"tau{l}": float(acf[l - 1]) for l in range(1, max_lag + 1)}
 
 
 def _v_mid_diag(agents) -> dict:
@@ -98,19 +118,22 @@ def _max_over_std(returns: np.ndarray) -> float:
     return float(np.abs(returns).max() / np.std(returns))
 
 
-def _run_one_seed(seed: int, *, condition: str, common: dict) -> dict:
+def _run_one_seed(seed: int, *, condition: str, common: dict,
+                  zi_margin_min: float, zi_margin_max: float) -> dict:
     if condition == "kronos":
         kwargs = dict(common,
                       n_kronos=common["n_agents"], n_zi=0,
-                      zi_mode="naive")  # n_zi=0 で ZI 無し
+                      zi_mode="naive")
     elif condition == "zi_matched":
+        # dose-matching parity: ZI 側の margin は CI×Kronos の agg に合わせて較正
+        # (pilot で決定、--zi-margin-min/--zi-margin-max で渡す)
         kwargs = dict(common,
                       n_kronos=0, n_zi=common["n_agents"],
                       zi_mode="matched_ar1",
-                      zi_phi_ar1=0.418, zi_sigma_ar1_abs=6e-3, zi_mu_ar1=0.0)
+                      zi_phi_ar1=0.418, zi_sigma_ar1_abs=6e-3, zi_mu_ar1=0.0,
+                      margin_min=zi_margin_min, margin_max=zi_margin_max)
     else:
         raise ValueError(f"unknown condition: {condition}")
-    # kronos/zi 内部キー除去
     n_agents = kwargs.pop("n_agents")
     m = SelfOrganizedBookMarket(**kwargs)
     t0 = time.time()
@@ -126,6 +149,10 @@ def _run_one_seed(seed: int, *, condition: str, common: dict) -> dict:
         "n_bars_returns_mid": int(res["returns_main_mid"].size),
         "sf_market": sf_market, "sf_mid": sf_mid,
         "max_over_std_mid": _max_over_std(res["returns_main_mid"]),
+        # discriminator (1): ret_acf τ=1..10 形状 (両 metric)
+        "ret_acf_shape_mid": _ret_acf_shape(res["returns_main_mid"], 10),
+        "ret_acf_shape_market": _ret_acf_shape(res["returns_main_market"], 10),
+        "vol_acf_shape_mid": _vol_acf_shape(res["returns_main_mid"], 10),
         "v_mid": _v_mid_diag(agents),
         "placement": _placement_var(agents),
     }
@@ -192,6 +219,9 @@ def main() -> None:
     p.add_argument("--order-ttl", type=int, default=15)
     p.add_argument("--kronos-lookback-bars", type=int, default=16)
     p.add_argument("--kronos-n-samples", type=int, default=32)
+    # dose-matching parity: ZI 側の margin (CI×Kronos の agg と合うように pilot で較正)
+    p.add_argument("--zi-margin-min", type=float, default=3e-5)
+    p.add_argument("--zi-margin-max", type=float, default=1e-4)
     p.add_argument("--out-json", type=str, default="/tmp/yh007_8_p3.json")
     args = p.parse_args()
 
@@ -212,7 +242,9 @@ def main() -> None:
     for cond in ("kronos", "zi_matched"):
         for seed in range(args.n_seeds):
             print(f"\n[{cond}/seed={seed}] start ...", flush=True)
-            r = _run_one_seed(seed, condition=cond, common=common)
+            r = _run_one_seed(seed, condition=cond, common=common,
+                              zi_margin_min=args.zi_margin_min,
+                              zi_margin_max=args.zi_margin_max)
             all_rows[cond].append(r)
             sm = r["sf_mid"]
             print(f"  dt={r['dt']:.1f}s  agg={r['agg_rate']:.3f}  bars_ret={r['n_bars_returns_mid']}")
@@ -221,6 +253,9 @@ def main() -> None:
                       f"ret1={sm['ret_acf'].get(1, float('nan')):+.3f} "
                       f"vol50={sm['vol_acf'].get(50, float('nan')):+.3f} "
                       f"|r|_max/std={r['max_over_std_mid']:.2f}")
+            ras = r["ret_acf_shape_mid"]
+            print(f"  ret_acf mid τ=1..5: " +
+                  "  ".join(f"τ{i}={ras[f'tau{i}']:+.3f}" for i in range(1, 6)))
             vmd = r["v_mid"]
             print(f"  (v-mid): phi={vmd['phi']:+.3f} sigma={vmd['sigma']:.4e} "
                   f"std={vmd['v_mid_std']:.4e} mean={vmd['v_mid_mean']:+.4e}")
@@ -250,6 +285,42 @@ def main() -> None:
               f"{ag_z['mean']:+.4f}±{ag_z['std']:.4f} ({ag_z['n']:>2})  "
               f"{tres.get('diff', float('nan')):+10.4f}  "
               f"{tres['t']:>+7.3f}  {tres['p']:.4f}{sig}")
+
+    # discriminator (1): ret_acf 形状 τ=1..10 を両 condition で並べる
+    print("\n=== discriminator (1): ret_acf τ=1..10 shape (mid) ===")
+    print(f"  {'lag':>5}  {'kronos (m±s)':>22}  {'zi_matched (m±s)':>22}  diff")
+    for lag in range(1, 11):
+        ag_k = _aggregate(all_rows["kronos"], ("ret_acf_shape_mid", f"tau{lag}"))
+        ag_z = _aggregate(all_rows["zi_matched"], ("ret_acf_shape_mid", f"tau{lag}"))
+        diff = ag_k["mean"] - ag_z["mean"]
+        print(f"  τ={lag:>2}    {ag_k['mean']:+.4f}±{ag_k['std']:.4f} ({ag_k['n']:>2})  "
+              f"{ag_z['mean']:+.4f}±{ag_z['std']:.4f} ({ag_z['n']:>2})  {diff:+.4f}")
+
+    # discriminator (2): ZI-matched でも −0.41 が出るか
+    print("\n=== discriminator (2): ZI-matched vs CI×Kronos ret_acf τ=1 ===")
+    z1 = _aggregate(all_rows["zi_matched"], ("ret_acf_shape_mid", "tau1"))
+    k1 = _aggregate(all_rows["kronos"], ("ret_acf_shape_mid", "tau1"))
+    print(f"  kronos τ=1     = {k1['mean']:+.4f} ± {k1['std']:.4f} (n={k1['n']})")
+    print(f"  zi_matched τ=1 = {z1['mean']:+.4f} ± {z1['std']:.4f} (n={z1['n']})")
+    if abs(z1['mean']) > 0.1 and abs(k1['mean']) > 0.1 and abs(k1['mean'] - z1['mean']) < 0.1:
+        verdict = "★ artifact 確定 (両者で同程度の負相関) → 深さ/aggression 較正に戻る"
+    elif abs(z1['mean']) < 0.1 and abs(k1['mean']) > 0.1:
+        verdict = "★ Kronos 情報駆動 (ZI=0, Kronos のみ -0.4) → magnitude 過大か別途審査"
+    elif abs(z1['mean']) < 0.1 and abs(k1['mean']) < 0.1:
+        verdict = "★ 両者で bounce 消失 = 成功条件 1 達成"
+    else:
+        verdict = "中間 (要追加診断)"
+    print(f"  → {verdict}")
+
+    # discriminator (3): vol_acf 形状 (機構 3 の本来の指標)
+    print("\n=== discriminator (3, 参考): vol_acf τ=1..10 (mid) ===")
+    print(f"  {'lag':>5}  {'kronos (m±s)':>22}  {'zi_matched (m±s)':>22}  diff")
+    for lag in (1, 2, 3, 5, 10):
+        ag_k = _aggregate(all_rows["kronos"], ("vol_acf_shape_mid", f"tau{lag}"))
+        ag_z = _aggregate(all_rows["zi_matched"], ("vol_acf_shape_mid", f"tau{lag}"))
+        diff = ag_k["mean"] - ag_z["mean"]
+        print(f"  τ={lag:>2}    {ag_k['mean']:+.4f}±{ag_k['std']:.4f} ({ag_k['n']:>2})  "
+              f"{ag_z['mean']:+.4f}±{ag_z['std']:.4f} ({ag_z['n']:>2})  {diff:+.4f}")
 
     # dose match 検証
     print("\n=== dose match check ((v−mid) AR(1)) ===")
