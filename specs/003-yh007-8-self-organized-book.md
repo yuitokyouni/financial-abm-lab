@@ -158,9 +158,34 @@ $-game / GCMG 型・毎バー実価格結合 payoff(002 §4.3)+ 確信度連動 
 - ZI-matched control(§4)は **この quantile 分布の 1・2 次モーメントを matching** する
   (= 分布幅も dose match)。中心位置の予測力を分離できる。
 
----
+### 3.7 予測誤差・裁定エージェント(forecast-error arbitrageur)【round5 fix、P3 FAIL の対策】
 
-## 4. 【Guard 3 + α §9-3 BLOCKER 反映】Control baseline = Zero-Intelligence(dose matching)
+P3 で `ret_acf τ=1=−0.228`(集合 over-reaction)が出た根因は §3.2/§12 round4 の通り:
+**共有 Kronos 信号で全 agent が同方向に shift し、それを吸収する逆張り流動性が無い**。
+現状の fade(002 §4.2「現在価格 vs 現 Kronos 中心」)は**安定化しない** — Kronos が上を予想すると
+trend も「上を追う」、fade も「現価格は予想中心より安い→買う」で**両方同じ側**になり、逆張りが
+逆張りとして機能しない(④ が逆張りニッチを維持できなかった理由)。
+
+**修正 = 逆張りを「予測誤差・裁定エージェント」に再定義**。アンカーを**現予想でなく直前予想**にする:
+
+```
+bar t−1 で Kronos が予想した「bar t の中心水準」 X_t を保持
+bar t が実現値 P_t を付けたとき:
+   P_t > X_t  (予想超過 / over-shoot)  → 売り(行き過ぎを戻す)
+   P_t < X_t  (予想未達 / under-shoot) → 買い(届かなさを埋める)
+```
+
+決定的な違いは**一語**: 「**現予想に対し現価格**を fade(= 動きを追う、増幅)」ではなく
+「**直前予想に対し実現値**を fade(= 予想からの行き過ぎを叩く、復元)」。後者だけが集合
+over-shoot に逆らう復元力になり、`ret_acf τ=1` を 0 に押し戻す。これがユーザ直感
+「Kronos の予想と実際の乖離から裁定を取れば収束する」の正確な実装。
+
+**caveat — gain のバランス(over-stabilize の罠)**:
+- 強すぎ → 価格が Kronos 予想に**ピン留め**(毎 bar mid=X)→ 変動が死に fat tail / vol clustering
+  も消える(SF 消失)。
+- 弱すぎ → `−0.23` が残る。
+- **中庸**(over-shoot は消すが予想に固定しない)が要る。本来 ④(淘汰)が内生で見つけるべきで、
+  ダメなら fade 比率 / gain を tune。**Hill α / vol_acf を同時監視**して over-pin を検出する。
 
 **自己組織化 CDA は ZI(ランダム注文)だけでも SF の一部を生む**
 (Smith-Farmer-Gillemot-Krishnamurthy 2003)。「YH007-8 で SF が出た」だけでは **Kronos 由来か
@@ -243,6 +268,7 @@ SF を「出す」ことではなく、**信用できる測定土台が立つこ
 | **P2** ✅ | CI×Kronos(§3.1–3.6、quantile-rank 評価値)実装。分散注入診断(§3.2 herding≠degeneracy)。**+ §10-4 バッチ化レイテンシ実測(必須 deliverable)**: quantile-rank を共有 hub 1 回 predict で全 agent 取る構造の実 Kronos レイテンシ(P4 budget を確定、裁定 D)。**+ Kronos の `(v−mid)` の φ/σ 実測**(§4 ZI-matched 較正用、裁定 A)。 **達成**: agg=**0.106** ∈ 帯維持 ✓、batched latency=**median 0.151s / p95 0.192s per bar** (n_samples=32, n_agents=10, lookback=16)、**`(v−mid)` AR(1): φ=+0.418±0.058, σ≈6e-3, mean≈0** (mean-reverting 確認、純 RW でない)、placement var_ts_std=7.2e-5>0 (degeneracy 否定 ✓)。**⚠ 新発見**: Kronos 投入で **ret_acf τ=1 (mid) が +0.008 → −0.413 へ後退**(bounce 再来) — 残すべき herding か潰すべき degeneracy か **指揮裁定要**(§10 新項目)。 |
 | **P3** | 2000 bar × 8 seed で CI×Kronos vs ZI-matched(φ=0.42, **agg parity 必須**)。§5 規律フル + **bounce 再来の discriminator 3 点**(§12 round3: ACF τ=1..10 形状 / ZI-matched も −0.41 か / 板密度感度) | real(P2 で latency 確定済) | **成功条件 1(ret_acf≈0)を CI×Kronos が満たす** + 成功条件 3(差分有意)。−0.41 が ZI-matched でも出る=artifact → 不合格・較正に戻る |
 | **P3** ❌ FAIL | (上記実行済) | real | **CI×Kronos ret_acf τ=1=−0.228 が合格 |.|<0.1 を超過**。ZI-matched=−0.054(合格)→ artifact でなく Kronos 戦略構造由来(§12 round4)。次: 診断 (d)+戦略 mix → fix → 再走 |
+| **P3'** | 診断 (d) で chase 型 fade を確認 → §3.7 予測誤差・裁定エージェントを実装し P3 を再走 | real | **二重合格**: ret_acf τ=1→~0 **かつ** Hill/vol_acf が生きてる(予想にピン留めされてない、§12 round5) |
 | **P4** | P3 が合格(bounce が ret_acf≈0 に収まる)した構成で headline run。seed/bar 確定済 | real | 3 点同時達成。**P3 合格まで held** |
 | **P5** | **(003 scope 外、別 spec / 002 §11 に差し戻し)** 機構 ablation を自己組織化板で再走 | real | 002 の問いに回答 |
 
@@ -307,6 +333,7 @@ mock で板機構と artifact 消去を検証 → 実 Kronos は headline のみ
 | 日付 | 内容 |
 |---|---|
 | 2026-06-23 | 初版ドラフト。全 LIMIT 化 + 内生流動性(MMFCN 廃止)+ Kronos 評価値→指値。4 ガード、成功条件 3 点、実験計画 P0–P5、α/β 分担。CI/ZI は reduced-form のため PAMS LIMIT agent を新規実装する点を明記。 |
+| 2026-06-23 | **round5 裁定(fix 方針)**。P3 FAIL の root cause(集合 over-shoot を吸収する逆張り流動性の欠如)への fix を確定。ユーザ直感「Kronos の予想と実際の乖離から裁定を取れば収束」を採択し **§3.7「予測誤差・裁定エージェント」** として仕様化。**アンカーを現予想でなく直前予想に**(直前予想 X_t に対し実現値 P_t を fade: P_t>X_t→売 / P_t<X_t→買)— 現状 fade(現価格 vs 現中心)は trend と同方向に潰れて安定化しないのが根因。caveat: gain 過大で価格が予想にピン留め→SF 消失(Hill/vol_acf 監視)。β 指示: 診断 (d) で chase 型を実証 → 実装 → P3' 再走、合格は ret_acf≈0 **かつ** SF が生きてる二重条件。§3.7 新設・§7 P3'・§12 round5。 |
 | 2026-06-23 | **round4 裁定(P3 結果)**。P3 FAIL を支持(CI×Kronos ret_acf τ=1=−0.228 が |.|<0.1 超過、ZI-matched=−0.054 合格)。**機械的 artifact でなく Kronos 戦略構造由来**を 3 discriminator で確定。β の「herding だから OK」化を継続して却下、substrate 未完成・P4 held。根因精緻化: quantile-rank は幅を散らすが時間方向の集合 directionality を散らさない + 戦略 mix が ~all-trend に collapse して逆張り流動性枯渇(④ 不全)。診断順序: (d)+戦略 mix readout を最優先(logs から cheap)、(c) 板密度は候補 fix 検証として後回し。**裁定: これは substrate 欠陥(潰す)であると同時に「同一基盤モデル共有 → directional 同期 → 集合 over-reaction」という候補 finding として保存**(破棄しない)。§3.2 限界注記・§7 P3 FAIL・§10・§12 round4 改訂。 |
 | 2026-06-23 | **round3 裁定(P2 結果)**。バッチ化(0.151s/bar, 10x)・`(v−mid)` AR(1) φ=0.42 を受領(裁定 A/D 確証)。**bounce 再来(ret_acf mid −0.413)を「herding」と読み替える β の前のめりを却下** — β の判別資料は (a)herding と (b)artifact を区別せず、−0.41 は 002 の artifact 規模で bar スケール真 SF なら ret_acf≈0。**002 撤回で禁じた「壊れた成功条件の feature 化」の再来**として疑わしきは artifact 扱い。P3 の discriminator を 3 点(ACF τ=1..10 形状 / ZI-matched も −0.41 か / 板密度感度)に明確化。ZI-matched は φ=0.42+**agg parity** で。budget 承認(2000bar×8seed×2cond≈30min)だが **P3 合格 = CI×Kronos が ret_acf≈0 を満たすこと**(満たさねば較正に戻り P4 へ進めない)。§7 P3/P4・§10・§12 改訂。 |
 | 2026-06-23 | **v3: P1 pilot 結果 + round2 裁定(A〜D)**。P1 で **bounce 構造的消滅(mid -0.56→+0.008)+ 量子化解消(1→9 tick)+ agg_rate 0.153 ∈ 帯** を達成 = YH007-8 主仮説実証。A: ZI-matched を AR(1) on `(v−mid)` に(純 RW 棄却、φ/σ は P2 実測)。B: Hill α 主要維持・検出力は 2000 bar で確保(降格せず)。C: mid tick 帯を [2,5]→~5–15 許容に緩和、9 tick 合格。D: バッチ化レイテンシを P2 必須 deliverable に。§3.3/§4/§5/§6/§7/§12 改訂。 |
@@ -412,3 +439,21 @@ quantile-rank は **cross-section の幅**を散らすが、**時間方向の集
 市場の**新規で重要な現象**になりうる(homogeneous adoption → synchronized instability)。
 **今は substrate 欠陥として潰す**(YH007-8 の clean 測定土台のため ret_acf≈0 必須)が、**この現象は
 専用実験の候補 finding として保存**(破棄しない)。002 §11 or 別 spec で扱う。
+
+### round5 裁定(fix 方針 = 予測誤差・裁定エージェント、2026-06-23)
+
+**P3 FAIL の root cause(集合 over-shoot を吸収する逆張り流動性の欠如)への fix を確定**。
+ユーザ直感「Kronos の予想と実際の乖離から裁定を取れば収束する」を採択し、**§3.7 に
+「予測誤差・裁定エージェント」として仕様化**。要点:
+- **アンカーは現予想でなく直前予想**。「直前予想 X_t に対し実現値 P_t を fade」(P_t>X_t→売、
+  P_t<X_t→買)。現状 fade(現価格 vs 現中心)は trend と同方向に潰れて安定化しない、が根因。
+- これが集合 over-shoot に復元力を与え `ret_acf τ=1` を 0 へ戻す。
+- **caveat**: gain 過大 → 価格が予想にピン留め → SF 消失。Hill/vol_acf を監視し over-pin を回避。
+  中庸は ④ が内生で見つけるのが筋、ダメなら fade 比率/gain を tune。
+
+**β への指示(順序)**:
+1. **診断 (d) を先に**(logs から cheap、round4): 現 fade が「chase 型(現価格 vs 現中心)」か確認 +
+   per-bar 同側比率 + trend/fade 構成比。**root cause を実証してから書き換える**(空振り回避)。
+2. (d) が degeneracy を確認したら **§3.7 の予測誤差・裁定エージェントを実装**して P3 を再走(P3')。
+3. 合格判定は **二重**: (i) `ret_acf τ=1 → ~0`(substrate clean)**かつ** (ii) **価格が Kronos 予想に
+   ピン留めされていない**(Hill α/vol_acf が生きている = SF 候補が残る)。両立して初めて P4 へ。
