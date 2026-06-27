@@ -152,7 +152,7 @@ def test_parse_edit_file_keeps_single_hash_markdown_headers():
 ## novelty_notes
 # 観察 1
 real user content
-## main_idea  (this is an unknown ## header, so it truncates but its body drops)
+## main_idea
 this text is dropped
 ## mechanism_strengths
 ### サブ見出しは保持される
