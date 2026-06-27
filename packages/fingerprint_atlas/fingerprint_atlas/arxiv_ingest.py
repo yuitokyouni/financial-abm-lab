@@ -152,9 +152,18 @@ def _call_groq_for_extraction(paper: dict, model: str,
         except Exception as exc:
             last_exc = exc
             msg = str(exc)
-            transient = ("json_validate_failed" in msg
-                         or "Failed to validate JSON" in msg)
-            if attempt < max_retries and transient:
+            rate_limited = ("Rate limit reached" in msg
+                            or "rate_limit_exceeded" in msg
+                            or "429" in msg)
+            transient_json = ("json_validate_failed" in msg
+                              or "Failed to validate JSON" in msg)
+            if attempt < max_retries and rate_limited:
+                # Groq's per-key TPM window is 60s; sleep 65 to give margin.
+                print(f"  (Groq 429 rate limit on {paper['arxiv_id']}, "
+                      f"sleeping 65s before retry {attempt + 1}/{max_retries})")
+                time.sleep(65)
+                continue
+            if attempt < max_retries and transient_json:
                 temperature = min(1.0, temperature + 0.1)
                 continue
             raise
@@ -284,9 +293,11 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
             print(f"  + {p['arxiv_id']} [{p['year']}] rel={rel}  tags=[{tags}]  "
                   f"{p['title'][:70]}")
 
-        # arxiv-friendly pacing already enforced by arxiv.Client; Groq has
-        # its own per-key rate limit (we just keep the loop sequential).
-        time.sleep(0.1)
+        # Groq's gpt-oss-120b free-tier TPM is 8000. Each extraction call
+        # uses ~600 input + 200 output = 800 tokens, so ~10 papers/minute
+        # is the ceiling. Sleep 6s between successful extractions so we
+        # stay under the limit without paying 60s recovery penalties.
+        time.sleep(6.0)
 
     return {
         "query": query, "n_papers_returned": len(papers),
