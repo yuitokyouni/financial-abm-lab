@@ -111,11 +111,34 @@ def _format_proposal_full(p: dict) -> str:
 
 # ---- sub-commands -------------------------------------------------------
 
+def _handle_groq_error(exc: Exception, args) -> int:
+    """Turn Groq's cryptic 413 / 429 errors into actionable hints."""
+    msg = str(exc)
+    if "413" in msg or "Request too large" in msg or "rate_limit_exceeded" in msg:
+        print("\n  ! Groq rate-limit / TPM error.", file=sys.stderr)
+        print(f"    Current --literature-top-n is "
+              f"{getattr(args, 'literature_top_n', '?')}.", file=sys.stderr)
+        print("    Try lowering it (e.g. --literature-top-n 4) or pass "
+              "--no-literature.", file=sys.stderr)
+        print("    Or switch to a model with higher limits (--groq-model "
+              "llama-3.3-70b-versatile, which has 12K TPM).", file=sys.stderr)
+    elif "429" in msg:
+        print("  ! Groq rate-limit (429). Wait 60s and retry.", file=sys.stderr)
+    else:
+        print(f"  ! Groq error: {type(exc).__name__}: {exc}", file=sys.stderr)
+    return 1
+
+
 def cmd_from_corpus(args) -> int:
     ensure_proposals_schema(args.db)
-    res = propose_from_corpus(
-        args.db, n=args.n, groq_model=args.groq_model, temperature=args.temperature,
-    )
+    try:
+        res = propose_from_corpus(
+            args.db, n=args.n, groq_model=args.groq_model,
+            temperature=args.temperature,
+            literature_top_n=args.literature_top_n,
+        )
+    except Exception as exc:
+        return _handle_groq_error(exc, args)
     summary = res[0]
     print(f"groq model    : {summary['llm_model']}")
     print(f"requested     : {summary['n_requested']}")
@@ -293,10 +316,14 @@ def cmd_auto(args) -> int:
     print(f"[1/3] PROPOSE (groq_model={args.groq_model}, n={args.n})")
     print("=" * 70)
     ensure_proposals_schema(args.db)
-    res = propose_from_corpus(
-        args.db, n=args.n, groq_model=args.groq_model,
-        temperature=args.temperature,
-    )
+    try:
+        res = propose_from_corpus(
+            args.db, n=args.n, groq_model=args.groq_model,
+            temperature=args.temperature,
+            literature_top_n=args.literature_top_n,
+        )
+    except Exception as exc:
+        return _handle_groq_error(exc, args)
     summary = res[0]
     print(f"  accepted: {len(summary['accepted'])} / requested {summary['n_requested']}")
     for p in summary["accepted"]:
@@ -462,6 +489,12 @@ def main() -> int:
               "Current list: https://console.groq.com/docs/models"),
     )
     p_fc.add_argument("--temperature", type=float, default=0.7)
+    p_fc.add_argument(
+        "--literature-top-n", type=int, default=7,
+        help=("how many literature_methods papers to inject into the LLM "
+              "context. Default 7 fits Groq's free-tier 8K TPM with gpt-oss-120b. "
+              "Drop to 4 if you hit 413."),
+    )
 
     p_ls = sub.add_parser("list", help="one-line summary per proposal")
     p_ls.add_argument("--status", default=None,
@@ -501,6 +534,10 @@ def main() -> int:
                         help="execute seeds = seed-base + proposal_id")
     p_auto.add_argument("--analytics-out", default="notebooks/propose_analytics/")
     p_auto.add_argument("--skip-analytics", action="store_true")
+    p_auto.add_argument(
+        "--literature-top-n", type=int, default=7,
+        help="see `from-corpus --literature-top-n` for the trade-off",
+    )
 
     args = ap.parse_args()
     handlers = {

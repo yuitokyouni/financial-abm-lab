@@ -309,7 +309,7 @@ def _select_literature_for_context(rows: list[dict], top_n: int = 15) -> list[di
     return out
 
 
-def summarize_corpus(db_path: str, *, literature_top_n: int = 15) -> dict[str, Any]:
+def summarize_corpus(db_path: str, *, literature_top_n: int = 7) -> dict[str, Any]:
     """Build the JSON context handed to the LLM."""
     runs = load_runs(db_path)
     methods = list_methods(db_path)
@@ -420,16 +420,24 @@ def _validate_proposal(p: dict, n_features: int) -> tuple[bool, str]:
 def propose_from_corpus(db_path: str, n: int = 5, *,
                         groq_model: str = DEFAULT_GROQ_MODEL,
                         temperature: float = 0.7,
+                        literature_top_n: int = 7,
                         dry_run_payload: dict | None = None
                         ) -> list[dict]:
     """Generate n proposals, validate, write each accepted one to DB.
+
+    literature_top_n : how many papers to include in the LLM context.
+                       Trade-off: more papers = better grounding but a larger
+                       prompt. Groq's free tier caps gpt-oss-120b at
+                       8000 TPM — keep this <= 8 there. For paid tiers
+                       (or smaller models with lower per-paper cost) it can
+                       go higher.
 
     dry_run_payload : if provided, skip the LLM call and use this dict as the
                       parsed response. Lets tests exercise the parse/validate/
                       store path without network.
     """
     ensure_proposals_schema(db_path)
-    context = summarize_corpus(db_path)
+    context = summarize_corpus(db_path, literature_top_n=literature_top_n)
     payload = {"n": n, "task": "propose n param_sweep ABMs to extend the atlas",
                "context": context}
     if dry_run_payload is None:
