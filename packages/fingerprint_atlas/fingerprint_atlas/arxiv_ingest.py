@@ -120,8 +120,11 @@ def query_arxiv(query: str, max_results: int = 50,
 
 
 def _call_groq_for_extraction(paper: dict, model: str,
-                              temperature: float = 0.3) -> dict:
-    """One Groq call extracting structured info from a paper."""
+                              temperature: float = 0.3,
+                              max_retries: int = 2) -> dict:
+    """One Groq call extracting structured info from a paper. Retries on the
+    'json_validate_failed' 400 — same gpt-oss-120b JSON-mode quirk as
+    `propose._call_groq`."""
     try:
         from groq import Groq
     except ImportError as e:
@@ -133,16 +136,29 @@ def _call_groq_for_extraction(paper: dict, model: str,
         raise RuntimeError("GROQ_API_KEY environment variable not set.")
     client = Groq(api_key=api_key)
     user_msg = f"Title: {paper['title']}\n\nAbstract: {paper['abstract']}"
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},
-            {"role": "user", "content": user_msg},
-        ],
-        response_format={"type": "json_object"},
-        temperature=temperature,
-    )
-    return json.loads(resp.choices[0].message.content)
+    last_exc: Exception | None = None
+    for attempt in range(max_retries + 1):
+        try:
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},
+                    {"role": "user", "content": user_msg},
+                ],
+                response_format={"type": "json_object"},
+                temperature=temperature,
+            )
+            return json.loads(resp.choices[0].message.content)
+        except Exception as exc:
+            last_exc = exc
+            msg = str(exc)
+            transient = ("json_validate_failed" in msg
+                         or "Failed to validate JSON" in msg)
+            if attempt < max_retries and transient:
+                temperature = min(1.0, temperature + 0.1)
+                continue
+            raise
+    raise last_exc
 
 
 def extract_paper_structured(paper: dict, model: str = DEFAULT_GROQ_MODEL, *,

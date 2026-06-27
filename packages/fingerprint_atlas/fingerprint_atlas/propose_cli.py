@@ -112,18 +112,21 @@ def _format_proposal_full(p: dict) -> str:
 # ---- sub-commands -------------------------------------------------------
 
 def _handle_groq_error(exc: Exception, args) -> int:
-    """Turn Groq's cryptic 413 / 429 errors into actionable hints."""
+    """Turn Groq's cryptic 413 / 429 / 400 errors into actionable hints."""
     msg = str(exc)
     if "413" in msg or "Request too large" in msg or "rate_limit_exceeded" in msg:
         print("\n  ! Groq rate-limit / TPM error.", file=sys.stderr)
         print(f"    Current --literature-top-n is "
               f"{getattr(args, 'literature_top_n', '?')}.", file=sys.stderr)
-        print("    Try lowering it (e.g. --literature-top-n 4) or pass "
-              "--no-literature.", file=sys.stderr)
-        print("    Or switch to a model with higher limits (--groq-model "
-              "llama-3.3-70b-versatile, which has 12K TPM).", file=sys.stderr)
+        print("    Lower it (e.g. --literature-top-n 4) and try again.",
+              file=sys.stderr)
     elif "429" in msg:
         print("  ! Groq rate-limit (429). Wait 60s and retry.", file=sys.stderr)
+    elif "json_validate_failed" in msg or "Failed to validate JSON" in msg:
+        print("  ! gpt-oss-120b returned malformed JSON even after retries.",
+              file=sys.stderr)
+        print("    This is a Groq sampling quirk, not a prompt error. "
+              "Just rerun the same command.", file=sys.stderr)
     else:
         print(f"  ! Groq error: {type(exc).__name__}: {exc}", file=sys.stderr)
     return 1
@@ -480,13 +483,12 @@ def main() -> int:
     p_fc.add_argument("--n", type=int, default=5)
     p_fc.add_argument(
         "--groq-model", default=DEFAULT_GROQ_MODEL,
-        help=("Groq model id. Default: openai/gpt-oss-120b (chosen after live "
-              "A/B against llama-3.3-70b-versatile and llama-4-scout — only "
-              "model that named mechanism-specific reasoning like percolation "
-              "thresholds and power-law tails). Other free-tier alternatives: "
-              "llama-3.3-70b-versatile (fastest), "
-              "meta-llama/llama-4-scout-17b-16e-instruct (newer Llama 4 MoE). "
-              "Current list: https://console.groq.com/docs/models"),
+        help=("Groq model id. Default: openai/gpt-oss-120b. This is the only "
+              "Groq free-tier model that produces ABM proposals with actual "
+              "mechanism understanding; other models tested (Llama 3.3 70B, "
+              "Llama 4 Scout) fall back to template Japanese rationales that "
+              "the validator rejects. Override only if you know what you're "
+              "doing. Current model list: https://console.groq.com/docs/models"),
     )
     p_fc.add_argument("--temperature", type=float, default=0.7)
     p_fc.add_argument(

@@ -31,12 +31,16 @@ from .adapters import MODEL_BOUNDS, PRICELESS_MODELS
 from .methods import list_methods
 
 
-# gpt-oss-120b: OpenAI's open-source 120B model, free tier on Groq. In a live
-# A/B test against llama-3.3-70b and llama-4-scout (Nov 2026), gpt-oss-120b
-# was the only model that produced proposals with mechanism-aware reasoning
-# (e.g. naming the Cont-Bouchaud percolation threshold and predicting the
-# power-law effect on cluster sizes). Llama-3.3-70b and llama-4-scout
-# produced template-style rationales (user-scored 3/10 vs gpt-oss-120b's 8/10).
+# gpt-oss-120b: OpenAI's open-source 120B model, free tier on Groq. Chosen
+# after A/B testing — the only Groq free-tier model whose rationales reflect
+# actual ABM mechanism understanding (e.g. naming Cont-Bouchaud percolation
+# threshold + predicting power-law cluster sizes). Other Groq free-tier
+# options collapse into template Japanese ("〜を目的としています") that the
+# validator rejects, so they are not viable substitutes for this task.
+#
+# Known quirk: gpt-oss-120b occasionally returns malformed JSON under JSON
+# mode (Groq 400 'json_validate_failed'). _call_groq retries with a slight
+# temperature jitter; usually one retry is enough.
 DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
 
 
@@ -354,8 +358,15 @@ def summarize_corpus(db_path: str, *, literature_top_n: int = 7) -> dict[str, An
 
 
 def _call_groq(system_prompt: str, user_payload: dict, model: str,
-               temperature: float = 0.7) -> dict:
-    """Single Groq chat-completion call returning parsed JSON."""
+               temperature: float = 0.7, max_retries: int = 2) -> dict:
+    """Single Groq chat-completion call returning parsed JSON.
+
+    Retries up to `max_retries` times on the specific Groq 400
+    'json_validate_failed' / 'Failed to validate JSON' error — that one is
+    a transient sampling quirk of gpt-oss-120b under JSON mode, not a
+    prompt error. Each retry bumps temperature by +0.1 to perturb sampling.
+    Other errors (rate limit, auth, network) re-raise immediately.
+    """
     try:
         from groq import Groq
     except ImportError as e:
@@ -367,17 +378,36 @@ def _call_groq(system_prompt: str, user_payload: dict, model: str,
     if not api_key:
         raise RuntimeError("GROQ_API_KEY environment variable not set.")
     client = Groq(api_key=api_key)
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
-        ],
-        response_format={"type": "json_object"},
-        temperature=temperature,
-    )
-    raw = resp.choices[0].message.content
-    return json.loads(raw)
+    last_exc: Exception | None = None
+    for attempt in range(max_retries + 1):
+        try:
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",
+                     "content": json.dumps(user_payload, ensure_ascii=False)},
+                ],
+                response_format={"type": "json_object"},
+                temperature=temperature,
+            )
+            raw = resp.choices[0].message.content
+            return json.loads(raw)
+        except Exception as exc:
+            last_exc = exc
+            msg = str(exc)
+            transient = (
+                "json_validate_failed" in msg
+                or "Failed to validate JSON" in msg
+            )
+            if attempt < max_retries and transient:
+                temperature = min(1.0, temperature + 0.1)
+                print(f"  (groq retry {attempt + 1}/{max_retries} after "
+                      f"JSON-validate failure; bumping temperature to "
+                      f"{temperature:.2f})")
+                continue
+            raise
+    raise last_exc  # safety net (unreachable)
 
 
 def _validate_proposal(p: dict, n_features: int) -> tuple[bool, str]:

@@ -157,7 +157,9 @@ def _select_relevant_literature(target: Method, db_path: str,
 
 
 def _call_groq(system_prompt: str, user_payload: dict, model: str,
-               temperature: float = 0.5) -> dict:
+               temperature: float = 0.5, max_retries: int = 2) -> dict:
+    """Retries up to max_retries times on Groq's transient
+    'json_validate_failed' 400 (gpt-oss-120b JSON-mode quirk)."""
     try:
         from groq import Groq
     except ImportError as e:
@@ -166,16 +168,30 @@ def _call_groq(system_prompt: str, user_payload: dict, model: str,
     if not api_key:
         raise RuntimeError("GROQ_API_KEY environment variable not set.")
     client = Groq(api_key=api_key)
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
-        ],
-        response_format={"type": "json_object"},
-        temperature=temperature,
-    )
-    return json.loads(resp.choices[0].message.content)
+    last_exc: Exception | None = None
+    for attempt in range(max_retries + 1):
+        try:
+            resp = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",
+                     "content": json.dumps(user_payload, ensure_ascii=False)},
+                ],
+                response_format={"type": "json_object"},
+                temperature=temperature,
+            )
+            return json.loads(resp.choices[0].message.content)
+        except Exception as exc:
+            last_exc = exc
+            msg = str(exc)
+            transient = ("json_validate_failed" in msg
+                         or "Failed to validate JSON" in msg)
+            if attempt < max_retries and transient:
+                temperature = min(1.0, temperature + 0.1)
+                continue
+            raise
+    raise last_exc
 
 
 def draft_notes_for_method(db_path: str, method_name: str, *,
