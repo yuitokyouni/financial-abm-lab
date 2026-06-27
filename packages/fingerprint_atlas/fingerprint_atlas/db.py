@@ -308,6 +308,9 @@ def update_literature_extraction(
 def load_literature(db_path: str, *, min_relevance: float | None = None,
                     tag: str | None = None, max_results: int | None = None
                     ) -> list[dict[str, Any]]:
+    # Defensive: a fresh DB may not have ingested any papers yet — make
+    # this a soft no-op rather than an OperationalError.
+    ensure_literature_schema(db_path)
     sql = ("SELECT id, arxiv_id, title, authors, year, published_date, "
            "primary_category, abstract, mechanism_summary, mechanism_tags, "
            "stylized_facts_targeted, novelty_signal, relevance_score, "
@@ -342,6 +345,135 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
             "extracted_by_model": r[13], "extraction_attempts": r[14],
             "user_notes": r[15] or "", "user_tags": r[16] or "",
             "ingested_at": r[17], "updated_at": r[18],
+        })
+    return out
+
+
+# ============================================================================
+# ideas — natural-language idea descriptions + LLM judgments + plans + scaffolds
+# ============================================================================
+
+IDEAS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS ideas (
+    id                  INTEGER PRIMARY KEY,
+    idea_text           TEXT NOT NULL,
+    aspects_json        TEXT,         -- structured aspects extracted by LLM
+    judgment_json       TEXT,         -- novelty verdict + matches
+    judgment_llm_model  TEXT,
+    plan_json           TEXT,         -- implementation plan
+    plan_llm_model      TEXT,
+    scaffold_paths      TEXT,         -- comma-separated file paths
+    proposal_ids        TEXT,         -- comma-separated proposals.id values
+    status              TEXT NOT NULL DEFAULT 'judged',  -- judged | planned | scaffolded | executed | rejected
+    user_notes          TEXT NOT NULL DEFAULT '',
+    created_at          TEXT NOT NULL,
+    updated_at          TEXT NOT NULL
+);
+"""
+
+_IDEAS_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_ideas_status ON ideas(status)",
+]
+
+
+def ensure_ideas_schema(db_path: str) -> None:
+    parent = os.path.dirname(db_path) or "."
+    os.makedirs(parent, exist_ok=True)
+    with sqlite3.connect(db_path) as con:
+        con.executescript(IDEAS_SCHEMA)
+        for stmt in _IDEAS_INDEXES:
+            con.execute(stmt)
+        con.commit()
+
+
+def insert_idea(db_path: str, *,
+                idea_text: str,
+                aspects: dict[str, Any] | None = None,
+                judgment: dict[str, Any] | None = None,
+                judgment_llm_model: str | None = None,
+                status: str = "judged") -> int:
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "INSERT INTO ideas (idea_text, aspects_json, judgment_json, "
+            "judgment_llm_model, status, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (idea_text,
+             json.dumps(aspects, ensure_ascii=False) if aspects else None,
+             json.dumps(judgment, ensure_ascii=False, default=_json_default) if judgment else None,
+             judgment_llm_model, status, now, now),
+        )
+        return int(cur.lastrowid)
+
+
+def update_idea(db_path: str, idea_id: int, *,
+                aspects: dict | None = None,
+                judgment: dict | None = None,
+                judgment_llm_model: str | None = None,
+                plan: dict | None = None,
+                plan_llm_model: str | None = None,
+                scaffold_paths: list[str] | None = None,
+                proposal_ids: list[int] | None = None,
+                status: str | None = None,
+                user_notes: str | None = None) -> None:
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    sets = []
+    args: list[Any] = []
+    for col, val in [
+        ("aspects_json", json.dumps(aspects, ensure_ascii=False) if aspects is not None else None),
+        ("judgment_json", json.dumps(judgment, ensure_ascii=False, default=_json_default) if judgment is not None else None),
+        ("judgment_llm_model", judgment_llm_model),
+        ("plan_json", json.dumps(plan, ensure_ascii=False, default=_json_default) if plan is not None else None),
+        ("plan_llm_model", plan_llm_model),
+        ("scaffold_paths", ",".join(scaffold_paths) if scaffold_paths is not None else None),
+        ("proposal_ids", ",".join(str(i) for i in proposal_ids) if proposal_ids is not None else None),
+        ("status", status),
+        ("user_notes", user_notes),
+    ]:
+        if val is not None:
+            sets.append(f"{col} = ?")
+            args.append(val)
+    if not sets:
+        return
+    sets.append("updated_at = ?")
+    args.append(now)
+    args.append(int(idea_id))
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            f"UPDATE ideas SET {', '.join(sets)} WHERE id = ?",
+            tuple(args),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no idea with id={idea_id}")
+        con.commit()
+
+
+def load_ideas(db_path: str, status: str | None = None) -> list[dict[str, Any]]:
+    sql = ("SELECT id, idea_text, aspects_json, judgment_json, judgment_llm_model, "
+           "plan_json, plan_llm_model, scaffold_paths, proposal_ids, status, "
+           "user_notes, created_at, updated_at FROM ideas")
+    args: tuple = ()
+    if status is not None:
+        sql += " WHERE status = ?"
+        args = (status,)
+    sql += " ORDER BY id"
+    with sqlite3.connect(db_path) as con:
+        rows = con.execute(sql, args).fetchall()
+    out = []
+    for r in rows:
+        out.append({
+            "id": r[0], "idea_text": r[1],
+            "aspects": json.loads(r[2]) if r[2] else None,
+            "judgment": json.loads(r[3]) if r[3] else None,
+            "judgment_llm_model": r[4],
+            "plan": json.loads(r[5]) if r[5] else None,
+            "plan_llm_model": r[6],
+            "scaffold_paths": [p for p in (r[7] or "").split(",") if p],
+            "proposal_ids": [int(i) for i in (r[8] or "").split(",") if i],
+            "status": r[9], "user_notes": r[10] or "",
+            "created_at": r[11], "updated_at": r[12],
         })
     return out
 
