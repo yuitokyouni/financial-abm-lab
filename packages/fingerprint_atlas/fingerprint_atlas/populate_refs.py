@@ -63,7 +63,7 @@ def populate_synthetic(db_path: str, *, n_per_model: int = 6, seed_base: int = 5
                     series_length=int(len(series)),
                     provenance={**provenance_static,
                                 "elapsed_s": round(time.time() - t0, 3)},
-                    created_at=dt.datetime.utcnow().isoformat() + "Z",
+                    created_at=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z",
                     hill_raw=hraw, origin="synthetic",
                 )
                 rows.append({"id": rid, "model": name, "i": i})

@@ -78,7 +78,7 @@ def update_preference(db_path: str, run_id: int, label: float,
     """Set `preference_label` (and timestamp) on one row. Idempotent overwrite."""
     import datetime as _dt
     if labeled_at is None:
-        labeled_at = _dt.datetime.utcnow().isoformat() + "Z"
+        labeled_at = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
     with sqlite3.connect(db_path) as con:
         cur = con.execute(
             "UPDATE runs SET preference_label = ?, preference_labeled_at = ? WHERE id = ?",
