@@ -83,7 +83,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: propose/${{ github.run_id }}
-          base: claude/vibrant-ptolemy-fapuxw
+          base: main
           add-paths: |
             proposals/**
           commit-message: "propose: new ABM proposals from ${{ env.GROQ_MODEL }} (run ${{ github.run_id }})"

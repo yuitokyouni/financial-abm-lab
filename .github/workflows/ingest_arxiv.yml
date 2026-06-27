@@ -11,13 +11,13 @@ on:
   workflow_dispatch:
     inputs:
       preset:
-        description: "arxiv query preset (financial_abm / agent_based_recent)"
+        description: "arxiv query preset (financial_abm_strict / financial_abm / agent_based_recent)"
         required: false
-        default: "agent_based_recent"
+        default: "financial_abm_strict"
       max_results:
         description: "max papers per call"
         required: false
-        default: "30"
+        default: "50"
       no_extract:
         description: "metadata only, skip Groq extraction (free)"
         required: false
@@ -32,8 +32,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DB_PATH: data/abm_knowhow.db
-      PRESET: ${{ github.event.inputs.preset || 'agent_based_recent' }}
-      MAX: ${{ github.event.inputs.max_results || '30' }}
+      PRESET: ${{ github.event.inputs.preset || 'financial_abm_strict' }}
+      MAX: ${{ github.event.inputs.max_results || '50' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -124,22 +124,23 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ingest-arxiv/${{ github.run_id }}
-          base: claude/vibrant-ptolemy-fapuxw
+          base: main
           add-paths: |
             data/literature_methods.json
           commit-message: "ingest-arxiv: weekly snapshot (run ${{ github.run_id }})"
           title: "Weekly arxiv literature snapshot — ${{ github.run_id }}"
           body: |
             New papers ingested from arxiv (preset: `${{ env.PRESET }}`,
-            max: `${{ env.MAX }}`). Extraction via Groq Llama 3.3 70B.
+            max: `${{ env.MAX }}`). Extraction via Groq gpt-oss-120b.
 
             The JSON snapshot under `data/literature_methods.json` is the
             source of truth for the literature DB — re-run any propose
             workflow and these papers will be available as LLM context.
 
             **Review hints**
-            - Spot-check 2-3 entries: does mechanism_summary describe what
+            - Spot-check 2-3 entries: does `mechanism_summary` describe what
               the abstract actually says?
-            - Drop rows with low signal by editing the JSON directly.
-            - Or just merge — the next ingest will accumulate on top.
+            - Drop rows with low `relevance_score` by editing the JSON.
+            - Or just merge — the next ingest accumulates on top via the
+              snapshot restore step.
           delete-branch: true
