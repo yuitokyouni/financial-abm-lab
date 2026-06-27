@@ -307,9 +307,10 @@ def main() -> int:
         "--groq-model", default=DEFAULT_GROQ_MODEL,
         help=("Groq model id. Default: llama-3.3-70b-versatile. "
               "Free-tier alternatives worth trying for better synthesis: "
-              "deepseek-r1-distill-llama-70b (reasoning-tuned, structured output), "
-              "moonshotai/kimi-k2-instruct (coding/reasoning), "
-              "meta-llama/llama-4-scout-17b-16e-instruct (newer)."),
+              "meta-llama/llama-4-scout-17b-16e-instruct (newer Llama 4 MoE), "
+              "moonshotai/kimi-k2-instruct (coding/reasoning, structured output), "
+              "openai/gpt-oss-120b (OpenAI open-source, very capable). "
+              "Current list: https://console.groq.com/docs/models"),
     )
     p_fc.add_argument("--temperature", type=float, default=0.7)
 
