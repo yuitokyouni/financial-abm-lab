@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from typing import Any
 
 import numpy as np
@@ -142,6 +143,60 @@ _RATIONALE_CONCRETE_KEYWORDS = [
     # citation markers
     "arXiv:", "arxiv:", "arxiv.org",
 ]
+
+
+_ARXIV_ID_RE = re.compile(
+    r'(?:arXiv\s*:?\s*|arxiv\s*:?\s*|arxiv\.org/abs/)?'
+    r'(\d{4}\.\d{4,5})(v\d+)?',
+    re.IGNORECASE,
+)
+
+
+def _arxiv_base(aid: str) -> str:
+    """Strip a trailing version suffix from an arxiv ID."""
+    return aid.split("v")[0]
+
+
+def _extract_arxiv_id(reference: str) -> str | None:
+    """Return the normalised arxiv ID inside a reference string, or None.
+
+    Handles 'arXiv:2605.00854v1', '2605.00854v1', 'arxiv:2605.00854',
+    'https://arxiv.org/abs/2605.00854', '2605.00854'. Free-form citations
+    like 'Cont 2001' or 'Lux & Marchesi 2000' return None — they are
+    treated as non-arxiv (and therefore unverifiable but not flagged).
+    """
+    m = _ARXIV_ID_RE.search(reference.strip())
+    if not m:
+        return None
+    base = m.group(1)
+    version = m.group(2) or ""
+    return base + version
+
+
+def classify_references(references: list[str], db_path: str) -> dict[str, list[str]]:
+    """Bucket every reference into in_db / external_arxiv / non_arxiv.
+
+    in_db          : arxiv id (base, version-stripped) is present in
+                     literature_methods.arxiv_id
+    external_arxiv : looks like an arxiv id but is NOT in the local DB —
+                     the LLM probably pulled it from pre-training; suspect
+                     of hallucination
+    non_arxiv      : doesn't parse as an arxiv id (e.g. 'Lux & Marchesi 2000');
+                     not verifiable here, no warning emitted
+    """
+    from .db import load_literature
+    rows = load_literature(db_path)
+    known_bases = {_arxiv_base(r["arxiv_id"]) for r in rows}
+    result: dict[str, list[str]] = {"in_db": [], "external_arxiv": [], "non_arxiv": []}
+    for ref in references:
+        aid = _extract_arxiv_id(ref)
+        if aid is None:
+            result["non_arxiv"].append(ref)
+        elif _arxiv_base(aid) in known_bases:
+            result["in_db"].append(ref)
+        else:
+            result["external_arxiv"].append(ref)
+    return result
 
 
 def _rationale_quality(rat: str) -> tuple[bool, str]:
@@ -398,6 +453,11 @@ def propose_from_corpus(db_path: str, n: int = 5, *,
             references=p.get("references", []),
             llm_model=groq_model,
         )
-        accepted.append({**p, "id": pid})
+        accepted_p = {**p, "id": pid}
+        # classify citations so the CLI can warn about hallucinated arxiv ids
+        refs = p.get("references", [])
+        if refs:
+            accepted_p["reference_validation"] = classify_references(refs, db_path)
+        accepted.append(accepted_p)
     return [{"accepted": accepted, "rejected": rejected,
              "llm_model": groq_model, "n_requested": n}]

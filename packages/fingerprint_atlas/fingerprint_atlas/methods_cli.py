@@ -226,6 +226,77 @@ def cmd_edit(db_path: str, name: str) -> int:
     return 0
 
 
+def cmd_draft(db_path: str, name: str, *,
+              groq_model: str, apply: bool, temperature: float) -> int:
+    """LLM-draft the four commentary fields for a method.
+
+    apply=False : write the draft to a temp markdown file via the same
+                  scratch-file flow as `edit`. The user reviews + saves.
+    apply=True  : skip the editor and write the LLM draft straight into DB.
+    """
+    from . import methods_draft
+    ensure_methods_schema(db_path)
+    m = get_method(db_path, name)
+    if m is None:
+        print(f"no method named {name!r}; try `methods seed` first.", file=sys.stderr)
+        return 1
+
+    print(f"asking {groq_model} to draft notes for {name}...")
+    try:
+        result = methods_draft.draft_notes_for_method(
+            db_path, name, groq_model=groq_model, temperature=temperature,
+        )
+    except Exception as exc:
+        print(f"draft failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
+    draft = result["draft"]
+    ctx = result["context_used"]
+    print(f"  literature surfaced into prompt: {ctx['n_relevant_literature']} papers")
+    if ctx["literature_cited_in_context"]:
+        print(f"  arxiv ids in prompt: {', '.join(ctx['literature_cited_in_context'][:5])}"
+              + (" ..." if len(ctx["literature_cited_in_context"]) > 5 else ""))
+    print(f"  other-method notes referenced: {ctx['n_other_methods_notes']}")
+
+    if apply:
+        update_method(db_path, name, **draft)
+        print(f"  -> applied draft directly to DB (no review)")
+        return 0
+
+    # Otherwise, render an edit-format scratch file pre-filled with the draft,
+    # open the editor, and on save patch the four columns. Same flow as `edit`.
+    rendered = _render_edit_file(m)
+    for sec in SECTIONS:
+        # find each "## sec\n" header in `rendered` and replace its body with draft[sec]
+        marker = f"\n## {sec}\n"
+        next_marker = None
+        i = SECTIONS.index(sec)
+        if i + 1 < len(SECTIONS):
+            next_marker = f"\n## {SECTIONS[i + 1]}\n"
+        start = rendered.find(marker)
+        if start == -1:
+            continue
+        body_start = start + len(marker)
+        body_end = rendered.find(next_marker, body_start) if next_marker else len(rendered)
+        rendered = rendered[:body_start] + (draft[sec] or "") + "\n" + rendered[body_end:]
+
+    with tempfile.NamedTemporaryFile("w", suffix=f"_{m.name}_draft.md", delete=False) as fh:
+        path = fh.name
+        fh.write(rendered)
+    editor = _resolve_editor()
+    print(f"opening {editor[0]} on {path}  (save & quit to apply changes)")
+    rc = subprocess.run(editor + [path]).returncode
+    if rc != 0:
+        print(f"editor returned {rc}; aborting (no DB write).", file=sys.stderr)
+        return rc
+    with open(path) as fh:
+        new_text = fh.read()
+    os.unlink(path)
+    new_vals = _parse_edit_file(new_text)
+    update_method(db_path, name, **new_vals)
+    print(f"saved edited draft for {name}")
+    return 0
+
+
 def cmd_tag(db_path: str, name: str, add: list[str], remove: list[str]) -> int:
     ensure_methods_schema(db_path)
     m = get_method(db_path, name)
@@ -265,6 +336,18 @@ def main() -> int:
     p_tag.add_argument("--add", action="append", default=[], metavar="TAG")
     p_tag.add_argument("--remove", action="append", default=[], metavar="TAG")
 
+    p_dr = sub.add_parser(
+        "draft",
+        help="LLM-draft the four commentary fields, open editor for review",
+    )
+    p_dr.add_argument("name")
+    p_dr.add_argument("--groq-model", default="openai/gpt-oss-120b")
+    p_dr.add_argument("--temperature", type=float, default=0.5)
+    p_dr.add_argument(
+        "--apply", action="store_true",
+        help="skip the editor and write the LLM draft directly to DB",
+    )
+
     args = ap.parse_args()
     if args.cmd == "seed":
         return cmd_seed(args.db, args.overwrite_mechanism)
@@ -276,6 +359,11 @@ def main() -> int:
         return cmd_edit(args.db, args.name)
     if args.cmd == "tag":
         return cmd_tag(args.db, args.name, args.add, args.remove)
+    if args.cmd == "draft":
+        return cmd_draft(args.db, args.name,
+                         groq_model=args.groq_model,
+                         apply=args.apply,
+                         temperature=args.temperature)
     return 1
 
 

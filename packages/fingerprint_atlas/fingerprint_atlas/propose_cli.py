@@ -51,6 +51,11 @@ def _format_proposal_short(p: dict) -> str:
             f"{p['target_model']:<20s} {rationale}")
 
 
+#: tiny pseudo-singleton so _format_proposal_full can run citation classification
+#: against the right DB without changing its signature.
+_DB_PATH_FOR_SHOW: dict[str, str] = {}
+
+
 def _format_proposal_full(p: dict) -> str:
     out = [
         f"=== proposal #{p['id']} ===",
@@ -86,9 +91,21 @@ def _format_proposal_full(p: dict) -> str:
         if p["prediction_error"] is not None:
             out.append(f"  prediction_error (L2 in standardised space): {p['prediction_error']:.3f}")
     if p["references"]:
+        # Classify on-the-fly against the current literature DB so the
+        # warning is always fresh (not frozen at proposal time).
+        from .propose import classify_references
+        rv = classify_references(p["references"], _DB_PATH_FOR_SHOW.get("db", ""))
         out += ["", "  references:"]
         for ref in p["references"]:
-            out.append(f"    - {ref}")
+            mark = (
+                "✓" if ref in rv["in_db"] else
+                "⚠" if ref in rv["external_arxiv"] else
+                " "
+            )
+            out.append(f"    {mark} {ref}")
+        if rv["external_arxiv"]:
+            out.append(f"  ⚠ {len(rv['external_arxiv'])} citation(s) flagged as unverified "
+                       "(arxiv id not in literature_methods)")
     return "\n".join(out)
 
 
@@ -104,12 +121,22 @@ def cmd_from_corpus(args) -> int:
     print(f"requested     : {summary['n_requested']}")
     print(f"accepted      : {len(summary['accepted'])}")
     print(f"rejected      : {len(summary['rejected'])}")
+    any_warnings = False
     for p in summary["accepted"]:
         print(f"  + #{p['id']} {p['target_model']:<20s} {p['rationale'][:60]}")
+        rv = p.get("reference_validation")
+        if rv and rv["external_arxiv"]:
+            any_warnings = True
+            print(f"      ⚠ unverified arxiv id(s) (not in literature_methods): "
+                  f"{rv['external_arxiv']}")
     if summary["rejected"]:
         print("rejected reasons:")
         for r in summary["rejected"]:
             print(f"  - {r['error']}")
+    if any_warnings:
+        print("\n  tip: fetch the unverified IDs into the literature DB with")
+        print("       `arxiv_cli ingest --query 'id:<arxiv_id>' --max 1`")
+        print("       to verify whether the LLM cited a real paper.")
     return 0 if summary["accepted"] else 1
 
 
@@ -132,6 +159,7 @@ def cmd_show(args) -> int:
     if args.id not in by_id:
         print(f"no proposal with id={args.id}", file=sys.stderr)
         return 1
+    _DB_PATH_FOR_SHOW["db"] = args.db
     print(_format_proposal_full(by_id[args.id]))
     return 0
 
@@ -225,6 +253,27 @@ def cmd_execute(args) -> int:
     )
     print(f"  wrote run #{run_id}; prediction_error={prediction_error}, "
           f"actual_novelty={actual_novelty}")
+    return 0
+
+
+def cmd_analytics(args) -> int:
+    """Render learning-curve plots and print summary stats."""
+    from . import analytics
+    import os
+    os.makedirs(args.out, exist_ok=True)
+    print(json.dumps(analytics.summarize(args.db), indent=2))
+    try:
+        info = analytics.plot_prediction_error_over_time(
+            args.db, os.path.join(args.out, "prediction_error_over_time.png"))
+        print(f"  -> {info['out_png']}")
+        info = analytics.plot_prediction_error_by_family(
+            args.db, os.path.join(args.out, "prediction_error_by_family.png"))
+        print(f"  -> {info['out_png']}")
+        info = analytics.plot_novelty_calibration(
+            args.db, os.path.join(args.out, "novelty_calibration.png"))
+        print(f"  -> {info['out_png']}")
+    except RuntimeError as e:
+        print(f"  (skipped some plots: {e})")
     return 0
 
 
@@ -337,11 +386,15 @@ def main() -> int:
     p_md.add_argument("--status", default=None,
                       choices=["proposed", "approved", "rejected", "executed"])
 
+    p_an = sub.add_parser("analytics",
+                          help="render LLM learning-curve plots from executed proposals")
+    p_an.add_argument("--out", default="notebooks/propose_analytics/")
+
     args = ap.parse_args()
     handlers = {
         "from-corpus": cmd_from_corpus, "list": cmd_list, "show": cmd_show,
         "approve": cmd_approve, "reject": cmd_reject, "execute": cmd_execute,
-        "dump-md": cmd_dump_md,
+        "dump-md": cmd_dump_md, "analytics": cmd_analytics,
     }
     return handlers[args.cmd](args)
 
