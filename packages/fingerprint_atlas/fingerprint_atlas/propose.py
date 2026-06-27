@@ -24,9 +24,9 @@ from typing import Any
 
 import numpy as np
 
-from .db import ensure_proposals_schema, insert_proposal, load_runs
+from .db import ensure_proposals_schema, insert_proposal, load_literature, load_runs
 from .fingerprint import FEATURE_NAMES, standardize, distance_matrix
-from .adapters import MODEL_BOUNDS
+from .adapters import MODEL_BOUNDS, PRICELESS_MODELS
 from .methods import list_methods
 
 
@@ -38,12 +38,19 @@ You are a research assistant proposing new agent-based model (ABM) parameter
 combinations for a financial-market ABM atlas.
 
 You will receive a JSON context describing:
-  - implemented_methods  : per-model mechanism descriptions and user notes
-  - parameter_bounds     : the (low, high) box already searched per model
-  - atlas_state          : per-family centroid in *standardised* fingerprint
-                           feature space, plus average within-family spread
-  - feature_names        : the 9 feature dimensions of every fingerprint
-  - sparse_regions       : a brief description of where the atlas is empty
+  - implemented_methods    : per-model mechanism descriptions and user notes
+  - parameter_bounds       : the (low, high) box already searched per model
+  - priceless_models       : list of models that do NOT produce a price/return
+                             series — their fingerprint is computed on
+                             attendance_excess (2A-N) and behaves differently
+  - feature_typical_ranges : per-feature observed range in the current corpus,
+                             use these to keep predicted_fingerprint plausible
+  - atlas_state            : per-family centroid in *standardised* fingerprint
+                             feature space
+  - feature_names          : the 9 feature dimensions of every fingerprint
+  - sparse_regions         : the 3 most isolated existing runs (potential gaps)
+  - literature             : arxiv papers your proposals should cite when the
+                             mechanism is genuinely close to a published one
 
 Your task: propose `n` parameter sweeps that would EXTEND THE ATLAS.
 
@@ -52,28 +59,41 @@ Each proposal MUST be a JSON object with this exact shape:
   {
     "type": "param_sweep",
     "target_model": <model name from parameter_bounds>,
-    "params": {<flat dict of the model's parameters>},
-    "rationale": "<1-2 sentences in Japanese on why this proposal is interesting>",
+    "params": {<flat dict of the model's parameters; MUST cover every key from
+               parameter_bounds[target_model]>},
+    "rationale": "<2-4 sentences in Japanese. MANDATORY non-empty. Explain
+                   (a) WHICH region of fingerprint space this aims at, (b) WHY
+                   these param values push there, (c) if applicable, which
+                   paper in `literature` inspired the choice.>",
     "predicted_fingerprint": {
         "volatility": <float>, "kurtosis": <float>, "hill_tail_index": <float>,
         "acf_ret_l1": <float>, "acf_absret_mean": <float>, "leverage": <float>,
-        "acf_absret_long": <float>, "acf_absret_decay": <float>, "agg_kurt_decay": <float>
+        "acf_absret_long": <float>, "acf_absret_decay": <float>,
+        "agg_kurt_decay": <float>
     },
-    "predicted_novelty_distance": <float, the *standardised* L2 distance to the closest existing run>,
-    "references": [<optional arxiv ids or paper citations>]
+    "predicted_novelty_distance": <float; the *standardised* L2 distance to the
+                                   nearest existing run. Use atlas_state and
+                                   feature_typical_ranges to estimate.>,
+    "references": [<arxiv_ids picked from literature[]; OR paper citations>]
   }
 
-Constraints, in order of importance:
-  1. `params` MUST contain ALL the keys listed in parameter_bounds[target_model].
-  2. Each param value SHOULD lie in [low, high] from parameter_bounds. If you
-     deliberately step outside, keep within +-30% and explain why in `rationale`.
-  3. The proposal SHOULD move toward a sparse region of the atlas. Concretely:
-     pick a target_model whose centroid is near one of the sparse_regions, then
-     choose params that push its fingerprint further in that direction.
-  4. predicted_fingerprint must be your best educated guess of what the run
-     will produce. It will be measured against reality.
-  5. Diversify: across the n proposals, do NOT repeat the same target_model.
-     If n > number_of_models, allow repeats but vary the strategy.
+Constraints, in order of priority:
+  1. `params` MUST contain every key in parameter_bounds[target_model].
+     Missing keys → your proposal is dropped silently.
+  2. Each param value SHOULD lie in [low, high]. Stepping outside by up to ±30%
+     is allowed but MUST be justified in `rationale`.
+  3. For target_model in priceless_models, the fingerprint is computed on
+     `attendance_excess = 2A - N` (units of agents, NOT log-returns).
+     - volatility for these is large (often 10-60), not 0.005-0.05.
+     - hill_tail_index saturates at 20 (no power-law tail in discrete attendance).
+     - acf_absret_* tend to be near 0.
+     If you propose a priceless model, your predicted_fingerprint MUST reflect
+     this. Do NOT predict volatility ~0.01 for minority_game.
+  4. `rationale` MUST be non-empty Japanese. An empty rationale is invalid.
+  5. Across the n proposals, prefer diversifying target_model and the region
+     of fingerprint space targeted.
+  6. Cite from `literature` only when the cited paper's mechanism is genuinely
+     close to your proposed change. Otherwise leave references empty.
 
 Output: a single JSON object with key "proposals" whose value is an array of
 exactly `n` proposal objects. No prose around the JSON.
@@ -121,7 +141,54 @@ def _describe_sparse_regions(rows: list[dict], n_regions: int = 3) -> list[dict]
     return out
 
 
-def summarize_corpus(db_path: str) -> dict[str, Any]:
+def _feature_typical_ranges(rows: list[dict]) -> dict[str, list[float]]:
+    """Per-feature 10th, 50th, 90th percentile across the population.
+
+    Tells the LLM what a "plausible" value for each feature looks like — a
+    direct counter to the empty-rationale / wildly-off-fingerprint failure
+    mode observed with the v1 prompt.
+    """
+    if not rows:
+        return {}
+    fps = np.vstack([r["fingerprint"] for r in rows])
+    out: dict[str, list[float]] = {}
+    for i, name in enumerate(FEATURE_NAMES):
+        col = fps[:, i]
+        finite = col[np.isfinite(col)]
+        if finite.size == 0:
+            out[name] = [float("nan"), float("nan"), float("nan")]
+        else:
+            qs = np.quantile(finite, [0.10, 0.50, 0.90])
+            out[name] = [round(float(q), 4) for q in qs]
+    return out
+
+
+def _select_literature_for_context(rows: list[dict], top_n: int = 15) -> list[dict]:
+    """Pick the top_n papers most relevant to atlas extension.
+
+    Strategy: relevance_score descending, then year descending. Drop papers
+    with no extraction yet (no relevance_score → not informative for the LLM).
+    Each entry is shrunk to essentials so the context stays small.
+    """
+    eligible = [r for r in rows
+                if r.get("relevance_score") is not None
+                and r.get("mechanism_summary")]
+    eligible.sort(key=lambda r: (-(r["relevance_score"] or 0), -(r["year"] or 0)))
+    out = []
+    for r in eligible[:top_n]:
+        out.append({
+            "arxiv_id": r["arxiv_id"],
+            "title": r["title"],
+            "year": r["year"],
+            "mechanism_summary": r["mechanism_summary"],
+            "mechanism_tags": r["mechanism_tags"],
+            "stylized_facts_targeted": r["stylized_facts_targeted"],
+            "novelty_signal": r["novelty_signal"],
+        })
+    return out
+
+
+def summarize_corpus(db_path: str, *, literature_top_n: int = 15) -> dict[str, Any]:
     """Build the JSON context handed to the LLM."""
     runs = load_runs(db_path)
     methods = list_methods(db_path)
@@ -139,16 +206,29 @@ def summarize_corpus(db_path: str) -> dict[str, Any]:
             } if any([m.novelty_notes, m.mechanism_strengths, m.mechanism_weaknesses,
                       m.research_questions, m.tags]) else None,
         })
+
+    # Literature: load all and pick the top N. The DB may be empty (no
+    # ingestion yet) — return [] in that case rather than failing.
+    try:
+        literature_all = load_literature(db_path)
+    except Exception:
+        literature_all = []
+    literature_for_prompt = _select_literature_for_context(literature_all, top_n=literature_top_n)
+
     return {
         "implemented_methods": methods_summary,
         "parameter_bounds": {k: {p: list(b) for p, b in v.items()}
                              for k, v in MODEL_BOUNDS.items()},
+        "priceless_models": sorted(PRICELESS_MODELS),
+        "feature_typical_ranges_pct_10_50_90": _feature_typical_ranges(runs),
         "atlas_state": {
             "n_runs": len(runs),
             "per_family_centroids_in_standardised_space": _per_family_centroids(runs),
         },
         "feature_names": FEATURE_NAMES,
         "sparse_regions": _describe_sparse_regions(runs),
+        "literature": literature_for_prompt,
+        "n_literature_total": len(literature_all),
     }
 
 
@@ -192,13 +272,24 @@ def _validate_proposal(p: dict, n_features: int) -> tuple[bool, str]:
         return False, f"unknown target_model {p['target_model']!r}"
     if not isinstance(p["params"], dict) or not p["params"]:
         return False, "params must be a non-empty dict"
+    # require every key in the model's MODEL_BOUNDS
+    required_keys = set(MODEL_BOUNDS[p["target_model"]].keys())
+    missing_params = required_keys - set(p["params"].keys())
+    if missing_params:
+        return False, f"params missing required keys: {sorted(missing_params)}"
+    # rationale: must be a non-empty string
+    rat = p.get("rationale")
+    if not isinstance(rat, str) or not rat.strip():
+        return False, "rationale is empty or not a string"
+    if len(rat.strip()) < 10:
+        return False, f"rationale too short ({len(rat.strip())} chars; need >= 10)"
     if "predicted_fingerprint" in p and p["predicted_fingerprint"] is not None:
         pf = p["predicted_fingerprint"]
         if not isinstance(pf, dict):
             return False, "predicted_fingerprint must be a dict"
         missing = set(FEATURE_NAMES) - set(pf.keys())
         if missing:
-            return False, f"predicted_fingerprint missing keys: {missing}"
+            return False, f"predicted_fingerprint missing keys: {sorted(missing)}"
     return True, ""
 
 

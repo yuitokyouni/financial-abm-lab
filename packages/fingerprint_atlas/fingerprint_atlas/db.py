@@ -198,6 +198,154 @@ def update_proposal_status(db_path: str, proposal_id: int, status: str,
         con.commit()
 
 
+# ============================================================================
+# literature_methods — arxiv-ingested papers, structured by LLM extraction
+# ============================================================================
+
+LITERATURE_SCHEMA = """
+CREATE TABLE IF NOT EXISTS literature_methods (
+    id                        INTEGER PRIMARY KEY,
+    arxiv_id                  TEXT NOT NULL UNIQUE,    -- e.g. '2412.01234' or '2412.01234v2'
+    title                     TEXT NOT NULL,
+    authors                   TEXT NOT NULL,           -- comma-separated
+    year                      INTEGER NOT NULL,
+    published_date            TEXT NOT NULL,           -- ISO-8601
+    primary_category          TEXT,
+    abstract                  TEXT NOT NULL,
+    -- LLM-extracted structured fields
+    mechanism_summary         TEXT,                    -- 1-3 sentence what it proposes
+    mechanism_tags            TEXT NOT NULL DEFAULT '',  -- comma-separated free tags
+    stylized_facts_targeted   TEXT NOT NULL DEFAULT '',  -- comma-separated
+    novelty_signal            TEXT,                    -- 1 sentence claimed-novelty
+    relevance_score           REAL,                    -- 0-1 LLM-estimated relevance to financial-ABM atlas
+    extracted_by_model        TEXT,                    -- groq llm id, NULL if not yet extracted
+    extraction_attempts       INTEGER NOT NULL DEFAULT 0,
+    -- user annotations (free-form, like methods)
+    user_notes                TEXT NOT NULL DEFAULT '',
+    user_tags                 TEXT NOT NULL DEFAULT '',
+    -- provenance
+    ingested_at               TEXT NOT NULL,
+    updated_at                TEXT NOT NULL
+);
+"""
+
+_LITERATURE_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_lit_year ON literature_methods(year)",
+    "CREATE INDEX IF NOT EXISTS idx_lit_cat ON literature_methods(primary_category)",
+    "CREATE INDEX IF NOT EXISTS idx_lit_rel ON literature_methods(relevance_score)",
+]
+
+
+def ensure_literature_schema(db_path: str) -> None:
+    """Idempotent literature_methods table create."""
+    parent = os.path.dirname(db_path) or "."
+    os.makedirs(parent, exist_ok=True)
+    with sqlite3.connect(db_path) as con:
+        con.executescript(LITERATURE_SCHEMA)
+        for stmt in _LITERATURE_INDEXES:
+            con.execute(stmt)
+        con.commit()
+
+
+def upsert_literature_metadata(
+    db_path: str, *,
+    arxiv_id: str, title: str, authors: str, year: int,
+    published_date: str, primary_category: str | None, abstract: str,
+) -> int:
+    """Insert a paper's raw metadata if absent; return the row id.
+
+    Idempotent: re-ingesting the same arxiv_id is a no-op. LLM extraction is
+    a separate step (`update_literature_extraction`) so we don't lose
+    extraction results on a metadata refresh.
+    """
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        existing = con.execute(
+            "SELECT id FROM literature_methods WHERE arxiv_id = ?", (arxiv_id,)
+        ).fetchone()
+        if existing:
+            return int(existing[0])
+        cur = con.execute(
+            "INSERT INTO literature_methods (arxiv_id, title, authors, year, "
+            "published_date, primary_category, abstract, ingested_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?)",
+            (arxiv_id, title, authors, int(year), published_date,
+             primary_category, abstract, now, now),
+        )
+        return int(cur.lastrowid)
+
+
+def update_literature_extraction(
+    db_path: str, arxiv_id: str, *,
+    mechanism_summary: str | None,
+    mechanism_tags: list[str],
+    stylized_facts_targeted: list[str],
+    novelty_signal: str | None,
+    relevance_score: float | None,
+    extracted_by_model: str,
+) -> None:
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET "
+            "mechanism_summary = ?, mechanism_tags = ?, "
+            "stylized_facts_targeted = ?, novelty_signal = ?, "
+            "relevance_score = ?, extracted_by_model = ?, "
+            "extraction_attempts = extraction_attempts + 1, updated_at = ? "
+            "WHERE arxiv_id = ?",
+            (mechanism_summary, ", ".join(mechanism_tags),
+             ", ".join(stylized_facts_targeted), novelty_signal,
+             None if relevance_score is None else float(relevance_score),
+             extracted_by_model, now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
+
+
+def load_literature(db_path: str, *, min_relevance: float | None = None,
+                    tag: str | None = None, max_results: int | None = None
+                    ) -> list[dict[str, Any]]:
+    sql = ("SELECT id, arxiv_id, title, authors, year, published_date, "
+           "primary_category, abstract, mechanism_summary, mechanism_tags, "
+           "stylized_facts_targeted, novelty_signal, relevance_score, "
+           "extracted_by_model, extraction_attempts, user_notes, user_tags, "
+           "ingested_at, updated_at FROM literature_methods")
+    where: list[str] = []
+    args: list[Any] = []
+    if min_relevance is not None:
+        where.append("relevance_score >= ?"); args.append(float(min_relevance))
+    if tag is not None:
+        # Tags are stored as ", "-joined strings; normalise both sides by
+        # stripping spaces so the LIKE match works regardless of leading
+        # spaces around commas.
+        where.append("REPLACE(',' || mechanism_tags || ',', ' ', '') LIKE ?")
+        args.append(f"%,{tag.replace(' ', '')},%")
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY COALESCE(relevance_score, -1) DESC, year DESC, id DESC"
+    if max_results is not None:
+        sql += " LIMIT ?"; args.append(int(max_results))
+    with sqlite3.connect(db_path) as con:
+        rows = con.execute(sql, tuple(args)).fetchall()
+    out = []
+    for r in rows:
+        out.append({
+            "id": r[0], "arxiv_id": r[1], "title": r[2], "authors": r[3],
+            "year": r[4], "published_date": r[5], "primary_category": r[6],
+            "abstract": r[7], "mechanism_summary": r[8],
+            "mechanism_tags": [t.strip() for t in (r[9] or "").split(",") if t.strip()],
+            "stylized_facts_targeted": [t.strip() for t in (r[10] or "").split(",") if t.strip()],
+            "novelty_signal": r[11], "relevance_score": r[12],
+            "extracted_by_model": r[13], "extraction_attempts": r[14],
+            "user_notes": r[15] or "", "user_tags": r[16] or "",
+            "ingested_at": r[17], "updated_at": r[18],
+        })
+    return out
+
+
 def load_proposals(db_path: str, status: str | None = None) -> list[dict[str, Any]]:
     sql = ("SELECT id, proposal_type, target_model, params_json, rationale, "
            "predicted_fingerprint_json, predicted_novelty_distance, references_json, "

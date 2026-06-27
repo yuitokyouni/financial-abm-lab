@@ -1,0 +1,145 @@
+name: ingest-arxiv
+
+# Pull the last week's worth of financial-ABM papers from arxiv, extract
+# structured info via Groq Llama 3.3 70B, and accumulate them in the
+# literature DB. Run weekly so the corpus stays current automatically.
+
+on:
+  schedule:
+    # Every Sunday 21:00 UTC (= Monday 06:00 JST). Runs before propose.
+    - cron: "0 21 * * 0"
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: "arxiv query preset (financial_abm / agent_based_recent)"
+        required: false
+        default: "agent_based_recent"
+      max_results:
+        description: "max papers per call"
+        required: false
+        default: "30"
+      no_extract:
+        description: "metadata only, skip Groq extraction (free)"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    env:
+      DB_PATH: data/abm_knowhow.db
+      PRESET: ${{ github.event.inputs.preset || 'agent_based_recent' }}
+      MAX: ${{ github.event.inputs.max_results || '30' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync workspace
+        run: uv sync
+
+      - name: Restore literature snapshot from previous run (if any)
+        # We track a small JSON dump of the literature_methods table at
+        # data/literature_methods.json so each Actions run can resume from
+        # the accumulated knowledge rather than starting empty.
+        run: |
+          mkdir -p data
+          if [ -f data/literature_methods.json ]; then
+            echo "found existing snapshot"
+            ls -la data/literature_methods.json
+          else
+            echo "no snapshot yet (first run)"
+          fi
+
+      - name: Materialise DB from snapshot
+        run: |
+          uv run python <<'PY'
+          import json, os
+          from fingerprint_atlas.db import (
+              ensure_literature_schema, upsert_literature_metadata,
+              update_literature_extraction,
+          )
+          DB = os.environ["DB_PATH"]
+          ensure_literature_schema(DB)
+          snap = "data/literature_methods.json"
+          if not os.path.exists(snap):
+              print("no snapshot; literature_methods starts empty")
+              raise SystemExit(0)
+          rows = json.load(open(snap))
+          for r in rows:
+              upsert_literature_metadata(
+                  DB, arxiv_id=r["arxiv_id"], title=r["title"],
+                  authors=r["authors"], year=r["year"],
+                  published_date=r["published_date"],
+                  primary_category=r["primary_category"], abstract=r["abstract"],
+              )
+              if r.get("extracted_by_model"):
+                  update_literature_extraction(
+                      DB, r["arxiv_id"],
+                      mechanism_summary=r["mechanism_summary"],
+                      mechanism_tags=r["mechanism_tags"],
+                      stylized_facts_targeted=r["stylized_facts_targeted"],
+                      novelty_signal=r["novelty_signal"],
+                      relevance_score=r["relevance_score"],
+                      extracted_by_model=r["extracted_by_model"],
+                  )
+          print(f"restored {len(rows)} papers from snapshot")
+          PY
+
+      - name: Ingest new arxiv papers
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          NO_EXTRACT="${{ github.event.inputs.no_extract || 'false' }}"
+          ARGS="--preset $PRESET --max $MAX --min-relevance-to-keep 0.3"
+          if [ "$NO_EXTRACT" = "true" ]; then ARGS="$ARGS --no-extract"; fi
+          uv run python -m fingerprint_atlas.arxiv_cli \
+            --db "$DB_PATH" ingest $ARGS
+
+      - name: Dump literature_methods snapshot to JSON
+        run: |
+          uv run python <<'PY'
+          import json, os
+          from fingerprint_atlas.db import load_literature
+          DB = os.environ["DB_PATH"]
+          rows = load_literature(DB)
+          # serialise lists as JSON arrays for round-trip
+          os.makedirs("data", exist_ok=True)
+          with open("data/literature_methods.json", "w") as fh:
+              json.dump(rows, fh, indent=2, ensure_ascii=False, default=str)
+          print(f"wrote {len(rows)} rows to data/literature_methods.json")
+          PY
+
+      - name: Open PR with snapshot diff
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ingest-arxiv/${{ github.run_id }}
+          base: claude/vibrant-ptolemy-fapuxw
+          add-paths: |
+            data/literature_methods.json
+          commit-message: "ingest-arxiv: weekly snapshot (run ${{ github.run_id }})"
+          title: "Weekly arxiv literature snapshot — ${{ github.run_id }}"
+          body: |
+            New papers ingested from arxiv (preset: `${{ env.PRESET }}`,
+            max: `${{ env.MAX }}`). Extraction via Groq Llama 3.3 70B.
+
+            The JSON snapshot under `data/literature_methods.json` is the
+            source of truth for the literature DB — re-run any propose
+            workflow and these papers will be available as LLM context.
+
+            **Review hints**
+            - Spot-check 2-3 entries: does mechanism_summary describe what
+              the abstract actually says?
+            - Drop rows with low signal by editing the JSON directly.
+            - Or just merge — the next ingest will accumulate on top.
+          delete-branch: true

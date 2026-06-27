@@ -152,7 +152,10 @@ def _fake_groq_response(target_model: str, params: dict) -> dict:
 
 def test_propose_from_corpus_dry_run_stores_valid_proposal():
     db = _populate_minimal_db()
-    payload = _fake_groq_response("lux_marchesi", {"n_integer_steps": 2500})
+    payload = _fake_groq_response(
+        "lux_marchesi",
+        {"n_integer_steps": 2500, "steps_per_unit": 100, "n_c_init": 80},
+    )
     res = propose_from_corpus(db, n=1, dry_run_payload=payload)
     summary = res[0]
     assert len(summary["accepted"]) == 1
@@ -193,7 +196,8 @@ def test_validator_catches_missing_required_keys():
 def test_validator_catches_bad_predicted_fingerprint():
     ok, err = _validate_proposal({
         "type": "param_sweep", "target_model": "speculation_game",
-        "params": {"N": 100}, "rationale": "x",
+        "params": {"N": 300, "M": 3, "S": 2, "T": 2000, "B": 9, "C": 3.0},
+        "rationale": "rationale long enough to pass",
         "predicted_fingerprint": {"volatility": 0.1},  # missing the rest
     }, len(FEATURE_NAMES))
     assert not ok and "missing keys" in err
@@ -203,10 +207,42 @@ def test_validator_accepts_well_formed():
     fp = {n: 0.0 for n in FEATURE_NAMES}
     ok, err = _validate_proposal({
         "type": "param_sweep", "target_model": "lux_marchesi",
-        "params": {"n_integer_steps": 2000}, "rationale": "x",
+        "params": {"n_integer_steps": 2000, "steps_per_unit": 100, "n_c_init": 80},
+        "rationale": "短期だが意味のある rationale テキスト",
         "predicted_fingerprint": fp,
     }, len(FEATURE_NAMES))
     assert ok, err
+
+
+def test_validator_rejects_empty_rationale():
+    fp = {n: 0.0 for n in FEATURE_NAMES}
+    ok, err = _validate_proposal({
+        "type": "param_sweep", "target_model": "lux_marchesi",
+        "params": {"n_integer_steps": 2000, "steps_per_unit": 100, "n_c_init": 80},
+        "rationale": "", "predicted_fingerprint": fp,
+    }, len(FEATURE_NAMES))
+    assert not ok and "empty" in err
+
+
+def test_validator_rejects_too_short_rationale():
+    fp = {n: 0.0 for n in FEATURE_NAMES}
+    ok, err = _validate_proposal({
+        "type": "param_sweep", "target_model": "lux_marchesi",
+        "params": {"n_integer_steps": 2000, "steps_per_unit": 100, "n_c_init": 80},
+        "rationale": "x", "predicted_fingerprint": fp,
+    }, len(FEATURE_NAMES))
+    assert not ok and "too short" in err
+
+
+def test_validator_rejects_missing_required_param_keys():
+    fp = {n: 0.0 for n in FEATURE_NAMES}
+    ok, err = _validate_proposal({
+        "type": "param_sweep", "target_model": "cont_bouchaud",
+        "params": {"N": 3000},  # missing c, a, lam, T
+        "rationale": "valid-looking rationale",
+        "predicted_fingerprint": fp,
+    }, len(FEATURE_NAMES))
+    assert not ok and "missing required keys" in err
 
 
 # ----- 7. end-to-end execute path -----------------------------------------
