@@ -124,9 +124,9 @@ def cmd_search(args) -> int:
     matches = []
     for r in rows:
         haystack = " ".join([
-            (r["title"] or ""), (r["abstract"] or ""),
+            (r["arxiv_id"] or ""), (r["title"] or ""), (r["abstract"] or ""),
             (r["mechanism_summary"] or ""), (r["novelty_signal"] or ""),
-            " ".join(r["mechanism_tags"]),
+            " ".join(r["mechanism_tags"]), (r["authors"] or ""),
         ]).lower()
         if needle in haystack:
             matches.append(r)
