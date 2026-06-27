@@ -27,7 +27,7 @@ import numpy as np
 from abm_models import REGISTRY
 from .adapters import MODEL_BOUNDS, build_model, sample_params_lhs, series_for_fingerprint
 from .db import ensure_runs_schema, insert_run
-from .fingerprint import FEATURE_NAMES, fingerprint
+from .fingerprint import FEATURE_NAMES, fingerprint, hill_tail_index_raw
 
 
 def _git_commit() -> str:
@@ -72,6 +72,10 @@ def populate(
                 result = model.run(seed=seed)
                 series, kind = series_for_fingerprint(name, result)
                 fp = fingerprint(series, compute_hill=(kind == "returns"))
+                # Record the *uncapped* Hill alongside as a diagnostic so we can
+                # tell whether the capped feature is reading "thin tail" honestly
+                # or hitting the ceiling. NaN for attendance_excess kind.
+                hraw = hill_tail_index_raw(series) if kind == "returns" else None
                 rid = insert_run(
                     db_path,
                     model_name=name,
@@ -84,6 +88,8 @@ def populate(
                                 "elapsed_s": round(time.time() - t0, 3),
                                 "exception": None},
                     created_at=dt.datetime.utcnow().isoformat() + "Z",
+                    hill_raw=hraw,
+                    origin="abm",
                 )
                 summary["rows"].append({"id": rid, "model": name, "i": i,
                                         "fp": [None if not np.isfinite(v) else round(float(v), 4)

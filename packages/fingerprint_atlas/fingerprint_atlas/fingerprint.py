@@ -48,13 +48,10 @@ def _autocorr_cross(x: np.ndarray, y: np.ndarray) -> float:
 HILL_ALPHA_CAP = 20.0
 
 
-def hill_tail_index(returns: np.ndarray, tail_frac: float = 0.05) -> float:
-    """Hill estimator of the tail index on the largest |returns|.
-
-    Returns alpha (tail exponent). Smaller alpha = fatter tails. Capped at
-    `HILL_ALPHA_CAP` so a thin-tail / near-degenerate series saturates at the
-    cap instead of producing an outlier (which would dominate inverse-variance
-    weighting and destroy the geometry).
+def hill_tail_index_raw(returns: np.ndarray, tail_frac: float = 0.05) -> float:
+    """Hill estimator α — uncapped. Useful as a diagnostic alongside the
+    capped variant used inside `fingerprint()`. A raw α >> HILL_ALPHA_CAP
+    is the honest signal "this series is essentially thin-tailed".
     """
     a = np.sort(np.abs(returns))[::-1]
     a = a[a > 0]
@@ -69,8 +66,21 @@ def hill_tail_index(returns: np.ndarray, tail_frac: float = 0.05) -> float:
     mean_log_ratio = float(np.mean(np.log(top / xmin)))
     if mean_log_ratio <= 0:
         return float("nan")
-    alpha = 1.0 / mean_log_ratio
-    return float(min(alpha, HILL_ALPHA_CAP))
+    return float(1.0 / mean_log_ratio)
+
+
+def hill_tail_index(returns: np.ndarray, tail_frac: float = 0.05) -> float:
+    """Capped Hill estimator α for use *in the fingerprint vector*.
+
+    Without the cap a near-Gaussian / degenerate series produces α in the
+    hundreds, which then dominates inverse-variance weighting and collapses
+    the geometry. Cap at `HILL_ALPHA_CAP` keeps the vector well-behaved;
+    callers wanting the uncapped reading should use `hill_tail_index_raw`.
+    """
+    raw = hill_tail_index_raw(returns, tail_frac=tail_frac)
+    if not np.isfinite(raw):
+        return raw
+    return float(min(raw, HILL_ALPHA_CAP))
 
 
 def fingerprint(returns: np.ndarray, *, compute_hill: bool = True) -> np.ndarray:

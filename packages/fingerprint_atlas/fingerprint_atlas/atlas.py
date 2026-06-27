@@ -98,8 +98,35 @@ def validation_gate(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+_ORIGIN_MARKER = {"abm": "o", "synthetic": "^", "real": "*"}
+_ORIGIN_SIZE = {"abm": 60, "synthetic": 130, "real": 240}
+
+
+def _display_family(model_name: str) -> str:
+    """Collapse `real_spx_p3` -> `real_spx`, `real_btc_full` -> `real_btc`.
+
+    Periods become point-shape variations within the same colour, so the
+    eye reads "the real S&P is multiple regimes" rather than 12 separate
+    legend entries.
+    """
+    if model_name.startswith("real_spx"):
+        return "real_spx"
+    if model_name.startswith("real_btc"):
+        return "real_btc"
+    return model_name
+
+
 def plot_atlas(rows: list[dict[str, Any]], out_png: str, title: str = "ABM fingerprint atlas") -> dict:
-    """Draw the 2-D PCA scatter coloured by model, save to PNG, return summary."""
+    """Draw the 2-D PCA scatter coloured by model family, save to PNG, return summary.
+
+    Marker shape encodes `origin`:
+      - circles  (o)  = ABM family    (abm)
+      - triangles (^) = synthetic injector (Cont-outside probe)
+      - stars     (*) = real market window (ground-truth landmark)
+
+    Real periods (`real_spx_p0..p4`, `real_spx_full`, etc.) collapse into one
+    colour per market so the regime spread within a market is visible.
+    """
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -108,27 +135,40 @@ def plot_atlas(rows: list[dict[str, Any]], out_png: str, title: str = "ABM finge
     if len(kept) < 3:
         raise RuntimeError(f"only {len(kept)} valid rows, cannot plot")
     labels = np.array([r["model_name"] for r in kept])
+    families = np.array([_display_family(lab) for lab in labels])
+    origins = np.array([r.get("origin", "abm") for r in kept])
     fps_std, _, _ = standardize(fps_raw)
     xy, ratio = _pca_2d(fps_std)
 
-    fig, ax = plt.subplots(figsize=(9, 7))
-    uniq = sorted(set(labels))
-    cmap = plt.colormaps.get_cmap("tab10").resampled(max(len(uniq), 2))
-    for k, lab in enumerate(uniq):
-        m = labels == lab
-        ax.scatter(xy[m, 0], xy[m, 1], s=70, alpha=0.78, edgecolor="black",
-                   linewidth=0.4, color=cmap(k), label=f"{lab} (n={int(m.sum())})")
+    fig, ax = plt.subplots(figsize=(12, 8))
+    uniq = sorted(set(families))
+    cmap = plt.colormaps.get_cmap("tab20").resampled(max(len(uniq), 2))
+    for k, fam in enumerate(uniq):
+        m = families == fam
+        origin = origins[m][0] if m.any() else "abm"
+        marker = _ORIGIN_MARKER.get(origin, "o")
+        size = _ORIGIN_SIZE.get(origin, 60)
+        ax.scatter(xy[m, 0], xy[m, 1], s=size, alpha=0.78, edgecolor="black",
+                   linewidth=0.5, color=cmap(k), marker=marker,
+                   label=f"{fam} (n={int(m.sum())}, {origin})")
+        # Annotate real-period points with the period id so spread is readable
+        if origin == "real":
+            for idx in np.where(m)[0]:
+                pid = labels[idx].split("_")[-1]   # 'p0', 'full', ...
+                ax.annotate(pid, (xy[idx, 0], xy[idx, 1]), fontsize=6,
+                            xytext=(4, 4), textcoords="offset points")
     ax.set_xlabel(f"PC1  ({100*ratio[0]:.1f}% var)")
     ax.set_ylabel(f"PC2  ({100*ratio[1]:.1f}% var)")
     ax.set_title(title)
     ax.grid(True, alpha=0.3)
-    ax.legend(loc="best", fontsize=9, frameon=True)
+    ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=8, frameon=True)
     fig.tight_layout()
-    fig.savefig(out_png, dpi=150)
+    fig.savefig(out_png, dpi=150, bbox_inches="tight")
     plt.close(fig)
     return {
         "out_png": out_png,
         "n_runs": int(len(kept)),
+        "n_families_collapsed": int(len(uniq)),
         "pc1_var": round(float(ratio[0]), 4),
         "pc2_var": round(float(ratio[1]), 4),
     }

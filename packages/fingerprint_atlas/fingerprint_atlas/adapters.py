@@ -86,16 +86,17 @@ MODEL_BOUNDS: dict[str, dict[str, tuple]] = {
         "r_min_static": (0.0, 0.05),
     },
     "chiarella_iori": {
-        # CI default noise_scale=0.01 + price_impact=0.005 gave returns≈0 (degenerate).
-        # Widen noise and impact so the CDA actually moves price across the LHS box.
+        # NOTE: REVERTED from v2. In v2 we widened noise/impact because CI baseline
+        # was returning ~0 (degenerate). That was the measuring instrument being
+        # bent to the specimen. The right answer is: CI *is* a low-vol thin-tail
+        # specimen at default params, and the atlas should *show* that, not hide it.
         "n_steps": (2000, 3000),
         "alpha_fund": (0.2, 0.6),
         "alpha_chart": (0.1, 0.5),
-        "alpha_noise": (0.2, 0.6),
+        "alpha_noise": (0.1, 0.4),
         "fund_speed": (0.02, 0.1),
-        "chart_strength": (0.3, 1.5),
-        "noise_scale": (0.02, 0.08),
-        "price_impact": (0.05, 0.3),
+        "chart_strength": (0.3, 1.2),
+        "noise_scale": (0.005, 0.02),
     },
     "zero_intelligence": {
         "n_steps": (2000, 3000),

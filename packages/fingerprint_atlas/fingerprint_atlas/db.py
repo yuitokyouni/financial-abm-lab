@@ -23,22 +23,39 @@ CREATE TABLE IF NOT EXISTS runs (
     model_name      TEXT NOT NULL,
     params_json     TEXT NOT NULL,
     seed            INTEGER NOT NULL,
-    fingerprint_json TEXT NOT NULL,        -- raw 6-vector (FEATURE_NAMES order)
+    fingerprint_json TEXT NOT NULL,        -- *capped* 6-vector (FEATURE_NAMES order)
     series_kind     TEXT NOT NULL,         -- 'returns' | 'attendance_excess'
     series_length   INTEGER NOT NULL,
     provenance_json TEXT NOT NULL,         -- {git_commit, code_hash, timestamp, host}
-    created_at      TEXT NOT NULL
+    created_at      TEXT NOT NULL,
+    hill_raw        REAL,                  -- uncapped Hill α (diagnostic)
+    origin          TEXT NOT NULL DEFAULT 'abm'  -- 'abm' | 'synthetic' | 'real'
 );
 CREATE INDEX IF NOT EXISTS idx_runs_model ON runs(model_name);
+CREATE INDEX IF NOT EXISTS idx_runs_origin ON runs(origin);
 """
 
 
+def _column_exists(con: sqlite3.Connection, table: str, col: str) -> bool:
+    rows = con.execute(f"PRAGMA table_info({table})").fetchall()
+    return any(r[1] == col for r in rows)
+
+
 def ensure_runs_schema(db_path: str) -> None:
-    """Create the `runs` table if absent. Idempotent; leaves `techniques` alone."""
+    """Create the `runs` table if absent. Idempotent; leaves `techniques` alone.
+
+    Also performs additive migration: if `runs` exists but lacks `hill_raw` /
+    `origin`, ALTER TABLE adds them. Existing rows get NULL / 'abm' respectively.
+    """
     parent = os.path.dirname(db_path) or "."
     os.makedirs(parent, exist_ok=True)
     with sqlite3.connect(db_path) as con:
         con.executescript(RUNS_SCHEMA)
+        if not _column_exists(con, "runs", "hill_raw"):
+            con.execute("ALTER TABLE runs ADD COLUMN hill_raw REAL")
+        if not _column_exists(con, "runs", "origin"):
+            con.execute("ALTER TABLE runs ADD COLUMN origin TEXT NOT NULL DEFAULT 'abm'")
+        con.commit()
 
 
 def insert_run(
@@ -52,14 +69,17 @@ def insert_run(
     series_length: int,
     provenance: dict[str, Any],
     created_at: str,
+    hill_raw: float | None = None,
+    origin: str = "abm",
 ) -> int:
     """Insert one run row. Returns its rowid."""
     fp = [None if not np.isfinite(v) else float(v) for v in np.asarray(fingerprint_vec).tolist()]
+    hr = (None if hill_raw is None or not np.isfinite(hill_raw) else float(hill_raw))
     with sqlite3.connect(db_path) as con:
         cur = con.execute(
             "INSERT INTO runs (model_name, params_json, seed, fingerprint_json, "
-            "series_kind, series_length, provenance_json, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?)",
+            "series_kind, series_length, provenance_json, created_at, hill_raw, origin) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
             (
                 model_name,
                 json.dumps(params, default=_json_default, sort_keys=True),
@@ -69,22 +89,29 @@ def insert_run(
                 int(series_length),
                 json.dumps(provenance, default=_json_default, sort_keys=True),
                 created_at,
+                hr,
+                origin,
             ),
         )
         return int(cur.lastrowid)
 
 
-def load_runs(db_path: str, model_name: str | None = None) -> list[dict[str, Any]]:
-    """Read back all runs (optionally filtered by model). Parses JSON columns."""
+def load_runs(db_path: str, model_name: str | None = None,
+              origin: str | None = None) -> list[dict[str, Any]]:
+    """Read back all runs (optionally filtered). Parses JSON columns."""
     sql = ("SELECT id, model_name, params_json, seed, fingerprint_json, "
-           "series_kind, series_length, provenance_json, created_at FROM runs")
-    args: tuple = ()
+           "series_kind, series_length, provenance_json, created_at, hill_raw, origin FROM runs")
+    where: list[str] = []
+    args: list[Any] = []
     if model_name is not None:
-        sql += " WHERE model_name = ?"
-        args = (model_name,)
+        where.append("model_name = ?"); args.append(model_name)
+    if origin is not None:
+        where.append("origin = ?"); args.append(origin)
+    if where:
+        sql += " WHERE " + " AND ".join(where)
     sql += " ORDER BY id"
     with sqlite3.connect(db_path) as con:
-        rows = con.execute(sql, args).fetchall()
+        rows = con.execute(sql, tuple(args)).fetchall()
     out: list[dict[str, Any]] = []
     for r in rows:
         out.append({
@@ -97,6 +124,8 @@ def load_runs(db_path: str, model_name: str | None = None) -> list[dict[str, Any
             "series_length": r[6],
             "provenance": json.loads(r[7]),
             "created_at": r[8],
+            "hill_raw": r[9],
+            "origin": r[10],
         })
     return out
 
