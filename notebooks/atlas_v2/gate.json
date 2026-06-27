@@ -1,0 +1,109 @@
+{
+  "ok": true,
+  "n_runs": 96,
+  "n_models": 8,
+  "n_per_model": {
+    "speculation_game": 12,
+    "cont_bouchaud": 12,
+    "lux_marchesi": 12,
+    "minority_game": 12,
+    "gcmg": 12,
+    "chiarella_iori": 12,
+    "zero_intelligence": 12,
+    "franke_westerhoff": 12
+  },
+  "feature_names": [
+    "volatility",
+    "kurtosis",
+    "hill_tail_index",
+    "acf_ret_l1",
+    "acf_absret_mean",
+    "leverage"
+  ],
+  "feature_means_raw": [
+    8.6812,
+    2.5396,
+    8.5812,
+    0.0424,
+    0.0977,
+    -0.0081
+  ],
+  "feature_stds_raw": [
+    14.8925,
+    5.5701,
+    6.8573,
+    0.1712,
+    0.149,
+    0.0456
+  ],
+  "mean_intra_distance": 1.6888,
+  "mean_inter_distance": 3.3095,
+  "separation_ratio": 1.9597,
+  "silhouette_macro": 0.1233,
+  "centroids_standardized": {
+    "chiarella_iori": [
+      -0.5829,
+      -0.5496,
+      -0.2497,
+      -0.1173,
+      -0.5583,
+      -0.1913
+    ],
+    "cont_bouchaud": [
+      0.7322,
+      0.7783,
+      -0.6637,
+      -0.2597,
+      -0.6565,
+      0.2849
+    ],
+    "franke_westerhoff": [
+      -0.5824,
+      -0.4009,
+      -0.4544,
+      2.224,
+      0.0574,
+      -0.1107
+    ],
+    "gcmg": [
+      1.8268,
+      -0.6035,
+      1.6652,
+      0.0034,
+      -0.5594,
+      -0.7333
+    ],
+    "lux_marchesi": [
+      -0.5822,
+      1.4402,
+      -0.8686,
+      -1.1384,
+      2.2533,
+      0.1204
+    ],
+    "minority_game": [
+      0.3538,
+      -0.4662,
+      1.6652,
+      -0.4204,
+      -0.4066,
+      0.0768
+    ],
+    "speculation_game": [
+      -0.5826,
+      0.2589,
+      -0.726,
+      -0.0763,
+      0.5122,
+      0.2083
+    ],
+    "zero_intelligence": [
+      -0.5827,
+      -0.4573,
+      -0.3679,
+      -0.2154,
+      -0.6421,
+      0.3449
+    ]
+  }
+}

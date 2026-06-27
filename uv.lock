@@ -17,6 +17,7 @@ resolution-markers = [
 members = [
     "abm-models",
     "financial-abm-lab",
+    "fingerprint-atlas",
     "provenance",
     "stylized-facts",
 ]
@@ -327,6 +328,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "abm-models" },
+    { name = "fingerprint-atlas" },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
@@ -352,6 +354,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "abm-models", editable = "packages/abm_models" },
+    { name = "fingerprint-atlas", editable = "packages/fingerprint_atlas" },
     { name = "ipykernel", marker = "extra == 'dev'" },
     { name = "matplotlib" },
     { name = "mypy", marker = "extra == 'dev'" },
@@ -370,6 +373,23 @@ requires-dist = [
     { name = "tqdm" },
 ]
 provides-extras = ["dev"]
+
+[[package]]
+name = "fingerprint-atlas"
+version = "0.1.0"
+source = { editable = "packages/fingerprint_atlas" }
+dependencies = [
+    { name = "abm-models" },
+    { name = "numpy" },
+    { name = "stylized-facts" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "abm-models", editable = "packages/abm_models" },
+    { name = "numpy" },
+    { name = "stylized-facts", editable = "packages/stylized_facts" },
+]
 
 [[package]]
 name = "fonttools"
