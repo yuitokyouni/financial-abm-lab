@@ -99,6 +99,136 @@ def clear_preference(db_path: str, run_id: int) -> None:
         con.commit()
 
 
+# ============================================================================
+# proposals — LLM-generated ABM suggestions, lifecycle: proposed → executed
+# ============================================================================
+
+PROPOSALS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS proposals (
+    id                          INTEGER PRIMARY KEY,
+    proposal_type               TEXT NOT NULL,        -- 'param_sweep' for now; later: 'mechanism_combo' etc.
+    target_model                TEXT NOT NULL,        -- one of REGISTRY keys, or 'new' for novel methods
+    params_json                 TEXT NOT NULL,        -- the concrete params to run
+    rationale                   TEXT NOT NULL,        -- LLM's natural-language reasoning
+    predicted_fingerprint_json  TEXT,                 -- LLM's prediction of the resulting fingerprint
+    predicted_novelty_distance  REAL,                 -- LLM's estimate of distance to nearest existing run
+    references_json             TEXT NOT NULL DEFAULT '[]',
+    llm_model                   TEXT NOT NULL,        -- e.g. 'llama-3.3-70b-versatile'
+    status                      TEXT NOT NULL DEFAULT 'proposed',  -- 'proposed' | 'approved' | 'rejected' | 'executed'
+    executed_run_id             INTEGER,              -- runs.id once executed
+    actual_fingerprint_json     TEXT,                 -- post-execute reality
+    actual_novelty_distance     REAL,                 -- post-execute reality
+    prediction_error            REAL,                 -- L2 distance between predicted and actual fp (standardised)
+    created_at                  TEXT NOT NULL,
+    updated_at                  TEXT NOT NULL,
+    FOREIGN KEY (executed_run_id) REFERENCES runs(id)
+);
+"""
+
+_PROPOSALS_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_proposals_status ON proposals(status)",
+    "CREATE INDEX IF NOT EXISTS idx_proposals_target ON proposals(target_model)",
+]
+
+
+def ensure_proposals_schema(db_path: str) -> None:
+    """Idempotent: create `proposals` table + indexes."""
+    parent = os.path.dirname(db_path) or "."
+    os.makedirs(parent, exist_ok=True)
+    with sqlite3.connect(db_path) as con:
+        con.executescript(PROPOSALS_SCHEMA)
+        for stmt in _PROPOSALS_INDEXES:
+            con.execute(stmt)
+        con.commit()
+
+
+def insert_proposal(
+    db_path: str, *,
+    proposal_type: str,
+    target_model: str,
+    params: dict[str, Any],
+    rationale: str,
+    predicted_fingerprint: dict[str, float] | None,
+    predicted_novelty_distance: float | None,
+    references: list[str],
+    llm_model: str,
+) -> int:
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    pf_json = json.dumps(predicted_fingerprint) if predicted_fingerprint else None
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "INSERT INTO proposals "
+            "(proposal_type, target_model, params_json, rationale, "
+            "predicted_fingerprint_json, predicted_novelty_distance, "
+            "references_json, llm_model, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            (proposal_type, target_model, json.dumps(params, sort_keys=True, default=_json_default),
+             rationale, pf_json,
+             None if predicted_novelty_distance is None else float(predicted_novelty_distance),
+             json.dumps(references), llm_model, now, now),
+        )
+        return int(cur.lastrowid)
+
+
+def update_proposal_status(db_path: str, proposal_id: int, status: str,
+                           executed_run_id: int | None = None,
+                           actual_fingerprint: dict[str, float] | None = None,
+                           actual_novelty_distance: float | None = None,
+                           prediction_error: float | None = None) -> None:
+    """Set status and optionally the post-execute measurement fields."""
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    af_json = json.dumps(actual_fingerprint) if actual_fingerprint else None
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE proposals SET status = ?, updated_at = ?, "
+            "executed_run_id = COALESCE(?, executed_run_id), "
+            "actual_fingerprint_json = COALESCE(?, actual_fingerprint_json), "
+            "actual_novelty_distance = COALESCE(?, actual_novelty_distance), "
+            "prediction_error = COALESCE(?, prediction_error) "
+            "WHERE id = ?",
+            (status, now, executed_run_id, af_json,
+             None if actual_novelty_distance is None else float(actual_novelty_distance),
+             None if prediction_error is None else float(prediction_error),
+             int(proposal_id)),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no proposal with id={proposal_id}")
+        con.commit()
+
+
+def load_proposals(db_path: str, status: str | None = None) -> list[dict[str, Any]]:
+    sql = ("SELECT id, proposal_type, target_model, params_json, rationale, "
+           "predicted_fingerprint_json, predicted_novelty_distance, references_json, "
+           "llm_model, status, executed_run_id, actual_fingerprint_json, "
+           "actual_novelty_distance, prediction_error, created_at, updated_at "
+           "FROM proposals")
+    args: tuple = ()
+    if status is not None:
+        sql += " WHERE status = ?"
+        args = (status,)
+    sql += " ORDER BY id"
+    with sqlite3.connect(db_path) as con:
+        rows = con.execute(sql, args).fetchall()
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        out.append({
+            "id": r[0], "proposal_type": r[1], "target_model": r[2],
+            "params": json.loads(r[3]), "rationale": r[4],
+            "predicted_fingerprint": json.loads(r[5]) if r[5] else None,
+            "predicted_novelty_distance": r[6],
+            "references": json.loads(r[7] or "[]"),
+            "llm_model": r[8], "status": r[9],
+            "executed_run_id": r[10],
+            "actual_fingerprint": json.loads(r[11]) if r[11] else None,
+            "actual_novelty_distance": r[12],
+            "prediction_error": r[13],
+            "created_at": r[14], "updated_at": r[15],
+        })
+    return out
+
+
 def insert_run(
     db_path: str,
     *,
