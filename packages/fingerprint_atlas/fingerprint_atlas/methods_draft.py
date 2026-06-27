@@ -211,11 +211,15 @@ def draft_notes_for_method(db_path: str, method_name: str, *,
     else:
         raw = _call_groq(SYSTEM_PROMPT, {"context": context}, groq_model, temperature)
 
-    # defensive parse: ensure each field is a string
+    # defensive parse: ensure each field is a string AND normalise newlines.
+    # gpt-oss-120b (and some other Groq models) emit literal '\n' inside JSON
+    # string values rather than using JSON's actual newline escape. After
+    # json.loads that becomes a backslash-n literal in the Python string,
+    # which renders as '\n' on display instead of a line break. Normalise.
     def _str(v):
         if v is None:
             return ""
-        return str(v).strip()
+        return str(v).strip().replace("\\n", "\n")
 
     draft = {
         "novelty_notes": _str(raw.get("novelty_notes")),

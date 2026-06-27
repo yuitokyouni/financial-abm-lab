@@ -297,6 +297,28 @@ def cmd_draft(db_path: str, name: str, *,
     return 0
 
 
+def cmd_normalize_newlines(db_path: str, dry_run: bool) -> int:
+    """One-shot maintenance: replace literal '\\n' in commentary columns with
+    actual newlines. Useful after an LLM draft that double-escaped newlines."""
+    ensure_methods_schema(db_path)
+    rows = list_methods(db_path)
+    n_touched = 0
+    for m in rows:
+        patch: dict[str, str] = {}
+        for col in ("novelty_notes", "mechanism_strengths",
+                    "mechanism_weaknesses", "research_questions", "tags"):
+            val = getattr(m, col)
+            if val and "\\n" in val:
+                patch[col] = val.replace("\\n", "\n")
+        if patch:
+            print(f"  {m.name}: {list(patch.keys())}")
+            if not dry_run:
+                update_method(db_path, m.name, **patch)
+            n_touched += 1
+    print(f"{'(dry-run) ' if dry_run else ''}touched {n_touched} method(s).")
+    return 0
+
+
 def cmd_tag(db_path: str, name: str, add: list[str], remove: list[str]) -> int:
     ensure_methods_schema(db_path)
     m = get_method(db_path, name)
@@ -336,6 +358,12 @@ def main() -> int:
     p_tag.add_argument("--add", action="append", default=[], metavar="TAG")
     p_tag.add_argument("--remove", action="append", default=[], metavar="TAG")
 
+    p_nn = sub.add_parser(
+        "normalize-newlines",
+        help="one-shot: replace literal '\\n' in existing notes with real newlines",
+    )
+    p_nn.add_argument("--dry-run", action="store_true")
+
     p_dr = sub.add_parser(
         "draft",
         help="LLM-draft the four commentary fields, open editor for review",
@@ -364,6 +392,8 @@ def main() -> int:
                          groq_model=args.groq_model,
                          apply=args.apply,
                          temperature=args.temperature)
+    if args.cmd == "normalize-newlines":
+        return cmd_normalize_newlines(args.db, args.dry_run)
     return 1
 
 
