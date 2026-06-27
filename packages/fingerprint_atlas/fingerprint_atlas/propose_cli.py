@@ -305,11 +305,12 @@ def main() -> int:
     p_fc.add_argument("--n", type=int, default=5)
     p_fc.add_argument(
         "--groq-model", default=DEFAULT_GROQ_MODEL,
-        help=("Groq model id. Default: llama-3.3-70b-versatile. "
-              "Free-tier alternatives worth trying for better synthesis: "
-              "meta-llama/llama-4-scout-17b-16e-instruct (newer Llama 4 MoE), "
-              "moonshotai/kimi-k2-instruct (coding/reasoning, structured output), "
-              "openai/gpt-oss-120b (OpenAI open-source, very capable). "
+        help=("Groq model id. Default: openai/gpt-oss-120b (chosen after live "
+              "A/B against llama-3.3-70b-versatile and llama-4-scout — only "
+              "model that named mechanism-specific reasoning like percolation "
+              "thresholds and power-law tails). Other free-tier alternatives: "
+              "llama-3.3-70b-versatile (fastest), "
+              "meta-llama/llama-4-scout-17b-16e-instruct (newer Llama 4 MoE). "
               "Current list: https://console.groq.com/docs/models"),
     )
     p_fc.add_argument("--temperature", type=float, default=0.7)

@@ -50,7 +50,8 @@ DEFAULT_QUERIES = {
     ),
 }
 
-DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+# Same default as propose.py — chosen after live A/B (see propose.py for notes).
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
 
 EXTRACTION_SYSTEM_PROMPT = """\
 You extract structured information from arxiv paper abstracts about financial

@@ -30,7 +30,13 @@ from .adapters import MODEL_BOUNDS, PRICELESS_MODELS
 from .methods import list_methods
 
 
-DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+# gpt-oss-120b: OpenAI's open-source 120B model, free tier on Groq. In a live
+# A/B test against llama-3.3-70b and llama-4-scout (Nov 2026), gpt-oss-120b
+# was the only model that produced proposals with mechanism-aware reasoning
+# (e.g. naming the Cont-Bouchaud percolation threshold and predicting the
+# power-law effect on cluster sizes). Llama-3.3-70b and llama-4-scout
+# produced template-style rationales (user-scored 3/10 vs gpt-oss-120b's 8/10).
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
 
 
 SYSTEM_PROMPT = """\
