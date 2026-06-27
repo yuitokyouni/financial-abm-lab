@@ -184,7 +184,12 @@ def classify_references(references: list[str], db_path: str) -> dict[str, list[s
     non_arxiv      : doesn't parse as an arxiv id (e.g. 'Lux & Marchesi 2000');
                      not verifiable here, no warning emitted
     """
-    from .db import load_literature
+    from .db import ensure_literature_schema, load_literature
+    # Defensive: the literature_methods table may not exist yet — e.g. on a
+    # fresh DB where the user hasn't ingested any arxiv papers. Create it
+    # (idempotent) so load_literature returns an empty list rather than
+    # raising OperationalError.
+    ensure_literature_schema(db_path)
     rows = load_literature(db_path)
     known_bases = {_arxiv_base(r["arxiv_id"]) for r in rows}
     result: dict[str, list[str]] = {"in_db": [], "external_arxiv": [], "non_arxiv": []}
