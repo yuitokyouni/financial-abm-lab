@@ -117,9 +117,16 @@ _SECTION_RE = re.compile(r"^##\s+([A-Za-z_]+)\s*$", re.MULTILINE)
 def _parse_edit_file(text: str) -> dict[str, str]:
     """Extract the SECTIONS from the user's saved edit file.
 
-    Lines starting with `#` (single hash, comment) are ignored within a
-    section so the read-only mechanism block does not contaminate parsing.
-    Unknown `##` sections are dropped silently.
+    Anything before the first recognised `## section` header (the rendered
+    mechanism preamble) is discarded. Inside a section body, every line is
+    kept verbatim — including single-`# ` markdown headers like
+    `# 観察1` or `# Important`. The body of a section ends at the next
+    `## word` header (whether it's a recognised section or not), so to
+    write a sub-heading inside a body use **three** hashes or more:
+    `### サブ`, `#### ノート`, etc.
+
+    Unknown `## word` headers truncate the current body but their own body
+    is silently dropped.
     """
     out: dict[str, str] = {sec: "" for sec in SECTIONS}
     matches = list(_SECTION_RE.finditer(text))
@@ -129,14 +136,7 @@ def _parse_edit_file(text: str) -> dict[str, str]:
             continue
         start = m.end()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
-        body = text[start:end]
-        # strip leading/trailing blank lines but keep internal structure
-        body = "\n".join(
-            line for line in body.split("\n")
-            if not line.lstrip().startswith("#") or "##" in line.lstrip()
-        )
-        body = body.strip("\n")
-        out[sec_name] = body
+        out[sec_name] = text[start:end].strip("\n")
     return out
 
 

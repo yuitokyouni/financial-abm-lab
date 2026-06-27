@@ -140,15 +140,47 @@ t1, t2
     assert "ignored" not in parsed["novelty_notes"]
 
 
-def test_parse_edit_file_strips_comment_lines_in_body():
-    """The mechanism block is rendered as # comments; parse must drop them."""
+def test_parse_edit_file_keeps_single_hash_markdown_headers():
+    """User-written `# header` lines inside a section body must be preserved.
+
+    Previously the parser stripped any line starting with `#` as a comment,
+    which clobbered legitimate markdown headers the user wrote in their notes.
+    Mechanism preamble is now discarded only because it lives BEFORE the
+    first `## section` header, not because of per-line filtering.
+    """
     text = """\
 ## novelty_notes
-# this is a leftover mechanism comment line
+# 観察 1
 real user content
+## main_idea  (this is an unknown ## header, so it truncates but its body drops)
+this text is dropped
+## mechanism_strengths
+### サブ見出しは保持される
+本文
 """
     parsed = _parse_edit_file(text)
-    assert parsed["novelty_notes"] == "real user content"
+    assert "# 観察 1" in parsed["novelty_notes"]
+    assert "real user content" in parsed["novelty_notes"]
+    assert "this text is dropped" not in parsed["novelty_notes"]
+    assert "### サブ見出しは保持される" in parsed["mechanism_strengths"]
+    assert "本文" in parsed["mechanism_strengths"]
+
+
+def test_parse_edit_file_drops_preamble_before_first_section():
+    """The `# mechanism: ...` comment block in the rendered template is
+    preamble (before the first `## section`) and must be silently dropped."""
+    text = """\
+# methodology notes for: speculation_game
+# kind: abm
+# mechanism: N agents each carry S strategies ...
+# more mechanism comment text
+
+## novelty_notes
+the user's first real content
+"""
+    parsed = _parse_edit_file(text)
+    assert "mechanism" not in parsed["novelty_notes"]
+    assert "the user's first real content" in parsed["novelty_notes"]
 
 
 def test_method_names_align_with_runs_keys():
