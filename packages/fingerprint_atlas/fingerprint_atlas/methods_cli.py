@@ -334,6 +334,61 @@ def cmd_tag(db_path: str, name: str, add: list[str], remove: list[str]) -> int:
     return 0
 
 
+def cmd_draft_all(db_path: str, *, groq_model: str, temperature: float,
+                  only_empty: bool, kinds: list[str] | None) -> int:
+    """Bulk LLM draft for every method that has no user notes yet.
+
+    By default skips methods that already have any commentary; with
+    `only_empty=False` re-drafts everything (overwrites existing notes —
+    use with care).
+    """
+    from . import methods_draft
+    ensure_methods_schema(db_path)
+    all_methods = list_methods(db_path, kind=None)
+    targets = []
+    for m in all_methods:
+        if kinds and m.kind not in kinds:
+            continue
+        has_notes = any(getattr(m, sec) for sec in (
+            "novelty_notes", "mechanism_strengths",
+            "mechanism_weaknesses", "research_questions",
+        ))
+        if only_empty and has_notes:
+            continue
+        targets.append(m)
+    if not targets:
+        print("nothing to draft (all targeted methods already have notes).")
+        return 0
+    print(f"drafting notes for {len(targets)} method(s) with {groq_model}:")
+    n_ok, n_fail = 0, 0
+    for i, m in enumerate(targets, start=1):
+        print(f"  [{i}/{len(targets)}] {m.name:<20s} ({m.kind})  ...", end="",
+              flush=True)
+        try:
+            result = methods_draft.draft_notes_for_method(
+                db_path, m.name,
+                groq_model=groq_model, temperature=temperature,
+            )
+            draft = result["draft"]
+            update_method(db_path, m.name, **draft)
+            ctx = result["context_used"]
+            print(f" ✓ ({ctx['n_relevant_literature']} lit, "
+                  f"{ctx['n_other_methods_notes']} other notes)")
+            n_ok += 1
+        except Exception as exc:
+            print(f" ✗ {type(exc).__name__}: {exc}")
+            n_fail += 1
+    print(f"\ndrafted {n_ok} method(s); {n_fail} failure(s).")
+    if n_ok:
+        print("\nreview / edit each one with:")
+        for m in targets[:5]:
+            print(f"  uv run python -m fingerprint_atlas.methods_cli "
+                  f"--db {db_path} edit {m.name}")
+        if len(targets) > 5:
+            print(f"  ... and {len(targets) - 5} more")
+    return 0 if n_fail == 0 else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
     ap.add_argument("--db", required=True)
@@ -376,6 +431,19 @@ def main() -> int:
         help="skip the editor and write the LLM draft directly to DB",
     )
 
+    p_da = sub.add_parser(
+        "draft-all",
+        help="bulk: LLM-draft notes for every method without commentary",
+    )
+    p_da.add_argument("--groq-model", default="openai/gpt-oss-120b")
+    p_da.add_argument("--temperature", type=float, default=0.5)
+    p_da.add_argument(
+        "--include-already-annotated", action="store_true",
+        help="re-draft methods that already have notes (OVERWRITES — careful)",
+    )
+    p_da.add_argument("--kind", action="append", default=[],
+                      help="filter by kind: abm | synthetic | llm_method")
+
     args = ap.parse_args()
     if args.cmd == "seed":
         return cmd_seed(args.db, args.overwrite_mechanism)
@@ -394,6 +462,11 @@ def main() -> int:
                          temperature=args.temperature)
     if args.cmd == "normalize-newlines":
         return cmd_normalize_newlines(args.db, args.dry_run)
+    if args.cmd == "draft-all":
+        return cmd_draft_all(args.db, groq_model=args.groq_model,
+                             temperature=args.temperature,
+                             only_empty=not args.include_already_annotated,
+                             kinds=args.kind or None)
     return 1
 
 

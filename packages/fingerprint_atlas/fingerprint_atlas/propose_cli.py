@@ -178,44 +178,49 @@ def cmd_reject(args) -> int:
     return 0
 
 
-def cmd_execute(args) -> int:
-    ensure_proposals_schema(args.db)
-    ensure_runs_schema(args.db)
-    rows = load_proposals(args.db)
-    p = next((r for r in rows if r["id"] == args.id), None)
-    if p is None:
-        print(f"no proposal with id={args.id}", file=sys.stderr)
-        return 1
-    if p["status"] not in ("proposed", "approved"):
-        print(f"proposal #{args.id} status is {p['status']!r}; refusing to execute. "
-              f"reset with `approve` if you really want to.", file=sys.stderr)
-        return 1
-    if p["proposal_type"] != "param_sweep":
-        print(f"executor only knows param_sweep; got {p['proposal_type']!r}", file=sys.stderr)
-        return 1
+def execute_proposal(db_path: str, proposal_id: int, *, seed: int = 9000,
+                     verbose: bool = True) -> dict:
+    """Run an approved/proposed param_sweep, store the resulting run, link
+    it back, compute prediction_error vs actual_fingerprint.
 
-    print(f"executing proposal #{p['id']}: {p['target_model']}")
-    print(f"  params: {json.dumps(p['params'], sort_keys=True)}")
+    Programmatic counterpart of `cmd_execute`. Raises ValueError if the
+    proposal can't be executed (wrong status, wrong type, not found).
+    Re-raises model run errors after marking the proposal status=rejected.
+    """
+    ensure_proposals_schema(db_path)
+    ensure_runs_schema(db_path)
+    rows = load_proposals(db_path)
+    p = next((r for r in rows if r["id"] == proposal_id), None)
+    if p is None:
+        raise ValueError(f"no proposal with id={proposal_id}")
+    if p["status"] not in ("proposed", "approved"):
+        raise ValueError(
+            f"proposal #{proposal_id} status is {p['status']!r}; refusing to execute"
+        )
+    if p["proposal_type"] != "param_sweep":
+        raise ValueError(
+            f"executor only knows param_sweep; got {p['proposal_type']!r}"
+        )
+
+    if verbose:
+        print(f"executing proposal #{p['id']}: {p['target_model']}")
 
     t0 = time.time()
     try:
         model = build_model(p["target_model"], p["params"])
-        result = model.run(seed=args.seed)
+        result = model.run(seed=seed)
         series, kind = series_for_fingerprint(p["target_model"], result)
         fp = fingerprint(series, compute_hill=(kind == "returns"))
         hill_r = hill_tail_index_raw(series) if kind == "returns" else None
     except Exception as exc:
-        print(f"  ! execution failed: {type(exc).__name__}: {exc}", file=sys.stderr)
-        update_proposal_status(args.db, args.id, status="rejected")
-        return 1
+        update_proposal_status(db_path, proposal_id, status="rejected")
+        raise
+
     elapsed = time.time() - t0
-    print(f"  ran in {elapsed:.1f}s; fingerprint:")
-    for name, v in zip(FEATURE_NAMES, fp):
-        print(f"    {name:<22s} {v:+.4f}")
 
     run_id = insert_run(
-        args.db,
-        model_name=p["target_model"], params=p["params"], seed=int(args.seed),
+        db_path,
+        model_name=p["target_model"], params=p["params"], seed=int(seed),
         fingerprint_vec=fp, series_kind=kind, series_length=int(len(series)),
         provenance={"source": "propose_execute", "proposal_id": p["id"],
                     "elapsed_s": round(elapsed, 3)},
@@ -224,17 +229,19 @@ def cmd_execute(args) -> int:
     )
 
     # Compare predicted vs actual in standardised space.
-    all_runs = load_runs(args.db)
-    fps_all = np.vstack([r["fingerprint"] for r in all_runs if np.all(np.isfinite(r["fingerprint"]))])
+    all_runs = load_runs(db_path)
+    fps_all = np.vstack([r["fingerprint"] for r in all_runs
+                         if np.all(np.isfinite(r["fingerprint"]))])
     fps_std, mu_feat, sd_feat = standardize(fps_all)
-    # find this run's row in fps_std (it's the last finite-fingerprint run)
     new_idx = next((i for i, r in enumerate(all_runs)
                     if r["id"] == run_id and np.all(np.isfinite(r["fingerprint"]))), None)
     actual_fp_dict = {name: float(v) for name, v in zip(FEATURE_NAMES, fp)}
 
     prediction_error = None
     if p["predicted_fingerprint"]:
-        predicted_vec = np.array([p["predicted_fingerprint"][name] for name in FEATURE_NAMES])
+        predicted_vec = np.array(
+            [p["predicted_fingerprint"][name] for name in FEATURE_NAMES]
+        )
         predicted_std = (predicted_vec - mu_feat) / sd_feat
         actual_std = fps_std[new_idx] if new_idx is not None else (fp - mu_feat) / sd_feat
         prediction_error = float(np.sqrt(np.nansum((predicted_std - actual_std) ** 2)))
@@ -246,14 +253,106 @@ def cmd_execute(args) -> int:
         actual_novelty = float(D[new_idx].min())
 
     update_proposal_status(
-        args.db, args.id, status="executed",
+        db_path, proposal_id, status="executed",
         executed_run_id=run_id, actual_fingerprint=actual_fp_dict,
         actual_novelty_distance=actual_novelty,
         prediction_error=prediction_error,
     )
-    print(f"  wrote run #{run_id}; prediction_error={prediction_error}, "
-          f"actual_novelty={actual_novelty}")
+    if verbose:
+        print(f"  ran in {elapsed:.1f}s; pred_err={prediction_error}; "
+              f"actual_novelty={actual_novelty}")
+    return {
+        "proposal_id": proposal_id, "run_id": run_id,
+        "target_model": p["target_model"],
+        "elapsed_s": elapsed,
+        "prediction_error": prediction_error,
+        "actual_novelty_distance": actual_novelty,
+        "actual_fingerprint": actual_fp_dict,
+    }
+
+
+def cmd_execute(args) -> int:
+    """Thin CLI wrapper around `execute_proposal`."""
+    try:
+        execute_proposal(args.db, args.id, seed=args.seed, verbose=True)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    except Exception as exc:
+        print(f"  ! execution failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
     return 0
+
+
+def cmd_auto(args) -> int:
+    """propose-from-corpus → execute every accepted proposal → render
+    analytics, in a single command. The whole loop without any copy-paste."""
+    from . import analytics
+    import os
+    print("=" * 70)
+    print(f"[1/3] PROPOSE (groq_model={args.groq_model}, n={args.n})")
+    print("=" * 70)
+    ensure_proposals_schema(args.db)
+    res = propose_from_corpus(
+        args.db, n=args.n, groq_model=args.groq_model,
+        temperature=args.temperature,
+    )
+    summary = res[0]
+    print(f"  accepted: {len(summary['accepted'])} / requested {summary['n_requested']}")
+    for p in summary["accepted"]:
+        print(f"    + #{p['id']} {p['target_model']:<20s} {p['rationale'][:60]}")
+        rv = p.get("reference_validation")
+        if rv and rv["external_arxiv"]:
+            print(f"      ⚠ unverified arxiv id(s): {rv['external_arxiv']}")
+    for r in summary["rejected"]:
+        print(f"    - rejected: {r['error']}")
+    if not summary["accepted"]:
+        print("no proposals to execute; aborting.")
+        return 1
+
+    print()
+    print("=" * 70)
+    print(f"[2/3] EXECUTE ({len(summary['accepted'])} proposals)")
+    print("=" * 70)
+    results = []
+    failures = []
+    for i, accepted in enumerate(summary["accepted"], start=1):
+        pid = accepted["id"]
+        seed = args.seed_base + pid
+        try:
+            r = execute_proposal(args.db, pid, seed=seed, verbose=False)
+            results.append(r)
+            err = r["prediction_error"]
+            nov = r["actual_novelty_distance"]
+            print(f"  ✓ [{i}/{len(summary['accepted'])}] #{pid:<3d} "
+                  f"{r['target_model']:<20s} "
+                  f"pred_err={err:.2f} nov={nov:.2f} ({r['elapsed_s']:.1f}s)")
+        except Exception as exc:
+            failures.append({"proposal_id": pid, "error": str(exc)})
+            print(f"  ✗ [{i}/{len(summary['accepted'])}] #{pid:<3d} FAILED: {exc}",
+                  file=sys.stderr)
+    print(f"\n  executed: {len(results)}, failed: {len(failures)}")
+
+    if args.skip_analytics:
+        return 0 if not failures else 1
+
+    print()
+    print("=" * 70)
+    print(f"[3/3] ANALYTICS (out={args.analytics_out})")
+    print("=" * 70)
+    os.makedirs(args.analytics_out, exist_ok=True)
+    print(json.dumps(analytics.summarize(args.db), indent=2))
+    for plot_fn, fname in [
+        (analytics.plot_prediction_error_over_time, "prediction_error_over_time.png"),
+        (analytics.plot_prediction_error_by_family, "prediction_error_by_family.png"),
+        (analytics.plot_novelty_calibration, "novelty_calibration.png"),
+    ]:
+        try:
+            info = plot_fn(args.db, os.path.join(args.analytics_out, fname))
+            print(f"  -> {info['out_png']}")
+        except RuntimeError as e:
+            print(f"  (skipped {fname}: {e})")
+    return 0 if not failures else 1
 
 
 def cmd_analytics(args) -> int:
@@ -390,11 +489,24 @@ def main() -> int:
                           help="render LLM learning-curve plots from executed proposals")
     p_an.add_argument("--out", default="notebooks/propose_analytics/")
 
+    p_auto = sub.add_parser(
+        "auto",
+        help=("one-shot loop: propose N + auto-execute every accepted "
+              "proposal + render analytics. The whole flow, no copy-paste."),
+    )
+    p_auto.add_argument("--n", type=int, default=5)
+    p_auto.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_auto.add_argument("--temperature", type=float, default=0.7)
+    p_auto.add_argument("--seed-base", type=int, default=9000,
+                        help="execute seeds = seed-base + proposal_id")
+    p_auto.add_argument("--analytics-out", default="notebooks/propose_analytics/")
+    p_auto.add_argument("--skip-analytics", action="store_true")
+
     args = ap.parse_args()
     handlers = {
         "from-corpus": cmd_from_corpus, "list": cmd_list, "show": cmd_show,
         "approve": cmd_approve, "reject": cmd_reject, "execute": cmd_execute,
-        "dump-md": cmd_dump_md, "analytics": cmd_analytics,
+        "dump-md": cmd_dump_md, "analytics": cmd_analytics, "auto": cmd_auto,
     }
     return handlers[args.cmd](args)
 
