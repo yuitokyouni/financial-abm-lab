@@ -303,7 +303,14 @@ def main() -> int:
 
     p_fc = sub.add_parser("from-corpus", help="generate proposals via Groq LLM")
     p_fc.add_argument("--n", type=int, default=5)
-    p_fc.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_fc.add_argument(
+        "--groq-model", default=DEFAULT_GROQ_MODEL,
+        help=("Groq model id. Default: llama-3.3-70b-versatile. "
+              "Free-tier alternatives worth trying for better synthesis: "
+              "deepseek-r1-distill-llama-70b (reasoning-tuned, structured output), "
+              "moonshotai/kimi-k2-instruct (coding/reasoning), "
+              "meta-llama/llama-4-scout-17b-16e-instruct (newer)."),
+    )
     p_fc.add_argument("--temperature", type=float, default=0.7)
 
     p_ls = sub.add_parser("list", help="one-line summary per proposal")

@@ -92,12 +92,67 @@ Constraints, in order of priority:
   4. `rationale` MUST be non-empty Japanese. An empty rationale is invalid.
   5. Across the n proposals, prefer diversifying target_model and the region
      of fingerprint space targeted.
-  6. Cite from `literature` only when the cited paper's mechanism is genuinely
-     close to your proposed change. Otherwise leave references empty.
+  6. references[] is MANDATORY when literature[] in the context is non-empty.
+     Pick the paper whose mechanism is closest to your proposal and put its
+     arxiv_id in references[]. In `rationale`, explicitly explain HOW your
+     proposal relates to that paper (transfer / extension / stress test /
+     contrast). A purely-parameter-sweep proposal with no literature link is
+     not useful here — re-anchor it to a paper if you must.
+  7. `rationale` MUST be specific, NOT a template. Bad rationale (will be
+     rejected): "このパラメータスイープは、エージェントとダイナミクスの関係を
+     調べることを目的としています". Good rationale: names a target FEATURE
+     (e.g. "acf_absret_long > 0.2"), a paper, and a concrete mechanism
+     conjecture.
 
 Output: a single JSON object with key "proposals" whose value is an array of
 exactly `n` proposal objects. No prose around the JSON.
 """
+
+
+# Japanese template phrases the LLM defaults to when it has nothing to say.
+# Anything containing one of these is treated as a "template rationale" and
+# the proposal is rejected by the validator. List grew from a real failed
+# run on llama-3.3-70b-versatile.
+_RATIONALE_TEMPLATE_BLACKLIST = [
+    "を目的としています",        # "the purpose is to ..."
+    "関係を調べる",              # "investigate the relationship"
+    "影響を調べる",              # "investigate the effect"
+    "ダイナミクスを調べる",       # "investigate the dynamics"
+    "の理解を深める",            # "deepen understanding"
+    "明らかにする",              # "make clear" (used as filler)
+]
+
+# Concrete signals that ANY useful rationale should contain at least one of.
+# Either an English-language stylized-facts keyword, a Japanese feature term,
+# or an explicit arxiv id / numeric target.
+_RATIONALE_CONCRETE_KEYWORDS = [
+    # English fingerprint vocabulary
+    "volatility", "kurtosis", "hill", "leverage", "acf",
+    "long memory", "long-memory", "fat tail", "fat-tail",
+    "clustering", "regime", "tail index",
+    # Japanese fingerprint vocabulary
+    "ボラ", "尖度", "裾", "クラスタ", "長期記憶",
+    "ファットテール", "レバレッジ", "自己相関",
+    # citation markers
+    "arXiv:", "arxiv:", "arxiv.org",
+]
+
+
+def _rationale_quality(rat: str) -> tuple[bool, str]:
+    """Return (ok, error). Rejects template phrases and rationales lacking
+    any concrete signal (no feature name, no citation, no number)."""
+    import re
+    s = rat.strip()
+    for phrase in _RATIONALE_TEMPLATE_BLACKLIST:
+        if phrase in s:
+            return False, f"rationale contains template phrase {phrase!r}"
+    lower = s.lower()
+    has_concrete_kw = any(k.lower() in lower for k in _RATIONALE_CONCRETE_KEYWORDS)
+    has_number = bool(re.search(r"\d", s))
+    if not (has_concrete_kw or has_number):
+        return False, ("rationale lacks concrete signal — no feature name, "
+                       "no arxiv id, no numeric target")
+    return True, ""
 
 
 def _per_family_centroids(rows: list[dict]) -> dict[str, list[float]]:
@@ -277,12 +332,15 @@ def _validate_proposal(p: dict, n_features: int) -> tuple[bool, str]:
     missing_params = required_keys - set(p["params"].keys())
     if missing_params:
         return False, f"params missing required keys: {sorted(missing_params)}"
-    # rationale: must be a non-empty string
+    # rationale: must be a non-empty string with concrete content
     rat = p.get("rationale")
     if not isinstance(rat, str) or not rat.strip():
         return False, "rationale is empty or not a string"
-    if len(rat.strip()) < 10:
-        return False, f"rationale too short ({len(rat.strip())} chars; need >= 10)"
+    if len(rat.strip()) < 20:
+        return False, f"rationale too short ({len(rat.strip())} chars; need >= 20)"
+    ok_q, err_q = _rationale_quality(rat)
+    if not ok_q:
+        return False, err_q
     if "predicted_fingerprint" in p and p["predicted_fingerprint"] is not None:
         pf = p["predicted_fingerprint"]
         if not isinstance(pf, dict):

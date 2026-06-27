@@ -142,7 +142,7 @@ def _fake_groq_response(target_model: str, params: dict) -> dict:
             "type": "param_sweep",
             "target_model": target_model,
             "params": params,
-            "rationale": "テスト用提案。長期記憶を伸ばす方向。",
+            "rationale": "テスト用提案: acf_absret_long を 0.2 程度に伸ばし leverage 効果 -0.1 を狙う。",
             "predicted_fingerprint": {n: 0.0 for n in FEATURE_NAMES},
             "predicted_novelty_distance": 2.0,
             "references": ["arXiv:test"],
@@ -197,7 +197,7 @@ def test_validator_catches_bad_predicted_fingerprint():
     ok, err = _validate_proposal({
         "type": "param_sweep", "target_model": "speculation_game",
         "params": {"N": 300, "M": 3, "S": 2, "T": 2000, "B": 9, "C": 3.0},
-        "rationale": "rationale long enough to pass",
+        "rationale": "volatility 0.01 程度を想定したテスト用 rationale (hill α=3 狙い)",
         "predicted_fingerprint": {"volatility": 0.1},  # missing the rest
     }, len(FEATURE_NAMES))
     assert not ok and "missing keys" in err
@@ -208,7 +208,7 @@ def test_validator_accepts_well_formed():
     ok, err = _validate_proposal({
         "type": "param_sweep", "target_model": "lux_marchesi",
         "params": {"n_integer_steps": 2000, "steps_per_unit": 100, "n_c_init": 80},
-        "rationale": "短期だが意味のある rationale テキスト",
+        "rationale": "尖度を抑えつつ leverage 効果 -0.1 を狙うパラメータ調整。",
         "predicted_fingerprint": fp,
     }, len(FEATURE_NAMES))
     assert ok, err
@@ -232,6 +232,59 @@ def test_validator_rejects_too_short_rationale():
         "rationale": "x", "predicted_fingerprint": fp,
     }, len(FEATURE_NAMES))
     assert not ok and "too short" in err
+
+
+def test_validator_rejects_template_rationale():
+    """A rationale containing one of the LLM's default template phrases is rejected."""
+    fp = {n: 0.0 for n in FEATURE_NAMES}
+    p = {
+        "type": "param_sweep", "target_model": "lux_marchesi",
+        "params": {"n_integer_steps": 2000, "steps_per_unit": 100, "n_c_init": 80},
+        "rationale": "このパラメータスイープは、エージェントとダイナミクスの関係を調べることを目的としています。",
+        "predicted_fingerprint": fp,
+    }
+    ok, err = _validate_proposal(p, len(FEATURE_NAMES))
+    assert not ok
+    assert "template phrase" in err
+
+
+def test_validator_rejects_concrete_less_rationale():
+    """A rationale with no feature name, no arxiv id, and no number is rejected
+    even if it doesn't hit a template blacklist."""
+    fp = {n: 0.0 for n in FEATURE_NAMES}
+    p = {
+        "type": "param_sweep", "target_model": "lux_marchesi",
+        "params": {"n_integer_steps": 2000, "steps_per_unit": 100, "n_c_init": 80},
+        "rationale": "市場が複雑である理由を考察する。何か新しいことが起こるはず。",  # vague
+        "predicted_fingerprint": fp,
+    }
+    ok, err = _validate_proposal(p, len(FEATURE_NAMES))
+    assert not ok
+    assert "concrete signal" in err
+
+
+def test_validator_accepts_rationale_with_feature_keyword():
+    fp = {n: 0.0 for n in FEATURE_NAMES}
+    p = {
+        "type": "param_sweep", "target_model": "lux_marchesi",
+        "params": {"n_integer_steps": 2000, "steps_per_unit": 100, "n_c_init": 80},
+        "rationale": "Tc を大きくして長期記憶 acf_absret_long を 0.25 まで伸ばす狙い。",
+        "predicted_fingerprint": fp,
+    }
+    ok, err = _validate_proposal(p, len(FEATURE_NAMES))
+    assert ok, err
+
+
+def test_validator_accepts_rationale_with_arxiv_citation():
+    fp = {n: 0.0 for n in FEATURE_NAMES}
+    p = {
+        "type": "param_sweep", "target_model": "lux_marchesi",
+        "params": {"n_integer_steps": 2000, "steps_per_unit": 100, "n_c_init": 80},
+        "rationale": "arXiv:2606.21784 の高速 ABM 実装に着想を得て、規模を上げる。",
+        "predicted_fingerprint": fp,
+    }
+    ok, err = _validate_proposal(p, len(FEATURE_NAMES))
+    assert ok, err
 
 
 def test_validator_rejects_missing_required_param_keys():

@@ -34,6 +34,20 @@ DEFAULT_QUERIES = {
         '(abs:"agent-based" OR abs:"ABM" OR abs:"heterogeneous agents") '
         'AND (cat:q-fin.* OR cat:physics.soc-ph)'
     ),
+    "financial_abm_strict": (
+        # Constrained to q-fin.TR (Trading & Microstructure), and abstract MUST
+        # mention a financial-ABM-specific mechanism phrase. This avoids the
+        # off-topic capture observed with `agent_based_recent` (engines, AMM
+        # market-making, opinion dynamics — high LLM-rated but tangentially
+        # relevant to our atlas).
+        'cat:q-fin.TR AND ('
+        'abs:"heterogeneous agent" OR abs:"heterogeneous agents" '
+        'OR abs:"agent-based market" OR abs:"agent-based model" '
+        'OR abs:"speculation game" OR abs:"minority game" '
+        'OR abs:"market microstructure" OR abs:"limit order book" '
+        'OR abs:"chartist" OR abs:"fundamentalist" '
+        'OR abs:"herding" OR abs:"stylized facts")'
+    ),
 }
 
 DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
