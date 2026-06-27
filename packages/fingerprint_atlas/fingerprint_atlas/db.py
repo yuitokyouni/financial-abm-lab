@@ -23,17 +23,25 @@ CREATE TABLE IF NOT EXISTS runs (
     model_name      TEXT NOT NULL,
     params_json     TEXT NOT NULL,
     seed            INTEGER NOT NULL,
-    fingerprint_json TEXT NOT NULL,        -- *capped* 6-vector (FEATURE_NAMES order)
+    fingerprint_json TEXT NOT NULL,        -- capped feature vector (FEATURE_NAMES order)
     series_kind     TEXT NOT NULL,         -- 'returns' | 'attendance_excess'
     series_length   INTEGER NOT NULL,
     provenance_json TEXT NOT NULL,         -- {git_commit, code_hash, timestamp, host}
     created_at      TEXT NOT NULL,
     hill_raw        REAL,                  -- uncapped Hill α (diagnostic)
-    origin          TEXT NOT NULL DEFAULT 'abm'  -- 'abm' | 'synthetic' | 'real'
+    origin          TEXT NOT NULL DEFAULT 'abm',  -- 'abm' | 'synthetic' | 'real'
+    preference_label        REAL,          -- user Likert score (e.g. -2..+2); NULL = unlabeled
+    preference_labeled_at   TEXT           -- ISO-8601 timestamp of the labelling event
 );
-CREATE INDEX IF NOT EXISTS idx_runs_model ON runs(model_name);
-CREATE INDEX IF NOT EXISTS idx_runs_origin ON runs(origin);
 """
+
+#: Indexes are created AFTER the ALTER TABLE migration so that an index on a
+#: column we are about to add isn't requested before the column exists.
+_RUNS_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_runs_model ON runs(model_name)",
+    "CREATE INDEX IF NOT EXISTS idx_runs_origin ON runs(origin)",
+    "CREATE INDEX IF NOT EXISTS idx_runs_pref ON runs(preference_label)",
+]
 
 
 def _column_exists(con: sqlite3.Connection, table: str, col: str) -> bool:
@@ -44,8 +52,9 @@ def _column_exists(con: sqlite3.Connection, table: str, col: str) -> bool:
 def ensure_runs_schema(db_path: str) -> None:
     """Create the `runs` table if absent. Idempotent; leaves `techniques` alone.
 
-    Also performs additive migration: if `runs` exists but lacks `hill_raw` /
-    `origin`, ALTER TABLE adds them. Existing rows get NULL / 'abm' respectively.
+    Additive migration: any column listed in the schema but missing on an
+    existing `runs` table is added via ALTER TABLE. Existing rows get NULL
+    for new nullable columns (or the declared DEFAULT for NOT NULL ones).
     """
     parent = os.path.dirname(db_path) or "."
     os.makedirs(parent, exist_ok=True)
@@ -55,6 +64,38 @@ def ensure_runs_schema(db_path: str) -> None:
             con.execute("ALTER TABLE runs ADD COLUMN hill_raw REAL")
         if not _column_exists(con, "runs", "origin"):
             con.execute("ALTER TABLE runs ADD COLUMN origin TEXT NOT NULL DEFAULT 'abm'")
+        if not _column_exists(con, "runs", "preference_label"):
+            con.execute("ALTER TABLE runs ADD COLUMN preference_label REAL")
+        if not _column_exists(con, "runs", "preference_labeled_at"):
+            con.execute("ALTER TABLE runs ADD COLUMN preference_labeled_at TEXT")
+        for stmt in _RUNS_INDEXES:
+            con.execute(stmt)
+        con.commit()
+
+
+def update_preference(db_path: str, run_id: int, label: float,
+                      labeled_at: str | None = None) -> None:
+    """Set `preference_label` (and timestamp) on one row. Idempotent overwrite."""
+    import datetime as _dt
+    if labeled_at is None:
+        labeled_at = _dt.datetime.utcnow().isoformat() + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE runs SET preference_label = ?, preference_labeled_at = ? WHERE id = ?",
+            (float(label), labeled_at, int(run_id)),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no row with id={run_id}")
+        con.commit()
+
+
+def clear_preference(db_path: str, run_id: int) -> None:
+    """Reset a row's preference label to NULL (unlabeled)."""
+    with sqlite3.connect(db_path) as con:
+        con.execute(
+            "UPDATE runs SET preference_label = NULL, preference_labeled_at = NULL "
+            "WHERE id = ?", (int(run_id),)
+        )
         con.commit()
 
 
@@ -97,16 +138,26 @@ def insert_run(
 
 
 def load_runs(db_path: str, model_name: str | None = None,
-              origin: str | None = None) -> list[dict[str, Any]]:
-    """Read back all runs (optionally filtered). Parses JSON columns."""
+              origin: str | None = None,
+              labeled: bool | None = None) -> list[dict[str, Any]]:
+    """Read back all runs (optionally filtered). Parses JSON columns.
+
+    labeled : if True, only rows with a non-NULL preference_label; if False,
+              only unlabeled rows; None = no filter on labelling.
+    """
     sql = ("SELECT id, model_name, params_json, seed, fingerprint_json, "
-           "series_kind, series_length, provenance_json, created_at, hill_raw, origin FROM runs")
+           "series_kind, series_length, provenance_json, created_at, hill_raw, origin, "
+           "preference_label, preference_labeled_at FROM runs")
     where: list[str] = []
     args: list[Any] = []
     if model_name is not None:
         where.append("model_name = ?"); args.append(model_name)
     if origin is not None:
         where.append("origin = ?"); args.append(origin)
+    if labeled is True:
+        where.append("preference_label IS NOT NULL")
+    elif labeled is False:
+        where.append("preference_label IS NULL")
     if where:
         sql += " WHERE " + " AND ".join(where)
     sql += " ORDER BY id"
@@ -126,6 +177,8 @@ def load_runs(db_path: str, model_name: str | None = None,
             "created_at": r[8],
             "hill_raw": r[9],
             "origin": r[10],
+            "preference_label": r[11],
+            "preference_labeled_at": r[12],
         })
     return out
 
