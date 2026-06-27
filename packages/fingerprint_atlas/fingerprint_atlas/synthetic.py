@@ -31,10 +31,14 @@ import numpy as np
 
 SYNTHETIC_BOUNDS: dict[str, dict[str, tuple]] = {
     "garch11": {
+        # NOTE: bounds chosen so α+β ≤ 0.99 over the *worst-case* LHS corner —
+        # one run had α=0.15+β=0.94=1.09 in v4 first attempt and the resulting
+        # explosive series destroyed the standardised-distance geometry. The
+        # specimen has to be stationary for the instrument reading to make sense.
         "T": (2000, 3000),
         "omega": (1e-7, 1e-5),
-        "alpha": (0.05, 0.15),   # innovation impact
-        "beta": (0.80, 0.94),    # persistence (alpha + beta < 1 stationarity)
+        "alpha": (0.03, 0.10),
+        "beta": (0.80, 0.89),
     },
     "levy_walk": {
         "T": (2000, 3000),

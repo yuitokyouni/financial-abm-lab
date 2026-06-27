@@ -190,8 +190,12 @@ def plot_feature_box(rows: list[dict[str, Any]], out_png: str) -> dict:
     labels = np.array([r["model_name"] for r in kept])
     uniq = sorted(set(labels))
 
-    fig, axes = plt.subplots(2, 3, figsize=(14, 8), sharey=False)
-    axes = axes.flatten()
+    # Auto-grid: pack as 3 columns, enough rows for all features
+    n_feat = len(FEATURE_NAMES)
+    n_cols = 3
+    n_rows = (n_feat + n_cols - 1) // n_cols
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(14, 3.0 * n_rows), sharey=False)
+    axes = np.atleast_1d(axes).flatten()
     for k, feat in enumerate(FEATURE_NAMES):
         ax = axes[k]
         data = [fps_raw[labels == lab, k] for lab in uniq]
@@ -201,6 +205,9 @@ def plot_feature_box(rows: list[dict[str, Any]], out_png: str) -> dict:
             tick.set_rotation(45)
             tick.set_fontsize(7)
         ax.grid(True, axis="y", alpha=0.3)
+    # hide unused axes (when n_feat < rows*cols)
+    for k in range(n_feat, len(axes)):
+        axes[k].axis("off")
     fig.suptitle("Per-model distribution of each fingerprint feature (raw)")
     fig.tight_layout()
     fig.savefig(out_png, dpi=150)

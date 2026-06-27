@@ -21,8 +21,14 @@ FEATURE_NAMES = [
     "kurtosis",
     "hill_tail_index",
     "acf_ret_l1",
-    "acf_absret_mean",
+    "acf_absret_mean",          # short-range vol persistence (lag 1-5)
     "leverage",
+    # v4: Cont-outside axes designed to break the GARCH(1,1) blind spot.
+    # GARCH(1,1) clusters but decays exponentially; LM/SG cluster with
+    # heavier long memory. These three should pull them apart.
+    "acf_absret_long",          # mean |r| ACF over lag 20-50 (long memory)
+    "acf_absret_decay",         # log-linear decay rate of |r| ACF lag 1-20
+    "agg_kurt_decay",           # 1 - kurt(window=20) / kurt(window=1) ∈ ~[-2, +1]
 ]
 
 
@@ -83,18 +89,61 @@ def hill_tail_index(returns: np.ndarray, tail_frac: float = 0.05) -> float:
     return float(min(raw, HILL_ALPHA_CAP))
 
 
+def _acf_decay_slope(absr: np.ndarray, lags=range(1, 21)) -> float:
+    """Log-linear regression slope of |r| ACF vs lag (lags 1..20).
+
+    Negative slope = decay; the *magnitude* of the slope distinguishes
+    fast-decaying (exponential, e.g. GARCH(1,1)) from slow-decaying
+    (power-law, long memory) clustering. Returns the slope of log|ACF| vs lag
+    so values are negative-or-zero; magnitude near 0 means heavy long memory.
+    """
+    acfs = [max(1e-6, abs(_autocorr(absr, lag))) for lag in lags]
+    lag_arr = np.array(list(lags), dtype=float)
+    log_acf = np.log(np.asarray(acfs, dtype=float))
+    # OLS slope of log_acf vs lag
+    x = lag_arr - lag_arr.mean()
+    y = log_acf - log_acf.mean()
+    denom = float(x @ x)
+    if denom <= 0:
+        return 0.0
+    return float((x @ y) / denom)
+
+
+def _kurt_excess(x: np.ndarray) -> float:
+    xc = x - x.mean()
+    m2 = float(np.mean(xc ** 2))
+    if m2 <= 0:
+        return 0.0
+    return float(np.mean(xc ** 4) / (m2 ** 2) - 3.0)
+
+
+def _aggregational_kurt_decay(r: np.ndarray, window: int = 20) -> float:
+    """1 − kurt(sum over window) / kurt(raw).
+
+    Aggregational Gaussianity (Cont): for GARCH and most clustering ABMs, the
+    sum-over-window returns approach Gaussian (excess kurt → 0). For α-stable
+    Lévy, kurtosis is theoretically undefined / unchanged. So this number
+    distinguishes "tails come from clustering" (→ +1) from "tails are
+    structural" (→ ~0 or negative).
+    """
+    r = r[np.isfinite(r)]
+    if len(r) < 4 * window:
+        return float("nan")
+    raw_k = _kurt_excess(r)
+    if not np.isfinite(raw_k) or raw_k == 0:
+        return float("nan")
+    n_blocks = len(r) // window
+    blocks = r[:n_blocks * window].reshape(n_blocks, window).sum(axis=1)
+    agg_k = _kurt_excess(blocks)
+    return float(1.0 - agg_k / raw_k)
+
+
 def fingerprint(returns: np.ndarray, *, compute_hill: bool = True) -> np.ndarray:
     """Raw (unstandardized) stylized-facts fingerprint of a return series.
 
-    Parameters
-    ----------
-    returns
-        The series. For price ABMs this is log-returns. For priceless ABMs
-        (MG/GCMG) it is the attendance excess `2A − N` — a discrete integer
-        series for which a power-law tail index is meaningless.
-    compute_hill
-        If False, the Hill feature is filled with `HILL_ALPHA_CAP` (the
-        "thin tail" verdict). Use False for discrete-integer series.
+    Length = `len(FEATURE_NAMES)`. v4 adds three Cont-outside axes
+    (acf_absret_long, acf_absret_decay, agg_kurt_decay) designed to break
+    the GARCH(1,1) ↔ ABM blind spot identified in v3.
     """
     r = np.asarray(returns, dtype=float)
     r = r[np.isfinite(r)]
@@ -107,13 +156,23 @@ def fingerprint(returns: np.ndarray, *, compute_hill: bool = True) -> np.ndarray
     kurt = float(np.mean(rc ** 4) / (m2 ** 2) - 3.0) if m2 > 0 else 0.0
     hill = hill_tail_index(r) if compute_hill else HILL_ALPHA_CAP
     acf_ret = _autocorr(r, 1)
-    acf_abs = float(np.mean([_autocorr(np.abs(r), l) for l in range(1, 6)]))
+    absr = np.abs(r)
+    acf_abs_short = float(np.mean([_autocorr(absr, l) for l in range(1, 6)]))
     if len(r) > 2:
         lev = _autocorr_cross(r[:-1], r[1:] ** 2)
     else:
         lev = 0.0
+    # v4 additions
+    if len(absr) > 50:
+        acf_abs_long = float(np.mean([_autocorr(absr, l) for l in range(20, 51)]))
+        acf_decay = _acf_decay_slope(absr)
+    else:
+        acf_abs_long = float("nan")
+        acf_decay = float("nan")
+    agg_kd = _aggregational_kurt_decay(r, window=20)
 
-    return np.array([vol, kurt, hill, acf_ret, acf_abs, lev], dtype=float)
+    return np.array([vol, kurt, hill, acf_ret, acf_abs_short, lev,
+                     acf_abs_long, acf_decay, agg_kd], dtype=float)
 
 
 def standardize(fps: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
