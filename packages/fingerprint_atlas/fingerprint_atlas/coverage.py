@@ -32,15 +32,32 @@ _CANONICAL_FACTS = [
 ]
 
 
+# OpenAlex top-level fields-of-study that are too generic to act as a
+# 'mechanism' label — they pollute the coverage matrix with empty rows.
+_GENERIC_OA_CONCEPTS = frozenset({
+    "Computer science", "Economics", "Business", "Mathematics",
+    "Physics", "Engineering", "Psychology", "Finance",
+    "Futures contract", "Algorithmic trading", "Artificial intelligence",
+    "Machine learning", "Deep learning", "Optimization",
+    "Mathematical economics", "Microeconomics", "Macro",
+    "Industrial organization", "Financial economics",
+    "Stylized fact",  # too generic AS A MECHANISM (it IS a target column)
+})
+
+
 def _primary_tag(row: dict) -> str:
-    """Mirror of literature_map.primary_tag; duplicated to avoid an import
-    cycle when this module is imported standalone."""
+    """Mirror of literature_map.primary_tag with one extra filter:
+    generic OpenAlex top-level concepts (Computer science / Economics /
+    Business / etc) don't count as a mechanism label — they produce
+    rows that have no useful coverage signal."""
     tags = row.get("mechanism_tags") or []
     if tags:
         return tags[0]
-    concepts = (row.get("oa_concepts") or "").split(",")
-    first = concepts[0].strip() if concepts else ""
-    return first or "other"
+    for concept in (row.get("oa_concepts") or "").split(","):
+        c = concept.strip()
+        if c and c not in _GENERIC_OA_CONCEPTS:
+            return c
+    return "untagged"
 
 
 def build_coverage(rows: list[dict], *, top_rows: int = 15,
@@ -54,7 +71,27 @@ def build_coverage(rows: list[dict], *, top_rows: int = 15,
     cols = facts or _CANONICAL_FACTS
 
     tag_counts = Counter(_primary_tag(r) for r in rows)
-    row_labels = [t for t, _ in tag_counts.most_common(top_rows)]
+    # Drop rows whose papers have zero targeted-fact intersections — they
+    # contribute nothing to the heatmap and just create visual noise.
+    candidate_tags = [t for t, _ in tag_counts.most_common(top_rows * 2)]
+    row_labels: list[str] = []
+    for t in candidate_tags:
+        if len(row_labels) >= top_rows:
+            break
+        # quick relevance check: at least one paper with this tag has a
+        # canonical fact in its stylized_facts_targeted.
+        has_any = False
+        for r in rows:
+            if _primary_tag(r) != t:
+                continue
+            for raw in (r.get("stylized_facts_targeted") or []):
+                if _canonical_fact(raw) in cols:
+                    has_any = True
+                    break
+            if has_any:
+                break
+        if has_any:
+            row_labels.append(t)
     col_idx = {c: j for j, c in enumerate(cols)}
     row_idx = {t: i for i, t in enumerate(row_labels)}
 

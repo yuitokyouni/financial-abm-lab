@@ -72,3 +72,22 @@ def test_render_heatmap_writes_png(tmp_path):
     render_heatmap(cov, out)
     assert os.path.exists(out)
     assert os.path.getsize(out) > 1000  # non-empty PNG
+
+
+def test_build_coverage_drops_zero_total_rows():
+    """A tag that only appears in papers whose stylized_facts_targeted is
+    empty or non-canonical should NOT show up as a row (visual noise)."""
+    from fingerprint_atlas.coverage import build_coverage
+    rows = [
+        {"arxiv_id": "g1", "title": "Generic", "mechanism_tags": [],
+         "oa_concepts": "Computer science",
+         "stylized_facts_targeted": []},  # zero-total, generic concept
+        {"arxiv_id": "g2", "title": "MG2",
+         "mechanism_tags": ["minority-game"],
+         "oa_concepts": "",
+         "stylized_facts_targeted": ["fat-tails"]},
+    ]
+    cov = build_coverage(rows, top_rows=10)
+    assert "minority-game" in cov["row_labels"]
+    assert "Computer science" not in cov["row_labels"]
+    assert "untagged" not in cov["row_labels"]
