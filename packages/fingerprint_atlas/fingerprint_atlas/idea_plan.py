@@ -76,9 +76,15 @@ implementation plan. Output ONE JSON object with this exact shape:
   },
 
   "knowhow_techniques_to_apply": [<list of technique names from
-                                   `candidate_techniques` that the user
-                                   should keep in mind, e.g. SBI / Sobol
-                                   pre-screen / out-of-sample testing>],
+                                   `candidate_techniques` that genuinely
+                                   fit the idea. Honest empty list is
+                                   acceptable if NONE of the techniques
+                                   apply (e.g. mechanistic-interpretability
+                                   ideas have nothing in common with
+                                   classical-ABM calibration techniques)>],
+  "techniques_skip_reason": "<MUST be set to a 1-sentence Japanese reason
+                              if knowhow_techniques_to_apply is empty;
+                              null otherwise>",
   "calibration_strategy": "<1 sentence in Japanese>",
   "validation_strategy": "<1 sentence in Japanese>",
   "references": [<arxiv_ids from candidate_literature only>]
@@ -93,9 +99,14 @@ Available context (use these to anchor the plan in concrete prior work):
                                    mechanism_combo / new_method spec so the
                                    plan inherits a real structural anchor.
   - candidate_techniques        : 15-row knowhow table (calibration,
-                                   validation, ablation tricks). Pick at
-                                   least one for calibration_strategy and
-                                   one for validation_strategy.
+                                   validation, ablation tricks). Use them
+                                   when they actually fit; if your idea is
+                                   off the ABM-classical track (e.g. uses
+                                   LLM internals, neural probes, etc), it
+                                   is FINE to leave the list empty AND
+                                   write techniques_skip_reason explaining
+                                   why. A wrong fit is worse than honest
+                                   absence.
 
 Hard constraints:
   1. If the judgment category is 'trivial_variant' or 'incremental_novelty',
