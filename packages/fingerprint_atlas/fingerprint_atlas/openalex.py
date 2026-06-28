@@ -111,6 +111,60 @@ def fetch_paper(arxiv_id: str) -> dict | None:
     }
 
 
+# ----- title search ------------------------------------------------------
+
+def search_by_title(title: str, year: int | None = None) -> dict | None:
+    """Look a paper up on OpenAlex by title, return its canonical arxiv_id.
+
+    Use case: a row whose arxiv_id was stored in a broken form (e.g. old
+    category-prefix stripped). We still have the title in DB, so this
+    pulls the right work back. `year` (when provided) disambiguates
+    similarly-titled papers.
+
+    Returns {oa_paper_id, arxiv_id, doi} or None on miss."""
+    if not title:
+        return None
+    q = urllib.parse.quote(title[:200])
+    url = f"{_OA_BASE}/works?search={q}&per_page=3"
+    raw = _http_get_json(url)
+    if not raw or not isinstance(raw.get("results"), list) or not raw["results"]:
+        return None
+    for work in raw["results"]:
+        if year and work.get("publication_year") != year:
+            continue
+        arxiv_id = _arxiv_id_from_work(work)
+        if arxiv_id:
+            return {
+                "oa_paper_id": work.get("id"),
+                "arxiv_id": arxiv_id,
+                "doi": work.get("doi"),
+                "title": work.get("title"),
+                "year": work.get("publication_year"),
+            }
+    return None
+
+
+def _arxiv_id_from_work(work: dict) -> str | None:
+    """Extract arxiv_id (incl. old-style category prefix) from an OpenAlex
+    work payload — checks ids.arxiv first, falls back to locations[]."""
+    if not isinstance(work, dict):
+        return None
+    ids = work.get("ids") or {}
+    if "arxiv" in ids and isinstance(ids["arxiv"], str):
+        m = re.search(r"(\d{4}\.\d{4,5}|[a-z\-]+/\d{7})", ids["arxiv"])
+        if m:
+            return m.group(1)
+    for loc in (work.get("locations") or []):
+        url_field = (loc or {}).get("landing_page_url", "") or ""
+        m = re.search(r"arxiv\.org/abs/(\S+)", url_field)
+        if m:
+            aid = m.group(1).rstrip("/")
+            # strip version suffix to match the rest of the codebase's
+            # base-id convention
+            return re.sub(r"v\d+$", "", aid)
+    return None
+
+
 # ----- reference walking -------------------------------------------------
 
 _OA_WORK_FIELDS = (
@@ -130,27 +184,12 @@ def _resolve_oa_work(oa_id: str) -> dict | None:
     raw = _http_get_json(url)
     if not raw or not isinstance(raw, dict):
         return None
-    ids = raw.get("ids") or {}
-    # arxiv id can appear as 'arxiv' or inside locations[].landing_page_url
-    arxiv_id = None
-    if "arxiv" in ids and isinstance(ids["arxiv"], str):
-        # Format like 'https://arxiv.org/abs/2503.00320' or just '2503.00320'
-        m_arxiv = re.search(r"(\d{4}\.\d{4,5}|[a-z\-]+/\d{7})", ids["arxiv"])
-        if m_arxiv:
-            arxiv_id = m_arxiv.group(1)
-    if not arxiv_id:
-        for loc in (raw.get("locations") or []):
-            url_field = (loc or {}).get("landing_page_url", "")
-            m_arxiv = re.search(r"arxiv\.org/abs/(\S+)", url_field or "")
-            if m_arxiv:
-                arxiv_id = m_arxiv.group(1).rstrip("/")
-                break
     return {
         "oa_paper_id": raw.get("id"),
         "title": raw.get("title"),
         "year": raw.get("publication_year"),
         "cited_by_count": raw.get("cited_by_count"),
-        "arxiv_id": arxiv_id,
+        "arxiv_id": _arxiv_id_from_work(raw),
     }
 
 

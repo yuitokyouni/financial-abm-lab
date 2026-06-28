@@ -98,3 +98,49 @@ def test_set_oa_metadata_roundtrip():
         assert row["oa_cited_by_count"] == 42
         assert "Econophysics" in row["oa_concepts"]
         assert row["oa_fetched_at"]
+
+
+def test_search_by_title_returns_canonical_arxiv_id(monkeypatch):
+    """OpenAlex title search resolves to canonical arxiv_id with category
+    prefix preserved — the recovery path for rows whose arxiv_id was
+    stored in the broken truncated form."""
+    from fingerprint_atlas import openalex as oa
+    fake = {
+        "results": [
+            {
+                "id": "https://openalex.org/W77",
+                "title": "Stylized facts of financial markets",
+                "publication_year": 2001,
+                "ids": {"arxiv": "https://arxiv.org/abs/cond-mat/0101326"},
+                "doi": "10.48550/arxiv.cond-mat/0101326",
+            },
+        ],
+    }
+    monkeypatch.setattr(oa, "_http_get_json", lambda url, **kw: fake)
+    out = oa.search_by_title("Stylized facts of financial markets",
+                              year=2001)
+    assert out["arxiv_id"] == "cond-mat/0101326"
+    assert "openalex.org/W77" in out["oa_paper_id"]
+
+
+def test_search_by_title_year_disambiguates(monkeypatch):
+    """When the top hit is a different-year paper, the year filter
+    should skip it and pick the next candidate."""
+    from fingerprint_atlas import openalex as oa
+    fake = {
+        "results": [
+            {  # wrong year — should be skipped
+                "id": "https://openalex.org/Wbad",
+                "publication_year": 1990,
+                "ids": {"arxiv": "https://arxiv.org/abs/wrong/year"},
+            },
+            {  # right year
+                "id": "https://openalex.org/Wgood",
+                "publication_year": 2001,
+                "ids": {"arxiv": "https://arxiv.org/abs/cond-mat/0101326"},
+            },
+        ],
+    }
+    monkeypatch.setattr(oa, "_http_get_json", lambda url, **kw: fake)
+    out = oa.search_by_title("anything", year=2001)
+    assert out["arxiv_id"] == "cond-mat/0101326"

@@ -424,55 +424,56 @@ def cmd_enrich_via_s2(args) -> int:
 def cmd_fix_arxiv_ids(args) -> int:
     """One-shot migration: scan DB for arxiv_ids that look like an old-style
     paper with the category prefix stripped (e.g. '0101326v1' that should
-    be 'cond-mat/0101326v1'). Re-query arxiv to get the canonical entry_id
-    and UPDATE the row in place.
+    be 'cond-mat/0101326v1'). Recover the canonical form by searching
+    OpenAlex by the row's title — the arxiv API itself rejects the bare
+    truncated id with HTTP 400 (needs the category prefix that was lost).
 
     Pre-2007 arxiv IDs are 7 digits, e.g. 0103089v1. New-style IDs are
-    YYMM.NNNNN (4 + 4-5 digits). Anything matching the old-shape that
-    lacks a '/' is suspect."""
-    from .arxiv_ingest import _extract_arxiv_id_from_entry
+    YYMM.NNNNN. Anything matching the old shape with no '/' is suspect."""
+    from .openalex import search_by_title, sleep_for_rate_limit
     import sqlite3
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
-    # Look-7-digits-no-slash: old-style id with the prefix dropped.
     suspect_re = re.compile(r"^\d{7}(v\d+)?$")
     suspects = [r for r in rows if suspect_re.match(r["arxiv_id"])]
     if not suspects:
         print("no rows with old-style arxiv_id missing a category prefix.")
         return 0
-    print(f"found {len(suspects)} suspect row(s); re-querying arxiv to "
-          "recover the canonical id...")
-    try:
-        import arxiv
-    except ImportError:
-        print("arxiv SDK not available", file=sys.stderr)
-        return 1
+    print(f"found {len(suspects)} suspect row(s); recovering canonical "
+          "arxiv_id via OpenAlex title search...")
     fixes: list[tuple[str, str]] = []
+    n_miss = 0
     for r in suspects:
-        # arxiv accepts the truncated form as id_list and returns the
-        # full canonical entry_id (incl. category prefix) in the result.
-        base = re.sub(r"v\d+$", "", r["arxiv_id"])
-        try:
-            search = arxiv.Search(id_list=[base])
-            client = arxiv.Client(page_size=1, delay_seconds=3.0)
-            results = list(client.results(search))
-        except Exception as exc:
-            print(f"  ! {r['arxiv_id']}: arxiv lookup failed ({exc})")
+        result = search_by_title(r["title"], year=r.get("year"))
+        if not result or not result.get("arxiv_id"):
+            print(f"  - {r['arxiv_id']:<16s} no canonical id found "
+                  f"(title: {r['title'][:50]}...)")
+            n_miss += 1
+            sleep_for_rate_limit(args.sleep)
             continue
-        if not results:
-            print(f"  - {r['arxiv_id']}: not found on arxiv (skipping)")
+        # Preserve version suffix from the original id if present
+        version_match = re.search(r"(v\d+)$", r["arxiv_id"])
+        canonical = result["arxiv_id"]
+        if "/" not in canonical:
+            print(f"  ? {r['arxiv_id']:<16s} OpenAlex returned non-prefixed "
+                  f"id {canonical!r} (skipping)")
+            n_miss += 1
+            sleep_for_rate_limit(args.sleep)
             continue
-        canonical = _extract_arxiv_id_from_entry(results[0].entry_id)
+        if version_match:
+            canonical = canonical + version_match.group(1)
         if canonical == r["arxiv_id"]:
-            print(f"  = {r['arxiv_id']}: already canonical, no fix needed")
+            print(f"  = {r['arxiv_id']}: already canonical")
+            sleep_for_rate_limit(args.sleep)
             continue
         fixes.append((r["arxiv_id"], canonical))
         print(f"  + {r['arxiv_id']:<16s} → {canonical}")
+        sleep_for_rate_limit(args.sleep)
     if args.dry_run:
-        print(f"\n(dry-run) would update {len(fixes)} row(s).")
+        print(f"\n(dry-run) would update {len(fixes)} row(s), miss {n_miss}.")
         return 0
     if not fixes:
-        print("\nnothing to update.")
+        print(f"\nnothing to update (miss {n_miss}).")
         return 0
     with sqlite3.connect(args.db) as con:
         for old, new in fixes:
@@ -481,7 +482,7 @@ def cmd_fix_arxiv_ids(args) -> int:
                 (new, old),
             )
         con.commit()
-    print(f"\nupdated {len(fixes)} row(s).")
+    print(f"\nupdated {len(fixes)} row(s), miss {n_miss}.")
     return 0
 
 
@@ -971,6 +972,8 @@ def main() -> int:
     )
     p_fa.add_argument("--dry-run", action="store_true",
                       help="print planned updates without modifying the DB")
+    p_fa.add_argument("--sleep", type=float, default=0.5,
+                      help="seconds between OpenAlex title searches")
 
     p_eo = sub.add_parser(
         "enrich-via-oa",
