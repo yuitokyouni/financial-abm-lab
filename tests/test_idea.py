@@ -114,6 +114,61 @@ def test_rank_proposals_empty_when_no_proposals():
         assert out == []
 
 
+def test_judge_idea_post_filters_hallucinated_arxiv_ids():
+    """C: verdict arxiv ids must come from candidate_literature. Anything
+    else gets either kept-but-flagged (in_db) or dropped (hallucinated)."""
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+    )
+    with tempfile.TemporaryDirectory() as td:
+        db = _populate_minimal(td)
+        ensure_literature_schema(db)
+        # Seed two arxiv rows: '2503.00320' will be a candidate via aspect
+        # tokens, '2602.07023' will exist in DB but won't be ranked.
+        upsert_literature_metadata(
+            db, arxiv_id="2503.00320v2",
+            title="TRIBE: LLM agents in bond markets",
+            authors="Vidler, Walsh", year=2025, published_date="2025-03-01",
+            primary_category="q-fin.TR", abstract="",
+        )
+        upsert_literature_metadata(
+            db, arxiv_id="2602.07023v2",
+            title="Behavioral Consistency Validation for LLM Agents",
+            authors="Li et al.", year=2026, published_date="2026-02-09",
+            primary_category="q-fin.TR", abstract="",
+        )
+        fake_aspects = {
+            "agent_types": ["LLM-trader"],
+            "key_keywords": ["tribe", "llm", "bond"],
+            "target_stylized_facts": [],
+            "switching_mechanism": None, "price_formation": None,
+            "novelty_claim": None,
+        }
+        fake_verdict = {
+            "category": "novel_combination",
+            "closest_method": None,
+            # candidate-list id, in-DB-but-not-candidate id, pure hallucination
+            "closest_literature_arxiv_ids": [
+                "2503.00320v2", "2602.07023v2", "9999.99999v1",
+            ],
+            "closest_proposal_id": None,
+            "covered_aspects": [],
+            "novel_aspects": [],
+            "differentiation_suggestions": [],
+            "confidence": 0.7,
+            "summary_ja": "",
+        }
+        result = judge_idea(db, "LLM TRIBE-like idea about bond markets",
+                            dry_run_aspects=fake_aspects,
+                            dry_run_verdict=fake_verdict)
+        # Hallucinated id is dropped from the verdict entirely.
+        assert "9999.99999v1" not in result["verdict"]["closest_literature_arxiv_ids"]
+        # Hallucination is surfaced in warnings.
+        assert "9999.99999v1" in result["verdict_warnings"]["hallucinated"]
+        # Both real ids survive (one as candidate, one as in_db_only).
+        assert "2503.00320v2" in result["verdict"]["closest_literature_arxiv_ids"]
+
+
 def test_rank_proposals_skips_rejected_rows():
     """Rejected proposals should not surface in idea_judge context."""
     from fingerprint_atlas.db import insert_proposal, update_proposal_status

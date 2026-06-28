@@ -69,12 +69,14 @@ def cmd_judge(args) -> int:
     aspects = result["aspects"]
     verdict = result["verdict"]
     matches = result["matches"]
+    warnings = result.get("verdict_warnings") or {}
     idea_id = insert_idea(
         args.db, idea_text=idea_text, aspects=aspects,
-        judgment={"verdict": verdict, "matches": matches},
+        judgment={"verdict": verdict, "matches": matches,
+                  "warnings": warnings},
         judgment_llm_model=result["llm_model"], status="judged",
     )
-    _print_judgment(idea_id, idea_text, aspects, matches, verdict)
+    _print_judgment(idea_id, idea_text, aspects, matches, verdict, warnings)
     return 0
 
 
@@ -160,7 +162,8 @@ def cmd_run(args) -> int:
         judgment_llm_model=judgment["llm_model"], status="judged",
     )
     _print_judgment(idea_id, idea_text, judgment["aspects"],
-                    judgment["matches"], judgment["verdict"])
+                    judgment["matches"], judgment["verdict"],
+                    judgment.get("verdict_warnings") or {})
 
     print()
     print("=" * 70)
@@ -249,7 +252,8 @@ def cmd_show(args) -> int:
 # ----- pretty print helper -------------------------------------------------
 
 def _print_judgment(idea_id: int, idea_text: str, aspects: dict,
-                    matches: dict, verdict: dict) -> None:
+                    matches: dict, verdict: dict,
+                    warnings: dict | None = None) -> None:
     print(f"\nidea #{idea_id}: {idea_text[:80]}")
     print("\n--- extracted aspects ---")
     for k, v in aspects.items():
@@ -281,6 +285,14 @@ def _print_judgment(idea_id: int, idea_text: str, aspects: dict,
             print(f"    - {s}")
     if verdict.get("summary_ja"):
         print(f"\n  まとめ: {verdict['summary_ja']}")
+    warnings = warnings or {}
+    if warnings.get("in_db_only"):
+        print(f"\n  ⚠ verdict cited arxiv id(s) NOT surfaced by ranking but "
+              f"present in DB (LLM memory): {warnings['in_db_only']}")
+    if warnings.get("hallucinated"):
+        print(f"\n  ⚠ verdict cited arxiv id(s) NOT in DB (hallucination, "
+              f"dropped from closest_literature_arxiv_ids): "
+              f"{warnings['hallucinated']}")
 
 
 def main() -> int:

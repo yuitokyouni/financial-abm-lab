@@ -68,7 +68,10 @@ Return ONE JSON object:
   "category": "trivial_variant" | "incremental_novelty" |
               "novel_combination" | "genuinely_novel",
   "closest_method": "<method.name from candidate_methods, or null>",
-  "closest_literature_arxiv_ids": [<arxiv_ids from candidate_literature>],
+  "closest_literature_arxiv_ids": [<arxiv_ids — MUST be a subset of the
+                                   arxiv_ids in candidate_literature; do
+                                   NOT cite papers from your pre-training
+                                   memory or invent ids>],
   "closest_proposal_id": <int or null>,
   "covered_aspects": [<aspects already present in the DB; cite which match>],
   "novel_aspects": [<aspects NOT in the DB; the genuinely new pieces>],
@@ -277,11 +280,57 @@ def judge_idea(db_path: str, idea_text: str, *,
         verdict = dry_run_verdict
     else:
         verdict = _call_groq(VERDICT_SYSTEM_PROMPT, payload, groq_model)
+    warnings = _filter_verdict_arxiv_ids(verdict, literature, db_path)
     return {
         "aspects": aspects,
         "matches": {
             "methods": methods, "literature": literature, "proposals": proposals,
         },
         "verdict": verdict,
+        "verdict_warnings": warnings,
         "llm_model": groq_model,
     }
+
+
+def _filter_verdict_arxiv_ids(verdict: dict, candidate_literature: list[dict],
+                              db_path: str) -> dict:
+    """Drop arxiv ids the LLM cited that aren't in the candidate list.
+
+    Bucket the cited ids three ways (same scheme as propose.classify_references):
+      - in_candidates : id was in candidate_literature (the only allowed source)
+      - in_db_only    : id exists in literature_methods but wasn't surfaced
+                        by ranking — LLM probably pulled it from pre-training
+                        but it happens to be real. Kept but flagged.
+      - hallucinated  : id parses as arxiv but isn't anywhere in the DB.
+                        Dropped from the verdict, listed in warnings.
+
+    Mutates `verdict` in place; returns a `warnings` dict the caller can
+    surface in the CLI output / persist alongside the judgment.
+    """
+    from .propose import _arxiv_base, _extract_arxiv_id
+    ids = verdict.get("closest_literature_arxiv_ids") or []
+    if not ids:
+        return {"in_db_only": [], "hallucinated": []}
+    candidate_bases = {_arxiv_base(r["arxiv_id"]) for r in candidate_literature
+                       if r.get("arxiv_id")}
+    db_bases: set[str] = set()
+    try:
+        from .db import load_literature
+        db_bases = {_arxiv_base(r["arxiv_id"]) for r in load_literature(db_path)}
+    except Exception:
+        pass
+    kept: list[str] = []
+    in_db_only: list[str] = []
+    hallucinated: list[str] = []
+    for cited in ids:
+        aid = _extract_arxiv_id(cited) or cited
+        base = _arxiv_base(aid)
+        if base in candidate_bases:
+            kept.append(cited)
+        elif base in db_bases:
+            kept.append(cited)
+            in_db_only.append(cited)
+        else:
+            hallucinated.append(cited)
+    verdict["closest_literature_arxiv_ids"] = kept
+    return {"in_db_only": in_db_only, "hallucinated": hallucinated}
