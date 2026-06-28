@@ -233,3 +233,50 @@ def test_summarize_corpus_includes_literature():
     # _select_literature_for_context, so both appear. Order matters:
     assert lit_ids.index("2412.10000") < lit_ids.index("2412.10001")
     assert ctx["n_literature_total"] == 2
+
+
+# ---- code_url extraction (regex only; PWC fetch is network-bound) -------
+
+def test_extract_github_from_text_finds_canonical_url():
+    from fingerprint_atlas.code_links import extract_github_from_text
+    abstract = (
+        "We propose TRIBE, an LLM-augmented bond-market ABM. "
+        "Source code available at https://github.com/Alicia-V/TRIBE-bond ."
+    )
+    assert extract_github_from_text(abstract) == "https://github.com/Alicia-V/TRIBE-bond"
+
+
+def test_extract_github_strips_trailing_punctuation_and_git_suffix():
+    from fingerprint_atlas.code_links import extract_github_from_text
+    assert (extract_github_from_text("Code: https://github.com/foo/bar.git).")
+            == "https://github.com/foo/bar")
+    assert (extract_github_from_text("see (https://github.com/foo/bar-baz),")
+            == "https://github.com/foo/bar-baz")
+
+
+def test_extract_github_returns_none_on_no_match():
+    from fingerprint_atlas.code_links import extract_github_from_text
+    assert extract_github_from_text(None) is None
+    assert extract_github_from_text("") is None
+    assert extract_github_from_text("no github link here, https://example.com/foo") is None
+
+
+def test_set_literature_code_url_roundtrip():
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+        load_literature, set_literature_code_url,
+    )
+    with tempfile.TemporaryDirectory() as td:
+        db = f"{td}/lit.db"
+        ensure_literature_schema(db)
+        upsert_literature_metadata(
+            db, arxiv_id="2503.99999v1", title="x", authors="A",
+            year=2025, published_date="2025-03-01T00:00:00Z",
+            primary_category="q-fin.TR", abstract="see https://github.com/foo/bar",
+        )
+        set_literature_code_url(db, "2503.99999v1",
+                                code_url="https://github.com/foo/bar",
+                                source="abstract")
+        rows = load_literature(db)
+        assert rows[0]["code_url"] == "https://github.com/foo/bar"
+        assert rows[0]["code_url_source"] == "abstract"

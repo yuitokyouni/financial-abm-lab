@@ -113,7 +113,44 @@ def cmd_show(args) -> int:
     if p["relevance_score"] is not None:
         print(f"relevance_score         : {p['relevance_score']}")
     print(f"extracted_by            : {p['extracted_by_model']}")
+    if p.get("code_url"):
+        src = p.get("code_url_source") or "?"
+        print(f"code_url ({src:<8s})     : {p['code_url']}")
     print(f"ingested_at             : {p['ingested_at']}")
+    return 0
+
+
+def cmd_backfill_code(args) -> int:
+    """For every already-ingested paper without a code_url, try regex over
+    the abstract first, then PWC API. Useful after the code_url column was
+    added — older rows have no link."""
+    from .code_links import resolve_code_url
+    from .db import set_literature_code_url
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    todo = [r for r in rows if not r.get("code_url")]
+    if not todo:
+        print("all rows already have code_url.")
+        return 0
+    print(f"trying to backfill code_url for {len(todo)} paper(s)...")
+    n_filled, n_skipped = 0, 0
+    for i, p in enumerate(todo):
+        if args.limit and i >= args.limit:
+            print(f"  (--limit {args.limit} reached, stopping)")
+            break
+        try:
+            url, source = resolve_code_url(p["arxiv_id"], p["abstract"])
+        except Exception as exc:
+            print(f"  ! {p['arxiv_id']}: {exc}")
+            continue
+        if url:
+            set_literature_code_url(args.db, p["arxiv_id"],
+                                    code_url=url, source=source)
+            print(f"  + {p['arxiv_id']} ({source}): {url}")
+            n_filled += 1
+        else:
+            n_skipped += 1
+    print(f"\nfilled {n_filled}, skipped {n_skipped}.")
     return 0
 
 
@@ -170,9 +207,17 @@ def main() -> int:
     p_se.add_argument("query")
     p_se.add_argument("--limit", type=int, default=20)
 
+    p_bf = sub.add_parser(
+        "backfill-code",
+        help=("for already-ingested papers without code_url, run the "
+              "abstract regex + PWC API to fill it in"),
+    )
+    p_bf.add_argument("--limit", type=int, default=0,
+                      help="stop after N papers (0 = no limit)")
+
     args = ap.parse_args()
     handlers = {"ingest": cmd_ingest, "list": cmd_list, "show": cmd_show,
-                "search": cmd_search}
+                "search": cmd_search, "backfill-code": cmd_backfill_code}
     return handlers[args.cmd](args)
 
 

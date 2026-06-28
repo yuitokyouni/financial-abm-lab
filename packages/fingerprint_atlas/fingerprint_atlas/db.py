@@ -237,13 +237,20 @@ _LITERATURE_INDEXES = [
 
 
 def ensure_literature_schema(db_path: str) -> None:
-    """Idempotent literature_methods table create."""
+    """Idempotent literature_methods table create + ALTER migrations."""
     parent = os.path.dirname(db_path) or "."
     os.makedirs(parent, exist_ok=True)
     with sqlite3.connect(db_path) as con:
         con.executescript(LITERATURE_SCHEMA)
         for stmt in _LITERATURE_INDEXES:
             con.execute(stmt)
+        # ALTER migrations for older DBs.
+        if not _column_exists(con, "literature_methods", "code_url"):
+            con.execute("ALTER TABLE literature_methods ADD COLUMN code_url TEXT")
+        if not _column_exists(con, "literature_methods", "code_url_source"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN code_url_source TEXT"
+            )
         con.commit()
 
 
@@ -315,7 +322,8 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
            "primary_category, abstract, mechanism_summary, mechanism_tags, "
            "stylized_facts_targeted, novelty_signal, relevance_score, "
            "extracted_by_model, extraction_attempts, user_notes, user_tags, "
-           "ingested_at, updated_at FROM literature_methods")
+           "ingested_at, updated_at, code_url, code_url_source "
+           "FROM literature_methods")
     where: list[str] = []
     args: list[Any] = []
     if min_relevance is not None:
@@ -345,8 +353,26 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
             "extracted_by_model": r[13], "extraction_attempts": r[14],
             "user_notes": r[15] or "", "user_tags": r[16] or "",
             "ingested_at": r[17], "updated_at": r[18],
+            "code_url": r[19], "code_url_source": r[20],
         })
     return out
+
+
+def set_literature_code_url(db_path: str, arxiv_id: str, *,
+                             code_url: str | None, source: str) -> None:
+    """Persist a code-repo URL for a paper. `source` ∈ {'abstract', 'pwc'}
+    so we know how confident the link is."""
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET code_url = ?, code_url_source = ?, "
+            "updated_at = ? WHERE arxiv_id = ?",
+            (code_url, source, now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
 
 
 # ============================================================================
