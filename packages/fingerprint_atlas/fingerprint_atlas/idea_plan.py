@@ -84,6 +84,19 @@ implementation plan. Output ONE JSON object with this exact shape:
   "references": [<arxiv_ids from candidate_literature only>]
 }
 
+Available context (use these to anchor the plan in concrete prior work):
+  - candidate_literature        : ranked related papers (titles, mechanisms)
+  - candidate_literature_code   : same papers' linked repos (URL, README
+                                   excerpt, top-level file tree). When a
+                                   paper here is the closest prior art,
+                                   reference its file/class names in the
+                                   mechanism_combo / new_method spec so the
+                                   plan inherits a real structural anchor.
+  - candidate_techniques        : 15-row knowhow table (calibration,
+                                   validation, ablation tricks). Pick at
+                                   least one for calibration_strategy and
+                                   one for validation_strategy.
+
 Hard constraints:
   1. If the judgment category is 'trivial_variant' or 'incremental_novelty',
      pick implementation_type='param_sweep'.
@@ -108,16 +121,37 @@ def make_plan(db_path: str, idea_text: str, judgment_payload: dict, *,
               dry_run_response: dict | None = None) -> dict:
     """Run the LLM to propose an implementation plan from a judged idea."""
     from .knowhow_techniques import load_techniques
+    from .db import load_code_snapshots
 
     aspects = judgment_payload["aspects"]
     matches = judgment_payload["matches"]
     verdict = judgment_payload["verdict"]
+    # Pull cached repo snapshots for every candidate paper that has one.
+    # Lets the LLM point at real file/class structure instead of pure
+    # research aspirations.
+    candidate_arxiv_ids = [r.get("arxiv_id") for r in matches["literature"]
+                           if r.get("arxiv_id")]
+    snaps = load_code_snapshots(db_path, candidate_arxiv_ids) if candidate_arxiv_ids else {}
+    candidate_literature_code = []
+    for r in matches["literature"]:
+        aid = r.get("arxiv_id")
+        url = r.get("code_url")
+        snap = snaps.get(aid) if aid else None
+        if not (url or snap):
+            continue
+        candidate_literature_code.append({
+            "arxiv_id": aid, "title": r.get("title"),
+            "code_url": url or (snap and snap.get("code_url")),
+            "readme_excerpt": (snap or {}).get("readme_excerpt"),
+            "file_tree": (snap or {}).get("file_tree"),
+        })
     payload = {
         "idea": idea_text,
         "aspects": aspects,
         "judgment": verdict,
         "candidate_methods": matches["methods"],
         "candidate_literature": matches["literature"],
+        "candidate_literature_code": candidate_literature_code,
         "candidate_techniques": load_techniques(db_path),
         "parameter_bounds": {k: {p: list(b) for p, b in v.items()}
                              for k, v in MODEL_BOUNDS.items()},

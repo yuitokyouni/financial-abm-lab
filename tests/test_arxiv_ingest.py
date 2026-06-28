@@ -280,3 +280,93 @@ def test_set_literature_code_url_roundtrip():
         rows = load_literature(db)
         assert rows[0]["code_url"] == "https://github.com/foo/bar"
         assert rows[0]["code_url_source"] == "abstract"
+
+
+def test_code_snapshot_roundtrip_and_load_by_arxiv_ids():
+    from fingerprint_atlas.db import (
+        ensure_code_snapshot_schema, upsert_code_snapshot, load_code_snapshots,
+    )
+    with tempfile.TemporaryDirectory() as td:
+        db = f"{td}/lit.db"
+        ensure_code_snapshot_schema(db)
+        upsert_code_snapshot(
+            db, arxiv_id="2503.99999v1",
+            code_url="https://github.com/foo/bar",
+            readme_excerpt="# bar\n\nA cool project.",
+            file_tree="src/\nREADME.md\nsetup.py",
+            status="ok",
+        )
+        upsert_code_snapshot(  # second row, will be excluded by filter
+            db, arxiv_id="2410.00001v1",
+            code_url="https://github.com/baz/qux",
+            readme_excerpt="qux", file_tree=None, status="ok",
+        )
+        snaps = load_code_snapshots(db, ["2503.99999v1"])
+        assert set(snaps) == {"2503.99999v1"}
+        assert "A cool project" in snaps["2503.99999v1"]["readme_excerpt"]
+        # update overwrites
+        upsert_code_snapshot(
+            db, arxiv_id="2503.99999v1",
+            code_url="https://github.com/foo/bar",
+            readme_excerpt="new readme", file_tree=None, status="no_readme",
+        )
+        snaps = load_code_snapshots(db, ["2503.99999v1"])
+        assert snaps["2503.99999v1"]["status"] == "no_readme"
+        assert snaps["2503.99999v1"]["readme_excerpt"] == "new readme"
+
+
+def test_make_plan_injects_code_snapshots_into_payload():
+    """When a candidate paper has a cached snapshot, plan payload should
+    expose candidate_literature_code so the LLM can reference real
+    file/class structure."""
+    from fingerprint_atlas.db import (
+        ensure_code_snapshot_schema, upsert_code_snapshot,
+    )
+    from fingerprint_atlas.idea_plan import make_plan
+    with tempfile.TemporaryDirectory() as td:
+        db = f"{td}/p.db"
+        ensure_code_snapshot_schema(db)
+        upsert_code_snapshot(
+            db, arxiv_id="2503.00320v2",
+            code_url="https://github.com/example/tribe",
+            readme_excerpt="# TRIBE\n\nA bond-market ABM.",
+            file_tree="tribe/\nREADME.md",
+            status="ok",
+        )
+        captured = {}
+
+        def fake_make_plan_response(*_a, **_kw):
+            return {"implementation_type": "param_sweep",
+                    "param_sweep": {}, "references": []}
+
+        # Monkey-patch _call_groq to capture payload, then return fake plan.
+        from fingerprint_atlas import idea_plan
+        orig = idea_plan._call_groq
+
+        def spy(_prompt, payload, _model, **_kw):
+            captured["payload"] = payload
+            return fake_make_plan_response()
+
+        idea_plan._call_groq = spy
+        try:
+            make_plan(
+                db, "tribe-style idea",
+                {
+                    "aspects": {}, "verdict": {},
+                    "matches": {
+                        "methods": [],
+                        "literature": [{
+                            "arxiv_id": "2503.00320v2",
+                            "title": "TRIBE",
+                            "code_url": "https://github.com/example/tribe",
+                        }],
+                        "proposals": [],
+                    },
+                },
+            )
+        finally:
+            idea_plan._call_groq = orig
+        clc = captured["payload"]["candidate_literature_code"]
+        assert len(clc) == 1
+        assert clc[0]["arxiv_id"] == "2503.00320v2"
+        assert "TRIBE" in (clc[0]["readme_excerpt"] or "")

@@ -358,6 +358,69 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
     return out
 
 
+CODE_SNAPSHOT_SCHEMA = """
+CREATE TABLE IF NOT EXISTS literature_code_snapshots (
+    id              INTEGER PRIMARY KEY,
+    arxiv_id        TEXT NOT NULL UNIQUE,
+    code_url        TEXT NOT NULL,
+    readme_excerpt  TEXT,           -- first ~3K chars; structure-of-repo signal for LLM plan prompts
+    file_tree       TEXT,           -- newline-separated top-level paths (capped)
+    status          TEXT NOT NULL,  -- 'ok' | 'no_readme' | 'error'
+    error_msg       TEXT,
+    fetched_at      TEXT NOT NULL
+);
+"""
+
+
+def ensure_code_snapshot_schema(db_path: str) -> None:
+    with sqlite3.connect(db_path) as con:
+        con.executescript(CODE_SNAPSHOT_SCHEMA)
+        con.commit()
+
+
+def upsert_code_snapshot(db_path: str, *, arxiv_id: str, code_url: str,
+                          readme_excerpt: str | None, file_tree: str | None,
+                          status: str, error_msg: str | None = None) -> None:
+    ensure_code_snapshot_schema(db_path)
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        con.execute(
+            "INSERT INTO literature_code_snapshots "
+            "(arxiv_id, code_url, readme_excerpt, file_tree, status, error_msg, fetched_at) "
+            "VALUES (?,?,?,?,?,?,?) "
+            "ON CONFLICT(arxiv_id) DO UPDATE SET "
+            "code_url=excluded.code_url, readme_excerpt=excluded.readme_excerpt, "
+            "file_tree=excluded.file_tree, status=excluded.status, "
+            "error_msg=excluded.error_msg, fetched_at=excluded.fetched_at",
+            (arxiv_id, code_url, readme_excerpt, file_tree, status, error_msg, now),
+        )
+        con.commit()
+
+
+def load_code_snapshots(db_path: str, arxiv_ids: list[str] | None = None
+                         ) -> dict[str, dict[str, Any]]:
+    """Return arxiv_id → snapshot dict. If `arxiv_ids` is given, restrict
+    to that set (no error if some are absent — snapshot is best-effort)."""
+    ensure_code_snapshot_schema(db_path)
+    sql = ("SELECT arxiv_id, code_url, readme_excerpt, file_tree, status, "
+           "error_msg, fetched_at FROM literature_code_snapshots")
+    args: tuple = ()
+    if arxiv_ids:
+        placeholders = ",".join("?" * len(arxiv_ids))
+        sql += f" WHERE arxiv_id IN ({placeholders})"
+        args = tuple(arxiv_ids)
+    out: dict[str, dict[str, Any]] = {}
+    with sqlite3.connect(db_path) as con:
+        for r in con.execute(sql, args).fetchall():
+            out[r[0]] = {
+                "arxiv_id": r[0], "code_url": r[1],
+                "readme_excerpt": r[2], "file_tree": r[3],
+                "status": r[4], "error_msg": r[5], "fetched_at": r[6],
+            }
+    return out
+
+
 def set_literature_code_url(db_path: str, arxiv_id: str, *,
                              code_url: str | None, source: str) -> None:
     """Persist a code-repo URL for a paper. `source` ∈ {'abstract', 'pwc'}

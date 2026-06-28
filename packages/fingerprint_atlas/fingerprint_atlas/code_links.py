@@ -19,6 +19,7 @@ whether to log it.
 from __future__ import annotations
 
 import json
+import os
 import re
 import urllib.error
 import urllib.parse
@@ -118,3 +119,102 @@ def resolve_code_url(arxiv_id: str, abstract: str | None) -> tuple[str | None, s
     if url:
         return url, "pwc"
     return None, None
+
+
+# ----- repo snapshot (README + top-level file list) ----------------------
+
+_README_CANDIDATES = (
+    "README.md", "Readme.md", "readme.md",
+    "README.rst", "README", "README.txt",
+)
+_GH_BRANCHES = ("HEAD", "main", "master")
+_README_MAX_CHARS = 3000
+_FILE_TREE_MAX_ENTRIES = 80
+
+
+def _parse_github_url(code_url: str) -> tuple[str, str] | None:
+    """Split https://github.com/<org>/<repo>(.git)? → (org, repo)."""
+    m = re.match(r"https?://github\.com/([^/]+)/([^/]+?)(\.git)?/?$",
+                 code_url.strip(), re.IGNORECASE)
+    if not m:
+        return None
+    return m.group(1), m.group(2)
+
+
+def _http_get_text(url: str, timeout: float = _PWC_TIMEOUT,
+                   extra_headers: dict | None = None) -> str | None:
+    headers = {"User-Agent": _USER_AGENT}
+    if extra_headers:
+        headers.update(extra_headers)
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status != 200:
+                return None
+            return resp.read().decode("utf-8", errors="replace")
+    except (urllib.error.URLError, urllib.error.HTTPError,
+            TimeoutError, OSError):
+        return None
+
+
+def _fetch_readme(org: str, repo: str) -> str | None:
+    """Try README candidates across HEAD/main/master via raw.githubusercontent."""
+    for branch in _GH_BRANCHES:
+        for name in _README_CANDIDATES:
+            url = f"https://raw.githubusercontent.com/{org}/{repo}/{branch}/{name}"
+            txt = _http_get_text(url)
+            if txt:
+                return txt[:_README_MAX_CHARS]
+    return None
+
+
+def _fetch_file_tree(org: str, repo: str) -> list[str] | None:
+    """List top-level entries via GitHub Contents API (no auth needed for
+    public repos; 60 req/hr unauth, or 5000/hr with GITHUB_TOKEN env)."""
+    headers = {"Accept": "application/vnd.github+json"}
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    url = f"https://api.github.com/repos/{org}/{repo}/contents/"
+    body = _http_get_text(url, extra_headers=headers)
+    if not body:
+        return None
+    try:
+        items = json.loads(body)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(items, list):
+        return None
+    out: list[str] = []
+    for it in items[:_FILE_TREE_MAX_ENTRIES]:
+        name = it.get("name")
+        typ = it.get("type")
+        if name and typ:
+            out.append(f"{name}/" if typ == "dir" else name)
+    return out
+
+
+def fetch_repo_snapshot(code_url: str) -> dict:
+    """Return {readme_excerpt, file_tree, status, error_msg}. Best-effort:
+    network failures don't raise, they degrade status to 'error'."""
+    parts = _parse_github_url(code_url)
+    if not parts:
+        return {"readme_excerpt": None, "file_tree": None,
+                "status": "error", "error_msg": "not a github URL"}
+    org, repo = parts
+    try:
+        readme = _fetch_readme(org, repo)
+        tree = _fetch_file_tree(org, repo)
+    except Exception as exc:
+        return {"readme_excerpt": None, "file_tree": None,
+                "status": "error", "error_msg": str(exc)[:200]}
+    tree_str = "\n".join(tree) if tree else None
+    if readme:
+        return {"readme_excerpt": readme, "file_tree": tree_str,
+                "status": "ok", "error_msg": None}
+    if tree_str:
+        # No README but we got the tree — still useful structure signal.
+        return {"readme_excerpt": None, "file_tree": tree_str,
+                "status": "no_readme", "error_msg": None}
+    return {"readme_excerpt": None, "file_tree": None,
+            "status": "error", "error_msg": "no README and no tree fetched"}

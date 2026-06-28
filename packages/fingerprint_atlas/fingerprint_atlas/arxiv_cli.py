@@ -120,6 +120,53 @@ def cmd_show(args) -> int:
     return 0
 
 
+def cmd_fetch_code_snapshots(args) -> int:
+    """For every paper with a code_url but no snapshot, fetch README +
+    top-level file tree from GitHub and cache it. Used by idea_plan to
+    show the LLM real file/class structure rather than just titles.
+
+    Unauthenticated GitHub API is rate-limited to 60/hr — set GITHUB_TOKEN
+    env var to lift the cap to 5000/hr."""
+    from .code_links import fetch_repo_snapshot
+    from .db import load_code_snapshots, upsert_code_snapshot
+    import time
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    targets = [r for r in rows if r.get("code_url")]
+    if not targets:
+        print("no rows with code_url. Run `backfill-code` first.")
+        return 0
+    cached = load_code_snapshots(args.db, [r["arxiv_id"] for r in targets])
+    todo = [r for r in targets if r["arxiv_id"] not in cached]
+    if not todo:
+        print("all code_url rows already have snapshots.")
+        return 0
+    print(f"fetching snapshots for {len(todo)} paper(s)...")
+    n_ok, n_no_readme, n_err = 0, 0, 0
+    for i, r in enumerate(todo):
+        if args.limit and i >= args.limit:
+            print(f"  (--limit {args.limit} reached, stopping)")
+            break
+        snap = fetch_repo_snapshot(r["code_url"])
+        upsert_code_snapshot(
+            args.db, arxiv_id=r["arxiv_id"], code_url=r["code_url"],
+            readme_excerpt=snap["readme_excerpt"], file_tree=snap["file_tree"],
+            status=snap["status"], error_msg=snap["error_msg"],
+        )
+        tag = {"ok": "+", "no_readme": "~", "error": "!"}[snap["status"]]
+        print(f"  {tag} {r['arxiv_id']:<14s} {snap['status']:<10s} {r['code_url']}")
+        if snap["status"] == "ok":
+            n_ok += 1
+        elif snap["status"] == "no_readme":
+            n_no_readme += 1
+        else:
+            n_err += 1
+        # GitHub raw + API are independent endpoints, but be gentle.
+        time.sleep(args.sleep)
+    print(f"\nok={n_ok}  no_readme={n_no_readme}  error={n_err}")
+    return 0
+
+
 def cmd_backfill_code(args) -> int:
     """For every already-ingested paper without a code_url, try regex over
     the abstract first, then PWC API. Useful after the code_url column was
@@ -215,9 +262,21 @@ def main() -> int:
     p_bf.add_argument("--limit", type=int, default=0,
                       help="stop after N papers (0 = no limit)")
 
+    p_fs = sub.add_parser(
+        "fetch-code-snapshots",
+        help=("for papers with code_url but no snapshot, fetch README + "
+              "top-level file tree from GitHub. Set GITHUB_TOKEN to lift "
+              "the 60/hr unauthenticated rate limit to 5000/hr."),
+    )
+    p_fs.add_argument("--limit", type=int, default=0,
+                      help="stop after N papers (0 = no limit)")
+    p_fs.add_argument("--sleep", type=float, default=1.0,
+                      help="seconds between paper snapshots (rate-limit padding)")
+
     args = ap.parse_args()
     handlers = {"ingest": cmd_ingest, "list": cmd_list, "show": cmd_show,
-                "search": cmd_search, "backfill-code": cmd_backfill_code}
+                "search": cmd_search, "backfill-code": cmd_backfill_code,
+                "fetch-code-snapshots": cmd_fetch_code_snapshots}
     return handlers[args.cmd](args)
 
 
