@@ -259,6 +259,22 @@ def ensure_literature_schema(db_path: str) -> None:
             con.execute(
                 "ALTER TABLE literature_methods ADD COLUMN pdf_scanned_at TEXT"
             )
+        if not _column_exists(con, "literature_methods", "s2_paper_id"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN s2_paper_id TEXT"
+            )
+        if not _column_exists(con, "literature_methods", "s2_tldr"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN s2_tldr TEXT"
+            )
+        if not _column_exists(con, "literature_methods", "s2_influential_citation_count"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN s2_influential_citation_count INTEGER"
+            )
+        if not _column_exists(con, "literature_methods", "s2_fetched_at"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN s2_fetched_at TEXT"
+            )
         con.commit()
 
 
@@ -331,7 +347,9 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
            "stylized_facts_targeted, novelty_signal, relevance_score, "
            "extracted_by_model, extraction_attempts, user_notes, user_tags, "
            "ingested_at, updated_at, code_url, code_url_source, arxiv_comment, "
-           "pdf_scanned_at FROM literature_methods")
+           "pdf_scanned_at, s2_paper_id, s2_tldr, "
+           "s2_influential_citation_count, s2_fetched_at "
+           "FROM literature_methods")
     where: list[str] = []
     args: list[Any] = []
     if min_relevance is not None:
@@ -363,6 +381,8 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
             "ingested_at": r[17], "updated_at": r[18],
             "code_url": r[19], "code_url_source": r[20],
             "arxiv_comment": r[21], "pdf_scanned_at": r[22],
+            "s2_paper_id": r[23], "s2_tldr": r[24],
+            "s2_influential_citation_count": r[25], "s2_fetched_at": r[26],
         })
     return out
 
@@ -428,6 +448,29 @@ def load_code_snapshots(db_path: str, arxiv_ids: list[str] | None = None
                 "status": r[4], "error_msg": r[5], "fetched_at": r[6],
             }
     return out
+
+
+def set_s2_metadata(db_path: str, arxiv_id: str, *,
+                     s2_paper_id: str | None,
+                     s2_tldr: str | None,
+                     s2_influential_citation_count: int | None) -> None:
+    """Persist Semantic Scholar enrichment for a paper. All fields are
+    optional; pass None to clear or skip a particular signal."""
+    ensure_literature_schema(db_path)
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET s2_paper_id = ?, s2_tldr = ?, "
+            "s2_influential_citation_count = ?, s2_fetched_at = ? "
+            "WHERE arxiv_id = ?",
+            (s2_paper_id, s2_tldr,
+             None if s2_influential_citation_count is None else int(s2_influential_citation_count),
+             now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
 
 
 def mark_pdf_scanned(db_path: str, arxiv_id: str) -> None:

@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import textwrap
 
@@ -332,6 +333,126 @@ def cmd_scan_pdfs_for_code(args) -> int:
     return 0
 
 
+def cmd_enrich_via_s2(args) -> int:
+    """Backfill Semantic Scholar metadata for every literature row that
+    doesn't have it yet. Adds tldr (often clearer than the abstract),
+    influential_citation_count, and the S2 paperId for cross-API lookups."""
+    from .semantic_scholar import fetch_paper, sleep_for_rate_limit
+    from .db import set_s2_metadata
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    todo = [r for r in rows
+            if not r.get("s2_paper_id") and not r.get("s2_fetched_at")]
+    if not todo:
+        print("all rows already have S2 metadata.")
+        return 0
+    print(f"enriching {len(todo)} paper(s) via Semantic Scholar...")
+    n_ok, n_miss = 0, 0
+    for i, r in enumerate(todo):
+        if args.limit and i >= args.limit:
+            print(f"  (--limit {args.limit} reached, stopping)")
+            break
+        paper = fetch_paper(r["arxiv_id"])
+        if paper:
+            try:
+                set_s2_metadata(
+                    args.db, r["arxiv_id"],
+                    s2_paper_id=paper["s2_paper_id"],
+                    s2_tldr=paper["tldr"],
+                    s2_influential_citation_count=paper["influential_citation_count"],
+                )
+                print(f"  + {r['arxiv_id']:<14s} tldr={'Y' if paper['tldr'] else 'N'} "
+                      f"infl_cit={paper['influential_citation_count']}")
+                n_ok += 1
+            except KeyError:
+                pass
+        else:
+            # Mark fetched even on miss so re-runs skip
+            try:
+                set_s2_metadata(
+                    args.db, r["arxiv_id"],
+                    s2_paper_id=None, s2_tldr=None,
+                    s2_influential_citation_count=None,
+                )
+                print(f"  - {r['arxiv_id']:<14s} not found on S2")
+                n_miss += 1
+            except KeyError:
+                pass
+        sleep_for_rate_limit(args.sleep)
+    print(f"\nenriched {n_ok}, missing {n_miss}.")
+    return 0
+
+
+def cmd_expand_via_s2(args) -> int:
+    """Walk each paper's references via S2 and report arxiv-hosted prior
+    work that isn't yet in our DB. By default only PRINTS candidates so the
+    user can review; pass --auto-ingest to bring them in via ingest-ids."""
+    from .semantic_scholar import fetch_references, sleep_for_rate_limit
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    if args.from_arxiv_id:
+        seed_papers = [r for r in rows if r["arxiv_id"] == args.from_arxiv_id]
+        if not seed_papers:
+            print(f"no row for arxiv_id={args.from_arxiv_id!r}", file=sys.stderr)
+            return 1
+    else:
+        # Default: walk references of the top N most-relevant papers.
+        seed_papers = sorted(
+            (r for r in rows if r.get("relevance_score") is not None),
+            key=lambda r: -(r["relevance_score"] or 0.0),
+        )[:args.top_seeds]
+    already_in_db: set[str] = {
+        re.sub(r"v\d+$", "", r["arxiv_id"]) for r in rows
+    }
+    candidates: dict[str, dict] = {}  # arxiv_base → ref entry
+    for i, seed in enumerate(seed_papers):
+        if args.limit and i >= args.limit:
+            print(f"(--limit {args.limit} reached, stopping seed walk)")
+            break
+        print(f"walking references of {seed['arxiv_id']} — {seed['title'][:60]}")
+        refs = fetch_references(seed["arxiv_id"], limit=args.refs_per_seed)
+        for ref in refs:
+            aid = ref.get("arxiv_id")
+            if not aid:
+                continue
+            base = re.sub(r"v\d+$", "", aid)
+            if base in already_in_db:
+                continue
+            # Prefer the entry with the higher influential citation count
+            cur = candidates.get(base)
+            if cur is None or ((ref.get("influential_citation_count") or 0)
+                                > (cur.get("influential_citation_count") or 0)):
+                candidates[base] = ref
+        sleep_for_rate_limit(args.sleep)
+    if not candidates:
+        print("\nno new arxiv-hosted candidates discovered.")
+        return 0
+    ranked = sorted(
+        candidates.values(),
+        key=lambda r: -(r.get("influential_citation_count") or 0),
+    )
+    print(f"\ndiscovered {len(ranked)} candidate(s):")
+    for r in ranked[:args.top_candidates]:
+        infl = r.get("influential_citation_count")
+        print(f"  [{infl or 0:>3d} infl cites] {r['arxiv_id']:<16s} "
+              f"({r.get('year') or '?'})  {(r.get('title') or '')[:70]}")
+    if args.auto_ingest:
+        from .arxiv_ingest import ingest_by_ids
+        ids = [r["arxiv_id"] for r in ranked[:args.top_candidates]]
+        print(f"\nauto-ingesting {len(ids)} paper(s)...")
+        summary = ingest_by_ids(
+            args.db, ids, extract=True,
+            groq_model=args.groq_model,
+            min_relevance_to_keep=args.min_relevance_to_keep,
+            verbose=True,
+        )
+        print(json.dumps({k: v for k, v in summary.items() if k != "errors"}, indent=2))
+    else:
+        print(f"\nto ingest these: re-run with --auto-ingest "
+              "(or use ingest-ids with the printed arxiv_ids).")
+    return 0
+
+
 def cmd_list_code(args) -> int:
     """Inspect all surfaced code_url rows in one view — quick sanity check
     for false positives picked up by abstract / comment / pdf scanners."""
@@ -550,6 +671,39 @@ def main() -> int:
                             "fetching uncached arxiv comments; the arxiv "
                             "client already enforces a 3s delay internally)"))
 
+    p_es = sub.add_parser(
+        "enrich-via-s2",
+        help=("backfill Semantic Scholar metadata (tldr + influential "
+              "citation count + paperId) for every literature row"),
+    )
+    p_es.add_argument("--limit", type=int, default=0,
+                      help="stop after N papers (0 = no limit)")
+    p_es.add_argument("--sleep", type=float, default=4.0,
+                      help="seconds between API calls (S2 free tier ≈ 100/5min)")
+
+    p_xs = sub.add_parser(
+        "expand-via-s2",
+        help=("walk each paper's references via S2 and report arxiv-hosted "
+              "prior work not yet in the DB. --auto-ingest brings them in."),
+    )
+    p_xs.add_argument("--from-arxiv-id", default=None,
+                      help="walk references of this single paper only")
+    p_xs.add_argument("--top-seeds", type=int, default=10,
+                      help="without --from-arxiv-id, walk top N "
+                           "highest-relevance papers as seeds")
+    p_xs.add_argument("--refs-per-seed", type=int, default=50,
+                      help="max references to fetch per seed paper")
+    p_xs.add_argument("--top-candidates", type=int, default=20,
+                      help="how many candidates to print / ingest")
+    p_xs.add_argument("--limit", type=int, default=0,
+                      help="stop after N seed papers (0 = no limit)")
+    p_xs.add_argument("--sleep", type=float, default=4.0)
+    p_xs.add_argument("--auto-ingest", action="store_true",
+                      help="run ingest-ids on the top candidates")
+    p_xs.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL,
+                      help="model for the LLM extraction step in --auto-ingest")
+    p_xs.add_argument("--min-relevance-to-keep", type=float, default=0.0)
+
     p_lc = sub.add_parser(
         "list-code",
         help=("list all rows with a code_url, grouped by source — quick "
@@ -616,7 +770,9 @@ def main() -> int:
                 "scan-pdfs-for-code": cmd_scan_pdfs_for_code,
                 "fetch-code-snapshots": cmd_fetch_code_snapshots,
                 "list-code": cmd_list_code,
-                "set-code-url": cmd_set_code_url}
+                "set-code-url": cmd_set_code_url,
+                "enrich-via-s2": cmd_enrich_via_s2,
+                "expand-via-s2": cmd_expand_via_s2}
     return handlers[args.cmd](args)
 
 
