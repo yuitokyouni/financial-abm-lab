@@ -27,6 +27,7 @@ import argparse
 import json
 import os
 import sys
+import traceback
 
 from .db import (
     ensure_ideas_schema, ensure_proposals_schema, ensure_runs_schema,
@@ -63,6 +64,7 @@ def cmd_judge(args) -> int:
     except Exception as exc:
         print(f"  ! judgment failed: {type(exc).__name__}: {exc}",
               file=sys.stderr)
+        traceback.print_exc()
         return 1
     aspects = result["aspects"]
     verdict = result["verdict"]
@@ -96,6 +98,7 @@ def cmd_plan(args) -> int:
                          groq_model=args.groq_model)
     except Exception as exc:
         print(f"  ! plan failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        traceback.print_exc()
         return 1
     update_idea(args.db, args.id, plan=plan, plan_llm_model=args.groq_model,
                 status="planned")
@@ -123,6 +126,7 @@ def cmd_scaffold(args) -> int:
     except Exception as exc:
         print(f"  ! scaffold failed: {type(exc).__name__}: {exc}",
               file=sys.stderr)
+        traceback.print_exc()
         return 1
     update_kwargs = {"status": "scaffolded"}
     if result.get("paths"):
@@ -147,6 +151,7 @@ def cmd_run(args) -> int:
         judgment = judge_idea(args.db, idea_text, groq_model=args.groq_model)
     except Exception as exc:
         print(f"  ! judge failed: {exc}", file=sys.stderr)
+        traceback.print_exc()
         return 1
     idea_id = insert_idea(
         args.db, idea_text=idea_text, aspects=judgment["aspects"],
@@ -171,6 +176,7 @@ def cmd_run(args) -> int:
         )
     except Exception as exc:
         print(f"  ! plan failed: {exc}", file=sys.stderr)
+        traceback.print_exc()
         return 1
     update_idea(args.db, idea_id, plan=plan,
                 plan_llm_model=args.groq_model, status="planned")
@@ -188,6 +194,7 @@ def cmd_run(args) -> int:
                           llm_model=args.groq_model)
     except Exception as exc:
         print(f"  ! scaffold failed: {exc}", file=sys.stderr)
+        traceback.print_exc()
         return 1
     update_kwargs = {"status": "scaffolded"}
     if result.get("paths"):
@@ -209,6 +216,7 @@ def cmd_run(args) -> int:
             print(json.dumps(er, indent=2, ensure_ascii=False))
         except Exception as exc:
             print(f"  ! execute failed: {exc}", file=sys.stderr)
+            traceback.print_exc()
     return 0
 
 

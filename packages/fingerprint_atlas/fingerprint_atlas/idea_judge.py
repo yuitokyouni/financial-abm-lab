@@ -190,7 +190,9 @@ def rank_proposals(db_path: str, aspects: dict, k: int = 5) -> list[dict]:
 
 def _call_groq(system_prompt: str, user_payload: dict, model: str,
                temperature: float = 0.4, max_retries: int = 2) -> dict:
-    """Same retry pattern as propose._call_groq."""
+    """Same retry pattern as propose._call_groq, plus defence against
+    empty `choices` and missing `message.content` (observed when Groq
+    silently truncates output)."""
     try:
         from groq import Groq
     except ImportError as e:
@@ -212,12 +214,26 @@ def _call_groq(system_prompt: str, user_payload: dict, model: str,
                 response_format={"type": "json_object"},
                 temperature=temperature,
             )
-            return json.loads(resp.choices[0].message.content)
+            if not resp.choices:
+                raise RuntimeError(
+                    f"Groq returned empty choices (model={model}, "
+                    f"prompt_size={len(system_prompt) + len(json.dumps(user_payload))} chars)"
+                )
+            content = getattr(resp.choices[0].message, "content", None)
+            if not content:
+                raise RuntimeError(
+                    f"Groq returned a choice with no message.content "
+                    f"(model={model}, finish_reason="
+                    f"{getattr(resp.choices[0], 'finish_reason', '?')})"
+                )
+            return json.loads(content)
         except Exception as exc:
             last_exc = exc
             msg = str(exc)
             transient = ("json_validate_failed" in msg
-                         or "Failed to validate JSON" in msg)
+                         or "Failed to validate JSON" in msg
+                         or "empty choices" in msg
+                         or "no message.content" in msg)
             if attempt < max_retries and transient:
                 temperature = min(1.0, temperature + 0.1)
                 continue
