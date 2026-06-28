@@ -54,3 +54,12 @@ def test_is_transient_catches_known_markers():
     assert _is_transient("non-object JSON")
     assert not _is_transient("bad prompt syntax")
     assert not _is_transient("invalid api key")
+
+
+def test_is_transient_treats_quota_errors_as_unrecoverable():
+    """OpenAI reports 'insufficient_quota' with HTTP 429 — generic '429'
+    match would loop forever. The unrecoverable list must win."""
+    msg = ("Error code: 429 - {'error': {'message': 'You exceeded your "
+           "current quota, please check your plan and billing details.', "
+           "'type': 'insufficient_quota'}}")
+    assert not _is_transient(msg)

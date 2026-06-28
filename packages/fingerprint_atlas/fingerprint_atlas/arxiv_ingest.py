@@ -190,6 +190,13 @@ def _call_groq_for_extraction(paper: dict, model: str,
         except Exception as exc:
             last_exc = exc
             msg = str(exc)
+            # Distinguish recoverable rate-limit-window from hard quota /
+            # auth / billing errors (OpenAI reports both as HTTP 429).
+            unrecoverable = ("insufficient_quota" in msg
+                             or "invalid_api_key" in msg
+                             or "billing" in msg.lower())
+            if unrecoverable:
+                raise
             rate_limited = ("Rate limit reached" in msg
                             or "rate_limit_exceeded" in msg
                             or "429" in msg)

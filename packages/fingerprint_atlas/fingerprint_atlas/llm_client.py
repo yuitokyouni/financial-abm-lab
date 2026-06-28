@@ -82,9 +82,23 @@ _TRANSIENT_MARKERS = (
     "Service temporarily", "overloaded",
 )
 
+# Errors a retry can NEVER fix — billing, auth, malformed request. These
+# beat the "429" transient marker so insufficient_quota (which OpenAI
+# reports as HTTP 429) doesn't get sleep-looped forever.
+_UNRECOVERABLE_MARKERS = (
+    "insufficient_quota",
+    "invalid_api_key",
+    "authentication",
+    "billing",
+    "exceeded your current quota",
+)
+
 
 def _is_transient(msg: str) -> bool:
-    return any(m.lower() in msg.lower() for m in _TRANSIENT_MARKERS)
+    low = msg.lower()
+    if any(m.lower() in low for m in _UNRECOVERABLE_MARKERS):
+        return False
+    return any(m.lower() in low for m in _TRANSIENT_MARKERS)
 
 
 def _call_openai(system_prompt: str, user_payload: dict, model_id: str,
