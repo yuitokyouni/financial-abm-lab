@@ -176,10 +176,12 @@ def rank_proposals(db_path: str, aspects: dict, k: int = 5) -> list[dict]:
         if not hay:
             continue
         overlap = len(needle & hay)
+        rationale_lines = (r["rationale"] or "").splitlines()
         scored.append({
             "id": r["id"], "target_model": r["target_model"],
             "status": r["status"],
-            "rationale_one_line": (r["rationale"] or "").splitlines()[0][:120],
+            "rationale_one_line": (rationale_lines[0][:120]
+                                   if rationale_lines else ""),
             "score": int(overlap),
         })
     scored.sort(key=lambda r: -r["score"])

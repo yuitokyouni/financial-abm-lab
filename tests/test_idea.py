@@ -114,6 +114,25 @@ def test_rank_proposals_empty_when_no_proposals():
         assert out == []
 
 
+def test_rank_proposals_handles_empty_rationale():
+    """Regression: an empty-string rationale used to IndexError on
+    `"".splitlines()[0]` because splitlines("") is [] (not [""])."""
+    from fingerprint_atlas.db import insert_proposal
+    with tempfile.TemporaryDirectory() as td:
+        db = _populate_minimal(td)
+        insert_proposal(
+            db, proposal_type="param_sweep",
+            target_model="minority_game", params={"N": 101},
+            predicted_fingerprint={n: 0.0 for n in FEATURE_NAMES},
+            predicted_novelty_distance=1.0,
+            rationale="",  # the trigger
+            references=[], llm_model="m",
+        )
+        # Just reaching this line (not raising IndexError) is the test;
+        # the keyword overlap filter may still drop the row.
+        rank_proposals(db, {"key_keywords": ["minority_game"]}, k=5)
+
+
 def test_rank_literature_returns_empty_when_no_literature():
     with tempfile.TemporaryDirectory() as td:
         db = _populate_minimal(td)
