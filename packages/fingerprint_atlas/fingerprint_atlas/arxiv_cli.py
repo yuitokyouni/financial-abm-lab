@@ -319,9 +319,42 @@ def cmd_diagnose_code(args) -> int:
     print()
     print("[4] PDF body (first 4 pages):")
     if args.pdf:
-        from .code_links import extract_github_from_pdf
+        from .code_links import (
+            extract_github_from_pdf, _download_pdf_bytes,
+        )
         u4 = extract_github_from_pdf(args.arxiv_id)
-        print(f"    {u4!r}")
+        print(f"    regex hit  : {u4!r}")
+        # Show what text was actually extracted, so a None hit can be
+        # diagnosed (PDF is image-only? URL spelled differently?)
+        try:
+            from pypdf import PdfReader
+            import io
+            body = _download_pdf_bytes(args.arxiv_id)
+            if not body:
+                print("    (PDF download failed)")
+            else:
+                reader = PdfReader(io.BytesIO(body))
+                joined = "\n".join(
+                    (page.extract_text() or "")
+                    for page in reader.pages[:4]
+                )
+                print(f"    extracted  : {len(joined)} chars from first 4 pages")
+                # Highlight every line that mentions 'github' or 'gitlab'
+                # — if there are zero, the link genuinely isn't in the body.
+                hits = [ln for ln in joined.splitlines()
+                        if "github" in ln.lower() or "gitlab" in ln.lower()]
+                if hits:
+                    print(f"    lines mentioning github/gitlab ({len(hits)}):")
+                    for h in hits[:10]:
+                        print(f"      | {h.strip()[:200]}")
+                else:
+                    print("    no 'github'/'gitlab' mention in extracted text")
+                    print("    first 400 chars:")
+                    print(f"      | {joined[:400].replace(chr(10), ' / ')}")
+        except ImportError:
+            print("    (pypdf not installed)")
+        except Exception as exc:
+            print(f"    (debug dump failed: {exc})")
     else:
         print("    (skipped; pass --pdf to actually download and scan)")
     return 0

@@ -400,3 +400,22 @@ def test_set_arxiv_comment_roundtrip():
                           "14 pages, code at https://github.com/foo/bar")
         rows = load_literature(db)
         assert "github.com/foo/bar" in rows[0]["arxiv_comment"]
+
+
+def test_extract_github_matches_bare_no_protocol():
+    """PDFs and arxiv comments often print 'Code: github.com/foo/bar'
+    without the https:// prefix."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    assert (extract_github_from_text("Code available at github.com/foo/bar.")
+            == "https://github.com/foo/bar")
+
+
+def test_extract_github_repairs_pdf_linewraps():
+    """pypdf-extracted text often splits long URLs across two lines."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    wrapped = "Code: https://github.com/Alicia/\nTRIBE-bond\nfor source."
+    assert (extract_github_from_text(wrapped)
+            == "https://github.com/Alicia/TRIBE-bond")
+    hyphenated = "see https://github.com/foo/very-long-\nrepo-name (paper §3)"
+    assert (extract_github_from_text(hyphenated)
+            == "https://github.com/foo/very-long-repo-name")

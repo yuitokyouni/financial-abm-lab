@@ -26,37 +26,70 @@ import urllib.parse
 import urllib.request
 
 
-# Match github.com URLs; tolerate query strings / trailing punctuation /
-# parens / closing brackets. We only keep the org/repo segment.
+# Match github.com URLs. Protocol is optional (PDFs often print bare
+# "Code: github.com/foo/bar"). We keep just the org/repo segment.
 _GITHUB_URL_RE = re.compile(
-    r"https?://github\.com/([A-Za-z0-9][A-Za-z0-9._\-]*)/([A-Za-z0-9._\-]+)",
+    r"(?:https?://)?github\.com/([A-Za-z0-9][A-Za-z0-9._\-]*)/([A-Za-z0-9._\-]+)",
     re.IGNORECASE,
 )
 
 _TRAILING_PUNCT = ".,;:)]}>\"'"
 
 
+def _normalize_for_url_scan(text: str) -> str:
+    """Reverse the line-break artifacts that PDF text extractors inject
+    into long URLs. Two common patterns:
+      'https://github.com/Alicia/\\nTRIBE-bond'   (hard line break)
+      'github.com/foo/\\nbar-baz'                  (same)
+      'github.com/foo-\\nbar/baz'                  (hyphenated linewrap)
+    Collapsing newlines that follow '/' or '-' inside URL-like substrings
+    is enough; we don't try to be clever about prose.
+    """
+    # Linewrap after a '-' inside a word: keep the hyphen, drop only the
+    # newline. (Removing the hyphen too is correct for prose dehyphenation
+    # but wrong for repo names like 'very-long-repo'; we err toward
+    # preserving real hyphens since false positives just produce a wrong
+    # URL that 404s instead of a fake link that points at someone else.)
+    text = re.sub(r"-\n", "-", text)
+    # Collapse a newline that immediately follows '/' (mid-URL) → ''
+    text = re.sub(r"/\n", "/", text)
+    # As a final cushion, collapse runs of whitespace (incl. \n) to a single
+    # space so the URL regex doesn't choke on weird PDF spacing.
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
 def extract_github_from_text(text: str | None) -> str | None:
     """Return the first canonical github.com/<org>/<repo> URL in `text`.
 
-    Strips trailing punctuation / closing brackets that often follow URLs
-    in prose. Drops `.git` suffix so we get a clean web URL.
+    Tolerates: missing protocol, trailing punctuation / closing brackets,
+    `.git` suffix, line-wrapped URLs (newline-after-/ and hyphenation).
     """
     if not text:
         return None
-    m = _GITHUB_URL_RE.search(text)
-    if not m:
+    candidates: list[str] = []
+    # Try BOTH the raw text and the normalized text. Normalization repairs
+    # PDF line-wrap mangling, but raw text wins when the URL was already
+    # clean. Pick the longer match — line-wrap repair only ever extends a
+    # repo name (e.g. 'very-long-' → 'very-long-repo-name').
+    for variant in (text, _normalize_for_url_scan(text)):
+        m = _GITHUB_URL_RE.search(variant)
+        if not m:
+            continue
+        org, repo = m.group(1), m.group(2)
+        while repo and repo[-1] in _TRAILING_PUNCT:
+            repo = repo[:-1]
+        if repo.endswith(".git"):
+            repo = repo[:-4]
+        # A trailing '-' or '.' on the repo is a strong sign of a truncated
+        # line-wrapped URL ('very-long-\nrepo' would yield 'very-long-'
+        # before normalization). Strip and keep so we can compare lengths.
+        repo = repo.rstrip("-.")
+        if repo:
+            candidates.append(f"https://github.com/{org}/{repo}")
+    if not candidates:
         return None
-    org, repo = m.group(1), m.group(2)
-    # Strip trailing junk from the repo segment (regex char class is
-    # permissive; explicit cleanup avoids URLs like `repo).`).
-    while repo and repo[-1] in _TRAILING_PUNCT:
-        repo = repo[:-1]
-    if repo.endswith(".git"):
-        repo = repo[:-4]
-    if not repo:
-        return None
-    return f"https://github.com/{org}/{repo}"
+    return max(candidates, key=len)
 
 
 _PWC_PAPERS_URL = "https://paperswithcode.com/api/v1/papers/"
