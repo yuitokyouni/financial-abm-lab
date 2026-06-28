@@ -421,6 +421,70 @@ def cmd_enrich_via_s2(args) -> int:
     return 0
 
 
+def cmd_fix_arxiv_ids(args) -> int:
+    """One-shot migration: scan DB for arxiv_ids that look like an old-style
+    paper with the category prefix stripped (e.g. '0101326v1' that should
+    be 'cond-mat/0101326v1'). Re-query arxiv to get the canonical entry_id
+    and UPDATE the row in place.
+
+    Pre-2007 arxiv IDs are 7 digits, e.g. 0103089v1. New-style IDs are
+    YYMM.NNNNN (4 + 4-5 digits). Anything matching the old-shape that
+    lacks a '/' is suspect."""
+    from .arxiv_ingest import _extract_arxiv_id_from_entry
+    import sqlite3
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    # Look-7-digits-no-slash: old-style id with the prefix dropped.
+    suspect_re = re.compile(r"^\d{7}(v\d+)?$")
+    suspects = [r for r in rows if suspect_re.match(r["arxiv_id"])]
+    if not suspects:
+        print("no rows with old-style arxiv_id missing a category prefix.")
+        return 0
+    print(f"found {len(suspects)} suspect row(s); re-querying arxiv to "
+          "recover the canonical id...")
+    try:
+        import arxiv
+    except ImportError:
+        print("arxiv SDK not available", file=sys.stderr)
+        return 1
+    fixes: list[tuple[str, str]] = []
+    for r in suspects:
+        # arxiv accepts the truncated form as id_list and returns the
+        # full canonical entry_id (incl. category prefix) in the result.
+        base = re.sub(r"v\d+$", "", r["arxiv_id"])
+        try:
+            search = arxiv.Search(id_list=[base])
+            client = arxiv.Client(page_size=1, delay_seconds=3.0)
+            results = list(client.results(search))
+        except Exception as exc:
+            print(f"  ! {r['arxiv_id']}: arxiv lookup failed ({exc})")
+            continue
+        if not results:
+            print(f"  - {r['arxiv_id']}: not found on arxiv (skipping)")
+            continue
+        canonical = _extract_arxiv_id_from_entry(results[0].entry_id)
+        if canonical == r["arxiv_id"]:
+            print(f"  = {r['arxiv_id']}: already canonical, no fix needed")
+            continue
+        fixes.append((r["arxiv_id"], canonical))
+        print(f"  + {r['arxiv_id']:<16s} → {canonical}")
+    if args.dry_run:
+        print(f"\n(dry-run) would update {len(fixes)} row(s).")
+        return 0
+    if not fixes:
+        print("\nnothing to update.")
+        return 0
+    with sqlite3.connect(args.db) as con:
+        for old, new in fixes:
+            con.execute(
+                "UPDATE literature_methods SET arxiv_id = ? WHERE arxiv_id = ?",
+                (new, old),
+            )
+        con.commit()
+    print(f"\nupdated {len(fixes)} row(s).")
+    return 0
+
+
 def cmd_enrich_via_oa(args) -> int:
     """OpenAlex equivalent of enrich-via-s2 — no API key required, 10
     req/s rate limit. Stores cited_by_count + top concepts + OA paperId."""
@@ -899,6 +963,15 @@ def main() -> int:
                             "fetching uncached arxiv comments; the arxiv "
                             "client already enforces a 3s delay internally)"))
 
+    p_fa = sub.add_parser(
+        "fix-arxiv-ids",
+        help=("one-shot migration: re-query arxiv for rows whose arxiv_id "
+              "is an old-style 7-digit number missing the category prefix "
+              "(e.g. '0101326v1' → 'cond-mat/0101326v1')"),
+    )
+    p_fa.add_argument("--dry-run", action="store_true",
+                      help="print planned updates without modifying the DB")
+
     p_eo = sub.add_parser(
         "enrich-via-oa",
         help=("backfill OpenAlex metadata (cited_by_count + concepts + "
@@ -1046,7 +1119,8 @@ def main() -> int:
                 "diagnose-s2": cmd_diagnose_s2,
                 "enrich-via-oa": cmd_enrich_via_oa,
                 "expand-via-oa": cmd_expand_via_oa,
-                "diagnose-oa": cmd_diagnose_oa}
+                "diagnose-oa": cmd_diagnose_oa,
+                "fix-arxiv-ids": cmd_fix_arxiv_ids}
     return handlers[args.cmd](args)
 
 

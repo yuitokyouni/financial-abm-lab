@@ -125,9 +125,8 @@ def query_arxiv_by_ids(arxiv_ids: list[str]) -> list[dict[str, Any]]:
     client = arxiv.Client(page_size=min(100, len(cleaned)), delay_seconds=3.0)
     out = []
     for r in client.results(search):
-        eid = r.entry_id.rsplit("/", 1)[-1]
         out.append({
-            "arxiv_id": eid,
+            "arxiv_id": _extract_arxiv_id_from_entry(r.entry_id),
             "title": r.title.strip().replace("\n", " "),
             "authors": ", ".join(a.name for a in r.authors),
             "year": r.published.year,
@@ -137,6 +136,27 @@ def query_arxiv_by_ids(arxiv_ids: list[str]) -> list[dict[str, Any]]:
             "comment": (r.comment or "").strip() or None,
         })
     return out
+
+
+def _extract_arxiv_id_from_entry(entry_id: str) -> str:
+    """Pull the canonical arxiv id (incl. category prefix for old papers)
+    out of arxiv's `entry_id` URL.
+
+    arxiv has two id schemes:
+      new-style (2007+) : `http://arxiv.org/abs/2503.00320v2`
+                          → '2503.00320v2'
+      old-style         : `http://arxiv.org/abs/cond-mat/0101326v1`
+                          → 'cond-mat/0101326v1' (NOT just '0101326v1' —
+                            the category is part of the id)
+
+    A naive `rsplit('/', 1)[-1]` strips the category off old-style ids,
+    breaking DOI lookups (the canonical DOI is
+    `10.48550/arXiv.cond-mat/0101326`, not `…/0101326`)."""
+    marker = "/abs/"
+    i = entry_id.find(marker)
+    if i >= 0:
+        return entry_id[i + len(marker):]
+    return entry_id.rsplit("/", 1)[-1]
 
 
 def query_arxiv(query: str, max_results: int = 50,
@@ -157,10 +177,8 @@ def query_arxiv(query: str, max_results: int = 50,
     client = arxiv.Client(page_size=min(100, max_results), delay_seconds=3.0)
     out = []
     for r in client.results(search):
-        # entry_id like 'http://arxiv.org/abs/2412.01234v2' → strip prefix + version
-        eid = r.entry_id.rsplit("/", 1)[-1]
         out.append({
-            "arxiv_id": eid,
+            "arxiv_id": _extract_arxiv_id_from_entry(r.entry_id),
             "title": r.title.strip().replace("\n", " "),
             "authors": ", ".join(a.name for a in r.authors),
             "year": r.published.year,

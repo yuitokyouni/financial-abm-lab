@@ -485,3 +485,19 @@ def test_query_arxiv_by_ids_strips_inline_comments(monkeypatch):
     assert seen["id_list"] == [
         "1909.03185", "cond-mat/9712151", "2104.10058",
     ]
+
+
+def test_extract_arxiv_id_preserves_old_style_category_prefix():
+    """Regression: cond-mat/0101326v1 used to be truncated to 0101326v1
+    by `rsplit('/', 1)[-1]`, breaking OpenAlex DOI lookups."""
+    from fingerprint_atlas.arxiv_ingest import _extract_arxiv_id_from_entry
+    assert (_extract_arxiv_id_from_entry(
+        "http://arxiv.org/abs/cond-mat/0101326v1") == "cond-mat/0101326v1")
+    assert (_extract_arxiv_id_from_entry(
+        "http://arxiv.org/abs/physics/0503230v1") == "physics/0503230v1")
+    # New-style IDs unchanged
+    assert (_extract_arxiv_id_from_entry(
+        "http://arxiv.org/abs/2503.00320v2") == "2503.00320v2")
+    # Malformed input falls back to last segment
+    assert (_extract_arxiv_id_from_entry(
+        "weird-no-marker") == "weird-no-marker")
