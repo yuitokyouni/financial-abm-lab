@@ -236,14 +236,34 @@ def _call_groq(system_prompt: str, user_payload: dict, model: str,
                     f"(model={model}, finish_reason="
                     f"{getattr(resp.choices[0], 'finish_reason', '?')})"
                 )
-            return json.loads(content)
+            parsed = json.loads(content)
+            # gpt-oss-120b occasionally returns a JSON array even with
+            # response_format=json_object set. Unwrap a single-element
+            # list, otherwise raise so the caller's retry / error path runs.
+            if isinstance(parsed, list):
+                if len(parsed) == 1 and isinstance(parsed[0], dict):
+                    parsed = parsed[0]
+                else:
+                    raise RuntimeError(
+                        f"Groq returned a JSON list instead of an object "
+                        f"(model={model}, len={len(parsed)}, "
+                        f"first_type={type(parsed[0]).__name__ if parsed else 'empty'})"
+                    )
+            if not isinstance(parsed, dict):
+                raise RuntimeError(
+                    f"Groq returned non-object JSON "
+                    f"(model={model}, got {type(parsed).__name__})"
+                )
+            return parsed
         except Exception as exc:
             last_exc = exc
             msg = str(exc)
             transient = ("json_validate_failed" in msg
                          or "Failed to validate JSON" in msg
                          or "empty choices" in msg
-                         or "no message.content" in msg)
+                         or "no message.content" in msg
+                         or "JSON list instead of an object" in msg
+                         or "non-object JSON" in msg)
             if attempt < max_retries and transient:
                 temperature = min(1.0, temperature + 0.1)
                 continue
@@ -308,6 +328,8 @@ def _filter_verdict_arxiv_ids(verdict: dict, candidate_literature: list[dict],
     surface in the CLI output / persist alongside the judgment.
     """
     from .propose import _arxiv_base, _extract_arxiv_id
+    if not isinstance(verdict, dict):
+        return {"in_db_only": [], "hallucinated": []}
     ids = verdict.get("closest_literature_arxiv_ids") or []
     if not ids:
         return {"in_db_only": [], "hallucinated": []}
