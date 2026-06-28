@@ -109,6 +109,69 @@ def fetch_pwc_repo(arxiv_id: str) -> str | None:
     return url.rstrip("/")
 
 
+_ARXIV_PDF_URL = "https://arxiv.org/pdf/{base}.pdf"
+_PDF_MAX_BYTES = 8 * 1024 * 1024  # 8 MB cap; abort if PDF is bigger
+_PDF_TIMEOUT = 30.0
+
+
+def _download_pdf_bytes(arxiv_id: str) -> bytes | None:
+    base = _arxiv_id_base(arxiv_id)
+    url = _ARXIV_PDF_URL.format(base=base)
+    req = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=_PDF_TIMEOUT) as resp:
+            if resp.status != 200:
+                return None
+            # Stream-read with a cap so a runaway big PDF doesn't OOM us.
+            buf = bytearray()
+            while True:
+                chunk = resp.read(64 * 1024)
+                if not chunk:
+                    break
+                buf.extend(chunk)
+                if len(buf) > _PDF_MAX_BYTES:
+                    return None
+            return bytes(buf)
+    except (urllib.error.URLError, urllib.error.HTTPError,
+            TimeoutError, OSError):
+        return None
+
+
+def extract_github_from_pdf(arxiv_id: str, max_pages: int = 4) -> str | None:
+    """Download the arxiv PDF, extract text from the first `max_pages`
+    pages, and regex-search for a github URL.
+
+    First ~4 pages cover abstract + introduction + footnotes, which is
+    where 'code is available at...' lives in almost every paper that has
+    a repo. Skipping the body saves bandwidth and parse time.
+
+    Returns the URL or None. All failures (network, pypdf parse error,
+    unsupported PDF) are swallowed.
+    """
+    try:
+        from pypdf import PdfReader  # local import: optional dep
+    except ImportError:
+        return None
+    body = _download_pdf_bytes(arxiv_id)
+    if not body:
+        return None
+    import io
+    try:
+        reader = PdfReader(io.BytesIO(body))
+    except Exception:
+        return None
+    text_parts: list[str] = []
+    for i, page in enumerate(reader.pages):
+        if i >= max_pages:
+            break
+        try:
+            text_parts.append(page.extract_text() or "")
+        except Exception:
+            continue
+    text = "\n".join(text_parts)
+    return extract_github_from_text(text)
+
+
 def fetch_arxiv_comment(arxiv_id: str) -> str | None:
     """Hit arxiv API for a single paper, return the author-comment field
     or None. Many ABM/finance papers stash 'code at github.com/...' here

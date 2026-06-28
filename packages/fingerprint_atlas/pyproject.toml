@@ -3,7 +3,7 @@ name = "fingerprint-atlas"
 version = "0.1.0"
 description = "Stylized-facts fingerprint space — ABM atlas / novelty / inverse-ABM as nearest-neighbour queries."
 requires-python = ">=3.11"
-dependencies = ["numpy", "abm-models", "stylized-facts", "groq", "arxiv"]
+dependencies = ["numpy", "abm-models", "stylized-facts", "groq", "arxiv", "pypdf"]
 
 [build-system]
 requires = ["hatchling"]

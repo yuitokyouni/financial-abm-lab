@@ -232,6 +232,55 @@ def cmd_backfill_code(args) -> int:
     return 0
 
 
+def cmd_scan_pdfs_for_code(args) -> int:
+    """Last-resort source: download the PDF for each paper without a code_url
+    (and not yet PDF-scanned), parse first few pages with pypdf, regex for
+    github. Many ABM/finance papers stash the link in the introduction
+    rather than the abstract or arxiv comment.
+
+    Best-effort: any per-paper failure is swallowed; the row is stamped
+    pdf_scanned_at regardless so we don't retry on the next run."""
+    from .code_links import extract_github_from_pdf
+    from .db import set_literature_code_url, mark_pdf_scanned
+    import time
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    todo = [r for r in rows
+            if not r.get("code_url") and not r.get("pdf_scanned_at")]
+    if not todo:
+        print("no papers left to scan (every link-less row already scanned).")
+        return 0
+    print(f"scanning {len(todo)} PDF(s) — {args.max_pages} pages each, "
+          f"{args.sleep:.1f}s between papers")
+    n_filled, n_empty = 0, 0
+    for i, p in enumerate(todo):
+        if args.limit and i >= args.limit:
+            print(f"  (--limit {args.limit} reached, stopping)")
+            break
+        try:
+            url = extract_github_from_pdf(p["arxiv_id"], max_pages=args.max_pages)
+        except Exception as exc:
+            print(f"  ! {p['arxiv_id']}: {exc}")
+            url = None
+        if url:
+            set_literature_code_url(args.db, p["arxiv_id"],
+                                    code_url=url, source="pdf")
+            print(f"  + {p['arxiv_id']} (pdf): {url}")
+            n_filled += 1
+        else:
+            print(f"  - {p['arxiv_id']}: no github link in first {args.max_pages} pages")
+            n_empty += 1
+        # Stamp regardless so a future re-run doesn't redownload the PDF.
+        try:
+            mark_pdf_scanned(args.db, p["arxiv_id"])
+        except KeyError:
+            pass
+        if args.sleep:
+            time.sleep(args.sleep)
+    print(f"\nfilled {n_filled}, no-link {n_empty}.")
+    return 0
+
+
 def cmd_diagnose_code(args) -> int:
     """Run all three code-link sources against ONE arxiv_id and print what
     each returns. Useful when backfill hit rate looks too low."""
@@ -267,6 +316,14 @@ def cmd_diagnose_code(args) -> int:
     print("[3] Papers with Code lookup:")
     u3 = fetch_pwc_repo(args.arxiv_id)
     print(f"    {u3!r}")
+    print()
+    print("[4] PDF body (first 4 pages):")
+    if args.pdf:
+        from .code_links import extract_github_from_pdf
+        u4 = extract_github_from_pdf(args.arxiv_id)
+        print(f"    {u4!r}")
+    else:
+        print("    (skipped; pass --pdf to actually download and scan)")
     return 0
 
 
@@ -339,10 +396,24 @@ def main() -> int:
 
     p_dc = sub.add_parser(
         "diagnose-code",
-        help=("run all three code-link sources against ONE arxiv_id and "
-              "print what each returns — useful when backfill hit rate is low"),
+        help=("run all code-link sources against ONE arxiv_id and print "
+              "what each returns — useful when backfill hit rate is low"),
     )
     p_dc.add_argument("arxiv_id")
+    p_dc.add_argument("--pdf", action="store_true",
+                      help="also download the PDF and scan first pages")
+
+    p_sp = sub.add_parser(
+        "scan-pdfs-for-code",
+        help=("last-resort: download PDFs for papers without a code_url "
+              "and grep first pages for github URL. Heavy — opt-in only."),
+    )
+    p_sp.add_argument("--limit", type=int, default=0,
+                      help="stop after N papers (0 = no limit)")
+    p_sp.add_argument("--max-pages", type=int, default=4,
+                      help="how many leading pages to extract per PDF")
+    p_sp.add_argument("--sleep", type=float, default=3.0,
+                      help="seconds between papers (arxiv rate-limit padding)")
 
     p_fs = sub.add_parser(
         "fetch-code-snapshots",
@@ -359,6 +430,7 @@ def main() -> int:
     handlers = {"ingest": cmd_ingest, "list": cmd_list, "show": cmd_show,
                 "search": cmd_search, "backfill-code": cmd_backfill_code,
                 "diagnose-code": cmd_diagnose_code,
+                "scan-pdfs-for-code": cmd_scan_pdfs_for_code,
                 "fetch-code-snapshots": cmd_fetch_code_snapshots}
     return handlers[args.cmd](args)
 

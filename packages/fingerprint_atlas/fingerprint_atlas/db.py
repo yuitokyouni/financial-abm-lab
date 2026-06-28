@@ -255,6 +255,10 @@ def ensure_literature_schema(db_path: str) -> None:
             con.execute(
                 "ALTER TABLE literature_methods ADD COLUMN arxiv_comment TEXT"
             )
+        if not _column_exists(con, "literature_methods", "pdf_scanned_at"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN pdf_scanned_at TEXT"
+            )
         con.commit()
 
 
@@ -326,8 +330,8 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
            "primary_category, abstract, mechanism_summary, mechanism_tags, "
            "stylized_facts_targeted, novelty_signal, relevance_score, "
            "extracted_by_model, extraction_attempts, user_notes, user_tags, "
-           "ingested_at, updated_at, code_url, code_url_source, arxiv_comment "
-           "FROM literature_methods")
+           "ingested_at, updated_at, code_url, code_url_source, arxiv_comment, "
+           "pdf_scanned_at FROM literature_methods")
     where: list[str] = []
     args: list[Any] = []
     if min_relevance is not None:
@@ -358,7 +362,7 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
             "user_notes": r[15] or "", "user_tags": r[16] or "",
             "ingested_at": r[17], "updated_at": r[18],
             "code_url": r[19], "code_url_source": r[20],
-            "arxiv_comment": r[21],
+            "arxiv_comment": r[21], "pdf_scanned_at": r[22],
         })
     return out
 
@@ -424,6 +428,22 @@ def load_code_snapshots(db_path: str, arxiv_ids: list[str] | None = None
                 "status": r[4], "error_msg": r[5], "fetched_at": r[6],
             }
     return out
+
+
+def mark_pdf_scanned(db_path: str, arxiv_id: str) -> None:
+    """Stamp the row so subsequent `scan-pdfs-for-code` runs skip it,
+    regardless of whether the scan found a link."""
+    ensure_literature_schema(db_path)
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET pdf_scanned_at = ? WHERE arxiv_id = ?",
+            (now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
 
 
 def set_arxiv_comment(db_path: str, arxiv_id: str, comment: str | None) -> None:
