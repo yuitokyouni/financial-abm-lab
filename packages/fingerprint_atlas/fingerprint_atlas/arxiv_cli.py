@@ -258,7 +258,8 @@ def cmd_scan_pdfs_for_code(args) -> int:
             print(f"  (--limit {args.limit} reached, stopping)")
             break
         try:
-            url = extract_github_from_pdf(p["arxiv_id"], max_pages=args.max_pages)
+            max_pages = args.max_pages if args.max_pages > 0 else None
+            url = extract_github_from_pdf(p["arxiv_id"], max_pages=max_pages)
         except Exception as exc:
             print(f"  ! {p['arxiv_id']}: {exc}")
             url = None
@@ -317,15 +318,13 @@ def cmd_diagnose_code(args) -> int:
     u3 = fetch_pwc_repo(args.arxiv_id)
     print(f"    {u3!r}")
     print()
-    print("[4] PDF body (first 4 pages):")
+    print("[4] PDF body (all pages):")
     if args.pdf:
         from .code_links import (
             extract_github_from_pdf, _download_pdf_bytes,
         )
         u4 = extract_github_from_pdf(args.arxiv_id)
         print(f"    regex hit  : {u4!r}")
-        # Show what text was actually extracted, so a None hit can be
-        # diagnosed (PDF is image-only? URL spelled differently?)
         try:
             from pypdf import PdfReader
             import io
@@ -336,19 +335,26 @@ def cmd_diagnose_code(args) -> int:
                 reader = PdfReader(io.BytesIO(body))
                 joined = "\n".join(
                     (page.extract_text() or "")
-                    for page in reader.pages[:4]
+                    for page in reader.pages
                 )
-                print(f"    extracted  : {len(joined)} chars from first 4 pages")
-                # Highlight every line that mentions 'github' or 'gitlab'
-                # — if there are zero, the link genuinely isn't in the body.
+                print(f"    extracted  : {len(joined)} chars across "
+                      f"{len(reader.pages)} pages")
+                # Highlight every line that mentions a code host or other
+                # repo-sharing keyword. Zero hits = link genuinely not in
+                # the paper.
+                needles = ("github", "gitlab", "bitbucket", "zenodo",
+                           "huggingface", "https://", "source code",
+                           "available at", "code at")
+                lc = joined.lower()
                 hits = [ln for ln in joined.splitlines()
-                        if "github" in ln.lower() or "gitlab" in ln.lower()]
+                        if any(n in ln.lower() for n in needles)]
                 if hits:
-                    print(f"    lines mentioning github/gitlab ({len(hits)}):")
-                    for h in hits[:10]:
+                    print(f"    lines mentioning code-link keywords "
+                          f"({len(hits)}):")
+                    for h in hits[:20]:
                         print(f"      | {h.strip()[:200]}")
                 else:
-                    print("    no 'github'/'gitlab' mention in extracted text")
+                    print("    no code-link keywords found at all")
                     print("    first 400 chars:")
                     print(f"      | {joined[:400].replace(chr(10), ' / ')}")
         except ImportError:
@@ -443,8 +449,10 @@ def main() -> int:
     )
     p_sp.add_argument("--limit", type=int, default=0,
                       help="stop after N papers (0 = no limit)")
-    p_sp.add_argument("--max-pages", type=int, default=4,
-                      help="how many leading pages to extract per PDF")
+    p_sp.add_argument("--max-pages", type=int, default=0,
+                      help=("how many leading pages to extract per PDF "
+                            "(0 = all pages; useful default since many "
+                            "papers put the link in acknowledgments / refs)"))
     p_sp.add_argument("--sleep", type=float, default=3.0,
                       help="seconds between papers (arxiv rate-limit padding)")
 

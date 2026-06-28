@@ -26,12 +26,16 @@ import urllib.parse
 import urllib.request
 
 
-# Match github.com URLs. Protocol is optional (PDFs often print bare
-# "Code: github.com/foo/bar"). We keep just the org/repo segment.
-_GITHUB_URL_RE = re.compile(
-    r"(?:https?://)?github\.com/([A-Za-z0-9][A-Za-z0-9._\-]*)/([A-Za-z0-9._\-]+)",
+# Match github / gitlab / bitbucket repository URLs. Protocol is optional
+# (PDFs often print bare "Code: github.com/foo/bar"). We keep just the
+# host + org/repo segment so the canonical URL is reconstructable.
+_REPO_HOST_RE = re.compile(
+    r"(?:https?://)?(github\.com|gitlab\.com|bitbucket\.org)/"
+    r"([A-Za-z0-9][A-Za-z0-9._\-]*)/([A-Za-z0-9._\-]+)",
     re.IGNORECASE,
 )
+# Alias kept for any external caller that still imports the old name.
+_GITHUB_URL_RE = _REPO_HOST_RE
 
 _TRAILING_PUNCT = ".,;:)]}>\"'"
 
@@ -73,10 +77,10 @@ def extract_github_from_text(text: str | None) -> str | None:
     # clean. Pick the longer match — line-wrap repair only ever extends a
     # repo name (e.g. 'very-long-' → 'very-long-repo-name').
     for variant in (text, _normalize_for_url_scan(text)):
-        m = _GITHUB_URL_RE.search(variant)
+        m = _REPO_HOST_RE.search(variant)
         if not m:
             continue
-        org, repo = m.group(1), m.group(2)
+        host, org, repo = m.group(1).lower(), m.group(2), m.group(3)
         while repo and repo[-1] in _TRAILING_PUNCT:
             repo = repo[:-1]
         if repo.endswith(".git"):
@@ -86,7 +90,7 @@ def extract_github_from_text(text: str | None) -> str | None:
         # before normalization). Strip and keep so we can compare lengths.
         repo = repo.rstrip("-.")
         if repo:
-            candidates.append(f"https://github.com/{org}/{repo}")
+            candidates.append(f"https://{host}/{org}/{repo}")
     if not candidates:
         return None
     return max(candidates, key=len)
@@ -170,13 +174,15 @@ def _download_pdf_bytes(arxiv_id: str) -> bytes | None:
         return None
 
 
-def extract_github_from_pdf(arxiv_id: str, max_pages: int = 4) -> str | None:
-    """Download the arxiv PDF, extract text from the first `max_pages`
-    pages, and regex-search for a github URL.
+def extract_github_from_pdf(arxiv_id: str, max_pages: int | None = None) -> str | None:
+    """Download the arxiv PDF, extract text from all pages (or the first
+    `max_pages` if you pass one), and regex-search for a github / gitlab /
+    bitbucket URL.
 
-    First ~4 pages cover abstract + introduction + footnotes, which is
-    where 'code is available at...' lives in almost every paper that has
-    a repo. Skipping the body saves bandwidth and parse time.
+    Default is whole-paper scan because many papers put the code link in
+    conclusions / acknowledgments / bibliography rather than the intro.
+    Per-page extraction is fast (~50ms) and the 8MB download cap keeps
+    runaway PDFs in check.
 
     Returns the URL or None. All failures (network, pypdf parse error,
     unsupported PDF) are swallowed.
@@ -195,7 +201,7 @@ def extract_github_from_pdf(arxiv_id: str, max_pages: int = 4) -> str | None:
         return None
     text_parts: list[str] = []
     for i, page in enumerate(reader.pages):
-        if i >= max_pages:
+        if max_pages is not None and i >= max_pages:
             break
         try:
             text_parts.append(page.extract_text() or "")
