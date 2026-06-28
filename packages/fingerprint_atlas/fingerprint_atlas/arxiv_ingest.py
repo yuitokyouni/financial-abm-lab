@@ -77,12 +77,14 @@ DEFAULT_QUERIES = {
         'OR abs:"reference point" OR abs:"behavioral bias")'
     ),
     "herding_dynamics": (
-        # The herding STYLIZED FACT (not just papers TAGGED 'herding').
-        # Cascade / contagion / opinion dynamics also surface here.
-        '(cat:q-fin.* OR cat:physics.soc-ph) AND ('
+        # The herding STYLIZED FACT in *financial* settings. The earlier
+        # 'OR cat:physics.soc-ph' variant pulled a flood of off-topic
+        # sociology-of-opinion papers (voter / majority-rule / flocking).
+        # Restrict to q-fin and require a finance-specific keyword.
+        'cat:q-fin.* AND ('
         'abs:"herding behavior" OR abs:"information cascade" '
-        'OR abs:"financial contagion" OR abs:"opinion dynamics" '
-        'OR abs:"crowd behavior" OR abs:"flocking")'
+        'OR abs:"financial contagion" OR abs:"market contagion" '
+        'OR abs:"investor herding" OR abs:"trader herding") '
     ),
     "leverage_effect": (
         # Asymmetric volatility / leverage effect — the empirical
