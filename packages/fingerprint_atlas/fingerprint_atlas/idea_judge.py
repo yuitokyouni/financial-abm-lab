@@ -30,10 +30,15 @@ DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
 # ----- LLM prompts ---------------------------------------------------------
 
 _JP_TERM_RULE = """\
-日本語の専門用語は、必ず通用する日本語表記(全角カタカナまたは漢字)で書くこと。
-半端な英語語幹+「的」(例: 'mechan的', 'リテラチャー的に')、対義語が一般化していない
-直訳漢字(例: '白箱')、未確立のカナ短縮は禁止。確立した訳語: メカニズム的解釈可能性,
+日本語で書く field (summary_ja, rationale, 各 prose 系) では、必ず通用する
+日本語表記(全角カタカナまたは漢字)を使うこと。半端な英語語幹+「的」
+(例: 'mechan的', 'リテラチャー的に')、対義語が一般化していない直訳漢字
+(例: '白箱')、未確立のカナ短縮は禁止。確立した訳語: メカニズム的解釈可能性,
 ホワイトボックス, アグリゲート, スタイライズド・ファクト, 文献, 集団, 個体。
+
+ただし keyword / tag / 識別子用の field(agent_types, key_keywords,
+target_stylized_facts, mechanism_tags, closest_method, references 等)は
+DB マッチングに使うので必ず英語のまま。日本語に翻訳しない。
 """
 
 
@@ -43,15 +48,21 @@ financial agent-based-model (ABM) research idea.
 
 Output ONE JSON object with this shape (no prose around it):
 {
-  "agent_types": [<short labels like "fundamentalist", "LLM-trader", "noise-trader">],
+  "agent_types": [<short ENGLISH labels — "fundamentalist", "LLM-trader",
+                  "noise-trader", "speculator". DO NOT translate to Japanese.>],
   "switching_mechanism": "<1 sentence: how do agents adapt/switch, or null>",
   "price_formation": "<1 sentence: how does price emerge, or null>",
   "target_stylized_facts": [<0-5 of: "fat-tails", "vol-clustering", "leverage",
                             "long-memory", "regime-switching",
                             "aggregational-gaussianity", "absence-of-autocorr", "other">],
   "novelty_claim": "<1 sentence: what does the proposer think is new?>",
-  "key_keywords": [<5-12 short keywords for DB search: e.g. "herding",
-                   "sentiment", "order-book", "reinforcement-learning">]
+  "key_keywords": [<5-12 short ENGLISH keywords for DB search. The DB
+                   methods table and literature abstracts are English, so
+                   Japanese keywords match nothing. Examples: "herding",
+                   "self-organized", "minority game", "speculation game",
+                   "cognitive threshold", "order book", "Lux-Marchesi",
+                   "reinforcement learning". Preserve English author /
+                   model names verbatim. DO NOT translate to Japanese.>]
 }
 """ + _JP_TERM_RULE
 
