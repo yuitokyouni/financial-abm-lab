@@ -31,6 +31,14 @@ DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
 
 # ----- LLM prompts ---------------------------------------------------------
 
+_JP_TERM_RULE = """\
+日本語の専門用語は、必ず通用する日本語表記(全角カタカナまたは漢字)で書くこと。
+半端な英語語幹+「的」(例: 'mechan的', 'リテラチャー的に')、対義語が一般化していない
+直訳漢字(例: '白箱')、未確立のカナ短縮は禁止。確立した訳語: メカニズム的解釈可能性,
+ホワイトボックス, アグリゲート, スタイライズド・ファクト, 文献, 集団, 個体。
+"""
+
+
 ASPECT_SYSTEM_PROMPT = """\
 You extract structured aspects from a natural-language description of a
 financial agent-based-model (ABM) research idea.
@@ -47,7 +55,7 @@ Output ONE JSON object with this shape (no prose around it):
   "key_keywords": [<5-12 short keywords for DB search: e.g. "herding",
                    "sentiment", "order-book", "reinforcement-learning">]
 }
-"""
+""" + _JP_TERM_RULE
 
 
 VERDICT_SYSTEM_PROMPT = """\
@@ -83,7 +91,7 @@ Return ONE JSON object:
 
 Be critical. If the idea is mostly recombination, say so. If literature
 already covers the same mechanism, say which paper and stop pretending.
-"""
+""" + _JP_TERM_RULE
 
 
 # ----- DB ranking (no LLM, pure keyword overlap) ---------------------------

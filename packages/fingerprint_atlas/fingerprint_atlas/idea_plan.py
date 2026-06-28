@@ -95,6 +95,11 @@ Hard constraints:
      parameter_bounds[target_model] and stay within ±30% of the bounds.
   5. Cite only arxiv_ids that appeared in `candidate_literature`. Do not
      fabricate references.
+
+日本語の専門用語は、必ず通用する日本語表記(全角カタカナまたは漢字)で書くこと。
+半端な英語語幹+「的」(例: 'mechan的', 'リテラチャー的に')、対義語が一般化していない
+直訳漢字(例: '白箱')、未確立のカナ短縮は禁止。確立した訳語: メカニズム的解釈可能性,
+ホワイトボックス, アグリゲート, スタイライズド・ファクト, 文献, 集団, 個体。
 """
 
 
