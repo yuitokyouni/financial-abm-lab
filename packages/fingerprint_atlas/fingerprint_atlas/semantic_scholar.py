@@ -34,6 +34,7 @@ import urllib.request
 _S2_BASE = "https://api.semanticscholar.org/graph/v1"
 _S2_TIMEOUT = 15.0
 _USER_AGENT = "fingerprint-atlas/0.1 (+https://github.com/yuitokyouni/financial-abm-lab)"
+_RATE_LIMIT_BACKOFF = 12.0  # seconds to wait on 429 before one retry
 
 
 def _arxiv_base(arxiv_id: str) -> str:
@@ -41,7 +42,16 @@ def _arxiv_base(arxiv_id: str) -> str:
     return re.sub(r"v\d+$", "", arxiv_id.strip())
 
 
-def _http_get_json(url: str, timeout: float = _S2_TIMEOUT) -> dict | None:
+def _http_get_json_with_status(url: str, timeout: float = _S2_TIMEOUT
+                                ) -> tuple[int | None, dict | None]:
+    """Return (status_code, parsed_json_or_None). status_code is None on
+    network failure / timeout (no HTTP response was received).
+
+    Behaviour vs the legacy _http_get_json: this version distinguishes
+    404 (paper genuinely not on S2) from 429 (rate-limit hit, should
+    retry) from 500/503 (transient server issue) from network timeout.
+    All produce parsed=None, but the status code lets the caller decide
+    whether to backoff + retry, log a real miss, or surface a fatal."""
     headers = {"User-Agent": _USER_AGENT, "Accept": "application/json"}
     api_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
     if api_key:
@@ -50,11 +60,27 @@ def _http_get_json(url: str, timeout: float = _S2_TIMEOUT) -> dict | None:
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             if resp.status != 200:
-                return None
-            return json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.URLError, urllib.error.HTTPError,
-            TimeoutError, json.JSONDecodeError, OSError):
-        return None
+                return resp.status, None
+            return resp.status, json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        return e.code, None
+    except (urllib.error.URLError, TimeoutError,
+            json.JSONDecodeError, OSError):
+        return None, None
+
+
+def _http_get_json(url: str, timeout: float = _S2_TIMEOUT) -> dict | None:
+    """Convenience wrapper that retries once on 429. Returns the parsed
+    JSON object, or None on any non-200 / network failure / parse error.
+
+    The 12-second backoff is conservative — S2 free tier's rolling
+    window is 5 minutes, but a single 12s pause is usually enough to
+    clear a transient burst-limit hit."""
+    status, body = _http_get_json_with_status(url, timeout)
+    if status == 429:
+        time.sleep(_RATE_LIMIT_BACKOFF)
+        status, body = _http_get_json_with_status(url, timeout)
+    return body if status == 200 else None
 
 
 # ----- single-paper enrichment -------------------------------------------

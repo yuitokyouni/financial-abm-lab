@@ -336,8 +336,18 @@ def cmd_scan_pdfs_for_code(args) -> int:
 def cmd_enrich_via_s2(args) -> int:
     """Backfill Semantic Scholar metadata for every literature row that
     doesn't have it yet. Adds tldr (often clearer than the abstract),
-    influential_citation_count, and the S2 paperId for cross-API lookups."""
-    from .semantic_scholar import fetch_paper, sleep_for_rate_limit
+    influential_citation_count, and the S2 paperId for cross-API lookups.
+
+    Per-paper status (200 / 404 / 429 / network) is printed so a low
+    hit rate can be diagnosed (rate-limit blast vs paper genuinely
+    not indexed). Rows that come back 404 are stamped `s2_fetched_at`
+    so a re-run skips them; rows that hit 429 or network are NOT
+    stamped, so the next run retries them."""
+    from .semantic_scholar import (
+        fetch_paper, sleep_for_rate_limit, _arxiv_base,
+        _http_get_json_with_status, _S2_BASE, _PAPER_FIELDS,
+    )
+    import urllib.parse as _up
     from .db import set_s2_metadata
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
@@ -347,39 +357,89 @@ def cmd_enrich_via_s2(args) -> int:
         print("all rows already have S2 metadata.")
         return 0
     print(f"enriching {len(todo)} paper(s) via Semantic Scholar...")
-    n_ok, n_miss = 0, 0
+    n_ok, n_404, n_429, n_other = 0, 0, 0, 0
     for i, r in enumerate(todo):
         if args.limit and i >= args.limit:
             print(f"  (--limit {args.limit} reached, stopping)")
             break
-        paper = fetch_paper(r["arxiv_id"])
-        if paper:
+        url = (f"{_S2_BASE}/paper/ARXIV:{_up.quote(_arxiv_base(r['arxiv_id']))}"
+               f"?fields={_PAPER_FIELDS}")
+        status, raw = _http_get_json_with_status(url)
+        # Single 429 retry in-loop (the generic _http_get_json wrapper does
+        # this too, but we use the low-level call here for status visibility).
+        if status == 429:
+            sleep_for_rate_limit(12.0)
+            status, raw = _http_get_json_with_status(url)
+        if status == 200 and raw:
+            tldr_obj = raw.get("tldr") or {}
+            tldr = tldr_obj.get("text") if isinstance(tldr_obj, dict) else None
+            infl = raw.get("influentialCitationCount")
             try:
                 set_s2_metadata(
                     args.db, r["arxiv_id"],
-                    s2_paper_id=paper["s2_paper_id"],
-                    s2_tldr=paper["tldr"],
-                    s2_influential_citation_count=paper["influential_citation_count"],
+                    s2_paper_id=raw.get("paperId"),
+                    s2_tldr=tldr,
+                    s2_influential_citation_count=infl,
                 )
-                print(f"  + {r['arxiv_id']:<14s} tldr={'Y' if paper['tldr'] else 'N'} "
-                      f"infl_cit={paper['influential_citation_count']}")
+                print(f"  + {r['arxiv_id']:<16s} tldr={'Y' if tldr else 'N'} "
+                      f"infl_cit={infl}")
                 n_ok += 1
             except KeyError:
                 pass
-        else:
-            # Mark fetched even on miss so re-runs skip
+        elif status == 404:
             try:
                 set_s2_metadata(
                     args.db, r["arxiv_id"],
                     s2_paper_id=None, s2_tldr=None,
                     s2_influential_citation_count=None,
                 )
-                print(f"  - {r['arxiv_id']:<14s} not found on S2")
-                n_miss += 1
+                print(f"  - {r['arxiv_id']:<16s} 404 (not indexed by S2)")
+                n_404 += 1
             except KeyError:
                 pass
+        elif status == 429:
+            print(f"  ! {r['arxiv_id']:<16s} 429 still rate-limited after backoff "
+                  f"(NOT stamped — next run will retry)")
+            n_429 += 1
+        else:
+            print(f"  ? {r['arxiv_id']:<16s} status={status} (NOT stamped)")
+            n_other += 1
         sleep_for_rate_limit(args.sleep)
-    print(f"\nenriched {n_ok}, missing {n_miss}.")
+    print(f"\nenriched {n_ok}, 404 {n_404}, 429 {n_429}, other {n_other}.")
+    if n_429 > 0:
+        print("Tip: set SEMANTIC_SCHOLAR_API_KEY env var (free at "
+              "https://www.semanticscholar.org/product/api#api-key-form) "
+              "to lift the 100req/5min limit.")
+    return 0
+
+
+def cmd_diagnose_s2(args) -> int:
+    """Single-paper deep-dive: print the raw S2 response (status + body
+    snippet) so a low-hit-rate enrich-via-s2 can be diagnosed."""
+    from .semantic_scholar import (
+        _arxiv_base, _http_get_json_with_status, _S2_BASE, _PAPER_FIELDS,
+    )
+    import urllib.parse as _up
+    base = _arxiv_base(args.arxiv_id)
+    url = (f"{_S2_BASE}/paper/ARXIV:{_up.quote(base)}"
+           f"?fields={_PAPER_FIELDS}")
+    print(f"GET {url}\n")
+    status, body = _http_get_json_with_status(url)
+    print(f"status: {status}")
+    if body is None:
+        print("body  : None (no parsed JSON)")
+    else:
+        # Show keys + a snippet of the most informative fields
+        print(f"body  : keys = {sorted(body.keys())[:10]}")
+        if "title" in body:
+            print(f"        title  = {body['title']!r}")
+        if "tldr" in body:
+            tldr_text = (body["tldr"] or {}).get("text") if body["tldr"] else None
+            print(f"        tldr   = {tldr_text!r}")
+        if "influentialCitationCount" in body:
+            print(f"        infl_cit = {body['influentialCitationCount']}")
+        if "externalIds" in body:
+            print(f"        externalIds = {body['externalIds']}")
     return 0
 
 
@@ -671,6 +731,13 @@ def main() -> int:
                             "fetching uncached arxiv comments; the arxiv "
                             "client already enforces a 3s delay internally)"))
 
+    p_ds = sub.add_parser(
+        "diagnose-s2",
+        help=("inspect the raw Semantic Scholar response for ONE arxiv_id "
+              "— useful when enrich-via-s2 hit rate is suspiciously low"),
+    )
+    p_ds.add_argument("arxiv_id")
+
     p_es = sub.add_parser(
         "enrich-via-s2",
         help=("backfill Semantic Scholar metadata (tldr + influential "
@@ -772,7 +839,8 @@ def main() -> int:
                 "list-code": cmd_list_code,
                 "set-code-url": cmd_set_code_url,
                 "enrich-via-s2": cmd_enrich_via_s2,
-                "expand-via-s2": cmd_expand_via_s2}
+                "expand-via-s2": cmd_expand_via_s2,
+                "diagnose-s2": cmd_diagnose_s2}
     return handlers[args.cmd](args)
 
 

@@ -115,3 +115,52 @@ def test_set_s2_metadata_persists(monkeypatch):
         assert row["s2_tldr"].startswith("Self-organized")
         assert row["s2_influential_citation_count"] == 15
         assert row["s2_fetched_at"]
+
+
+def test_http_get_json_with_status_returns_404_distinctly(monkeypatch):
+    """A 404 must surface as status=404, not collapse to None like a
+    network error — so the caller can stamp 'fetched_at' on real misses
+    but retry on transient rate-limits."""
+    import urllib.error
+    from fingerprint_atlas import semantic_scholar as s2
+
+    class _Fake404(urllib.error.HTTPError):
+        def __init__(self):
+            super().__init__("u", 404, "Not Found", {}, None)
+
+    def fake_urlopen(*a, **kw):
+        raise _Fake404()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    status, body = s2._http_get_json_with_status("https://example.com/x")
+    assert status == 404
+    assert body is None
+
+
+def test_http_get_json_retries_on_429(monkeypatch):
+    """The convenience _http_get_json should sleep + retry once on 429,
+    so a transient rate-limit doesn't masquerade as a real miss."""
+    import urllib.error
+    from fingerprint_atlas import semantic_scholar as s2
+
+    calls = {"n": 0}
+
+    def fake_status(url, timeout=None):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return 429, None
+        return 200, {"ok": True}
+
+    monkeypatch.setattr(s2, "_http_get_json_with_status", fake_status)
+    monkeypatch.setattr("time.sleep", lambda s: None)
+    out = s2._http_get_json("https://example.com/x")
+    assert out == {"ok": True}
+    assert calls["n"] == 2
+
+
+def test_http_get_json_returns_none_on_persistent_429(monkeypatch):
+    from fingerprint_atlas import semantic_scholar as s2
+    monkeypatch.setattr(s2, "_http_get_json_with_status",
+                         lambda url, timeout=None: (429, None))
+    monkeypatch.setattr("time.sleep", lambda s: None)
+    assert s2._http_get_json("https://example.com/x") is None
