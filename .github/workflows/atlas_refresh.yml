@@ -1,0 +1,137 @@
+name: atlas-refresh
+
+# Regenerate every "map" the project produces — fingerprint atlas (A),
+# literature 2D embedding (B), and (mechanism × stylized fact) coverage
+# matrix (C) — and open a PR with the new PNG / CSV / MD artifacts.
+#
+# Manual + weekly: cron runs every Friday 23:00 UTC (Sat 08:00 JST) so the
+# refreshed maps land before the user's weekend.
+
+on:
+  schedule:
+    - cron: "0 23 * * 5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      DB_PATH: data/abm_knowhow.db
+      ATLAS_OUT_DIR: notebooks/atlas/${{ github.run_id }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync workspace
+        run: uv sync
+
+      - name: Rebuild DB (methods seed + literature snapshot + ABM runs)
+        # Same shape as propose.yml / methods_annotate.yml: seed methods,
+        # restore literature snapshot if present, repopulate runs from
+        # the canonical model registry so the fingerprint atlas has data.
+        run: |
+          mkdir -p data notebooks/yahoo_cache
+          uv run python -m fingerprint_atlas.methods_cli --db "$DB_PATH" seed
+          if [ -f data/literature_methods.json ]; then
+            uv run python <<'PY'
+          import json, os
+          from fingerprint_atlas.db import (
+              ensure_literature_schema, upsert_literature_metadata,
+              update_literature_extraction,
+          )
+          DB = os.environ["DB_PATH"]
+          ensure_literature_schema(DB)
+          for r in json.load(open("data/literature_methods.json")):
+              upsert_literature_metadata(
+                  DB, arxiv_id=r["arxiv_id"], title=r["title"],
+                  authors=r["authors"], year=r["year"],
+                  published_date=r["published_date"],
+                  primary_category=r["primary_category"], abstract=r["abstract"],
+              )
+              if r.get("extracted_by_model"):
+                  update_literature_extraction(
+                      DB, r["arxiv_id"],
+                      mechanism_summary=r["mechanism_summary"],
+                      mechanism_tags=r["mechanism_tags"],
+                      stylized_facts_targeted=r["stylized_facts_targeted"],
+                      novelty_signal=r["novelty_signal"],
+                      relevance_score=r["relevance_score"],
+                      extracted_by_model=r["extracted_by_model"],
+                  )
+          PY
+          fi
+          uv run python -m fingerprint_atlas.populate \
+            --db "$DB_PATH" --n-per-model 12 --seed-base 1000 \
+            --rng-seed 7 --quiet
+          uv run python -m fingerprint_atlas.populate_refs \
+            --db "$DB_PATH" --n-synthetic-per-model 6 \
+            --cache-dir notebooks/yahoo_cache
+
+      - name: A) fingerprint atlas + per-feature box
+        run: |
+          mkdir -p "$ATLAS_OUT_DIR"
+          uv run python -m fingerprint_atlas.atlas \
+            --db "$DB_PATH" \
+            --atlas-png "$ATLAS_OUT_DIR/fingerprint_atlas.png" \
+            --feature-png "$ATLAS_OUT_DIR/per_feature_box.png" \
+            --gate-json "$ATLAS_OUT_DIR/validation_gate.json"
+
+      - name: B) literature 2D map
+        run: |
+          uv run python -m fingerprint_atlas.arxiv_cli \
+            --db "$DB_PATH" atlas --out-dir "$ATLAS_OUT_DIR"
+          # rename so all artifacts share the run dir clearly
+          if [ -f "$ATLAS_OUT_DIR/literature_map.png" ]; then
+            echo "literature map OK"
+          fi
+
+      - name: C) coverage heatmap
+        run: |
+          uv run python -m fingerprint_atlas.arxiv_cli \
+            --db "$DB_PATH" coverage --out-dir "$ATLAS_OUT_DIR"
+
+      - name: List artifacts
+        run: ls -la "$ATLAS_OUT_DIR"
+
+      - name: Open PR with refreshed maps
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: atlas-refresh/${{ github.run_id }}
+          base: main
+          add-paths: |
+            notebooks/atlas/**
+          commit-message: "atlas-refresh: regenerate A+B+C maps (run ${{ github.run_id }})"
+          title: "Atlas refresh — ${{ github.run_id }}"
+          body: |
+            Auto-regenerated under `notebooks/atlas/${{ github.run_id }}/`:
+
+            **A. Fingerprint atlas** — `fingerprint_atlas.png`, `per_feature_box.png`,
+            `validation_gate.json`. PCA layout of every ABM / synthetic /
+            real-data run in DB, coloured by model family.
+
+            **B. Literature 2D map** — `literature_map.png`, `literature_map.csv`.
+            TF-IDF over (tags + concepts + title), SVD-2D. Points coloured
+            by primary mechanism tag, sized by citation count. Top-K
+            most-cited papers labelled.
+
+            **C. Coverage matrix** — `coverage.png`, `coverage.md`.
+            (mechanism tag × stylized fact targeted) heatmap. Dense rows
+            are well-covered mechanisms; sparse cells / empty columns are
+            research blind spots in the current corpus.
+
+            **How to review**
+            - Skim each PNG for obvious gaps / mis-clusterings.
+            - Drop the merge if any map looks broken; the cron runs
+              weekly so a re-run is cheap.
+          delete-branch: true

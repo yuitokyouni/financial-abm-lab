@@ -421,6 +421,54 @@ def cmd_enrich_via_s2(args) -> int:
     return 0
 
 
+def cmd_coverage(args) -> int:
+    """Render the (mechanism × stylized fact) coverage heatmap + markdown."""
+    from .coverage import build_coverage, render_heatmap, render_markdown
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    if not rows:
+        print("no papers in literature_methods. Ingest first.", file=sys.stderr)
+        return 1
+    import os
+    out_dir = args.out_dir
+    os.makedirs(out_dir, exist_ok=True)
+    cov = build_coverage(rows, top_rows=args.top_rows)
+    png = os.path.join(out_dir, "coverage.png")
+    md = os.path.join(out_dir, "coverage.md")
+    render_heatmap(cov, png)
+    with open(md, "w") as fh:
+        fh.write(f"# Literature coverage matrix\n\n"
+                 f"({cov['n_papers_classified']} / {cov['n_papers_total']} "
+                 f"papers classified)\n\n")
+        fh.write(render_markdown(cov))
+        fh.write("\n")
+    print(f"wrote {png}")
+    print(f"wrote {md}")
+    return 0
+
+
+def cmd_atlas(args) -> int:
+    """Render the literature_methods 2D map (PNG + CSV)."""
+    from .literature_map import render_literature_map
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    if not rows:
+        print("no papers in literature_methods. Ingest first.", file=sys.stderr)
+        return 1
+    import os
+    out_dir = args.out_dir
+    os.makedirs(out_dir, exist_ok=True)
+    png = os.path.join(out_dir, "literature_map.png")
+    csv = os.path.join(out_dir, "literature_map.csv")
+    summary = render_literature_map(
+        rows, png, csv_path=csv, top_labels=args.top_labels,
+    )
+    print(f"wrote {png}")
+    print(f"wrote {csv}")
+    print(json.dumps(summary, indent=2))
+    return 0
+
+
 def cmd_delete_rows(args) -> int:
     """Delete one or more literature_methods rows by arxiv_id.
 
@@ -1001,6 +1049,24 @@ def main() -> int:
                             "fetching uncached arxiv comments; the arxiv "
                             "client already enforces a 3s delay internally)"))
 
+    p_cv = sub.add_parser(
+        "coverage",
+        help=("render the (mechanism × stylized fact) coverage matrix as "
+              "a PNG heatmap + markdown table"),
+    )
+    p_cv.add_argument("--out-dir", default="notebooks/coverage/")
+    p_cv.add_argument("--top-rows", type=int, default=15,
+                      help="number of top mechanism tags to include")
+
+    p_at = sub.add_parser(
+        "atlas",
+        help=("render the literature 2D map (PNG + CSV) — TF-IDF over "
+              "tags+concepts+title, projected via SVD, colored by tag"),
+    )
+    p_at.add_argument("--out-dir", default="notebooks/literature_map/")
+    p_at.add_argument("--top-labels", type=int, default=12,
+                      help="annotate the K most-cited papers")
+
     p_dl = sub.add_parser(
         "delete-rows",
         help=("delete literature_methods rows by arxiv_id (comma-sep). "
@@ -1170,7 +1236,9 @@ def main() -> int:
                 "expand-via-oa": cmd_expand_via_oa,
                 "diagnose-oa": cmd_diagnose_oa,
                 "fix-arxiv-ids": cmd_fix_arxiv_ids,
-                "delete-rows": cmd_delete_rows}
+                "delete-rows": cmd_delete_rows,
+                "atlas": cmd_atlas,
+                "coverage": cmd_coverage}
     return handlers[args.cmd](args)
 
 
