@@ -479,8 +479,11 @@ def cmd_expand_via_oa(args) -> int:
     """OpenAlex equivalent of expand-via-s2. Walks each seed paper's
     referenced_works, resolves each ref to find the arxiv_id (if any),
     deduplicates against the existing DB, prints the top-K most-cited
-    new candidates. --auto-ingest brings them in."""
-    from .openalex import fetch_references, sleep_for_rate_limit
+    new candidates. --auto-ingest brings them in.
+
+    Per-seed log includes n_refs so empty-referenced_works (common for
+    recent papers in OpenAlex) is visible at a glance."""
+    from .openalex import fetch_paper, fetch_references, sleep_for_rate_limit
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
     if args.from_arxiv_id:
@@ -495,13 +498,28 @@ def cmd_expand_via_oa(args) -> int:
         )[:args.top_seeds]
     already_in_db = {re.sub(r"v\d+$", "", r["arxiv_id"]) for r in rows}
     candidates: dict[str, dict] = {}
+    total_refs_walked = 0
+    n_empty_seeds = 0
     for i, seed in enumerate(seed_papers):
         if args.limit and i >= args.limit:
             print(f"(--limit {args.limit} reached, stopping seed walk)")
             break
-        print(f"walking references of {seed['arxiv_id']} — {seed['title'][:60]}")
+        # Look up n_refs first so empty-referenced_works seeds get a
+        # visible "no refs" message — otherwise the user sees "0 candidates"
+        # at the end with no idea why.
+        seed_paper = fetch_paper(seed["arxiv_id"])
+        n_refs = len(seed_paper["referenced_works"]) if seed_paper else 0
+        title = (seed.get("title") or "")[:60]
+        if n_refs == 0:
+            print(f"  - {seed['arxiv_id']} (n_refs=0)  {title}  "
+                  "[empty referenced_works — common for recent papers in OpenAlex]")
+            n_empty_seeds += 1
+            continue
+        refs_to_walk = min(n_refs, args.refs_per_seed)
+        print(f"walking {refs_to_walk}/{n_refs} refs of {seed['arxiv_id']} — {title}")
         refs = fetch_references(seed["arxiv_id"], limit=args.refs_per_seed,
                                  sleep=args.sleep)
+        total_refs_walked += len(refs)
         for ref in refs:
             aid = ref.get("arxiv_id")
             if not aid:
@@ -514,6 +532,9 @@ def cmd_expand_via_oa(args) -> int:
                                 > (cur.get("cited_by_count") or 0)):
                 candidates[base] = ref
         sleep_for_rate_limit(args.sleep)
+    print(f"\nwalked {total_refs_walked} refs across "
+          f"{len(seed_papers) - n_empty_seeds} non-empty seed(s); "
+          f"{n_empty_seeds} seed(s) had empty referenced_works.")
     if not candidates:
         print("\nno new arxiv-hosted candidates discovered.")
         return 0
