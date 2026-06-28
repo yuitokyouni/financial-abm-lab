@@ -68,14 +68,20 @@ def cmd_ingest_ids(args) -> int:
     (comma-sep) or one-per-line from --ids-file."""
     from .arxiv_ingest import ingest_by_ids
     ids: list[str] = []
+    def _clean_id(token: str) -> str:
+        # Strip leading/trailing whitespace AND drop any inline '# comment'.
+        return token.split("#", 1)[0].strip()
     if args.ids:
-        ids.extend(s.strip() for s in args.ids.split(",") if s.strip())
+        for tok in args.ids.split(","):
+            cleaned = _clean_id(tok)
+            if cleaned:
+                ids.append(cleaned)
     if args.ids_file:
         with open(args.ids_file) as fh:
             for line in fh:
-                s = line.strip()
-                if s and not s.startswith("#"):
-                    ids.append(s)
+                cleaned = _clean_id(line)
+                if cleaned:
+                    ids.append(cleaned)
     if not ids:
         print("either --ids or --ids-file is required", file=sys.stderr)
         return 1

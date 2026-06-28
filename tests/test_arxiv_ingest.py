@@ -452,3 +452,36 @@ def test_extract_github_falls_back_when_no_authors_hint():
     from fingerprint_atlas.code_links import extract_github_from_text
     text = "We use https://github.com/foo/bar for stuff."
     assert extract_github_from_text(text) == "https://github.com/foo/bar"
+
+
+def test_query_arxiv_by_ids_strips_inline_comments(monkeypatch):
+    """Regression: --ids-file lines like '1909.03185  # Katahira' used to
+    forward the '#'-suffix to arxiv → HTTP 400. Pure unit test, no network:
+    we monkeypatch arxiv.Client.results and only verify the cleaned id_list
+    that reaches arxiv.Search."""
+    import fingerprint_atlas.arxiv_ingest as ai
+    seen: dict = {}
+
+    class _FakeClient:
+        def __init__(self, *a, **kw): pass
+        def results(self, search):
+            seen["id_list"] = list(search.id_list)
+            return iter([])
+
+    class _FakeSearch:
+        def __init__(self, *, id_list):
+            self.id_list = id_list
+
+    monkeypatch.setattr("arxiv.Client", _FakeClient)
+    monkeypatch.setattr("arxiv.Search", _FakeSearch)
+
+    ai.query_arxiv_by_ids([
+        "1909.03185        # Katahira & Chen 2019 — Speculation Game",
+        "cond-mat/9712151  # Challet & Zhang",
+        "  2104.10058v2",  # version suffix gets stripped
+        "",                # empty skipped
+        "# whole-line comment",  # comment-only line skipped
+    ])
+    assert seen["id_list"] == [
+        "1909.03185", "cond-mat/9712151", "2104.10058",
+    ]

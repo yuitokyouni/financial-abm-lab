@@ -108,10 +108,17 @@ def query_arxiv_by_ids(arxiv_ids: list[str]) -> list[dict[str, Any]]:
     that the broad-query passes can miss because they're old or in a
     category we don't sweep."""
     import arxiv
-    # Strip version suffix — arxiv id_list expects base ids; the returned
-    # entry_id carries the canonical version.
+    # Defence: strip whitespace, drop trailing '# comment', drop version
+    # suffix (arxiv id_list expects base ids; entry_id carries the version).
     import re as _re
-    cleaned = [_re.sub(r"v\d+$", "", a.strip()) for a in arxiv_ids if a.strip()]
+    cleaned: list[str] = []
+    for raw in arxiv_ids:
+        if not raw:
+            continue
+        s = str(raw).split("#", 1)[0].strip()
+        if not s:
+            continue
+        cleaned.append(_re.sub(r"v\d+$", "", s))
     if not cleaned:
         return []
     search = arxiv.Search(id_list=cleaned)
