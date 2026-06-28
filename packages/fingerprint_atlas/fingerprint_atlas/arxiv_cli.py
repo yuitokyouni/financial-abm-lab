@@ -351,10 +351,18 @@ def cmd_enrich_via_s2(args) -> int:
     from .db import set_s2_metadata
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
-    todo = [r for r in rows
-            if not r.get("s2_paper_id") and not r.get("s2_fetched_at")]
+    if args.retry_missing:
+        # Reconsider every row that doesn't actually have S2 data, regardless
+        # of fetched_at. Useful after fixing the silent-429 swallowing bug,
+        # where the old code stamped fetched_at on rows it never really
+        # enriched.
+        todo = [r for r in rows if not r.get("s2_paper_id")]
+    else:
+        todo = [r for r in rows
+                if not r.get("s2_paper_id") and not r.get("s2_fetched_at")]
     if not todo:
-        print("all rows already have S2 metadata.")
+        print("all rows already have S2 metadata. "
+              "(use --retry-missing to re-fetch rows that came back empty)")
         return 0
     print(f"enriching {len(todo)} paper(s) via Semantic Scholar...")
     n_ok, n_404, n_429, n_other = 0, 0, 0, 0
@@ -747,6 +755,9 @@ def main() -> int:
                       help="stop after N papers (0 = no limit)")
     p_es.add_argument("--sleep", type=float, default=4.0,
                       help="seconds between API calls (S2 free tier ≈ 100/5min)")
+    p_es.add_argument("--retry-missing", action="store_true",
+                      help=("ignore s2_fetched_at; re-fetch every row that "
+                            "doesn't actually have s2_paper_id set"))
 
     p_xs = sub.add_parser(
         "expand-via-s2",
