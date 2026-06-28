@@ -158,40 +158,11 @@ def _select_relevant_literature(target: Method, db_path: str,
 
 def _call_groq(system_prompt: str, user_payload: dict, model: str,
                temperature: float = 0.5, max_retries: int = 2) -> dict:
-    """Retries up to max_retries times on Groq's transient
-    'json_validate_failed' 400 (gpt-oss-120b JSON-mode quirk)."""
-    try:
-        from groq import Groq
-    except ImportError as e:
-        raise ImportError("groq SDK not installed. `uv add groq`.") from e
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY environment variable not set.")
-    client = Groq(api_key=api_key)
-    last_exc: Exception | None = None
-    for attempt in range(max_retries + 1):
-        try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user",
-                     "content": json.dumps(user_payload, ensure_ascii=False)},
-                ],
-                response_format={"type": "json_object"},
-                temperature=temperature,
-            )
-            return json.loads(resp.choices[0].message.content)
-        except Exception as exc:
-            last_exc = exc
-            msg = str(exc)
-            transient = ("json_validate_failed" in msg
-                         or "Failed to validate JSON" in msg)
-            if attempt < max_retries and transient:
-                temperature = min(1.0, temperature + 0.1)
-                continue
-            raise
-    raise last_exc
+    """Backwards-compatible alias for `llm_client.call_llm`. Routes to
+    OpenAI when `model` is an OpenAI chat model id, otherwise Groq."""
+    from .llm_client import call_llm
+    return call_llm(system_prompt, user_payload, model,
+                    temperature=temperature, max_retries=max_retries)
 
 
 def draft_notes_for_method(db_path: str, method_name: str, *,

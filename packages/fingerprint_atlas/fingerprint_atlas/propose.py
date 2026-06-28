@@ -359,55 +359,11 @@ def summarize_corpus(db_path: str, *, literature_top_n: int = 7) -> dict[str, An
 
 def _call_groq(system_prompt: str, user_payload: dict, model: str,
                temperature: float = 0.7, max_retries: int = 2) -> dict:
-    """Single Groq chat-completion call returning parsed JSON.
-
-    Retries up to `max_retries` times on the specific Groq 400
-    'json_validate_failed' / 'Failed to validate JSON' error — that one is
-    a transient sampling quirk of gpt-oss-120b under JSON mode, not a
-    prompt error. Each retry bumps temperature by +0.1 to perturb sampling.
-    Other errors (rate limit, auth, network) re-raise immediately.
-    """
-    try:
-        from groq import Groq
-    except ImportError as e:
-        raise ImportError(
-            "groq SDK not installed. Add it with `uv add groq` or "
-            "`pip install groq`."
-        ) from e
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY environment variable not set.")
-    client = Groq(api_key=api_key)
-    last_exc: Exception | None = None
-    for attempt in range(max_retries + 1):
-        try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user",
-                     "content": json.dumps(user_payload, ensure_ascii=False)},
-                ],
-                response_format={"type": "json_object"},
-                temperature=temperature,
-            )
-            raw = resp.choices[0].message.content
-            return json.loads(raw)
-        except Exception as exc:
-            last_exc = exc
-            msg = str(exc)
-            transient = (
-                "json_validate_failed" in msg
-                or "Failed to validate JSON" in msg
-            )
-            if attempt < max_retries and transient:
-                temperature = min(1.0, temperature + 0.1)
-                print(f"  (groq retry {attempt + 1}/{max_retries} after "
-                      f"JSON-validate failure; bumping temperature to "
-                      f"{temperature:.2f})")
-                continue
-            raise
-    raise last_exc  # safety net (unreachable)
+    """Backwards-compatible alias for `llm_client.call_llm`. Routes to
+    OpenAI when `model` is an OpenAI chat model id, otherwise Groq."""
+    from .llm_client import call_llm
+    return call_llm(system_prompt, user_payload, model,
+                    temperature=temperature, max_retries=max_retries)
 
 
 def _validate_proposal(p: dict, n_features: int) -> tuple[bool, str]:

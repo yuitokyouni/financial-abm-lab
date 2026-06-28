@@ -63,6 +63,37 @@ def cmd_ingest(args) -> int:
     return 0 if summary["n_errors"] == 0 else 1
 
 
+def cmd_ingest_ids(args) -> int:
+    """Targeted ingest of an explicit arxiv_id list. Reads ids from --ids
+    (comma-sep) or one-per-line from --ids-file."""
+    from .arxiv_ingest import ingest_by_ids
+    ids: list[str] = []
+    if args.ids:
+        ids.extend(s.strip() for s in args.ids.split(",") if s.strip())
+    if args.ids_file:
+        with open(args.ids_file) as fh:
+            for line in fh:
+                s = line.strip()
+                if s and not s.startswith("#"):
+                    ids.append(s)
+    if not ids:
+        print("either --ids or --ids-file is required", file=sys.stderr)
+        return 1
+    summary = ingest_by_ids(
+        args.db, ids, extract=not args.no_extract,
+        groq_model=args.groq_model,
+        min_relevance_to_keep=args.min_relevance_to_keep,
+        verbose=not args.quiet,
+    )
+    print("\n--- summary ---")
+    print(json.dumps({k: v for k, v in summary.items() if k != "errors"}, indent=2))
+    if summary["errors"]:
+        print(f"\nfirst 3 errors:")
+        for e in summary["errors"][:3]:
+            print("  -", e)
+    return 0 if summary["n_errors"] == 0 else 1
+
+
 def cmd_list(args) -> int:
     ensure_literature_schema(args.db)
     rows = load_literature(
@@ -472,6 +503,21 @@ def main() -> int:
                       help="papers extracted below this relevance keep metadata only")
     p_in.add_argument("--quiet", action="store_true")
 
+    p_ii = sub.add_parser(
+        "ingest-ids",
+        help=("targeted ingest of explicit arxiv_ids (e.g. for foundational "
+              "papers the broad query passes miss)"),
+    )
+    g_ii = p_ii.add_mutually_exclusive_group(required=True)
+    g_ii.add_argument("--ids", help="comma-separated arxiv_ids "
+                                     "(e.g. '1909.03185,1611.04839')")
+    g_ii.add_argument("--ids-file", help=("one arxiv_id per line, # comments "
+                                           "and blanks ignored"))
+    p_ii.add_argument("--no-extract", action="store_true")
+    p_ii.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_ii.add_argument("--min-relevance-to-keep", type=float, default=0.0)
+    p_ii.add_argument("--quiet", action="store_true")
+
     p_ls = sub.add_parser("list", help="one-line summary per paper")
     p_ls.add_argument("--tag", default=None)
     p_ls.add_argument("--min-relevance", type=float, default=None)
@@ -557,7 +603,8 @@ def main() -> int:
                       help="seconds between paper snapshots (rate-limit padding)")
 
     args = ap.parse_args()
-    handlers = {"ingest": cmd_ingest, "list": cmd_list, "show": cmd_show,
+    handlers = {"ingest": cmd_ingest, "ingest-ids": cmd_ingest_ids,
+                "list": cmd_list, "show": cmd_show,
                 "search": cmd_search, "backfill-code": cmd_backfill_code,
                 "diagnose-code": cmd_diagnose_code,
                 "scan-pdfs-for-code": cmd_scan_pdfs_for_code,

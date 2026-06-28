@@ -17,8 +17,6 @@ DB ranking is pure-Python keyword overlap; no embedding model needed.
 """
 from __future__ import annotations
 
-import json
-import os
 import re
 from typing import Any
 
@@ -208,75 +206,14 @@ def rank_proposals(db_path: str, aspects: dict, k: int = 5) -> list[dict]:
 
 def _call_groq(system_prompt: str, user_payload: dict, model: str,
                temperature: float = 0.4, max_retries: int = 2) -> dict:
-    """Same retry pattern as propose._call_groq, plus defence against
-    empty `choices` and missing `message.content` (observed when Groq
-    silently truncates output)."""
-    try:
-        from groq import Groq
-    except ImportError as e:
-        raise ImportError("groq SDK not installed. `uv add groq`.") from e
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY environment variable not set.")
-    client = Groq(api_key=api_key)
-    last_exc: Exception | None = None
-    for attempt in range(max_retries + 1):
-        try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user",
-                     "content": json.dumps(user_payload, ensure_ascii=False)},
-                ],
-                response_format={"type": "json_object"},
-                temperature=temperature,
-            )
-            if not resp.choices:
-                raise RuntimeError(
-                    f"Groq returned empty choices (model={model}, "
-                    f"prompt_size={len(system_prompt) + len(json.dumps(user_payload))} chars)"
-                )
-            content = getattr(resp.choices[0].message, "content", None)
-            if not content:
-                raise RuntimeError(
-                    f"Groq returned a choice with no message.content "
-                    f"(model={model}, finish_reason="
-                    f"{getattr(resp.choices[0], 'finish_reason', '?')})"
-                )
-            parsed = json.loads(content)
-            # gpt-oss-120b occasionally returns a JSON array even with
-            # response_format=json_object set. Unwrap a single-element
-            # list, otherwise raise so the caller's retry / error path runs.
-            if isinstance(parsed, list):
-                if len(parsed) == 1 and isinstance(parsed[0], dict):
-                    parsed = parsed[0]
-                else:
-                    raise RuntimeError(
-                        f"Groq returned a JSON list instead of an object "
-                        f"(model={model}, len={len(parsed)}, "
-                        f"first_type={type(parsed[0]).__name__ if parsed else 'empty'})"
-                    )
-            if not isinstance(parsed, dict):
-                raise RuntimeError(
-                    f"Groq returned non-object JSON "
-                    f"(model={model}, got {type(parsed).__name__})"
-                )
-            return parsed
-        except Exception as exc:
-            last_exc = exc
-            msg = str(exc)
-            transient = ("json_validate_failed" in msg
-                         or "Failed to validate JSON" in msg
-                         or "empty choices" in msg
-                         or "no message.content" in msg
-                         or "JSON list instead of an object" in msg
-                         or "non-object JSON" in msg)
-            if attempt < max_retries and transient:
-                temperature = min(1.0, temperature + 0.1)
-                continue
-            raise
-    raise last_exc
+    """Backwards-compatible alias for `llm_client.call_llm`. Despite the
+    name, this routes to OpenAI when `model` is an OpenAI chat model id
+    (gpt-4o-mini etc); see llm_client._is_openai_model for the dispatch
+    rule. Kept under the old name so existing callers don't have to
+    change."""
+    from .llm_client import call_llm
+    return call_llm(system_prompt, user_payload, model,
+                    temperature=temperature, max_retries=max_retries)
 
 
 def extract_aspects(idea_text: str, groq_model: str = DEFAULT_GROQ_MODEL,

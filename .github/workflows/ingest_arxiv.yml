@@ -1,7 +1,7 @@
 name: ingest-arxiv
 
 # Pull the last week's worth of financial-ABM papers from arxiv, extract
-# structured info via Groq Llama 3.3 70B, and accumulate them in the
+# structured info via the configured LLM, and accumulate them in the
 # literature DB. Run weekly so the corpus stays current automatically.
 
 on:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
     inputs:
       preset:
-        description: "arxiv query preset (financial_abm_strict / financial_abm / agent_based_recent)"
+        description: "arxiv query preset (financial_abm_strict / financial_abm / foundational_abm)"
         required: false
         default: "financial_abm_strict"
       max_results:
@@ -19,9 +19,13 @@ on:
         required: false
         default: "50"
       no_extract:
-        description: "metadata only, skip Groq extraction (free)"
+        description: "metadata only, skip LLM extraction"
         required: false
         default: "false"
+      model:
+        description: "LLM model id (openai/gpt-4o-mini → OpenAI, openai/gpt-oss-120b → Groq)"
+        required: false
+        default: "openai/gpt-4o-mini"
 
 permissions:
   contents: write
@@ -34,6 +38,7 @@ jobs:
       DB_PATH: data/abm_knowhow.db
       PRESET: ${{ github.event.inputs.preset || 'financial_abm_strict' }}
       MAX: ${{ github.event.inputs.max_results || '50' }}
+      LLM_MODEL: ${{ github.event.inputs.model || 'openai/gpt-4o-mini' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -97,10 +102,27 @@ jobs:
 
       - name: Ingest new arxiv papers
         env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           NO_EXTRACT="${{ github.event.inputs.no_extract || 'false' }}"
-          ARGS="--preset $PRESET --max $MAX --min-relevance-to-keep 0.3"
+          if [ "$NO_EXTRACT" != "true" ]; then
+            case "$LLM_MODEL" in
+              openai/gpt-4o*|openai/gpt-4-turbo*|openai/gpt-4.1*|openai/gpt-3.5*|openai/o1*|openai/o3*|openai/o4*)
+                if [ -z "$OPENAI_API_KEY" ]; then
+                  echo "::error::OPENAI_API_KEY secret is not set but LLM_MODEL=$LLM_MODEL routes to OpenAI."
+                  exit 1
+                fi
+                ;;
+              *)
+                if [ -z "$GROQ_API_KEY" ]; then
+                  echo "::error::GROQ_API_KEY secret is not set but LLM_MODEL=$LLM_MODEL routes to Groq."
+                  exit 1
+                fi
+                ;;
+            esac
+          fi
+          ARGS="--preset $PRESET --max $MAX --min-relevance-to-keep 0.3 --groq-model $LLM_MODEL"
           if [ "$NO_EXTRACT" = "true" ]; then ARGS="$ARGS --no-extract"; fi
           uv run python -m fingerprint_atlas.arxiv_cli \
             --db "$DB_PATH" ingest $ARGS
@@ -131,7 +153,7 @@ jobs:
           title: "Weekly arxiv literature snapshot — ${{ github.run_id }}"
           body: |
             New papers ingested from arxiv (preset: `${{ env.PRESET }}`,
-            max: `${{ env.MAX }}`). Extraction via Groq gpt-oss-120b.
+            max: `${{ env.MAX }}`). Extraction via `${{ env.LLM_MODEL }}`.
 
             The JSON snapshot under `data/literature_methods.json` is the
             source of truth for the literature DB — re-run any propose

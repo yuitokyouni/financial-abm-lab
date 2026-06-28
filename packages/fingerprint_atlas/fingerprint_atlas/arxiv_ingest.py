@@ -48,6 +48,21 @@ DEFAULT_QUERIES = {
         'OR abs:"chartist" OR abs:"fundamentalist" '
         'OR abs:"herding" OR abs:"stylized facts")'
     ),
+    "foundational_abm": (
+        # Catches the older / cross-category ABM foundations the q-fin
+        # query misses: physics.soc-ph self-organization, MG / SG /
+        # Lux-Marchesi / Cont-Bouchaud / Challet et al. work, including
+        # pre-2020 papers and econophysics venues. Pair with --sort
+        # relevance so well-cited classics surface even if old.
+        '(cat:physics.soc-ph OR cat:q-fin.GN OR cat:q-fin.TR OR cat:nlin.AO) '
+        'AND ('
+        'abs:"minority game" OR abs:"speculation game" '
+        'OR abs:"self-organized" OR abs:"self-organization" '
+        'OR abs:"Lux-Marchesi" OR abs:"Cont-Bouchaud" '
+        'OR abs:"Challet" OR abs:"Katahira" '
+        'OR abs:"stylized fact" OR abs:"stylized facts" '
+        'OR abs:"financial market model" OR abs:"econophysics")'
+    ),
 }
 
 # Same default as propose.py — chosen after live A/B (see propose.py for notes).
@@ -87,6 +102,36 @@ Be conservative. Output ONLY the JSON object, no prose.
 """
 
 
+def query_arxiv_by_ids(arxiv_ids: list[str]) -> list[dict[str, Any]]:
+    """Fetch arxiv metadata for an explicit list of arxiv_ids. Useful for
+    targeted ingest of foundational papers (e.g. Katahira-Chen 1909.03185)
+    that the broad-query passes can miss because they're old or in a
+    category we don't sweep."""
+    import arxiv
+    # Strip version suffix — arxiv id_list expects base ids; the returned
+    # entry_id carries the canonical version.
+    import re as _re
+    cleaned = [_re.sub(r"v\d+$", "", a.strip()) for a in arxiv_ids if a.strip()]
+    if not cleaned:
+        return []
+    search = arxiv.Search(id_list=cleaned)
+    client = arxiv.Client(page_size=min(100, len(cleaned)), delay_seconds=3.0)
+    out = []
+    for r in client.results(search):
+        eid = r.entry_id.rsplit("/", 1)[-1]
+        out.append({
+            "arxiv_id": eid,
+            "title": r.title.strip().replace("\n", " "),
+            "authors": ", ".join(a.name for a in r.authors),
+            "year": r.published.year,
+            "published_date": r.published.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "primary_category": r.primary_category,
+            "abstract": r.summary.strip().replace("\n", " "),
+            "comment": (r.comment or "").strip() or None,
+        })
+    return out
+
+
 def query_arxiv(query: str, max_results: int = 50,
                 sort_by: str = "submitted") -> list[dict[str, Any]]:
     """Query the arxiv API, return a list of paper metadata dicts."""
@@ -123,49 +168,28 @@ def query_arxiv(query: str, max_results: int = 50,
 def _call_groq_for_extraction(paper: dict, model: str,
                               temperature: float = 0.3,
                               max_retries: int = 2) -> dict:
-    """One Groq call extracting structured info from a paper. Retries on the
-    'json_validate_failed' 400 — same gpt-oss-120b JSON-mode quirk as
-    `propose._call_groq`."""
-    try:
-        from groq import Groq
-    except ImportError as e:
-        raise ImportError(
-            "groq SDK not installed. Run `uv add groq` or `pip install groq`."
-        ) from e
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY environment variable not set.")
-    client = Groq(api_key=api_key)
-    user_msg = f"Title: {paper['title']}\n\nAbstract: {paper['abstract']}"
+    """Per-paper structured extraction. Wraps `llm_client.call_llm`, which
+    routes to OpenAI when `model` is an OpenAI chat model id, otherwise
+    Groq. Keeps an explicit `time.sleep(65)` recovery on Groq 429 since
+    the per-key TPM window is 60s — that backoff is more aggressive than
+    the generic transient retry."""
+    from .llm_client import call_llm
+    paper_payload = {"title": paper["title"], "abstract": paper["abstract"]}
     last_exc: Exception | None = None
     for attempt in range(max_retries + 1):
         try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},
-                    {"role": "user", "content": user_msg},
-                ],
-                response_format={"type": "json_object"},
-                temperature=temperature,
-            )
-            return json.loads(resp.choices[0].message.content)
+            return call_llm(EXTRACTION_SYSTEM_PROMPT, paper_payload, model,
+                            temperature=temperature, max_retries=0)
         except Exception as exc:
             last_exc = exc
             msg = str(exc)
             rate_limited = ("Rate limit reached" in msg
                             or "rate_limit_exceeded" in msg
                             or "429" in msg)
-            transient_json = ("json_validate_failed" in msg
-                              or "Failed to validate JSON" in msg)
             if attempt < max_retries and rate_limited:
-                # Groq's per-key TPM window is 60s; sleep 65 to give margin.
-                print(f"  (Groq 429 rate limit on {paper['arxiv_id']}, "
-                      f"sleeping 65s before retry {attempt + 1}/{max_retries})")
+                print(f"  (rate limit on {paper['arxiv_id']}, sleeping 65s "
+                      f"before retry {attempt + 1}/{max_retries})")
                 time.sleep(65)
-                continue
-            if attempt < max_retries and transient_json:
-                temperature = min(1.0, temperature + 0.1)
                 continue
             raise
     raise last_exc
@@ -211,15 +235,17 @@ def _coerce_relevance(v) -> float | None:
     return max(0.0, min(1.0, f))
 
 
-def ingest(db_path: str, *, query: str, max_results: int = 50,
+def ingest(db_path: str, *, query: str | None = None, max_results: int = 50,
            extract: bool = True, groq_model: str = DEFAULT_GROQ_MODEL,
            min_relevance_to_keep: float = 0.0,
+           papers: list[dict[str, Any]] | None = None,
            verbose: bool = True) -> dict:
     """End-to-end: query → upsert metadata → (optional) LLM extract → store.
 
-    Returns a summary dict. Re-running over the same query is safe; arxiv_id is
-    unique. Papers already extracted are skipped unless their extraction is
-    stale (we don't currently re-extract — see `re-extract` CLI sub-command).
+    Either pass `query` (broad arxiv search) or a pre-fetched `papers` list
+    (e.g. from `query_arxiv_by_ids` for targeted ingest). Re-running over
+    the same papers is safe; arxiv_id is unique. Papers already extracted
+    are skipped.
     """
     from .db import (
         ensure_literature_schema, upsert_literature_metadata,
@@ -229,11 +255,14 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
     from .code_links import resolve_code_url
     ensure_literature_schema(db_path)
 
+    if papers is None:
+        if not query:
+            raise ValueError("either `query` or `papers` must be provided")
+        if verbose:
+            print(f"querying arxiv: {query!r}  (max_results={max_results})")
+        papers = query_arxiv(query, max_results=max_results)
     if verbose:
-        print(f"querying arxiv: {query!r}  (max_results={max_results})")
-    papers = query_arxiv(query, max_results=max_results)
-    if verbose:
-        print(f"  -> {len(papers)} papers returned by arxiv")
+        print(f"  -> {len(papers)} papers to process")
 
     n_new, n_extracted, n_skipped, n_dropped = 0, 0, 0, 0
     errors = []
@@ -339,3 +368,23 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
         "errors": errors,
         "groq_model": groq_model if extract else None,
     }
+
+
+def ingest_by_ids(db_path: str, arxiv_ids: list[str], *,
+                   extract: bool = True,
+                   groq_model: str = DEFAULT_GROQ_MODEL,
+                   min_relevance_to_keep: float = 0.0,
+                   verbose: bool = True) -> dict:
+    """Targeted ingest of an explicit arxiv_id list. Wraps `ingest` with
+    pre-fetched metadata so foundational papers (e.g. Katahira-Chen 2019
+    = 1909.03185) get into the DB even when they fall outside our broad
+    query coverage."""
+    if verbose:
+        print(f"fetching {len(arxiv_ids)} arxiv id(s)")
+    papers = query_arxiv_by_ids(arxiv_ids)
+    if verbose:
+        print(f"  -> {len(papers)} returned by arxiv "
+              f"(missing: {len(arxiv_ids) - len(papers)})")
+    return ingest(db_path, papers=papers, extract=extract,
+                  groq_model=groq_model,
+                  min_relevance_to_keep=min_relevance_to_keep, verbose=verbose)
