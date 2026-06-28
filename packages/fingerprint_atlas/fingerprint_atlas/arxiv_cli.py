@@ -234,23 +234,37 @@ def cmd_backfill_code(args) -> int:
 
 def cmd_scan_pdfs_for_code(args) -> int:
     """Last-resort source: download the PDF for each paper without a code_url
-    (and not yet PDF-scanned), parse first few pages with pypdf, regex for
-    github. Many ABM/finance papers stash the link in the introduction
-    rather than the abstract or arxiv comment.
+    (and not yet PDF-scanned), parse pages with pypdf, regex for github /
+    gitlab / bitbucket. Many ABM/finance papers stash the link in the
+    introduction / acknowledgments / refs rather than in the abstract.
 
     Best-effort: any per-paper failure is swallowed; the row is stamped
-    pdf_scanned_at regardless so we don't retry on the next run."""
+    pdf_scanned_at regardless so we don't retry on the next run.
+
+    --rescan re-runs the scanner on rows that were already scanned (use
+    after improving the extractor or to refresh a previously-wrong link).
+    --filter-source LIST only re-scans rows whose existing code_url_source
+    matches one of LIST (comma-sep, e.g. 'pdf' to revisit only PDF hits)."""
     from .code_links import extract_github_from_pdf
     from .db import set_literature_code_url, mark_pdf_scanned
     import time
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
-    todo = [r for r in rows
-            if not r.get("code_url") and not r.get("pdf_scanned_at")]
+    filter_sources = (set(args.filter_source.split(","))
+                      if args.filter_source else None)
+    if args.rescan:
+        todo = [r for r in rows
+                if (filter_sources is None
+                    or r.get("code_url_source") in filter_sources)]
+    else:
+        todo = [r for r in rows
+                if not r.get("code_url") and not r.get("pdf_scanned_at")]
     if not todo:
         print("no papers left to scan (every link-less row already scanned).")
         return 0
-    print(f"scanning {len(todo)} PDF(s) — {args.max_pages} pages each, "
+    max_pages = args.max_pages if args.max_pages > 0 else None
+    scope = f"first {max_pages} pages" if max_pages else "all pages"
+    print(f"scanning {len(todo)} PDF(s) — {scope}, "
           f"{args.sleep:.1f}s between papers")
     n_filled, n_empty = 0, 0
     for i, p in enumerate(todo):
@@ -258,7 +272,6 @@ def cmd_scan_pdfs_for_code(args) -> int:
             print(f"  (--limit {args.limit} reached, stopping)")
             break
         try:
-            max_pages = args.max_pages if args.max_pages > 0 else None
             url = extract_github_from_pdf(p["arxiv_id"], max_pages=max_pages)
         except Exception as exc:
             print(f"  ! {p['arxiv_id']}: {exc}")
@@ -269,7 +282,7 @@ def cmd_scan_pdfs_for_code(args) -> int:
             print(f"  + {p['arxiv_id']} (pdf): {url}")
             n_filled += 1
         else:
-            print(f"  - {p['arxiv_id']}: no github link in first {args.max_pages} pages")
+            print(f"  - {p['arxiv_id']}: no repo link in {scope}")
             n_empty += 1
         # Stamp regardless so a future re-run doesn't redownload the PDF.
         try:
@@ -455,6 +468,13 @@ def main() -> int:
                             "papers put the link in acknowledgments / refs)"))
     p_sp.add_argument("--sleep", type=float, default=3.0,
                       help="seconds between papers (arxiv rate-limit padding)")
+    p_sp.add_argument("--rescan", action="store_true",
+                      help=("re-scan rows that already have code_url and/or "
+                            "pdf_scanned_at — use after improving the "
+                            "extractor or to refresh wrong links"))
+    p_sp.add_argument("--filter-source", default=None,
+                      help=("comma-sep code_url_source values to rescan, "
+                            "e.g. 'pdf' to only revisit PDF-derived hits"))
 
     p_fs = sub.add_parser(
         "fetch-code-snapshots",

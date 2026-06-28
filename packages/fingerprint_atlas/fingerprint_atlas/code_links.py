@@ -63,34 +63,86 @@ def _normalize_for_url_scan(text: str) -> str:
     return text
 
 
+# Phrases that strongly indicate the URL right after them is the paper's
+# OWN repo (rather than a tool / base-model citation). The proximity
+# window is ~120 chars after each match.
+_AUTHORS_REPO_HINTS = re.compile(
+    r"\b("
+    r"source\s+code|"
+    r"code\s+(?:is\s+)?available|"
+    r"code\s+(?:can\s+be\s+)?found|"
+    r"code\s+(?:and|with)\s+data|"
+    r"our\s+code|"
+    r"we\s+release|"
+    r"we\s+(?:make\s+)?(?:publicly\s+)?available|"
+    r"implementation\s+(?:is\s+)?available|"
+    r"supplementary\s+code|"
+    r"replication\s+(?:code|package)|"
+    r"open[- ]source(?:d)?(?:\s+at)?"
+    r")\b",
+    re.IGNORECASE,
+)
+_PROXIMITY_WINDOW = 120
+
+
+def _clean_repo_match(m: "re.Match[str]") -> str | None:
+    host, org, repo = m.group(1).lower(), m.group(2), m.group(3)
+    while repo and repo[-1] in _TRAILING_PUNCT:
+        repo = repo[:-1]
+    if repo.endswith(".git"):
+        repo = repo[:-4]
+    # Trailing '-' or '.' on repo = truncated line-wrapped URL artifact.
+    repo = repo.rstrip("-.")
+    if not repo:
+        return None
+    return f"https://{host}/{org}/{repo}"
+
+
+def _find_authors_repo(text: str) -> str | None:
+    """Find a repo URL that sits within the proximity window after an
+    'authors-own-code' phrase. Returns None if no proximity hit."""
+    for hint in _AUTHORS_REPO_HINTS.finditer(text):
+        window = text[hint.end():hint.end() + _PROXIMITY_WINDOW]
+        m = _REPO_HOST_RE.search(window)
+        if not m:
+            continue
+        url = _clean_repo_match(m)
+        if url:
+            return url
+    return None
+
+
 def extract_github_from_text(text: str | None) -> str | None:
-    """Return the first canonical github.com/<org>/<repo> URL in `text`.
+    """Return a github / gitlab / bitbucket URL extracted from `text`.
 
     Tolerates: missing protocol, trailing punctuation / closing brackets,
     `.git` suffix, line-wrapped URLs (newline-after-/ and hyphenation).
+
+    Disambiguation: when a paper cites multiple repos (e.g. base-model +
+    its own code), prefer URLs that appear within ~120 chars after
+    'authors-own-code' phrases like 'source code', 'code available at',
+    'we release'. Falls back to first match in document order.
     """
     if not text:
         return None
-    candidates: list[str] = []
     # Try BOTH the raw text and the normalized text. Normalization repairs
-    # PDF line-wrap mangling, but raw text wins when the URL was already
-    # clean. Pick the longer match — line-wrap repair only ever extends a
-    # repo name (e.g. 'very-long-' → 'very-long-repo-name').
+    # PDF line-wrap mangling, but raw text wins when the URL was clean.
+    for variant in (text, _normalize_for_url_scan(text)):
+        # First pass: proximity to authors-own-code hint. Strong signal.
+        url = _find_authors_repo(variant)
+        if url:
+            return url
+    # Fall back: any repo URL in the text. Less reliable for papers that
+    # cite multiple repos; the first one wins (currently a known issue
+    # for e.g. base-model citations preceding the author's own repo).
+    candidates: list[str] = []
     for variant in (text, _normalize_for_url_scan(text)):
         m = _REPO_HOST_RE.search(variant)
         if not m:
             continue
-        host, org, repo = m.group(1).lower(), m.group(2), m.group(3)
-        while repo and repo[-1] in _TRAILING_PUNCT:
-            repo = repo[:-1]
-        if repo.endswith(".git"):
-            repo = repo[:-4]
-        # A trailing '-' or '.' on the repo is a strong sign of a truncated
-        # line-wrapped URL ('very-long-\nrepo' would yield 'very-long-'
-        # before normalization). Strip and keep so we can compare lengths.
-        repo = repo.rstrip("-.")
-        if repo:
-            candidates.append(f"https://{host}/{org}/{repo}")
+        url = _clean_repo_match(m)
+        if url:
+            candidates.append(url)
     if not candidates:
         return None
     return max(candidates, key=len)

@@ -419,3 +419,36 @@ def test_extract_github_repairs_pdf_linewraps():
     hyphenated = "see https://github.com/foo/very-long-\nrepo-name (paper §3)"
     assert (extract_github_from_text(hyphenated)
             == "https://github.com/foo/very-long-repo-name")
+
+
+def test_extract_github_prefers_authors_own_repo_over_tool_citation():
+    """A paper that cites Baichuan as its base model and ALSO releases its
+    own code should surface the OWN repo, not the base-model link, even
+    though the base-model citation appears first in document order."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    text = (
+        "We fine-tune Baichuan (https://github.com/baichuan-inc/Baichuan-13B) "
+        "on financial dialogue. "
+        "Our code is available at https://github.com/the-authors/finance-paper."
+    )
+    assert (extract_github_from_text(text)
+            == "https://github.com/the-authors/finance-paper")
+
+
+def test_extract_github_proximity_phrases():
+    """Various phrasings that should pick the URL right after them."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    for prefix in (
+        "Source code: https://github.com/x/y",
+        "We release https://github.com/x/y .",
+        "Implementation is available at https://github.com/x/y",
+        "Open-source at https://github.com/x/y",
+    ):
+        assert extract_github_from_text(prefix) == "https://github.com/x/y", prefix
+
+
+def test_extract_github_falls_back_when_no_authors_hint():
+    """If no 'code available' phrase exists, return the first match."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    text = "We use https://github.com/foo/bar for stuff."
+    assert extract_github_from_text(text) == "https://github.com/foo/bar"
