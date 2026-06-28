@@ -109,12 +109,38 @@ def fetch_pwc_repo(arxiv_id: str) -> str | None:
     return url.rstrip("/")
 
 
-def resolve_code_url(arxiv_id: str, abstract: str | None) -> tuple[str | None, str | None]:
-    """Convenience: try abstract → PWC. Return (url, source) where source is
-    'abstract' / 'pwc' / None."""
+def fetch_arxiv_comment(arxiv_id: str) -> str | None:
+    """Hit arxiv API for a single paper, return the author-comment field
+    or None. Many ABM/finance papers stash 'code at github.com/...' here
+    rather than in the abstract."""
+    try:
+        import arxiv  # local import: cli-only dep
+    except ImportError:
+        return None
+    base = _arxiv_id_base(arxiv_id)
+    try:
+        client = arxiv.Client(page_size=1, delay_seconds=3.0)
+        results = list(client.results(arxiv.Search(id_list=[base])))
+    except Exception:
+        return None
+    if not results:
+        return None
+    return results[0].comment
+
+
+def resolve_code_url(arxiv_id: str, abstract: str | None,
+                     comment: str | None = None) -> tuple[str | None, str | None]:
+    """Try abstract → comment → PWC. Return (url, source) where source is
+    'abstract' / 'comment' / 'pwc' / None.
+
+    `comment` is the arxiv author-comment field. If you have it cached, pass
+    it; otherwise the caller can also pass None and rely on PWC fallback."""
     url = extract_github_from_text(abstract)
     if url:
         return url, "abstract"
+    url = extract_github_from_text(comment)
+    if url:
+        return url, "comment"
     url = fetch_pwc_repo(arxiv_id)
     if url:
         return url, "pwc"

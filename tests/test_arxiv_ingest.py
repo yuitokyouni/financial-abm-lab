@@ -370,3 +370,33 @@ def test_make_plan_injects_code_snapshots_into_payload():
         assert len(clc) == 1
         assert clc[0]["arxiv_id"] == "2503.00320v2"
         assert "TRIBE" in (clc[0]["readme_excerpt"] or "")
+
+
+def test_resolve_code_url_uses_comment_when_abstract_misses():
+    from fingerprint_atlas.code_links import resolve_code_url
+    url, src = resolve_code_url(
+        "2503.99999v1",
+        abstract="A study of X with no link.",
+        comment="14 pages, code at https://github.com/foo/bar",
+    )
+    assert url == "https://github.com/foo/bar"
+    assert src == "comment"
+
+
+def test_set_arxiv_comment_roundtrip():
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata, load_literature,
+        set_arxiv_comment,
+    )
+    with tempfile.TemporaryDirectory() as td:
+        db = f"{td}/lit.db"
+        ensure_literature_schema(db)
+        upsert_literature_metadata(
+            db, arxiv_id="2503.99999v1", title="x", authors="A",
+            year=2025, published_date="2025-03-01T00:00:00Z",
+            primary_category="q-fin.TR", abstract="no link",
+        )
+        set_arxiv_comment(db, "2503.99999v1",
+                          "14 pages, code at https://github.com/foo/bar")
+        rows = load_literature(db)
+        assert "github.com/foo/bar" in rows[0]["arxiv_comment"]

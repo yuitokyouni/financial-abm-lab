@@ -115,6 +115,7 @@ def query_arxiv(query: str, max_results: int = 50,
             "published_date": r.published.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "primary_category": r.primary_category,
             "abstract": r.summary.strip().replace("\n", " "),
+            "comment": (r.comment or "").strip() or None,
         })
     return out
 
@@ -223,7 +224,7 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
     from .db import (
         ensure_literature_schema, upsert_literature_metadata,
         update_literature_extraction, load_literature,
-        set_literature_code_url,
+        set_literature_code_url, set_arxiv_comment,
     )
     from .code_links import resolve_code_url
     ensure_literature_schema(db_path)
@@ -250,9 +251,16 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
         if not had_id:
             n_new += 1
 
-        # Attempt to surface a code-repo URL. Cheap: regex over the
-        # abstract first, only hit PWC when the abstract has nothing.
-        # Skip the PWC call if we already have one persisted.
+        # Cache arxiv's author-comment field — many ABM/finance papers put
+        # 'code at github.com/...' here rather than in the abstract.
+        if p.get("comment") is not None:
+            try:
+                set_arxiv_comment(db_path, p["arxiv_id"], p["comment"])
+            except KeyError:
+                pass
+
+        # Attempt to surface a code-repo URL. Cheap: regex over abstract,
+        # then comment, then PWC. Skip if already persisted.
         existing_code_url = next(
             (r.get("code_url") for r in before_rows
              if r["arxiv_id"] == p["arxiv_id"] and r.get("code_url")),
@@ -260,7 +268,9 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
         )
         if not existing_code_url:
             try:
-                url, source = resolve_code_url(p["arxiv_id"], p["abstract"])
+                url, source = resolve_code_url(
+                    p["arxiv_id"], p["abstract"], p.get("comment"),
+                )
             except Exception:
                 url, source = None, None
             if url:

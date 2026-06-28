@@ -251,6 +251,10 @@ def ensure_literature_schema(db_path: str) -> None:
             con.execute(
                 "ALTER TABLE literature_methods ADD COLUMN code_url_source TEXT"
             )
+        if not _column_exists(con, "literature_methods", "arxiv_comment"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN arxiv_comment TEXT"
+            )
         con.commit()
 
 
@@ -322,7 +326,7 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
            "primary_category, abstract, mechanism_summary, mechanism_tags, "
            "stylized_facts_targeted, novelty_signal, relevance_score, "
            "extracted_by_model, extraction_attempts, user_notes, user_tags, "
-           "ingested_at, updated_at, code_url, code_url_source "
+           "ingested_at, updated_at, code_url, code_url_source, arxiv_comment "
            "FROM literature_methods")
     where: list[str] = []
     args: list[Any] = []
@@ -354,6 +358,7 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
             "user_notes": r[15] or "", "user_tags": r[16] or "",
             "ingested_at": r[17], "updated_at": r[18],
             "code_url": r[19], "code_url_source": r[20],
+            "arxiv_comment": r[21],
         })
     return out
 
@@ -421,9 +426,22 @@ def load_code_snapshots(db_path: str, arxiv_ids: list[str] | None = None
     return out
 
 
+def set_arxiv_comment(db_path: str, arxiv_id: str, comment: str | None) -> None:
+    """Persist the arxiv author-comment field (often contains 'code at github...')."""
+    ensure_literature_schema(db_path)
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET arxiv_comment = ? WHERE arxiv_id = ?",
+            (comment, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
+
+
 def set_literature_code_url(db_path: str, arxiv_id: str, *,
                              code_url: str | None, source: str) -> None:
-    """Persist a code-repo URL for a paper. `source` ∈ {'abstract', 'pwc'}
+    """Persist a code-repo URL for a paper. `source` ∈ {'abstract', 'comment', 'pwc'}
     so we know how confident the link is."""
     import datetime as _dt
     now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"

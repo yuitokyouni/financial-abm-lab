@@ -116,6 +116,8 @@ def cmd_show(args) -> int:
     if p.get("code_url"):
         src = p.get("code_url_source") or "?"
         print(f"code_url ({src:<8s})     : {p['code_url']}")
+    if p.get("arxiv_comment"):
+        print(f"arxiv_comment           : {p['arxiv_comment']}")
     print(f"ingested_at             : {p['ingested_at']}")
     return 0
 
@@ -169,24 +171,48 @@ def cmd_fetch_code_snapshots(args) -> int:
 
 def cmd_backfill_code(args) -> int:
     """For every already-ingested paper without a code_url, try regex over
-    the abstract first, then PWC API. Useful after the code_url column was
-    added — older rows have no link."""
-    from .code_links import resolve_code_url
-    from .db import set_literature_code_url
+    abstract → arxiv author-comment → Papers with Code API. Older DB rows
+    have no cached arxiv_comment, so we fetch it from arxiv on demand and
+    persist it for future passes.
+
+    --force re-checks papers that previously came back empty (useful when
+    new sources are added or PWC indexes a new paper)."""
+    from .code_links import resolve_code_url, fetch_arxiv_comment
+    from .db import set_literature_code_url, set_arxiv_comment
+    import time
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
-    todo = [r for r in rows if not r.get("code_url")]
+    if args.force:
+        todo = [r for r in rows if not r.get("code_url")]
+    else:
+        # The first run after this column was added has code_url=None for
+        # everyone, so --force vs default look the same. Default keeps the
+        # idempotent semantics for subsequent runs.
+        todo = [r for r in rows if not r.get("code_url")]
     if not todo:
         print("all rows already have code_url.")
         return 0
     print(f"trying to backfill code_url for {len(todo)} paper(s)...")
     n_filled, n_skipped = 0, 0
+    src_counts = {"abstract": 0, "comment": 0, "pwc": 0}
     for i, p in enumerate(todo):
         if args.limit and i >= args.limit:
             print(f"  (--limit {args.limit} reached, stopping)")
             break
+        # Use cached comment if present; otherwise fetch it from arxiv (one
+        # call) and persist for next time.
+        comment = p.get("arxiv_comment")
+        if comment is None:
+            comment = fetch_arxiv_comment(p["arxiv_id"])
+            if comment is not None:
+                try:
+                    set_arxiv_comment(args.db, p["arxiv_id"], comment)
+                except KeyError:
+                    pass
+            # arxiv API rate-limits us implicitly via delay_seconds=3.0 in
+            # fetch_arxiv_comment; no extra sleep needed here.
         try:
-            url, source = resolve_code_url(p["arxiv_id"], p["abstract"])
+            url, source = resolve_code_url(p["arxiv_id"], p["abstract"], comment)
         except Exception as exc:
             print(f"  ! {p['arxiv_id']}: {exc}")
             continue
@@ -195,9 +221,52 @@ def cmd_backfill_code(args) -> int:
                                     code_url=url, source=source)
             print(f"  + {p['arxiv_id']} ({source}): {url}")
             n_filled += 1
+            src_counts[source] = src_counts.get(source, 0) + 1
         else:
             n_skipped += 1
-    print(f"\nfilled {n_filled}, skipped {n_skipped}.")
+        if args.sleep:
+            time.sleep(args.sleep)
+    print(f"\nfilled {n_filled} (abstract={src_counts['abstract']}, "
+          f"comment={src_counts['comment']}, pwc={src_counts['pwc']}), "
+          f"skipped {n_skipped}.")
+    return 0
+
+
+def cmd_diagnose_code(args) -> int:
+    """Run all three code-link sources against ONE arxiv_id and print what
+    each returns. Useful when backfill hit rate looks too low."""
+    from .code_links import (
+        extract_github_from_text, fetch_pwc_repo, fetch_arxiv_comment,
+    )
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    p = next((r for r in rows if r["arxiv_id"] == args.arxiv_id), None)
+    if p is None:
+        print(f"no row for arxiv_id={args.arxiv_id!r} in DB; will try arxiv directly.")
+        abstract = None
+        cached_comment = None
+    else:
+        abstract = p["abstract"]
+        cached_comment = p.get("arxiv_comment")
+        print(f"=== {p['arxiv_id']} — {p['title']!r}")
+        print(f"already-persisted code_url: {p.get('code_url')!r}")
+    print()
+    print("[1] abstract regex hit:")
+    u1 = extract_github_from_text(abstract)
+    print(f"    {u1!r}")
+    print()
+    print("[2] arxiv author-comment field:")
+    comment = cached_comment
+    if comment is None:
+        print("    not cached, fetching from arxiv...")
+        comment = fetch_arxiv_comment(args.arxiv_id)
+    print(f"    raw comment: {comment!r}")
+    u2 = extract_github_from_text(comment)
+    print(f"    regex hit  : {u2!r}")
+    print()
+    print("[3] Papers with Code lookup:")
+    u3 = fetch_pwc_repo(args.arxiv_id)
+    print(f"    {u3!r}")
     return 0
 
 
@@ -256,11 +325,24 @@ def main() -> int:
 
     p_bf = sub.add_parser(
         "backfill-code",
-        help=("for already-ingested papers without code_url, run the "
-              "abstract regex + PWC API to fill it in"),
+        help=("for already-ingested papers without code_url, run abstract "
+              "regex → arxiv author-comment → Papers with Code API"),
     )
     p_bf.add_argument("--limit", type=int, default=0,
                       help="stop after N papers (0 = no limit)")
+    p_bf.add_argument("--force", action="store_true",
+                      help="re-check papers that previously came back empty")
+    p_bf.add_argument("--sleep", type=float, default=0.0,
+                      help=("seconds between papers (only useful when "
+                            "fetching uncached arxiv comments; the arxiv "
+                            "client already enforces a 3s delay internally)"))
+
+    p_dc = sub.add_parser(
+        "diagnose-code",
+        help=("run all three code-link sources against ONE arxiv_id and "
+              "print what each returns — useful when backfill hit rate is low"),
+    )
+    p_dc.add_argument("arxiv_id")
 
     p_fs = sub.add_parser(
         "fetch-code-snapshots",
@@ -276,6 +358,7 @@ def main() -> int:
     args = ap.parse_args()
     handlers = {"ingest": cmd_ingest, "list": cmd_list, "show": cmd_show,
                 "search": cmd_search, "backfill-code": cmd_backfill_code,
+                "diagnose-code": cmd_diagnose_code,
                 "fetch-code-snapshots": cmd_fetch_code_snapshots}
     return handlers[args.cmd](args)
 
