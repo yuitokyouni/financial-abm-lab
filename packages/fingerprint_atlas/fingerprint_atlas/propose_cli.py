@@ -204,6 +204,38 @@ def cmd_reject(args) -> int:
     return 0
 
 
+def cmd_reject_template(args) -> int:
+    """Sweep all non-rejected proposals; reject any whose rationale matches
+    the template blacklist that the post-blacklist `from-corpus` validator
+    now rejects up-front. Cleans out rows generated before the validator
+    landed, which were polluting idea_judge ranking context."""
+    from .propose import _RATIONALE_TEMPLATE_BLACKLIST
+    ensure_proposals_schema(args.db)
+    rows = load_proposals(args.db)
+    hit_ids: list[tuple[int, str]] = []
+    for p in rows:
+        if (p.get("status") or "") == "rejected":
+            continue
+        rationale = p.get("rationale") or ""
+        for phrase in _RATIONALE_TEMPLATE_BLACKLIST:
+            if phrase in rationale:
+                hit_ids.append((p["id"], phrase))
+                break
+    if not hit_ids:
+        print("no template-rationale proposals found.")
+        return 0
+    if args.dry_run:
+        print(f"would reject {len(hit_ids)} proposal(s):")
+        for pid, phrase in hit_ids:
+            print(f"  #{pid:<3d} (matched: {phrase!r})")
+        return 0
+    for pid, phrase in hit_ids:
+        update_proposal_status(args.db, pid, status="rejected")
+        print(f"  #{pid:<3d} -> rejected (matched: {phrase!r})")
+    print(f"rejected {len(hit_ids)} proposal(s).")
+    return 0
+
+
 def execute_proposal(db_path: str, proposal_id: int, *, seed: int = 9000,
                      verbose: bool = True) -> dict:
     """Run an approved/proposed param_sweep, store the resulting run, link
@@ -511,6 +543,14 @@ def main() -> int:
     p_rj = sub.add_parser("reject", help="mark proposal status=rejected")
     p_rj.add_argument("id", type=int)
 
+    p_rt = sub.add_parser(
+        "reject-template",
+        help=("bulk-reject all proposals whose rationale matches the template "
+              "blacklist (cleans rows generated before the validator landed)"),
+    )
+    p_rt.add_argument("--dry-run", action="store_true",
+                      help="print what would be rejected without modifying the DB")
+
     p_ex = sub.add_parser("execute", help="run an approved proposal, measure, compare")
     p_ex.add_argument("id", type=int)
     p_ex.add_argument("--seed", type=int, default=9000)
@@ -544,7 +584,9 @@ def main() -> int:
     args = ap.parse_args()
     handlers = {
         "from-corpus": cmd_from_corpus, "list": cmd_list, "show": cmd_show,
-        "approve": cmd_approve, "reject": cmd_reject, "execute": cmd_execute,
+        "approve": cmd_approve, "reject": cmd_reject,
+        "reject-template": cmd_reject_template,
+        "execute": cmd_execute,
         "dump-md": cmd_dump_md, "analytics": cmd_analytics, "auto": cmd_auto,
     }
     return handlers[args.cmd](args)

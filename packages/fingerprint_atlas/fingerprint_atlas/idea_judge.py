@@ -167,6 +167,11 @@ def rank_proposals(db_path: str, aspects: dict, k: int = 5) -> list[dict]:
     rows = load_proposals(db_path)
     if not rows:
         return []
+    # Skip rejected rows so cleared-out template-rationale proposals stop
+    # polluting the idea_judge context.
+    rows = [r for r in rows if (r.get("status") or "") != "rejected"]
+    if not rows:
+        return []
     needle = _aspect_tokens(aspects)
     scored = []
     for r in rows:

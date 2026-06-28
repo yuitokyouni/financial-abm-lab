@@ -114,6 +114,34 @@ def test_rank_proposals_empty_when_no_proposals():
         assert out == []
 
 
+def test_rank_proposals_skips_rejected_rows():
+    """Rejected proposals should not surface in idea_judge context."""
+    from fingerprint_atlas.db import insert_proposal, update_proposal_status
+    with tempfile.TemporaryDirectory() as td:
+        db = _populate_minimal(td)
+        kept_id = insert_proposal(
+            db, proposal_type="param_sweep",
+            target_model="minority_game", params={"N": 101},
+            predicted_fingerprint={n: 0.0 for n in FEATURE_NAMES},
+            predicted_novelty_distance=1.0,
+            rationale="minority game N sweep — investigate kurtosis",
+            references=[], llm_model="m",
+        )
+        dropped_id = insert_proposal(
+            db, proposal_type="param_sweep",
+            target_model="minority_game", params={"N": 51},
+            predicted_fingerprint={n: 0.0 for n in FEATURE_NAMES},
+            predicted_novelty_distance=1.0,
+            rationale="minority game N sweep — investigate kurtosis",
+            references=[], llm_model="m",
+        )
+        update_proposal_status(db, dropped_id, status="rejected")
+        out = rank_proposals(db, {"key_keywords": ["minority", "kurtosis"]}, k=5)
+        ids = {r["id"] for r in out}
+        assert kept_id in ids
+        assert dropped_id not in ids
+
+
 def test_rank_proposals_handles_empty_rationale():
     """Regression: an empty-string rationale used to IndexError on
     `"".splitlines()[0]` because splitlines("") is [] (not [""])."""
