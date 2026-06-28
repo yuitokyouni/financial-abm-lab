@@ -501,3 +501,15 @@ def test_extract_arxiv_id_preserves_old_style_category_prefix():
     # Malformed input falls back to last segment
     assert (_extract_arxiv_id_from_entry(
         "weird-no-marker") == "weird-no-marker")
+
+
+def test_default_queries_includes_coverage_gap_presets():
+    """The 6 new presets for coverage-gap filling must be registered."""
+    from fingerprint_atlas.arxiv_ingest import DEFAULT_QUERIES
+    expected = {"behavioral_finance", "herding_dynamics", "leverage_effect",
+                "regime_switching", "econophysics_classics", "low_freq_returns"}
+    assert expected.issubset(set(DEFAULT_QUERIES))
+    # Each preset must be a non-empty string with at least one cat: clause
+    for name in expected:
+        q = DEFAULT_QUERIES[name]
+        assert q and "cat:" in q, f"{name} missing cat: clause"

@@ -641,6 +641,15 @@ def cmd_expand_via_oa(args) -> int:
         if not seed_papers:
             print(f"no row for arxiv_id={args.from_arxiv_id!r}", file=sys.stderr)
             return 1
+    elif args.all_seeds_since:
+        # Every DB row published >= YEAR. Older papers (≤2020) usually
+        # have non-empty referenced_works in OpenAlex; recent ones get
+        # auto-skipped by the n_refs==0 check below.
+        seed_papers = sorted(
+            (r for r in rows
+             if r.get("year") is not None and r["year"] >= args.all_seeds_since),
+            key=lambda r: r["year"],  # oldest first → richest citation data
+        )
     else:
         seed_papers = sorted(
             (r for r in rows if r.get("relevance_score") is not None),
@@ -650,6 +659,7 @@ def cmd_expand_via_oa(args) -> int:
     candidates: dict[str, dict] = {}
     total_refs_walked = 0
     n_empty_seeds = 0
+    print(f"walking references of {len(seed_papers)} seed paper(s)...")
     for i, seed in enumerate(seed_papers):
         if args.limit and i >= args.limit:
             print(f"(--limit {args.limit} reached, stopping seed walk)")
@@ -1105,6 +1115,10 @@ def main() -> int:
     )
     p_xo.add_argument("--from-arxiv-id", default=None)
     p_xo.add_argument("--top-seeds", type=int, default=10)
+    p_xo.add_argument("--all-seeds-since", type=int, default=None, metavar="YEAR",
+                      help=("walk references of EVERY DB paper published in "
+                            "YEAR or later (overrides --top-seeds). Recent "
+                            "papers with empty referenced_works auto-skip."))
     p_xo.add_argument("--refs-per-seed", type=int, default=50)
     p_xo.add_argument("--top-candidates", type=int, default=20)
     p_xo.add_argument("--limit", type=int, default=0)

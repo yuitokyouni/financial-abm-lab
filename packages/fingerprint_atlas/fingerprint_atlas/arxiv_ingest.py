@@ -63,6 +63,59 @@ DEFAULT_QUERIES = {
         'OR abs:"stylized fact" OR abs:"stylized facts" '
         'OR abs:"financial market model" OR abs:"econophysics")'
     ),
+    # ----- targeted coverage-gap presets -----
+    # Each preset fills a sparse column or under-represented mechanism
+    # cluster in the literature_methods coverage matrix. Sweep all of them
+    # to lift the per-cell paper count off 0/1.
+    "behavioral_finance": (
+        # Loss aversion / disposition effect / overconfidence — the
+        # behavioral-bias literature that LLM-agent papers (TRIBE,
+        # TraderTalk etc) build on. Currently sparse in our corpus.
+        '(cat:q-fin.TR OR cat:q-fin.GN OR cat:q-fin.ST) AND ('
+        'abs:"loss aversion" OR abs:"disposition effect" '
+        'OR abs:"overconfidence" OR abs:"prospect theory" '
+        'OR abs:"reference point" OR abs:"behavioral bias")'
+    ),
+    "herding_dynamics": (
+        # The herding STYLIZED FACT (not just papers TAGGED 'herding').
+        # Cascade / contagion / opinion dynamics also surface here.
+        '(cat:q-fin.* OR cat:physics.soc-ph) AND ('
+        'abs:"herding behavior" OR abs:"information cascade" '
+        'OR abs:"financial contagion" OR abs:"opinion dynamics" '
+        'OR abs:"crowd behavior" OR abs:"flocking")'
+    ),
+    "leverage_effect": (
+        # Asymmetric volatility / leverage effect — the empirical
+        # asymmetry between price-down + vol-up vs price-up. Almost
+        # empty in our matrix.
+        '(cat:q-fin.* OR cat:stat.AP) AND ('
+        'abs:"leverage effect" OR abs:"asymmetric volatility" '
+        'OR abs:"volatility asymmetry" OR abs:"negative-return positive-volatility")'
+    ),
+    "regime_switching": (
+        # Markov-switching / hidden-state regime models. Bridges
+        # ABM-flavor and time-series-flavor literature.
+        '(cat:q-fin.* OR cat:stat.AP) AND ('
+        'abs:"regime switching" OR abs:"regime change" '
+        'OR abs:"Markov switching" OR abs:"hidden Markov" '
+        'OR abs:"structural break" OR abs:"market regime")'
+    ),
+    "econophysics_classics": (
+        # Targeted at the 1995-2010 econophysics body of work: scaling
+        # laws, multifractality, Mantegna-Stanley distributional studies.
+        '(cat:physics.soc-ph OR cat:cond-mat.stat-mech OR cat:q-fin.ST) AND ('
+        'abs:"power law" OR abs:"scaling law" OR abs:"multifractal" '
+        'OR abs:"Mantegna" OR abs:"Stanley" '
+        'OR abs:"empirical finance" OR abs:"financial scaling")'
+    ),
+    "low_freq_returns": (
+        # Long-memory & aggregational-gaussianity — the two stylized
+        # facts most under-represented in our coverage matrix.
+        'cat:q-fin.* AND ('
+        'abs:"long memory" OR abs:"long-range dependence" '
+        'OR abs:"Hurst exponent" OR abs:"fractional integration" '
+        'OR abs:"aggregational gaussianity" OR abs:"return distribution scaling")'
+    ),
 }
 
 # Same default as propose.py — chosen after live A/B (see propose.py for notes).
