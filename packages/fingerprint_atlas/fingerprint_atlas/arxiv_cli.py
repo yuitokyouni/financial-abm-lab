@@ -421,6 +421,43 @@ def cmd_enrich_via_s2(args) -> int:
     return 0
 
 
+def cmd_delete_rows(args) -> int:
+    """Delete one or more literature_methods rows by arxiv_id.
+
+    Use case: cleanup after an ingest that pulled the wrong papers
+    (e.g. foundational_abm_ids.txt with truncated IDs where arxiv
+    returned arbitrary papers from collision-cousin categories)."""
+    import sqlite3
+    ensure_literature_schema(args.db)
+    ids = [s.strip() for s in args.arxiv_ids.split(",") if s.strip()]
+    if not ids:
+        print("no arxiv_ids given", file=sys.stderr)
+        return 1
+    rows = load_literature(args.db)
+    by_id = {r["arxiv_id"]: r for r in rows}
+    found = [aid for aid in ids if aid in by_id]
+    missing = [aid for aid in ids if aid not in by_id]
+    if missing:
+        print(f"not in DB: {missing}", file=sys.stderr)
+    if not found:
+        return 1
+    if not args.yes:
+        print("would delete:")
+        for aid in found:
+            print(f"  {aid:<22s} {by_id[aid]['title'][:60]}")
+        print(f"\nre-run with --yes to actually delete {len(found)} row(s).")
+        return 0
+    with sqlite3.connect(args.db) as con:
+        for aid in found:
+            con.execute(
+                "DELETE FROM literature_methods WHERE arxiv_id = ?", (aid,)
+            )
+            print(f"  deleted {aid}")
+        con.commit()
+    print(f"\ndeleted {len(found)} row(s).")
+    return 0
+
+
 def cmd_fix_arxiv_ids(args) -> int:
     """One-shot migration: scan DB for arxiv_ids that look like an old-style
     paper with the category prefix stripped (e.g. '0101326v1' that should
@@ -964,6 +1001,15 @@ def main() -> int:
                             "fetching uncached arxiv comments; the arxiv "
                             "client already enforces a 3s delay internally)"))
 
+    p_dl = sub.add_parser(
+        "delete-rows",
+        help=("delete literature_methods rows by arxiv_id (comma-sep). "
+              "Dry-run by default; pass --yes to commit"),
+    )
+    p_dl.add_argument("arxiv_ids", help="comma-separated arxiv_ids")
+    p_dl.add_argument("--yes", action="store_true",
+                      help="actually delete (default: dry-run)")
+
     p_fa = sub.add_parser(
         "fix-arxiv-ids",
         help=("one-shot migration: re-query arxiv for rows whose arxiv_id "
@@ -1123,7 +1169,8 @@ def main() -> int:
                 "enrich-via-oa": cmd_enrich_via_oa,
                 "expand-via-oa": cmd_expand_via_oa,
                 "diagnose-oa": cmd_diagnose_oa,
-                "fix-arxiv-ids": cmd_fix_arxiv_ids}
+                "fix-arxiv-ids": cmd_fix_arxiv_ids,
+                "delete-rows": cmd_delete_rows}
     return handlers[args.cmd](args)
 
 
