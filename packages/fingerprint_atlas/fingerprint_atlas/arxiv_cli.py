@@ -421,6 +421,145 @@ def cmd_enrich_via_s2(args) -> int:
     return 0
 
 
+def cmd_enrich_via_oa(args) -> int:
+    """OpenAlex equivalent of enrich-via-s2 — no API key required, 10
+    req/s rate limit. Stores cited_by_count + top concepts + OA paperId."""
+    from .openalex import fetch_paper, sleep_for_rate_limit
+    from .db import set_oa_metadata
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    if args.retry_missing:
+        todo = [r for r in rows if not r.get("oa_paper_id")]
+    else:
+        todo = [r for r in rows
+                if not r.get("oa_paper_id") and not r.get("oa_fetched_at")]
+    if not todo:
+        print("all rows already have OpenAlex metadata. "
+              "(use --retry-missing to re-fetch rows that came back empty)")
+        return 0
+    print(f"enriching {len(todo)} paper(s) via OpenAlex...")
+    n_ok, n_miss = 0, 0
+    for i, r in enumerate(todo):
+        if args.limit and i >= args.limit:
+            print(f"  (--limit {args.limit} reached, stopping)")
+            break
+        paper = fetch_paper(r["arxiv_id"])
+        if paper:
+            concepts_str = ", ".join(paper["concepts"][:3])
+            try:
+                set_oa_metadata(
+                    args.db, r["arxiv_id"],
+                    oa_paper_id=paper["oa_paper_id"],
+                    oa_cited_by_count=paper["cited_by_count"],
+                    oa_concepts=concepts_str,
+                )
+                cit = paper["cited_by_count"] or 0
+                print(f"  + {r['arxiv_id']:<16s} cit={cit:<4d}  "
+                      f"concepts=[{concepts_str[:55]}]")
+                n_ok += 1
+            except KeyError:
+                pass
+        else:
+            try:
+                set_oa_metadata(
+                    args.db, r["arxiv_id"],
+                    oa_paper_id=None, oa_cited_by_count=None,
+                    oa_concepts=None,
+                )
+                print(f"  - {r['arxiv_id']:<16s} not found on OpenAlex")
+                n_miss += 1
+            except KeyError:
+                pass
+        sleep_for_rate_limit(args.sleep)
+    print(f"\nenriched {n_ok}, missing {n_miss}.")
+    return 0
+
+
+def cmd_expand_via_oa(args) -> int:
+    """OpenAlex equivalent of expand-via-s2. Walks each seed paper's
+    referenced_works, resolves each ref to find the arxiv_id (if any),
+    deduplicates against the existing DB, prints the top-K most-cited
+    new candidates. --auto-ingest brings them in."""
+    from .openalex import fetch_references, sleep_for_rate_limit
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    if args.from_arxiv_id:
+        seed_papers = [r for r in rows if r["arxiv_id"] == args.from_arxiv_id]
+        if not seed_papers:
+            print(f"no row for arxiv_id={args.from_arxiv_id!r}", file=sys.stderr)
+            return 1
+    else:
+        seed_papers = sorted(
+            (r for r in rows if r.get("relevance_score") is not None),
+            key=lambda r: -(r["relevance_score"] or 0.0),
+        )[:args.top_seeds]
+    already_in_db = {re.sub(r"v\d+$", "", r["arxiv_id"]) for r in rows}
+    candidates: dict[str, dict] = {}
+    for i, seed in enumerate(seed_papers):
+        if args.limit and i >= args.limit:
+            print(f"(--limit {args.limit} reached, stopping seed walk)")
+            break
+        print(f"walking references of {seed['arxiv_id']} — {seed['title'][:60]}")
+        refs = fetch_references(seed["arxiv_id"], limit=args.refs_per_seed,
+                                 sleep=args.sleep)
+        for ref in refs:
+            aid = ref.get("arxiv_id")
+            if not aid:
+                continue
+            base = re.sub(r"v\d+$", "", aid)
+            if base in already_in_db:
+                continue
+            cur = candidates.get(base)
+            if cur is None or ((ref.get("cited_by_count") or 0)
+                                > (cur.get("cited_by_count") or 0)):
+                candidates[base] = ref
+        sleep_for_rate_limit(args.sleep)
+    if not candidates:
+        print("\nno new arxiv-hosted candidates discovered.")
+        return 0
+    ranked = sorted(candidates.values(),
+                    key=lambda r: -(r.get("cited_by_count") or 0))
+    print(f"\ndiscovered {len(ranked)} candidate(s):")
+    for r in ranked[:args.top_candidates]:
+        cit = r.get("cited_by_count") or 0
+        print(f"  [{cit:>4d} cites] {r['arxiv_id']:<16s} "
+              f"({r.get('year') or '?'})  {(r.get('title') or '')[:70]}")
+    if args.auto_ingest:
+        from .arxiv_ingest import ingest_by_ids
+        ids = [r["arxiv_id"] for r in ranked[:args.top_candidates]]
+        print(f"\nauto-ingesting {len(ids)} paper(s)...")
+        summary = ingest_by_ids(
+            args.db, ids, extract=True,
+            groq_model=args.groq_model,
+            min_relevance_to_keep=args.min_relevance_to_keep,
+            verbose=True,
+        )
+        print(json.dumps({k: v for k, v in summary.items() if k != "errors"}, indent=2))
+    else:
+        print(f"\nto ingest these: re-run with --auto-ingest.")
+    return 0
+
+
+def cmd_diagnose_oa(args) -> int:
+    """Single-paper deep-dive against OpenAlex."""
+    from .openalex import _http_get_json_with_status, _arxiv_doi, _OA_BASE
+    import urllib.parse as _up
+    url = f"{_OA_BASE}/works/doi:{_up.quote(_arxiv_doi(args.arxiv_id))}"
+    print(f"GET {url}\n")
+    status, body = _http_get_json_with_status(url)
+    print(f"status: {status}")
+    if body is None:
+        print("body  : None")
+    else:
+        print(f"        title  = {body.get('title')!r}")
+        print(f"        cit    = {body.get('cited_by_count')}")
+        concepts = [c.get("display_name") for c in (body.get("concepts") or [])[:5]
+                    if isinstance(c, dict)]
+        print(f"        concepts = {concepts}")
+        print(f"        n_refs = {len(body.get('referenced_works') or [])}")
+    return 0
+
+
 def cmd_diagnose_s2(args) -> int:
     """Single-paper deep-dive: print the raw S2 response (status + body
     snippet) so a low-hit-rate enrich-via-s2 can be diagnosed."""
@@ -739,6 +878,38 @@ def main() -> int:
                             "fetching uncached arxiv comments; the arxiv "
                             "client already enforces a 3s delay internally)"))
 
+    p_eo = sub.add_parser(
+        "enrich-via-oa",
+        help=("backfill OpenAlex metadata (cited_by_count + concepts + "
+              "OA paperId). No API key required; 10 req/s limit."),
+    )
+    p_eo.add_argument("--limit", type=int, default=0)
+    p_eo.add_argument("--sleep", type=float, default=0.5,
+                      help="seconds between API calls (OpenAlex caps at 10/sec)")
+    p_eo.add_argument("--retry-missing", action="store_true",
+                      help="ignore oa_fetched_at; re-fetch all rows without oa_paper_id")
+
+    p_xo = sub.add_parser(
+        "expand-via-oa",
+        help=("OpenAlex citation graph 1-hop expansion. Like expand-via-s2 "
+              "but uses OpenAlex (no API key required)."),
+    )
+    p_xo.add_argument("--from-arxiv-id", default=None)
+    p_xo.add_argument("--top-seeds", type=int, default=10)
+    p_xo.add_argument("--refs-per-seed", type=int, default=50)
+    p_xo.add_argument("--top-candidates", type=int, default=20)
+    p_xo.add_argument("--limit", type=int, default=0)
+    p_xo.add_argument("--sleep", type=float, default=0.5)
+    p_xo.add_argument("--auto-ingest", action="store_true")
+    p_xo.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_xo.add_argument("--min-relevance-to-keep", type=float, default=0.0)
+
+    p_do = sub.add_parser(
+        "diagnose-oa",
+        help="inspect raw OpenAlex response for one arxiv_id",
+    )
+    p_do.add_argument("arxiv_id")
+
     p_ds = sub.add_parser(
         "diagnose-s2",
         help=("inspect the raw Semantic Scholar response for ONE arxiv_id "
@@ -851,7 +1022,10 @@ def main() -> int:
                 "set-code-url": cmd_set_code_url,
                 "enrich-via-s2": cmd_enrich_via_s2,
                 "expand-via-s2": cmd_expand_via_s2,
-                "diagnose-s2": cmd_diagnose_s2}
+                "diagnose-s2": cmd_diagnose_s2,
+                "enrich-via-oa": cmd_enrich_via_oa,
+                "expand-via-oa": cmd_expand_via_oa,
+                "diagnose-oa": cmd_diagnose_oa}
     return handlers[args.cmd](args)
 
 

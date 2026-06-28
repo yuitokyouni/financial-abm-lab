@@ -275,6 +275,22 @@ def ensure_literature_schema(db_path: str) -> None:
             con.execute(
                 "ALTER TABLE literature_methods ADD COLUMN s2_fetched_at TEXT"
             )
+        if not _column_exists(con, "literature_methods", "oa_paper_id"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN oa_paper_id TEXT"
+            )
+        if not _column_exists(con, "literature_methods", "oa_cited_by_count"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN oa_cited_by_count INTEGER"
+            )
+        if not _column_exists(con, "literature_methods", "oa_concepts"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN oa_concepts TEXT"
+            )
+        if not _column_exists(con, "literature_methods", "oa_fetched_at"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN oa_fetched_at TEXT"
+            )
         con.commit()
 
 
@@ -348,7 +364,8 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
            "extracted_by_model, extraction_attempts, user_notes, user_tags, "
            "ingested_at, updated_at, code_url, code_url_source, arxiv_comment, "
            "pdf_scanned_at, s2_paper_id, s2_tldr, "
-           "s2_influential_citation_count, s2_fetched_at "
+           "s2_influential_citation_count, s2_fetched_at, "
+           "oa_paper_id, oa_cited_by_count, oa_concepts, oa_fetched_at "
            "FROM literature_methods")
     where: list[str] = []
     args: list[Any] = []
@@ -383,6 +400,8 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
             "arxiv_comment": r[21], "pdf_scanned_at": r[22],
             "s2_paper_id": r[23], "s2_tldr": r[24],
             "s2_influential_citation_count": r[25], "s2_fetched_at": r[26],
+            "oa_paper_id": r[27], "oa_cited_by_count": r[28],
+            "oa_concepts": r[29], "oa_fetched_at": r[30],
         })
     return out
 
@@ -467,6 +486,28 @@ def set_s2_metadata(db_path: str, arxiv_id: str, *,
             (s2_paper_id, s2_tldr,
              None if s2_influential_citation_count is None else int(s2_influential_citation_count),
              now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
+
+
+def set_oa_metadata(db_path: str, arxiv_id: str, *,
+                     oa_paper_id: str | None,
+                     oa_cited_by_count: int | None,
+                     oa_concepts: str | None) -> None:
+    """Persist OpenAlex enrichment for a paper. concepts is stored as a
+    comma-separated string (e.g. 'Econophysics, Agent-based model')."""
+    ensure_literature_schema(db_path)
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET oa_paper_id = ?, oa_cited_by_count = ?, "
+            "oa_concepts = ?, oa_fetched_at = ? WHERE arxiv_id = ?",
+            (oa_paper_id,
+             None if oa_cited_by_count is None else int(oa_cited_by_count),
+             oa_concepts, now, arxiv_id),
         )
         if cur.rowcount == 0:
             raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
