@@ -129,8 +129,16 @@ Hard constraints:
 
 def make_plan(db_path: str, idea_text: str, judgment_payload: dict, *,
               groq_model: str = DEFAULT_GROQ_MODEL,
+              force_implementation: str | None = None,
               dry_run_response: dict | None = None) -> dict:
-    """Run the LLM to propose an implementation plan from a judged idea."""
+    """Run the LLM to propose an implementation plan from a judged idea.
+
+    `force_implementation` overrides the category-→-implementation_type
+    hard rule in the prompt — useful when the judge is conservative due
+    to incomplete corpus and the user knows the idea is actually a
+    mechanism_combo / new_method despite the verdict saying otherwise.
+    Valid values: 'param_sweep', 'mechanism_combo', 'new_method'.
+    """
     from .knowhow_techniques import load_techniques
     from .db import load_code_snapshots
 
@@ -169,9 +177,24 @@ def make_plan(db_path: str, idea_text: str, judgment_payload: dict, *,
         "priceless_models": sorted(PRICELESS_MODELS),
         "feature_names": FEATURE_NAMES,
     }
+    if force_implementation is not None:
+        if force_implementation not in {"param_sweep", "mechanism_combo", "new_method"}:
+            raise ValueError(
+                f"force_implementation must be one of param_sweep / "
+                f"mechanism_combo / new_method (got {force_implementation!r})"
+            )
+        payload["forced_implementation_type"] = force_implementation
     if dry_run_response is not None:
         return dry_run_response
-    return _call_groq(PLAN_SYSTEM_PROMPT, payload, groq_model)
+    prompt = PLAN_SYSTEM_PROMPT
+    if force_implementation is not None:
+        prompt = (prompt + "\n\nOVERRIDE: the user has set "
+                  f"`forced_implementation_type = {force_implementation!r}`. "
+                  "Use it as implementation_type regardless of the judgment "
+                  "category in Hard Constraint 1-3. Constraint 4 (param "
+                  "bounds) and 5 (citation only of candidate_literature) "
+                  "still apply.")
+    return _call_groq(prompt, payload, groq_model)
 
 
 # ----- Scaffold paths -----------------------------------------------------

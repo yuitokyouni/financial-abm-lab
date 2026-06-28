@@ -386,3 +386,44 @@ def test_scaffold_unknown_type_raises():
     with pytest.raises(ValueError):
         scaffold({"implementation_type": "ghost"}, db_path=":memory:",
                  idea_id=1, packages_root="/tmp", llm_model="m")
+
+
+def test_make_plan_force_implementation_overrides_category(monkeypatch):
+    """B: --force-implementation lets the user override an overly conservative
+    verdict. The forced type must appear in the prompt + payload."""
+    from fingerprint_atlas.idea_plan import make_plan
+    captured = {}
+
+    def spy(prompt, payload, model, **kw):
+        captured["prompt"] = prompt
+        captured["payload"] = payload
+        return {"implementation_type": "mechanism_combo",
+                "mechanism_combo": {}, "references": []}
+
+    monkeypatch.setattr("fingerprint_atlas.idea_plan._call_groq", spy)
+    with tempfile.TemporaryDirectory() as td:
+        db = _populate_minimal(td)
+        out = make_plan(
+            db, "self-organized SG",
+            {"aspects": {}, "verdict": {"category": "incremental_novelty"},
+             "matches": {"methods": [], "literature": [], "proposals": []}},
+            force_implementation="mechanism_combo",
+        )
+    assert out["implementation_type"] == "mechanism_combo"
+    assert captured["payload"]["forced_implementation_type"] == "mechanism_combo"
+    assert "OVERRIDE" in captured["prompt"]
+    assert "mechanism_combo" in captured["prompt"]
+
+
+def test_make_plan_force_implementation_rejects_invalid_value():
+    from fingerprint_atlas.idea_plan import make_plan
+    with tempfile.TemporaryDirectory() as td:
+        db = _populate_minimal(td)
+        with pytest.raises(ValueError, match="force_implementation"):
+            make_plan(
+                db, "x",
+                {"aspects": {}, "verdict": {}, "matches": {
+                    "methods": [], "literature": [], "proposals": []}},
+                force_implementation="ghost_type",
+                dry_run_response=None,
+            )

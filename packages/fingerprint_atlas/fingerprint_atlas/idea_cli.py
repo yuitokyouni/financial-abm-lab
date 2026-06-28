@@ -97,7 +97,8 @@ def cmd_plan(args) -> int:
     }
     try:
         plan = make_plan(args.db, idea["idea_text"], judgment_payload,
-                         groq_model=args.groq_model)
+                         groq_model=args.groq_model,
+                         force_implementation=args.force_implementation)
     except Exception as exc:
         print(f"  ! plan failed: {type(exc).__name__}: {exc}", file=sys.stderr)
         traceback.print_exc()
@@ -176,6 +177,7 @@ def cmd_run(args) -> int:
              "verdict": judgment["verdict"],
              "matches": judgment["matches"]},
             groq_model=args.groq_model,
+            force_implementation=args.force_implementation,
         )
     except Exception as exc:
         print(f"  ! plan failed: {exc}", file=sys.stderr)
@@ -314,6 +316,11 @@ def main() -> int:
     p_p = sub.add_parser("plan", help="implementation plan for a judged idea")
     p_p.add_argument("--id", type=int, required=True)
     p_p.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_p.add_argument("--force-implementation", default=None,
+                     choices=["param_sweep", "mechanism_combo", "new_method"],
+                     help=("override the category→implementation_type rule. "
+                           "Useful when the judge is too conservative due "
+                           "to incomplete corpus."))
 
     p_s = sub.add_parser("scaffold", help="materialise the plan")
     p_s.add_argument("--id", type=int, required=True)
@@ -325,6 +332,9 @@ def main() -> int:
     p_r.add_argument("--packages-root", default=_packages_root_default())
     p_r.add_argument("--auto-execute", action="store_true",
                      help="if plan is param_sweep, also run execute")
+    p_r.add_argument("--force-implementation", default=None,
+                     choices=["param_sweep", "mechanism_combo", "new_method"],
+                     help=("override the category→implementation_type rule"))
 
     p_l = sub.add_parser("list", help="one-line per idea")
     p_l.add_argument("--status", default=None,
