@@ -295,6 +295,58 @@ def cmd_scan_pdfs_for_code(args) -> int:
     return 0
 
 
+def cmd_list_code(args) -> int:
+    """Inspect all surfaced code_url rows in one view — quick sanity check
+    for false positives picked up by abstract / comment / pdf scanners."""
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    hits = [r for r in rows if r.get("code_url")]
+    if not hits:
+        print("no rows have code_url.")
+        return 0
+    by_source: dict[str, list[dict]] = {}
+    for r in hits:
+        by_source.setdefault(r.get("code_url_source") or "?", []).append(r)
+    for src in sorted(by_source):
+        print(f"\n--- source={src} ({len(by_source[src])}) ---")
+        for r in sorted(by_source[src], key=lambda r: r["arxiv_id"]):
+            print(f"  {r['arxiv_id']:<14s} {r['code_url']:<70s} "
+                  f"{(r['title'] or '')[:60]}")
+    print(f"\ntotal: {len(hits)} code_url(s) across {len(rows)} papers "
+          f"({100 * len(hits) / len(rows):.0f}% coverage)")
+    return 0
+
+
+def cmd_set_code_url(args) -> int:
+    """Manual override: set or clear a paper's code_url.
+
+    --clear marks the row as "no code link" by writing NULL; further
+    backfill / scan-pdfs runs will leave it alone because the row also
+    has pdf_scanned_at stamped (clear marks it stamped so we don't loop)."""
+    from .db import set_literature_code_url, mark_pdf_scanned
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    if not any(r["arxiv_id"] == args.arxiv_id for r in rows):
+        print(f"no row for arxiv_id={args.arxiv_id!r}", file=sys.stderr)
+        return 1
+    if args.clear:
+        set_literature_code_url(args.db, args.arxiv_id,
+                                code_url=None, source="manual_clear")
+        try:
+            mark_pdf_scanned(args.db, args.arxiv_id)
+        except KeyError:
+            pass
+        print(f"{args.arxiv_id}: code_url cleared (will not be re-scanned)")
+        return 0
+    if not args.url:
+        print("either --url URL or --clear is required", file=sys.stderr)
+        return 1
+    set_literature_code_url(args.db, args.arxiv_id,
+                            code_url=args.url, source="manual")
+    print(f"{args.arxiv_id}: code_url = {args.url}")
+    return 0
+
+
 def cmd_diagnose_code(args) -> int:
     """Run all three code-link sources against ONE arxiv_id and print what
     each returns. Useful when backfill hit rate looks too low."""
@@ -446,6 +498,23 @@ def main() -> int:
                             "fetching uncached arxiv comments; the arxiv "
                             "client already enforces a 3s delay internally)"))
 
+    p_lc = sub.add_parser(
+        "list-code",
+        help=("list all rows with a code_url, grouped by source — quick "
+              "sanity check for false positives"),
+    )
+
+    p_sc = sub.add_parser(
+        "set-code-url",
+        help=("manual override: set or clear one row's code_url "
+              "(survives subsequent backfill / scan runs)"),
+    )
+    p_sc.add_argument("arxiv_id")
+    g_sc = p_sc.add_mutually_exclusive_group(required=True)
+    g_sc.add_argument("--url", help="full repo URL to set")
+    g_sc.add_argument("--clear", action="store_true",
+                      help="clear the code_url and mark row 'no link'")
+
     p_dc = sub.add_parser(
         "diagnose-code",
         help=("run all code-link sources against ONE arxiv_id and print "
@@ -492,7 +561,9 @@ def main() -> int:
                 "search": cmd_search, "backfill-code": cmd_backfill_code,
                 "diagnose-code": cmd_diagnose_code,
                 "scan-pdfs-for-code": cmd_scan_pdfs_for_code,
-                "fetch-code-snapshots": cmd_fetch_code_snapshots}
+                "fetch-code-snapshots": cmd_fetch_code_snapshots,
+                "list-code": cmd_list_code,
+                "set-code-url": cmd_set_code_url}
     return handlers[args.cmd](args)
 
 
