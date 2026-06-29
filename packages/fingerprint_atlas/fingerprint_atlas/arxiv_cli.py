@@ -730,6 +730,74 @@ def cmd_canon(args) -> int:
     return 0
 
 
+def cmd_canon_atlas(args) -> int:
+    """Sweep every subfield in subfields.SUBFIELDS, run canon detection,
+    join with the local literature DB, render a single self-contained
+    HTML page (heatmap + per-subfield detail sections).
+
+    Optional --auto-ingest-missing pulls every arxiv-hosted canon paper
+    not yet in DB through arxiv_ingest in one batch — single command to
+    close the canon-coverage gap across the whole atlas."""
+    from .canon_atlas import build_atlas, render_html, missing_arxiv_ids
+    from .subfields import SUBFIELDS
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    db_arxiv_ids = {r["arxiv_id"] for r in rows if r.get("arxiv_id")}
+
+    subfields = SUBFIELDS
+    if args.only:
+        wanted = {s.strip() for s in args.only.split(",") if s.strip()}
+        subfields = [s for s in SUBFIELDS if s["key"] in wanted]
+        if not subfields:
+            print(f"no subfield matches --only={args.only!r}. "
+                  f"Available keys: "
+                  f"{', '.join(s['key'] for s in SUBFIELDS)}", file=sys.stderr)
+            return 1
+
+    print(f"building canon atlas for {len(subfields)} subfield(s)...")
+    print("(this takes ~30-60s — one OpenAlex call per subfield)")
+    atlas = build_atlas(subfields, db_arxiv_ids=db_arxiv_ids,
+                         n_per_subfield=args.n, year_max=args.year_max,
+                         sleep=args.sleep)
+
+    # Print a one-line per-subfield summary so users can see progress
+    # without opening the HTML. n_canon is the OpenAlex search hit count
+    # (top-cited); n_on_arxiv is the subset that's reachable from arxiv
+    # (many econometric / journal papers aren't). Coverage is n_in_db /
+    # n_on_arxiv — '—' when nothing is on arxiv.
+    print()
+    for entry in atlas:
+        cov = entry["coverage"]
+        cov_txt = "  —" if cov is None else f"{int(round(cov * 100)):>3d}%"
+        print(f"  [{cov_txt}] {entry['n_in_db']:>2d}/{entry['n_on_arxiv']:>2d} "
+              f"on-arxiv (of {entry['n_canon']} canon)  ·  {entry['name']}")
+
+    render_html(atlas, args.out)
+    print(f"\nwrote {args.out}")
+
+    missing = missing_arxiv_ids(atlas)
+    if not missing:
+        print("no missing arxiv canon — coverage is complete.")
+        return 0
+
+    if args.auto_ingest_missing:
+        from .arxiv_ingest import ingest_by_ids
+        print(f"\nauto-ingesting {len(missing)} missing canon paper(s) "
+              f"from arxiv...")
+        summary = ingest_by_ids(
+            args.db, missing, extract=True,
+            groq_model=args.groq_model,
+            min_relevance_to_keep=args.min_relevance_to_keep,
+            verbose=True,
+        )
+        print(json.dumps({k: v for k, v in summary.items() if k != "errors"},
+                          indent=2))
+    else:
+        print(f"\n{len(missing)} canon paper(s) on arxiv are not yet in DB.")
+        print(f"re-run with --auto-ingest-missing to pull them.")
+    return 0
+
+
 def cmd_enrich_via_oa(args) -> int:
     """OpenAlex equivalent of enrich-via-s2 — no API key required, 10
     req/s rate limit. Stores cited_by_count + top concepts + OA paperId."""
@@ -1313,6 +1381,28 @@ def main() -> int:
     p_cn.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
     p_cn.add_argument("--min-relevance-to-keep", type=float, default=0.0)
 
+    p_ca = sub.add_parser(
+        "canon-atlas",
+        help=("sweep every subfield in subfields.SUBFIELDS, run canon "
+              "detection per subfield, render a single HTML page with "
+              "coverage heatmap + per-subfield detail. "
+              "--auto-ingest-missing pulls every missing canon arxiv paper."),
+    )
+    p_ca.add_argument("--out", default="notebooks/canon_atlas/atlas.html")
+    p_ca.add_argument("--n", type=int, default=8,
+                      help="how many top-cited papers per subfield")
+    p_ca.add_argument("--year-max", type=int, default=None,
+                      help="exclude canon candidates after this year")
+    p_ca.add_argument("--sleep", type=float, default=0.5,
+                      help="seconds between OpenAlex calls (rate-limit pad)")
+    p_ca.add_argument("--only", default=None,
+                      help="comma-separated subfield keys to limit to "
+                           "(default: all 25). Use canon-atlas without "
+                           "--only to see available keys.")
+    p_ca.add_argument("--auto-ingest-missing", action="store_true")
+    p_ca.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_ca.add_argument("--min-relevance-to-keep", type=float, default=0.0)
+
     p_eo = sub.add_parser(
         "enrich-via-oa",
         help=("backfill OpenAlex metadata (cited_by_count + concepts + "
@@ -1470,6 +1560,7 @@ def main() -> int:
                 "atlas": cmd_atlas,
                 "coverage": cmd_coverage,
                 "canon": cmd_canon,
+                "canon-atlas": cmd_canon_atlas,
                 "genealogy": cmd_genealogy,
                 "diagnose-concept": cmd_diagnose_concept}
     return handlers[args.cmd](args)

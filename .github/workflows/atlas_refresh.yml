@@ -100,6 +100,12 @@ jobs:
           uv run python -m fingerprint_atlas.arxiv_cli \
             --db "$DB_PATH" coverage --out-dir "$ATLAS_OUT_DIR"
 
+      - name: D) canon atlas (25 subfields × OpenAlex top-cited)
+        run: |
+          uv run python -m fingerprint_atlas.arxiv_cli \
+            --db "$DB_PATH" canon-atlas \
+            --out "$ATLAS_OUT_DIR/canon_atlas.html" --n 8 --sleep 0.3
+
       - name: List artifacts
         run: ls -la "$ATLAS_OUT_DIR"
 
@@ -111,7 +117,7 @@ jobs:
           base: main
           add-paths: |
             notebooks/atlas/**
-          commit-message: "atlas-refresh: regenerate A+B+C maps (run ${{ github.run_id }})"
+          commit-message: "atlas-refresh: regenerate A+B+C+D maps (run ${{ github.run_id }})"
           title: "Atlas refresh — ${{ github.run_id }}"
           body: |
             Auto-regenerated under `notebooks/atlas/${{ github.run_id }}/`:
@@ -129,6 +135,12 @@ jobs:
             (mechanism tag × stylized fact targeted) heatmap. Dense rows
             are well-covered mechanisms; sparse cells / empty columns are
             research blind spots in the current corpus.
+
+            **D. Canon atlas** — `canon_atlas.html`. 25 financial-ABM
+            subfields × top-cited OpenAlex canon. Heatmap top section is
+            in-DB coverage % per subfield; per-subfield detail lists the
+            top canon papers with arxiv links and in-DB / missing badges.
+            Open the HTML in a browser.
 
             **How to review**
             - Skim each PNG for obvious gaps / mis-clusterings.
