@@ -36,6 +36,17 @@ _OA_BASE = "https://api.openalex.org"
 _OA_TIMEOUT = 15.0
 _POLITE_MAILTO = "yuitokyouni+oa@gmail.com"  # OpenAlex etiquette param
 _USER_AGENT = "fingerprint-atlas/0.1 (mailto:" + _POLITE_MAILTO + ")"
+_LAST_HTTP_STATUS: int | None = None
+_RATE_LIMITED = False
+
+
+class OpenAlexQueryError(RuntimeError):
+    """Raised when canon discovery failed rather than returned no matches."""
+
+    def __init__(self, status: int | None):
+        self.status = status
+        detail = f"HTTP {status}" if status else "network/timeout"
+        super().__init__(f"OpenAlex query failed ({detail})")
 
 
 def _arxiv_base(arxiv_id: str) -> str:
@@ -61,10 +72,17 @@ def _http_get_json_with_status(url: str, timeout: float = _OA_TIMEOUT
 def _http_get_json(url: str, timeout: float = _OA_TIMEOUT) -> dict | None:
     """One short backoff-retry on 429, then give up. OpenAlex's free tier
     is generous enough that this is rarely triggered."""
+    global _LAST_HTTP_STATUS, _RATE_LIMITED
+    if _RATE_LIMITED:
+        _LAST_HTTP_STATUS = 429
+        return None
     status, body = _http_get_json_with_status(url, timeout)
     if status == 429:
         time.sleep(5.0)
         status, body = _http_get_json_with_status(url, timeout)
+        if status == 429:
+            _RATE_LIMITED = True
+    _LAST_HTTP_STATUS = status
     return body if status == 200 else None
 
 
@@ -250,30 +268,23 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
     """Top-N highest-cited papers about a topic.
 
     Two resolution paths:
-      (a) If `query_or_concept` is an OpenAlex concept id (CXXXXX or full
-          URI), or find_concept_id resolves the name to one, filter
-          /works by `concepts.id:`.
-      (b) Otherwise (fine-grained subfields like 'Minority game' that
-          aren't first-class OpenAlex concepts), fall back to direct
-          search `/works?search=...` and sort by cited_by_count.
+      (a) If `query_or_concept` is an explicit OpenAlex concept id
+          (CXXXXX or full URI), filter by that concept.
+      (b) Otherwise use exact-phrase title/abstract search.
 
-    Path (b) is more reliable for narrow subfields — OpenAlex's concept
-    taxonomy is coarse (it has 'Stochastic game' but not 'Minority game')
-    while its title/abstract search reaches every paper.
+    Natural-language queries are deliberately not auto-resolved to concepts.
+    OpenAlex's concept search often returns a broader first result (for
+    example "game" for "Minority game"), silently polluting canon results.
 
     Each entry: {oa_paper_id, arxiv_id, title, year, cited_by_count, doi}.
     """
+    global _LAST_HTTP_STATUS
+    _LAST_HTTP_STATUS = None
     concept_id: str | None = None
     if "/" in query_or_concept or query_or_concept.startswith("C"):
         m = re.search(r"(C\d+)", query_or_concept)
         if m:
             concept_id = m.group(1)
-    else:
-        full = find_concept_id(query_or_concept)
-        if full:
-            m = re.search(r"(C\d+)", full)
-            if m:
-                concept_id = m.group(1)
 
     select = "id,title,publication_year,cited_by_count,ids,doi,locations"
     n_per_page = min(n, 200)
@@ -304,6 +315,8 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
     url = (f"{_OA_BASE}/works?filter={','.join(filter_clauses)}"
            f"&sort=cited_by_count:desc&per-page={n_per_page}&select={select}")
     raw = _http_get_json(url)
+    if raw is None:
+        raise OpenAlexQueryError(_LAST_HTTP_STATUS)
 
     # Retry fallback: title_and_abstract.search filter is occasionally
     # absent / mis-parsed for very narrow queries. Plain ?search= with a
@@ -317,6 +330,8 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
                f"&filter={retry_filter}"
                f"&per-page={n_per_page}&select={select}")
         raw = _http_get_json(url)
+        if raw is None:
+            raise OpenAlexQueryError(_LAST_HTTP_STATUS)
 
     if not raw or not isinstance(raw.get("results"), list):
         return []

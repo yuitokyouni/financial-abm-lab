@@ -21,8 +21,12 @@ import os
 import re
 from typing import Any
 
-from .openalex import find_canon_papers, sleep_for_rate_limit
-from .subfields import SUBFIELDS, Subfield
+from .openalex import (
+    OpenAlexQueryError,
+    find_canon_papers,
+    sleep_for_rate_limit,
+)
+from .subfields import Subfield
 
 
 _CATEGORY_COLOR = {
@@ -70,8 +74,20 @@ def build_atlas(subfields: list[Subfield], *,
     db_oa_set = set(db_oa_ids or set())
     atlas: list[dict[str, Any]] = []
     for sf in subfields:
-        papers = find_canon_papers(sf["query"], n=n_per_subfield,
-                                    year_max=year_max)
+        error: str | None = None
+        try:
+            papers = find_canon_papers(sf["query"], n=n_per_subfield,
+                                        year_max=year_max)
+        except OpenAlexQueryError as exc:
+            papers = []
+            error = str(exc)
+        title_terms = [term.casefold() for term in sf.get("title_any", [])]
+        if title_terms:
+            papers = [
+                paper for paper in papers
+                if any(term in (paper.get("title") or "").casefold()
+                       for term in title_terms)
+            ]
         annotated: list[dict[str, Any]] = []
         n_in_db = 0
         for p in papers:
@@ -94,7 +110,7 @@ def build_atlas(subfields: list[Subfield], *,
             })
         n_canon = len(annotated)
         n_on_arxiv = sum(1 for p in annotated if p["arxiv_id"])
-        coverage = (n_in_db / n_canon) if n_canon else None
+        coverage = (n_in_db / n_canon) if n_canon and not error else None
         atlas.append({
             "key": sf["key"],
             "name": sf["name"],
@@ -106,6 +122,7 @@ def build_atlas(subfields: list[Subfield], *,
             "n_in_db": n_in_db,
             "n_on_arxiv": n_on_arxiv,
             "coverage": coverage,
+            "error": error,
         })
         if sleep:
             sleep_for_rate_limit(sleep)
@@ -201,7 +218,8 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
 def _render_cell(entry: dict[str, Any]) -> str:
     cov = entry["coverage"]
     bg = _coverage_color(cov)
-    pct_txt = "—" if cov is None else f"{int(round(cov * 100))}%"
+    pct_txt = "ERROR" if entry.get("error") else (
+        "—" if cov is None else f"{int(round(cov * 100))}%")
     frac_txt = (f"{entry['n_in_db']} / {entry['n_canon']} canon "
                 f"({entry['n_on_arxiv']} on arxiv)")
     cat_color = _CATEGORY_COLOR.get(entry["category"], "#888")
@@ -242,11 +260,14 @@ def _render_section(entry: dict[str, Any]) -> str:
             f"<td>{html.escape(p['arxiv_id'] or '')}</td></tr>"
         )
     cov = entry["coverage"]
-    cov_txt = "—" if cov is None else f"{int(round(cov * 100))}%"
+    cov_txt = "ERROR" if entry.get("error") else (
+        "—" if cov is None else f"{int(round(cov * 100))}%")
     meta = (f'coverage <b>{cov_txt}</b> · '
             f'{entry["n_in_db"]} / {entry["n_canon"]} canon in DB · '
             f'{entry["n_on_arxiv"]} on arxiv · '
             f'query: <code>{html.escape(entry["query"])}</code>')
+    if entry.get("error"):
+        meta += f' · <b>{html.escape(entry["error"])}</b>'
     return (f'<details id="sub-{entry["key"]}">'
             f'<summary><span style="display:inline-block;width:8px;height:8px;'
             f'border-radius:50%;background:{cat_color};margin-right:8px;'

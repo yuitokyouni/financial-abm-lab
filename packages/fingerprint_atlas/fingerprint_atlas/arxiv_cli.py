@@ -780,12 +780,20 @@ def cmd_canon_atlas(args) -> int:
     print()
     for entry in atlas:
         cov = entry["coverage"]
-        cov_txt = "  —" if cov is None else f"{int(round(cov * 100)):>3d}%"
+        cov_txt = ("ERR" if entry.get("error") else
+                   ("  —" if cov is None else f"{int(round(cov * 100)):>3d}%"))
         print(f"  [{cov_txt}] {entry['n_in_db']:>2d}/{entry['n_canon']:>2d} "
               f"canon ({entry['n_on_arxiv']} on arxiv)  ·  {entry['name']}")
 
     render_html(atlas, args.out)
     print(f"\nwrote {args.out}")
+
+    failed = [entry for entry in atlas if entry.get("error")]
+    if failed:
+        print(f"\nERROR: OpenAlex lookup failed for {len(failed)} subfield(s); "
+              "coverage is incomplete and auto-ingest was skipped.",
+              file=sys.stderr)
+        return 2
 
     missing = missing_canon(atlas)
     n_arxiv = len(missing["arxiv"])

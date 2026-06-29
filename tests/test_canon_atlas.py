@@ -98,6 +98,57 @@ def test_build_atlas_coverage_when_only_journal_canon(monkeypatch):
     assert atlas[0]["n_canon"] == 1
 
 
+def test_build_atlas_filters_fulltext_noise_by_title_terms(monkeypatch):
+    from fingerprint_atlas import canon_atlas
+
+    monkeypatch.setattr(
+        canon_atlas,
+        "find_canon_papers",
+        _fake_canon_factory({
+            "Minority game": [
+                {"oa_paper_id": "https://openalex.org/Wgood",
+                 "arxiv_id": None, "title": "Minority Games in Finance",
+                 "year": 2001, "cited_by_count": 100, "doi": None},
+                {"oa_paper_id": "https://openalex.org/Wnoise",
+                 "arxiv_id": None,
+                 "title": "Racist Acts Experienced by Online Gamers",
+                 "year": 2012, "cited_by_count": 177, "doi": None},
+            ],
+        }),
+    )
+    subfields = [{
+        "key": "minority_game", "name": "Minority Game",
+        "category": "foundational", "query": "Minority game",
+        "title_any": ["minority"],
+    }]
+
+    atlas = canon_atlas.build_atlas(subfields, sleep=0)
+
+    assert [paper["oa_paper_id"] for paper in atlas[0]["papers"]] == [
+        "https://openalex.org/Wgood",
+    ]
+
+
+def test_build_atlas_marks_openalex_failure(monkeypatch):
+    from fingerprint_atlas import canon_atlas
+    from fingerprint_atlas.openalex import OpenAlexQueryError
+
+    def fail(*args, **kwargs):
+        raise OpenAlexQueryError(429)
+
+    monkeypatch.setattr(canon_atlas, "find_canon_papers", fail)
+    subfields = [{
+        "key": "minority_game", "name": "Minority Game",
+        "category": "foundational", "query": "Minority game",
+    }]
+
+    atlas = canon_atlas.build_atlas(subfields, sleep=0)
+
+    assert atlas[0]["coverage"] is None
+    assert atlas[0]["error"] == "OpenAlex query failed (HTTP 429)"
+    assert atlas[0]["n_canon"] == 0
+
+
 def test_missing_arxiv_ids_dedupes_and_skips_in_db():
     from fingerprint_atlas.canon_atlas import missing_arxiv_ids
     atlas = [
