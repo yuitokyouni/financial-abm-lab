@@ -106,6 +106,31 @@ line-height:1.45;color:var(--ink)}
 .tech-card code{background:#f5f5f5;padding:1px 4px;border-radius:2px;font-size:10px}
 @media(max-width:1000px){.tech-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:650px){.tech-grid{grid-template-columns:1fr}}
+.fam-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:6px}
+.fam-card{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+padding:12px 14px;font-size:12px;line-height:1.5}
+.fam-card>summary{cursor:pointer;list-style:none;outline:none;user-select:none}
+.fam-card>summary::-webkit-details-marker{display:none}
+.fam-card>summary::before{content:'▸ ';color:var(--muted);font-size:10px}
+.fam-card[open]>summary::before{content:'▾ '}
+.fam-card .fam-name{font-weight:700;font-size:13px}
+.fam-card .fam-key{font-family:ui-monospace,Menlo,Monaco,monospace;font-size:10.5px;
+color:var(--muted);margin-left:6px}
+.fam-card .fam-src{display:block;color:var(--muted);font-size:11px;margin-top:3px}
+.fam-card .fam-mech{display:block;color:var(--ink);font-size:11.5px;margin-top:6px;
+line-height:1.5}
+.fam-card .fam-role{display:block;background:#fff5e6;border-left:3px solid #b54708;
+padding:7px 10px;margin-top:8px;font-size:11px;line-height:1.5;border-radius:0 4px 4px 0}
+.fam-card .fam-role b{color:#b54708;font-size:10px;text-transform:uppercase;
+letter-spacing:0.06em;display:block;margin-bottom:3px}
+.fam-card .fam-field{margin-top:8px;font-size:11px}
+.fam-card .fam-field-label{font-weight:600;color:var(--muted);text-transform:uppercase;
+font-size:10px;letter-spacing:0.04em;display:block;margin-bottom:3px}
+.fam-card .fam-field ul{margin:0;padding-left:16px;line-height:1.5;color:var(--ink)}
+.fam-card .fam-field li{margin-bottom:3px;font-size:11px}
+.fam-card .fam-arxiv{font-family:ui-monospace,Menlo,Monaco,monospace;font-size:10px;
+color:var(--blue)}
+@media(max-width:850px){.fam-grid{grid-template-columns:1fr}}
 @media(max-width:850px){.shell{display:block}aside{position:static;height:auto;padding:14px}
 .brand{margin:0 6px 12px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}
 main{padding:22px 16px}.head{display:block}.status{margin-top:8px}.metrics{grid-template-columns:1fr 1fr}
@@ -400,6 +425,60 @@ def _technique_catalog_html() -> str:
     return nav_strip + "".join(sections)
 
 
+def _abm_family_card(fam: dict) -> str:
+    """One card per ABM family. Visible at rest: name + key + source paper +
+    1-line mechanism. The epistemic role is highlighted in an amber callout
+    (especially important for ZI, which is a null hypothesis not a model).
+    Click expands fidelity notes + arxiv ref."""
+    name = html.escape(fam["name"])
+    key = html.escape(fam["key"])
+    src = html.escape(fam.get("source_paper", ""))
+    mech = html.escape(fam.get("mechanism", ""))
+    role = html.escape(fam.get("epistemic_role", ""))
+
+    parts: list[str] = []
+    fidelity = fam.get("fidelity_notes") or []
+    if fidelity:
+        items = "".join(f"<li>{html.escape(n)}</li>" for n in fidelity)
+        parts.append(
+            '<div class="fam-field"><span class="fam-field-label">'
+            'fidelity to source paper</span>'
+            f'<ul>{items}</ul></div>'
+        )
+    arxiv = fam.get("arxiv_id")
+    if arxiv:
+        link = f"https://arxiv.org/abs/{html.escape(arxiv)}"
+        parts.append(
+            '<div class="fam-field"><span class="fam-field-label">'
+            'arxiv</span>'
+            f'<a class="fam-arxiv" href="{link}" target="_blank">{html.escape(arxiv)}</a>'
+            '</div>'
+        )
+
+    return (
+        f'<details class="fam-card">'
+        f'<summary>'
+        f'<span class="fam-name">{name}</span>'
+        f'<span class="fam-key">{key}</span>'
+        f'<span class="fam-src">{src}</span>'
+        f'<span class="fam-mech">{mech}</span>'
+        f'<span class="fam-role"><b>epistemic role</b>{role}</span>'
+        f'</summary>'
+        f'{"".join(parts)}</details>'
+    )
+
+
+def _abm_family_grid_html() -> str:
+    """8 ABM-family reference cards, 2-col grid."""
+    try:
+        from .abm_families import ABM_FAMILIES
+    except ImportError:
+        return ""
+    return ('<div class="fam-grid">'
+            + "".join(_abm_family_card(f) for f in ABM_FAMILIES)
+            + '</div>')
+
+
 def _subfield_catalog_html() -> str:
     """Static catalog grid of the 25 subfields. Renders even when no
     canon search has been run — so Research Coverage is never empty."""
@@ -464,16 +543,26 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
         "dominate the principal axes (read the loadings to interpret).",
     ]
     distance_lookfor = [
+        "Distance metric: median L2 distance in the 6-dim standardised "
+        "fingerprint space — features are {Hill α (tail), volatility-"
+        "clustering ACF, leverage cross-correlation, return autocorrelation, "
+        "kurtosis, GARCH(1,1) persistence}; each feature is z-scored across "
+        "all runs (ABM + real) before the distance is computed.",
+        "ZI (zero_intelligence) is a NULL HYPOTHESIS not a behavioural model. "
+        "Close to ZI = 'this period's dynamics are mostly mechanical / "
+        "structural, strategy plays a small role'. Don't read it as 'these "
+        "traders are stupid'. See the ABM family reference cards below.",
         "Which family wins each regime — crisis windows often match different "
-        "families than calm windows, suggesting mechanism switching in the "
-        "real market.",
+        "families than calm ones, suggesting mechanism switching in the real "
+        "market.",
         "Gap between top-1 and top-2 distance: a small gap means low confidence "
         "in the match. Treat the assignment as 'plausible' rather than 'best'.",
         "Rows where every column is roughly equidistant: the 6-feature space "
-        "cannot discriminate that period's dynamics — extend features or "
-        "add ABM families.",
-        "Columns that never win: model families that look nothing like real "
-        "markets in any regime — either narrow target use, or miscalibrated.",
+        "cannot discriminate that period's dynamics — extend features or add "
+        "ABM families.",
+        "Columns that never win: families that look nothing like real markets "
+        "in any regime — either narrow target use, or miscalibrated. Check "
+        "the family card's fidelity notes before drawing strong conclusions.",
     ]
 
     overview = metric_html + (
@@ -521,6 +610,12 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
                   "Lower distance indicates a closer empirical fingerprint match.",
                   wide=True, lookfor=distance_lookfor)
         + '</div></section>'
+        '<section class="band"><h2>ABM family reference</h2>'
+        '<p class="sub">What is each column above? Source paper, mechanism, '
+        'how faithful our implementation is to the original, and — crucially '
+        '— what conclusion you can actually draw if a real market period '
+        'lands closest to that family.</p>'
+        + _abm_family_grid_html() + '</section>'
     )
 
     # Canon Atlas link — search multiple known locations, copy to
