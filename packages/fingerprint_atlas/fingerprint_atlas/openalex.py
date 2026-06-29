@@ -111,6 +111,76 @@ def fetch_paper(arxiv_id: str) -> dict | None:
     }
 
 
+# ----- concept search + canon detection ----------------------------------
+
+def find_concept_id(concept_name: str) -> str | None:
+    """Look up the OpenAlex concept id (e.g. 'C2779489203') for a display
+    name like 'Minority game'. Returns None if no match.
+
+    OpenAlex's concept taxonomy auto-tags every work — so this gives us a
+    way to find papers thematically related to a topic, separate from any
+    citation graph we have."""
+    q = urllib.parse.quote(concept_name)
+    url = f"{_OA_BASE}/concepts?search={q}&per-page=5"
+    raw = _http_get_json(url)
+    if not raw or not isinstance(raw.get("results"), list) or not raw["results"]:
+        return None
+    # Pick the closest title match (case-insensitive)
+    target = concept_name.lower().strip()
+    for c in raw["results"]:
+        if (c.get("display_name") or "").lower().strip() == target:
+            return c.get("id")
+    # Fallback: take the first result
+    return raw["results"][0].get("id")
+
+
+def find_canon_papers(concept_id_or_name: str, *, n: int = 30,
+                       year_max: int | None = None) -> list[dict]:
+    """Top-N highest-cited papers under an OpenAlex concept.
+
+    Pass either the OpenAlex concept id ('C2779489203' or
+    'https://openalex.org/C2779489203') or a display name ('Minority game')
+    which we'll resolve via find_concept_id.
+
+    Each entry: {oa_paper_id, arxiv_id (if any), title, year, cited_by_count,
+    doi, abstract_inverted_index}. arxiv_id is None for journal-only papers
+    we can't ingest via the arxiv API."""
+    # Resolve display name to concept id if needed
+    if "/" in concept_id_or_name or concept_id_or_name.startswith("C"):
+        m = re.search(r"(C\d+)", concept_id_or_name)
+        concept_id = m.group(1) if m else None
+    else:
+        full = find_concept_id(concept_id_or_name)
+        m = re.search(r"(C\d+)", full or "")
+        concept_id = m.group(1) if m else None
+    if not concept_id:
+        return []
+    f = [f"concepts.id:{concept_id}"]
+    if year_max is not None:
+        f.append(f"publication_year:<={year_max}")
+    qs = urllib.parse.urlencode({
+        "filter": ",".join(f),
+        "sort": "cited_by_count:desc",
+        "per-page": min(n, 200),
+        "select": "id,title,publication_year,cited_by_count,ids,doi,locations",
+    })
+    url = f"{_OA_BASE}/works?{qs}"
+    raw = _http_get_json(url)
+    if not raw or not isinstance(raw.get("results"), list):
+        return []
+    out: list[dict] = []
+    for work in raw["results"][:n]:
+        out.append({
+            "oa_paper_id": work.get("id"),
+            "arxiv_id": _arxiv_id_from_work(work),
+            "title": work.get("title"),
+            "year": work.get("publication_year"),
+            "cited_by_count": work.get("cited_by_count"),
+            "doi": work.get("doi"),
+        })
+    return out
+
+
 # ----- title search ------------------------------------------------------
 
 def search_by_title(title: str, year: int | None = None) -> dict | None:
@@ -163,6 +233,59 @@ def _arxiv_id_from_work(work: dict) -> str | None:
             # base-id convention
             return re.sub(r"v\d+$", "", aid)
     return None
+
+
+# ----- forward citation (papers that cite this one) ---------------------
+
+def find_citing_papers(oa_paper_id: str, *, n: int = 50,
+                        year_max: int | None = None,
+                        min_cited_by: int = 0) -> list[dict]:
+    """Return up to N papers that CITE the given OpenAlex work, sorted by
+    their own cited_by_count (so the most influential descendants surface
+    first). The 'forward' direction of the citation graph — opposite of
+    fetch_references.
+
+    Unlike referenced_works (which OpenAlex has empty for most arxiv
+    preprints), the inverted index here is built from any work that
+    contributes references, so coverage is much higher for canonical
+    works."""
+    # Accept either 'W12345' bare id or full 'https://openalex.org/W12345'
+    m = re.search(r"(W\d+)", oa_paper_id)
+    if not m:
+        return []
+    work_id = m.group(1)
+    f = [f"cites:{work_id}"]
+    if year_max is not None:
+        f.append(f"publication_year:<={year_max}")
+    if min_cited_by > 0:
+        f.append(f"cited_by_count:>={min_cited_by}")
+    qs = urllib.parse.urlencode({
+        "filter": ",".join(f),
+        "sort": "cited_by_count:desc",
+        "per-page": min(n, 200),
+        "select": ("id,title,publication_year,cited_by_count,ids,doi,"
+                   "locations,concepts"),
+    })
+    url = f"{_OA_BASE}/works?{qs}"
+    raw = _http_get_json(url)
+    if not raw or not isinstance(raw.get("results"), list):
+        return []
+    out: list[dict] = []
+    for work in raw["results"][:n]:
+        concepts = []
+        for c in (work.get("concepts") or [])[:3]:
+            if isinstance(c, dict) and c.get("display_name"):
+                concepts.append(c["display_name"])
+        out.append({
+            "oa_paper_id": work.get("id"),
+            "arxiv_id": _arxiv_id_from_work(work),
+            "title": work.get("title"),
+            "year": work.get("publication_year"),
+            "cited_by_count": work.get("cited_by_count"),
+            "doi": work.get("doi"),
+            "concepts": concepts,
+        })
+    return out
 
 
 # ----- reference walking -------------------------------------------------

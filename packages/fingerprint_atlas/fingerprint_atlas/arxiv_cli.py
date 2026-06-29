@@ -571,6 +571,130 @@ def cmd_fix_arxiv_ids(args) -> int:
     return 0
 
 
+def cmd_genealogy(args) -> int:
+    """Build a forward-citation tree from a root paper and render it as
+    an interactive HTML force-graph (vis-network, CDN-loaded — no install).
+
+    The root can be specified two ways:
+      --root-arxiv-id X   resolve via OpenAlex
+      --root-concept Y    pick the top-cited paper under that concept (the
+                          'canon') and use it as root
+    """
+    from .openalex import (
+        find_canon_papers, find_concept_id, fetch_paper,
+    )
+    from .genealogy import build_tree, render_html
+    import os
+    if args.root_arxiv_id:
+        meta = fetch_paper(args.root_arxiv_id)
+        if not meta:
+            print(f"could not resolve arxiv_id={args.root_arxiv_id!r} via OpenAlex",
+                  file=sys.stderr)
+            return 1
+        root_oa_id = meta["oa_paper_id"]
+        root_label = f"arxiv:{args.root_arxiv_id}"
+        root_arxiv_id = args.root_arxiv_id
+        root_title = meta.get("title")
+        root_year = meta.get("year")
+        root_cit = meta.get("cited_by_count")
+    elif args.root_concept:
+        print(f"finding canon paper under concept {args.root_concept!r}...")
+        canon = find_canon_papers(args.root_concept, n=1,
+                                    year_max=args.year_max)
+        if not canon:
+            print(f"no canon paper for concept {args.root_concept!r}",
+                  file=sys.stderr)
+            return 1
+        root = canon[0]
+        root_oa_id = root["oa_paper_id"]
+        root_arxiv_id = root.get("arxiv_id")
+        root_title = root.get("title")
+        root_year = root.get("year")
+        root_cit = root.get("cited_by_count")
+        root_label = f"canon[{args.root_concept}]"
+        print(f"root: {root_title!r} ({root_year}, {root_cit} cites)")
+    else:
+        print("--root-arxiv-id or --root-concept required", file=sys.stderr)
+        return 1
+
+    print(f"walking forward citations: depth={args.depth}, "
+          f"per_node={args.per_node}, min_cited_by={args.min_cited_by}")
+    print("(this can take a few minutes for depth=2)")
+    tree = build_tree(
+        root_oa_id, root_arxiv_id=root_arxiv_id, root_title=root_title,
+        root_year=root_year, root_cit=root_cit,
+        depth=args.depth, per_node=args.per_node,
+        min_cited_by=args.min_cited_by, sleep=args.sleep,
+    )
+    print(f"\ntree: {len(tree['nodes'])} nodes, {len(tree['edges'])} edges")
+
+    out_dir = os.path.dirname(os.path.abspath(args.out)) or "."
+    os.makedirs(out_dir, exist_ok=True)
+    title = f"{root_label}  ·  forward citations, depth {args.depth}"
+    render_html(tree, args.out, title=title)
+    print(f"wrote {args.out}")
+    print(f"open in browser to view the interactive graph.")
+    return 0
+
+
+def cmd_canon(args) -> int:
+    """Surface the canon (top-cited papers) under an OpenAlex concept.
+
+    For each subfield (Minority Game / Leverage Effect / Order Book etc),
+    the canon is the small set of papers that nearly every later paper in
+    that subfield cites. Found by querying OpenAlex for highest-cited
+    works under the concept tag. Optional --auto-ingest pulls the ones
+    that are on arxiv into the literature DB."""
+    from .openalex import find_canon_papers, find_concept_id
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    already_in_db = {re.sub(r"v\d+$", "", r["arxiv_id"]) for r in rows}
+
+    print(f"resolving concept {args.concept!r}...")
+    concept_id = find_concept_id(args.concept) if not args.concept.startswith("C") \
+        else args.concept
+    if not concept_id:
+        print(f"no OpenAlex concept matches {args.concept!r}", file=sys.stderr)
+        return 1
+    print(f"OpenAlex concept id: {concept_id}")
+
+    canon = find_canon_papers(concept_id, n=args.n, year_max=args.year_max)
+    if not canon:
+        print("no canon papers returned.")
+        return 0
+    print(f"\ntop {len(canon)} canon paper(s) for concept {args.concept!r}:")
+    arxiv_candidates: list[str] = []
+    for r in canon:
+        aid = r.get("arxiv_id")
+        in_db_flag = ""
+        if aid and re.sub(r"v\d+$", "", aid) in already_in_db:
+            in_db_flag = " [in DB]"
+        elif aid:
+            arxiv_candidates.append(aid)
+        cit = r.get("cited_by_count") or 0
+        year = r.get("year") or "?"
+        title = (r.get("title") or "")[:65]
+        arxiv_tag = f"arxiv:{aid}" if aid else "(no-arxiv)"
+        print(f"  [{cit:>5d} cit] {year}  {arxiv_tag:<28s} {title}{in_db_flag}")
+
+    if args.auto_ingest and arxiv_candidates:
+        from .arxiv_ingest import ingest_by_ids
+        print(f"\nauto-ingesting {len(arxiv_candidates)} arxiv-hosted canon "
+              f"paper(s) not yet in DB...")
+        summary = ingest_by_ids(
+            args.db, arxiv_candidates, extract=True,
+            groq_model=args.groq_model,
+            min_relevance_to_keep=args.min_relevance_to_keep,
+            verbose=True,
+        )
+        print(json.dumps({k: v for k, v in summary.items() if k != "errors"},
+                          indent=2))
+    elif not args.auto_ingest:
+        print(f"\nto ingest the {len(arxiv_candidates)} arxiv-hosted canon "
+              f"paper(s) not yet in DB: re-run with --auto-ingest")
+    return 0
+
+
 def cmd_enrich_via_oa(args) -> int:
     """OpenAlex equivalent of enrich-via-s2 — no API key required, 10
     req/s rate limit. Stores cited_by_count + top concepts + OA paperId."""
@@ -1097,6 +1221,46 @@ def main() -> int:
     p_fa.add_argument("--sleep", type=float, default=0.5,
                       help="seconds between OpenAlex title searches")
 
+    p_gn = sub.add_parser(
+        "genealogy",
+        help=("interactive HTML force-graph of forward citations from a "
+              "root paper (the 'genealogy tree' of a subfield)"),
+    )
+    p_gn_src = p_gn.add_mutually_exclusive_group(required=True)
+    p_gn_src.add_argument("--root-arxiv-id",
+                          help="paper to use as the tree's root")
+    p_gn_src.add_argument("--root-concept",
+                          help="auto-pick the top-cited paper under this "
+                               "OpenAlex concept as root")
+    p_gn.add_argument("--year-max", type=int, default=None,
+                      help="for --root-concept: exclude root candidates "
+                           "after this year")
+    p_gn.add_argument("--depth", type=int, default=2,
+                      help="forward-citation walk depth (1 or 2 recommended)")
+    p_gn.add_argument("--per-node", type=int, default=20,
+                      help="max children per node (top-cited kept)")
+    p_gn.add_argument("--min-cited-by", type=int, default=0,
+                      help="filter children with fewer than this many citations")
+    p_gn.add_argument("--sleep", type=float, default=0.5)
+    p_gn.add_argument("--out", default="notebooks/genealogy/tree.html")
+
+    p_cn = sub.add_parser(
+        "canon",
+        help=("surface the top-cited 'canon' papers under an OpenAlex "
+              "concept (e.g. 'Minority game' / 'Leverage effect'). "
+              "--auto-ingest pulls the arxiv-hosted ones into DB"),
+    )
+    p_cn.add_argument("concept",
+                      help="concept display name (e.g. 'Minority game') "
+                           "OR OpenAlex concept id (CXXXXXXX)")
+    p_cn.add_argument("--n", type=int, default=30,
+                      help="how many top-cited papers to surface")
+    p_cn.add_argument("--year-max", type=int, default=None,
+                      help="exclude papers published after this year")
+    p_cn.add_argument("--auto-ingest", action="store_true")
+    p_cn.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_cn.add_argument("--min-relevance-to-keep", type=float, default=0.0)
+
     p_eo = sub.add_parser(
         "enrich-via-oa",
         help=("backfill OpenAlex metadata (cited_by_count + concepts + "
@@ -1252,7 +1416,9 @@ def main() -> int:
                 "fix-arxiv-ids": cmd_fix_arxiv_ids,
                 "delete-rows": cmd_delete_rows,
                 "atlas": cmd_atlas,
-                "coverage": cmd_coverage}
+                "coverage": cmd_coverage,
+                "canon": cmd_canon,
+                "genealogy": cmd_genealogy}
     return handlers[args.cmd](args)
 
 
