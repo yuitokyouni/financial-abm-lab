@@ -119,8 +119,8 @@ def test_find_canon_papers_falls_back_to_search_when_no_concept(monkeypatch):
         # Second call: find_concept_id fallback /works?search= → empty concepts
         if "select=concepts" in url:
             return {"results": [{"concepts": []}]}
-        # Third call: find_canon_papers /works?search= → real papers
-        if "search=Minority+game" in url or "search=Minority%20game" in url:
+        # Third call: find_canon_papers /works with default.search filter
+        if "default.search" in url:
             return {"results": [
                 {"id": "https://openalex.org/W1",
                  "title": "Statistical mechanics of the minority game",
@@ -139,7 +139,8 @@ def test_find_canon_papers_falls_back_to_search_when_no_concept(monkeypatch):
     assert len(out) == 2
     assert out[0]["cited_by_count"] == 800
     assert out[0]["arxiv_id"] == "cond-mat/9909265"
-    # Confirm the fallback path was actually used (not concept-id filter)
+    # Fallback path: filter=default.search:..., cit-floor, NOT concept-id
     last_url = calls[-1]
-    assert "search=Minority" in last_url
+    assert "default.search" in last_url
+    assert "cited_by_count" in last_url
     assert "concepts.id" not in last_url
