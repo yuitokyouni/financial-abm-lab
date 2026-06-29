@@ -215,16 +215,16 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
             filt.append(f"publication_year:<={year_max}")
         params["filter"] = ",".join(filt)
     else:
-        # Fallback path: title+abstract search via default.search filter,
-        # combined with a citation-floor so global high-citation noise
-        # (cancer / COVID / sports surveys etc) doesn't dominate the
-        # ranking when the query terms are too generic.
+        # Fallback path: title+abstract search via title_and_abstract.search
+        # filter, combined with a citation-floor so global high-citation
+        # noise (cancer / COVID / sports surveys etc) doesn't dominate
+        # the ranking when the query terms are too generic.
         #
         # `?search=...` alone would also return matches but blends OR'd
         # word matching against the entire OpenAlex corpus, and
         # sort=cited_by_count:desc then pulls in unrelated mega-cites.
-        # `filter=default.search:...` is much stricter.
-        filt = [f"default.search:{query_or_concept}",
+        # `filter=title_and_abstract.search:...` is much stricter.
+        filt = [f"title_and_abstract.search:{query_or_concept}",
                 "cited_by_count:>=10"]
         if year_max is not None:
             filt.append(f"publication_year:<={year_max}")
@@ -233,6 +233,24 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
     qs = urllib.parse.urlencode(params)
     url = f"{_OA_BASE}/works?{qs}"
     raw = _http_get_json(url)
+
+    # Last-resort fallback: if title_and_abstract.search returned no
+    # results (filter name change, query too narrow, etc), retry with
+    # OpenAlex's basic ?search= ranked by relevance. Less precise but
+    # better than returning empty for any reasonable query.
+    if (not concept_id and (not raw or not raw.get("results"))):
+        retry_params = {
+            "search": query_or_concept,
+            "per-page": min(n, 200),
+            "select": "id,title,publication_year,cited_by_count,ids,doi,locations",
+        }
+        if year_max is not None:
+            retry_params["filter"] = (f"publication_year:<={year_max},"
+                                       "cited_by_count:>=10")
+        else:
+            retry_params["filter"] = "cited_by_count:>=10"
+        raw = _http_get_json(f"{_OA_BASE}/works?{urllib.parse.urlencode(retry_params)}")
+
     if not raw or not isinstance(raw.get("results"), list):
         return []
     out: list[dict] = []
