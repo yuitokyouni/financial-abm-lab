@@ -218,10 +218,10 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
             filter_clauses.append(f"publication_year:<={year_max}")
     else:
         # title_and_abstract.search hits papers whose title OR abstract
-        # contains the query. cited_by_count:>=10 drops low-impact noise.
+        # contains the query. cited_by_count:>9 drops low-impact noise.
         q_safe = urllib.parse.quote(query_or_concept, safe="")
         filter_clauses = [f"title_and_abstract.search:{q_safe}",
-                           "cited_by_count:>=10"]
+                           "cited_by_count:>9"]
         if year_max is not None:
             filter_clauses.append(f"publication_year:<={year_max}")
 
@@ -234,7 +234,7 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
     # citation-floor filter is a more lenient last resort.
     if not concept_id and (not raw or not raw.get("results")):
         q_safe = urllib.parse.quote(query_or_concept, safe="")
-        retry_filter = "cited_by_count:>=10"
+        retry_filter = "cited_by_count:>9"
         if year_max is not None:
             retry_filter += f",publication_year:<={year_max}"
         url = (f"{_OA_BASE}/works?search={q_safe}"
