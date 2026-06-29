@@ -23,6 +23,7 @@ returns None / empty list instead of raising.
 """
 from __future__ import annotations
 
+import html
 import json
 import re
 import time
@@ -67,6 +68,19 @@ def _http_get_json(url: str, timeout: float = _OA_TIMEOUT) -> dict | None:
     return body if status == 200 else None
 
 
+def _http_get_text(url: str, timeout: float = _OA_TIMEOUT) -> str | None:
+    headers = {"User-Agent": _USER_AGENT, "Accept": "text/html"}
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status != 200:
+                return None
+            return resp.read().decode("utf-8")
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError,
+            UnicodeDecodeError, OSError):
+        return None
+
+
 # ----- single-paper enrichment -------------------------------------------
 
 def _arxiv_doi(arxiv_id: str) -> str:
@@ -74,6 +88,63 @@ def _arxiv_doi(arxiv_id: str) -> str:
     OpenAlex indexes by this canonical DOI, so we can look any arxiv
     paper up without round-tripping through their search endpoint."""
     return f"10.48550/arXiv.{_arxiv_base(arxiv_id)}"
+
+
+def _normalise_work(raw: dict) -> dict:
+    concepts = raw.get("concepts") or []
+    concept_names = [c.get("display_name") for c in concepts[:5]
+                     if isinstance(c, dict) and c.get("display_name")]
+    oa = raw.get("open_access") or {}
+    return {
+        "oa_paper_id": raw.get("id"),
+        "title": raw.get("title"),
+        "year": raw.get("publication_year"),
+        "cited_by_count": raw.get("cited_by_count"),
+        "concepts": concept_names,
+        "referenced_works": raw.get("referenced_works") or [],
+        "open_access_pdf": oa.get("oa_url") if isinstance(oa, dict) else None,
+        "doi": raw.get("doi"),
+    }
+
+
+def _old_style_arxiv_metadata(arxiv_id: str) -> tuple[str | None, str | None]:
+    """Return (title, journal DOI) from an old-style arXiv abstract page."""
+    aid = urllib.parse.quote(_arxiv_base(arxiv_id), safe="/")
+    body = _http_get_text(f"https://arxiv.org/abs/{aid}")
+    if not body:
+        return None, None
+
+    def meta(name: str) -> str | None:
+        match = re.search(
+            rf'<meta\s+name=["\']{re.escape(name)}["\']\s+'
+            rf'content=["\']([^"\']+)["\']',
+            body,
+            flags=re.IGNORECASE,
+        )
+        return html.unescape(match.group(1)).strip() if match else None
+
+    return meta("citation_title"), meta("citation_doi")
+
+
+def _fetch_work_by_title(title: str) -> dict | None:
+    query = urllib.parse.quote(f'"{title[:200]}"', safe="")
+    select = (
+        "id,title,publication_year,cited_by_count,concepts,"
+        "referenced_works,open_access,doi"
+    )
+    url = (f"{_OA_BASE}/works?filter=display_name.search:{query}"
+           f"&sort=cited_by_count:desc&per-page=5&select={select}")
+    raw = _http_get_json(url)
+    if not raw or not isinstance(raw.get("results"), list):
+        return None
+    target = re.sub(r"\W+", " ", title).strip().casefold()
+    for work in raw["results"]:
+        candidate = re.sub(
+            r"\W+", " ", work.get("title") or ""
+        ).strip().casefold()
+        if candidate == target:
+            return work
+    return None
 
 
 def fetch_paper(arxiv_id: str) -> dict | None:
@@ -91,24 +162,24 @@ def fetch_paper(arxiv_id: str) -> dict | None:
         "doi": str | None,
       }
     """
-    url = f"{_OA_BASE}/works/doi:{urllib.parse.quote(_arxiv_doi(arxiv_id))}"
+    base_id = _arxiv_base(arxiv_id)
+    if "/" in base_id:
+        title, journal_doi = _old_style_arxiv_metadata(base_id)
+        if journal_doi:
+            url = f"{_OA_BASE}/works/doi:{urllib.parse.quote(journal_doi)}"
+            raw = _http_get_json(url)
+            if raw and isinstance(raw, dict):
+                return _normalise_work(raw)
+        if title:
+            raw = _fetch_work_by_title(title)
+            if raw:
+                return _normalise_work(raw)
+
+    url = f"{_OA_BASE}/works/doi:{urllib.parse.quote(_arxiv_doi(base_id))}"
     raw = _http_get_json(url)
     if not raw or not isinstance(raw, dict):
         return None
-    concepts = raw.get("concepts") or []
-    concept_names = [c.get("display_name") for c in concepts[:5]
-                      if isinstance(c, dict) and c.get("display_name")]
-    oa = raw.get("open_access") or {}
-    return {
-        "oa_paper_id": raw.get("id"),
-        "title": raw.get("title"),
-        "year": raw.get("publication_year"),
-        "cited_by_count": raw.get("cited_by_count"),
-        "concepts": concept_names,
-        "referenced_works": raw.get("referenced_works") or [],
-        "open_access_pdf": oa.get("oa_url") if isinstance(oa, dict) else None,
-        "doi": raw.get("doi"),
-    }
+    return _normalise_work(raw)
 
 
 # ----- concept search + canon detection ----------------------------------

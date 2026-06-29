@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import tempfile
 
-import pytest
-
 
 def test_arxiv_doi_constructs_canonical_doi():
     from fingerprint_atlas.openalex import _arxiv_doi
@@ -42,6 +40,66 @@ def test_fetch_paper_returns_none_on_miss(monkeypatch):
     from fingerprint_atlas import openalex as oa
     monkeypatch.setattr(oa, "_http_get_json", lambda url, **kw: None)
     assert oa.fetch_paper("9999.99999") is None
+
+
+def test_fetch_paper_resolves_old_style_arxiv_id_before_synthetic_doi(
+        monkeypatch):
+    from fingerprint_atlas import openalex as oa
+
+    arxiv_html = """
+    <meta name="citation_title"
+          content="Emergence of Cooperation and Organization in an Evolutionary Game" />
+    <meta name="citation_doi" content="10.1016/S0378-4371(97)00419-6" />
+    """
+    real_work = {
+        "id": "https://openalex.org/W2091653681",
+        "title": "Emergence of cooperation and organization in an evolutionary game",
+        "publication_year": 1997,
+        "cited_by_count": 924,
+        "concepts": [{"display_name": "Stochastic game"}],
+        "referenced_works": ["https://openalex.org/W1973754035"],
+        "open_access": {"oa_url": "https://arxiv.org/pdf/adap-org/9708006"},
+        "doi": "https://doi.org/10.1016/s0378-4371(97)00419-6",
+    }
+    requested_urls = []
+    monkeypatch.setattr(oa, "_http_get_text", lambda url, **kw: arxiv_html)
+
+    def fake_get_json(url, **kwargs):
+        requested_urls.append(url)
+        assert "10.48550" not in url
+        return real_work
+
+    monkeypatch.setattr(oa, "_http_get_json", fake_get_json)
+
+    out = oa.fetch_paper("adap-org/9708006")
+
+    assert "minority" in out["title"].lower() or "cooperation" in out["title"].lower()
+    assert out["cited_by_count"] > 100
+    assert requested_urls
+
+
+def test_fetch_paper_old_style_falls_back_to_exact_title_search(monkeypatch):
+    from fingerprint_atlas import openalex as oa
+
+    monkeypatch.setattr(
+        oa, "_old_style_arxiv_metadata",
+        lambda arxiv_id: ("An Old Preprint Without a Journal DOI", None),
+    )
+    work = {
+        "id": "https://openalex.org/W42",
+        "title": "An Old Preprint Without a Journal DOI",
+        "publication_year": 1998,
+        "cited_by_count": 123,
+    }
+    monkeypatch.setattr(
+        oa, "_http_get_json",
+        lambda url, **kw: {"results": [work]},
+    )
+
+    out = oa.fetch_paper("cond-mat/9810262")
+
+    assert out["oa_paper_id"] == "https://openalex.org/W42"
+    assert out["cited_by_count"] == 123
 
 
 def test_resolve_oa_work_extracts_arxiv_id_from_ids(monkeypatch):
