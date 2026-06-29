@@ -66,6 +66,25 @@ font-weight:600;list-style:none;user-select:none}
 .lookfor p{font-size:11px;color:var(--ink);margin-top:6px;line-height:1.55}
 .lookfor ul{font-size:11px;color:var(--ink);margin:6px 0 0 0;padding-left:18px;line-height:1.5}
 .lookfor li{margin-bottom:3px}
+.tech-cat{font-size:13px;font-weight:700;margin:18px 0 6px;color:var(--ink)}
+.tech-cat .count{font-size:11px;color:var(--muted);font-weight:400;margin-left:6px}
+.tech-card{background:var(--panel);border:1px solid var(--line);border-left:3px solid;
+padding:8px 10px;margin-bottom:6px;font-size:11px}
+.tech-card>summary{cursor:pointer;list-style:none;outline:none;user-select:none}
+.tech-card>summary::-webkit-details-marker{display:none}
+.tech-card>summary::before{content:'▸ ';color:var(--muted)}
+.tech-card[open]>summary::before{content:'▾ '}
+.tech-card b{font-size:12px}
+.tech-card .purpose{display:block;color:var(--muted);font-size:11px;margin-top:3px;
+line-height:1.4}
+.tech-card .field{margin-top:6px;font-size:10px}
+.tech-card .field-label{font-weight:600;color:var(--muted);text-transform:uppercase;
+letter-spacing:0.04em;margin-right:4px}
+.tech-card .field ul{margin:3px 0 0 0;padding-left:16px;font-size:10.5px;
+line-height:1.4;color:var(--ink)}
+.tech-card .field li{margin-bottom:2px}
+.tech-card .field a{font-size:10.5px;word-break:break-all}
+.tech-card code{background:#f5f5f5;padding:1px 4px;border-radius:2px;font-size:10px}
 @media(max-width:850px){.shell{display:block}aside{position:static;height:auto;padding:14px}
 .brand{margin:0 6px 12px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}
 main{padding:22px 16px}.head{display:block}.status{margin-top:8px}.metrics{grid-template-columns:1fr 1fr}
@@ -224,6 +243,97 @@ def _ensure_coverage_png(out_dir: Path, rows: list[dict[str, Any]]
     except Exception:
         return None
     return f"assets/{target.name}"
+
+
+_TECHNIQUE_CATEGORY_COLOR = {
+    "tail-stats": "#1f77b4",
+    "sim-arch": "#2ca02c",
+    "decision-rule": "#d62728",
+    "validation": "#9467bd",
+    "calibration": "#ff7f0e",
+    "learning-agent": "#17becf",
+}
+
+
+def _technique_card(tech: dict) -> str:
+    """One expandable card per technique. Shows name + purpose at rest;
+    expands to gotchas / ref_papers / ref_repos / your_impl."""
+    color = _TECHNIQUE_CATEGORY_COLOR.get(tech.get("category", ""), "#888")
+    name = html.escape(tech["name"])
+    purpose = html.escape(tech.get("purpose", ""))
+
+    parts: list[str] = []
+    gotchas = tech.get("gotchas") or []
+    if gotchas:
+        items = "".join(f"<li>{html.escape(g)}</li>" for g in gotchas)
+        parts.append(
+            f'<div class="field"><span class="field-label">gotchas</span>'
+            f'<ul>{items}</ul></div>'
+        )
+    ref_papers = tech.get("ref_papers") or []
+    if ref_papers:
+        items = "".join(f'<li><code>{html.escape(p)}</code></li>'
+                         for p in ref_papers)
+        parts.append(
+            f'<div class="field"><span class="field-label">ref papers</span>'
+            f'<ul>{items}</ul></div>'
+        )
+    ref_repos = tech.get("ref_repos") or []
+    if ref_repos:
+        items = []
+        for r in ref_repos:
+            href = html.escape(r)
+            label = html.escape(r.replace("https://github.com/", "")
+                                  .replace("https://", ""))
+            items.append(f'<li><a href="{href}" target="_blank">{label}</a></li>')
+        parts.append(
+            '<div class="field"><span class="field-label">ref repos</span>'
+            f'<ul>{"".join(items)}</ul></div>'
+        )
+    your_impl = tech.get("your_impl")
+    if your_impl:
+        parts.append(
+            '<div class="field"><span class="field-label">your impl</span>'
+            f'<code>{html.escape(your_impl)}</code></div>'
+        )
+
+    return (
+        f'<details class="tech-card" style="border-left-color:{color}">'
+        f'<summary><b>{name}</b>'
+        f'<span class="purpose">{purpose}</span></summary>'
+        f'{"".join(parts)}</details>'
+    )
+
+
+def _technique_catalog_html() -> str:
+    """Catalog of implementation techniques, grouped by category.
+    Each technique is a collapsible card — name + purpose at rest,
+    gotchas/refs/links on click."""
+    try:
+        from .techniques import TECHNIQUES
+    except ImportError:
+        return ""
+    by_cat: dict[str, list[dict]] = {}
+    for t in TECHNIQUES:
+        by_cat.setdefault(t.get("category", "other"), []).append(t)
+
+    # Stable category ordering (matches the catalog's mental model)
+    cat_order = ["tail-stats", "sim-arch", "decision-rule",
+                  "validation", "calibration", "learning-agent"]
+    cat_order += [c for c in by_cat if c not in cat_order]
+
+    blocks: list[str] = []
+    for cat in cat_order:
+        techs = by_cat.get(cat) or []
+        if not techs:
+            continue
+        color = _TECHNIQUE_CATEGORY_COLOR.get(cat, "#888")
+        blocks.append(
+            f'<div class="tech-cat" style="color:{color}">{html.escape(cat)}'
+            f'<span class="count">({len(techs)})</span></div>'
+        )
+        blocks.extend(_technique_card(t) for t in techs)
+    return "".join(blocks)
 
 
 def _subfield_catalog_html() -> str:
@@ -432,6 +542,11 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
         '<p class="sub">25 financial-ABM subfields tracked by canon-atlas. '
         'Run <code>canon-atlas</code> to fill each with its top-cited papers '
         'and ingestion status.</p>' + _subfield_catalog_html() + '</section>'
+        '<section class="band"><h2>Technique catalog</h2>'
+        '<p class="sub">Implementation techniques (algorithm / sim-arch / '
+        'decision-rule / validation / calibration / learning-agent). '
+        'Click any card for gotchas, reference papers, and OSS repos.</p>'
+        + _technique_catalog_html() + '</section>'
         '<section class="band"><h2>Proposal diagnostics</h2><div class="grid">'
         + _figure(out, str(root / "notebooks/propose_analytics/prediction_error_over_time.png"),
                   "Prediction error over time",

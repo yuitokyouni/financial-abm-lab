@@ -135,6 +135,36 @@ def test_subfield_catalog_includes_all_categories():
     assert body.count('class="sfcard"') >= 25
 
 
+def test_technique_catalog_includes_all_categories_and_renders_refs():
+    from fingerprint_atlas.dashboard import _technique_catalog_html
+    body = _technique_catalog_html()
+    # all six categories appear as headings
+    for cat in ["tail-stats", "sim-arch", "decision-rule", "validation",
+                 "calibration", "learning-agent"]:
+        assert cat in body, f"missing category {cat}"
+    # 30 entries → at least 30 cards
+    assert body.count('class="tech-card"') >= 30
+    # known technique surfaces
+    assert "Hill estimator" in body
+    assert "Speculation Game" in body or "speculation game" in body.lower()
+    # ref_repos rendered as outbound links
+    assert 'href="https://github.com/' in body
+    # gotchas appear inside the cards
+    assert "gotchas" in body
+    # purpose blurb visible in summary
+    assert "tail-index" in body.lower() or "tail-exponent" in body.lower() \
+            or "tail exponent" in body.lower()
+
+
+def test_research_page_embeds_technique_catalog(tmp_path):
+    from fingerprint_atlas.dashboard import build_dashboard
+    out = tmp_path / "dashboard"
+    build_dashboard([], str(out), repo_root=str(tmp_path))
+    research = (out / "research.html").read_text()
+    assert "Technique catalog" in research
+    assert "tail-stats" in research and "decision-rule" in research
+
+
 def test_coverage_matrix_renders_when_tagged_rows_present(tmp_path,
                                                             monkeypatch):
     """Coverage matrix PNG must be auto-rendered into assets/ when the
