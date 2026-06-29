@@ -16,21 +16,21 @@ def test_build_atlas_annotates_in_db_correctly(monkeypatch):
     from fingerprint_atlas import canon_atlas
     from fingerprint_atlas.subfields import Subfield
 
-    # Two subfields, one mostly in DB, one mostly missing
     fake_papers = {
         "topic A": [
-            {"oa_paper_id": "W1", "arxiv_id": "1001.0001",
+            {"oa_paper_id": "https://openalex.org/W1", "arxiv_id": "1001.0001",
              "title": "A1", "year": 2001, "cited_by_count": 100, "doi": "10/a1"},
-            {"oa_paper_id": "W2", "arxiv_id": "1001.0002",
+            {"oa_paper_id": "https://openalex.org/W2", "arxiv_id": "1001.0002",
              "title": "A2", "year": 2002, "cited_by_count": 80, "doi": None},
-            {"oa_paper_id": "W3", "arxiv_id": None,
-             "title": "A3 (book)", "year": 2003, "cited_by_count": 60,
-             "doi": "10/a3"},
+            {"oa_paper_id": "https://openalex.org/W3", "arxiv_id": None,
+             "title": "A3 (book in DB via OA)", "year": 2003,
+             "cited_by_count": 60, "doi": "10/a3"},
         ],
         "topic B": [
-            {"oa_paper_id": "W4", "arxiv_id": "1002.0001",
+            {"oa_paper_id": "https://openalex.org/W4", "arxiv_id": "1002.0001",
              "title": "B1", "year": 2010, "cited_by_count": 50, "doi": None},
-            {"oa_paper_id": "W5", "arxiv_id": "1002.0002v2",
+            {"oa_paper_id": "https://openalex.org/W5",
+             "arxiv_id": "1002.0002v2",
              "title": "B2", "year": 2011, "cited_by_count": 30, "doi": None},
         ],
     }
@@ -42,41 +42,47 @@ def test_build_atlas_annotates_in_db_correctly(monkeypatch):
         {"key": "a", "name": "A", "category": "foundational", "query": "topic A"},
         {"key": "b", "name": "B", "category": "stylized", "query": "topic B"},
     ]
-    db_ids = {"1001.0001", "1002.0001"}  # 1/2 on-arxiv for A, 1/2 for B
+    # 1001.0001 + W3 (journal-only canon) are in DB; W3 matched via OA id.
+    db_arxiv = {"1001.0001", "1002.0001"}
+    db_oa = {"W3"}
 
-    atlas = canon_atlas.build_atlas(subfields, db_arxiv_ids=db_ids,
+    atlas = canon_atlas.build_atlas(subfields, db_arxiv_ids=db_arxiv,
+                                      db_oa_ids=db_oa,
                                       n_per_subfield=8, sleep=0)
 
     assert len(atlas) == 2
     a = next(e for e in atlas if e["key"] == "a")
     b = next(e for e in atlas if e["key"] == "b")
 
-    # A: 3 canon, 2 on arxiv (W3 has no arxiv_id), 1 in DB → coverage 50%
+    # A: 3 canon, 2 of which are in DB (1001.0001 via arxiv, W3 via OA).
+    # coverage = 2/3.
     assert a["n_canon"] == 3
     assert a["n_on_arxiv"] == 2
-    assert a["n_in_db"] == 1
-    assert a["coverage"] == 0.5
+    assert a["n_in_db"] == 2
+    assert abs(a["coverage"] - 2/3) < 1e-9
 
-    # B: 2 canon, 2 on arxiv, 1 in DB (version suffix stripping for W5)
+    # B: 2 canon, 1 in DB (version suffix stripping). coverage 50%.
     assert b["n_canon"] == 2
     assert b["n_on_arxiv"] == 2
     assert b["n_in_db"] == 1
     assert b["coverage"] == 0.5
 
     # in_db flag set correctly per paper
-    a_papers = {p["arxiv_id"]: p for p in a["papers"]}
-    assert a_papers["1001.0001"]["in_db"] is True
-    assert a_papers["1001.0002"]["in_db"] is False
-    # paper with no arxiv_id keeps in_db False
-    assert next(p for p in a["papers"] if p["arxiv_id"] is None)["in_db"] is False
+    a_papers = {p["title"]: p for p in a["papers"]}
+    assert a_papers["A1"]["in_db"] is True       # via arxiv_id
+    assert a_papers["A2"]["in_db"] is False
+    assert a_papers["A3 (book in DB via OA)"]["in_db"] is True  # via OA id
 
 
-def test_build_atlas_coverage_none_when_no_arxiv(monkeypatch):
+def test_build_atlas_coverage_when_only_journal_canon(monkeypatch):
+    """Subfield where all canon is journal-only — coverage is 0/N, not None,
+    because OA-metadata ingestion can still reach them."""
     from fingerprint_atlas import canon_atlas
     fake_papers = {
         "only-books": [
-            {"oa_paper_id": "W9", "arxiv_id": None, "title": "Book",
-             "year": 2000, "cited_by_count": 1000, "doi": "10/x"},
+            {"oa_paper_id": "https://openalex.org/W9", "arxiv_id": None,
+             "title": "Book", "year": 2000, "cited_by_count": 1000,
+             "doi": "10/x"},
         ],
     }
     monkeypatch.setattr(canon_atlas, "find_canon_papers",
@@ -85,10 +91,11 @@ def test_build_atlas_coverage_none_when_no_arxiv(monkeypatch):
     atlas = canon_atlas.build_atlas(
         [{"key": "x", "name": "X", "category": "foundational",
           "query": "only-books"}],
-        db_arxiv_ids=set(), sleep=0,
+        db_arxiv_ids=set(), db_oa_ids=set(), sleep=0,
     )
-    assert atlas[0]["coverage"] is None
+    assert atlas[0]["coverage"] == 0.0
     assert atlas[0]["n_on_arxiv"] == 0
+    assert atlas[0]["n_canon"] == 1
 
 
 def test_missing_arxiv_ids_dedupes_and_skips_in_db():
@@ -105,6 +112,37 @@ def test_missing_arxiv_ids_dedupes_and_skips_in_db():
         ]},
     ]
     assert missing_arxiv_ids(atlas) == ["1001.0002", "1002.0003"]
+
+
+def test_missing_canon_splits_arxiv_vs_oa_only():
+    from fingerprint_atlas.canon_atlas import missing_canon
+    atlas = [
+        {"papers": [
+            # in DB → skip
+            {"arxiv_id": "1001.0001",
+             "oa_paper_id": "https://openalex.org/W1", "in_db": True},
+            # arxiv missing → arxiv path
+            {"arxiv_id": "1001.0002",
+             "oa_paper_id": "https://openalex.org/W2", "in_db": False},
+            # journal-only missing → OA path
+            {"arxiv_id": None,
+             "oa_paper_id": "https://openalex.org/W3", "in_db": False},
+            # OA-only with no work id → skip (untrackable)
+            {"arxiv_id": None, "oa_paper_id": None, "in_db": False},
+        ]},
+        {"papers": [
+            # dup of the journal-only canon above
+            {"arxiv_id": None,
+             "oa_paper_id": "https://openalex.org/W3", "in_db": False},
+            # another journal canon
+            {"arxiv_id": None,
+             "oa_paper_id": "https://openalex.org/W4", "in_db": False},
+        ]},
+    ]
+    out = missing_canon(atlas)
+    assert out["arxiv"] == ["1001.0002"]
+    assert out["oa_only"] == ["https://openalex.org/W3",
+                               "https://openalex.org/W4"]
 
 
 def test_render_html_writes_self_contained_file(tmp_path):

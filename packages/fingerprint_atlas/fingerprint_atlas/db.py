@@ -291,6 +291,15 @@ def ensure_literature_schema(db_path: str) -> None:
             con.execute(
                 "ALTER TABLE literature_methods ADD COLUMN oa_fetched_at TEXT"
             )
+        # source_kind distinguishes rows that came in via arxiv ingestion
+        # vs OpenAlex-only canon (for which arxiv_id is synthetic
+        # 'oa:Wxxxxx' and there is no PDF to scan). Downstream code that
+        # builds arxiv URLs or fetches arxiv PDFs must check this column.
+        if not _column_exists(con, "literature_methods", "source_kind"):
+            con.execute(
+                "ALTER TABLE literature_methods ADD COLUMN source_kind "
+                "TEXT NOT NULL DEFAULT 'arxiv'"
+            )
         con.commit()
 
 
@@ -298,12 +307,17 @@ def upsert_literature_metadata(
     db_path: str, *,
     arxiv_id: str, title: str, authors: str, year: int,
     published_date: str, primary_category: str | None, abstract: str,
+    source_kind: str = "arxiv",
 ) -> int:
     """Insert a paper's raw metadata if absent; return the row id.
 
     Idempotent: re-ingesting the same arxiv_id is a no-op. LLM extraction is
     a separate step (`update_literature_extraction`) so we don't lose
     extraction results on a metadata refresh.
+
+    source_kind: 'arxiv' for arxiv preprints (arxiv_id is real, PDF fetch
+    works), 'openalex' for journal canon ingested from OpenAlex metadata
+    (arxiv_id is a synthetic 'oa:Wxxxxx', no PDF).
     """
     import datetime as _dt
     now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
@@ -315,10 +329,11 @@ def upsert_literature_metadata(
             return int(existing[0])
         cur = con.execute(
             "INSERT INTO literature_methods (arxiv_id, title, authors, year, "
-            "published_date, primary_category, abstract, ingested_at, updated_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?)",
+            "published_date, primary_category, abstract, ingested_at, "
+            "updated_at, source_kind) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
             (arxiv_id, title, authors, int(year), published_date,
-             primary_category, abstract, now, now),
+             primary_category, abstract, now, now, source_kind),
         )
         return int(cur.lastrowid)
 
@@ -365,7 +380,8 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
            "ingested_at, updated_at, code_url, code_url_source, arxiv_comment, "
            "pdf_scanned_at, s2_paper_id, s2_tldr, "
            "s2_influential_citation_count, s2_fetched_at, "
-           "oa_paper_id, oa_cited_by_count, oa_concepts, oa_fetched_at "
+           "oa_paper_id, oa_cited_by_count, oa_concepts, oa_fetched_at, "
+           "source_kind "
            "FROM literature_methods")
     where: list[str] = []
     args: list[Any] = []
@@ -402,6 +418,7 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
             "s2_influential_citation_count": r[25], "s2_fetched_at": r[26],
             "oa_paper_id": r[27], "oa_cited_by_count": r[28],
             "oa_concepts": r[29], "oa_fetched_at": r[30],
+            "source_kind": r[31] or "arxiv",
         })
     return out
 

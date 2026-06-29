@@ -738,11 +738,22 @@ def cmd_canon_atlas(args) -> int:
     Optional --auto-ingest-missing pulls every arxiv-hosted canon paper
     not yet in DB through arxiv_ingest in one batch — single command to
     close the canon-coverage gap across the whole atlas."""
-    from .canon_atlas import build_atlas, render_html, missing_arxiv_ids
+    from .canon_atlas import (build_atlas, render_html, missing_canon,
+                                _oa_work_id)
+    from .canon_ingest import is_openalex_synthetic_id
     from .subfields import SUBFIELDS
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
-    db_arxiv_ids = {r["arxiv_id"] for r in rows if r.get("arxiv_id")}
+    # Real arxiv ids only (skip oa: synthetic ids — those are matched via
+    # db_oa_ids instead). OA work ids come from the oa_paper_id column.
+    db_arxiv_ids = {r["arxiv_id"] for r in rows
+                     if r.get("arxiv_id")
+                     and not is_openalex_synthetic_id(r["arxiv_id"])}
+    db_oa_ids: set[str] = set()
+    for r in rows:
+        work = _oa_work_id(r.get("oa_paper_id"))
+        if work:
+            db_oa_ids.add(work)
 
     subfields = SUBFIELDS
     if args.only:
@@ -757,44 +768,60 @@ def cmd_canon_atlas(args) -> int:
     print(f"building canon atlas for {len(subfields)} subfield(s)...")
     print("(this takes ~30-60s — one OpenAlex call per subfield)")
     atlas = build_atlas(subfields, db_arxiv_ids=db_arxiv_ids,
+                         db_oa_ids=db_oa_ids,
                          n_per_subfield=args.n, year_max=args.year_max,
                          sleep=args.sleep)
 
     # Print a one-line per-subfield summary so users can see progress
     # without opening the HTML. n_canon is the OpenAlex search hit count
-    # (top-cited); n_on_arxiv is the subset that's reachable from arxiv
-    # (many econometric / journal papers aren't). Coverage is n_in_db /
-    # n_on_arxiv — '—' when nothing is on arxiv.
+    # (top-cited); coverage is n_in_db / n_canon — every canon paper is
+    # now ingestable (arxiv path for arxiv-hosted, OA-metadata path for
+    # journal-only).
     print()
     for entry in atlas:
         cov = entry["coverage"]
         cov_txt = "  —" if cov is None else f"{int(round(cov * 100)):>3d}%"
-        print(f"  [{cov_txt}] {entry['n_in_db']:>2d}/{entry['n_on_arxiv']:>2d} "
-              f"on-arxiv (of {entry['n_canon']} canon)  ·  {entry['name']}")
+        print(f"  [{cov_txt}] {entry['n_in_db']:>2d}/{entry['n_canon']:>2d} "
+              f"canon ({entry['n_on_arxiv']} on arxiv)  ·  {entry['name']}")
 
     render_html(atlas, args.out)
     print(f"\nwrote {args.out}")
 
-    missing = missing_arxiv_ids(atlas)
-    if not missing:
-        print("no missing arxiv canon — coverage is complete.")
+    missing = missing_canon(atlas)
+    n_arxiv = len(missing["arxiv"])
+    n_oa = len(missing["oa_only"])
+    if not n_arxiv and not n_oa:
+        print("all canon papers are in DB — coverage is complete.")
         return 0
 
-    if args.auto_ingest_missing:
+    print(f"\n{n_arxiv} arxiv-hosted + {n_oa} journal-only canon paper(s) "
+          f"are not yet in DB.")
+
+    if not args.auto_ingest_missing:
+        print(f"re-run with --auto-ingest-missing to pull them "
+              f"(arxiv path for {n_arxiv}, OA-metadata path for {n_oa}).")
+        return 0
+
+    if n_arxiv:
         from .arxiv_ingest import ingest_by_ids
-        print(f"\nauto-ingesting {len(missing)} missing canon paper(s) "
-              f"from arxiv...")
-        summary = ingest_by_ids(
-            args.db, missing, extract=True,
+        print(f"\n[arxiv path] ingesting {n_arxiv} canon paper(s)...")
+        s_arxiv = ingest_by_ids(
+            args.db, missing["arxiv"], extract=True,
             groq_model=args.groq_model,
             min_relevance_to_keep=args.min_relevance_to_keep,
             verbose=True,
         )
-        print(json.dumps({k: v for k, v in summary.items() if k != "errors"},
+        print(json.dumps({k: v for k, v in s_arxiv.items() if k != "errors"},
                           indent=2))
-    else:
-        print(f"\n{len(missing)} canon paper(s) on arxiv are not yet in DB.")
-        print(f"re-run with --auto-ingest-missing to pull them.")
+
+    if n_oa:
+        from .canon_ingest import ingest_canon_via_oa
+        print(f"\n[OA-metadata path] ingesting {n_oa} journal-only canon "
+              f"paper(s) (no PDF; abstract from OA inverted_index)...")
+        s_oa = ingest_canon_via_oa(args.db, missing["oa_only"],
+                                     sleep=args.sleep, verbose=True)
+        print(json.dumps({k: v for k, v in s_oa.items() if k != "errors"},
+                          indent=2))
     return 0
 
 

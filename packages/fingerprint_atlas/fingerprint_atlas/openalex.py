@@ -387,6 +387,73 @@ def _arxiv_id_from_work(work: dict) -> str | None:
     return None
 
 
+# ----- canon ingestion (full metadata from OA work id) ------------------
+
+def _reconstruct_abstract(inverted: dict | None) -> str:
+    """OpenAlex stores abstracts as an inverted index:
+       {word: [positions_in_text]}.
+    Reconstruct by placing each word at its position. Returns '' for
+    works without an indexed abstract (~10% of works).
+    """
+    if not inverted or not isinstance(inverted, dict):
+        return ""
+    pos_words: list[tuple[int, str]] = []
+    for word, positions in inverted.items():
+        if not isinstance(positions, list):
+            continue
+        for p in positions:
+            try:
+                pos_words.append((int(p), word))
+            except (TypeError, ValueError):
+                continue
+    pos_words.sort()
+    return " ".join(w for _, w in pos_words)
+
+
+def fetch_work_full(oa_id: str) -> dict | None:
+    """Fetch one OpenAlex work and return rich metadata suitable for
+    inserting into literature_methods as a canon row.
+
+    Returns:
+      {oa_paper_id, title, authors (str), year, published_date, doi,
+       abstract (reconstructed), cited_by_count, concepts (list[str]),
+       primary_category (None — OA doesn't have arxiv categories)}
+    or None on a hard miss.
+    """
+    m = re.search(r"(W\d+)", oa_id)
+    if not m:
+        return None
+    work_id = m.group(1)
+    select = ("id,title,publication_year,publication_date,cited_by_count,"
+              "concepts,authorships,abstract_inverted_index,doi,locations")
+    url = (f"{_OA_BASE}/works/{work_id}"
+           f"?select={urllib.parse.quote(select)}")
+    raw = _http_get_json(url)
+    if not raw or not isinstance(raw, dict):
+        return None
+    authors: list[str] = []
+    for a in (raw.get("authorships") or [])[:25]:
+        name = ((a or {}).get("author") or {}).get("display_name")
+        if name:
+            authors.append(name)
+    concepts: list[str] = []
+    for c in (raw.get("concepts") or [])[:5]:
+        if isinstance(c, dict) and c.get("display_name"):
+            concepts.append(c["display_name"])
+    return {
+        "oa_paper_id": raw.get("id"),
+        "title": raw.get("title"),
+        "authors": ", ".join(authors),
+        "year": raw.get("publication_year"),
+        "published_date": raw.get("publication_date"),
+        "doi": raw.get("doi"),
+        "abstract": _reconstruct_abstract(raw.get("abstract_inverted_index")),
+        "cited_by_count": raw.get("cited_by_count"),
+        "concepts": concepts,
+        "arxiv_id": _arxiv_id_from_work(raw),
+    }
+
+
 # ----- forward citation (papers that cite this one) ---------------------
 
 def find_citing_papers(oa_paper_id: str, *, n: int = 50,

@@ -42,16 +42,32 @@ def _arxiv_base(arxiv_id: str | None) -> str | None:
     return re.sub(r"v\d+$", "", arxiv_id.strip())
 
 
-def build_atlas(subfields: list[Subfield], *, db_arxiv_ids: set[str],
+def _oa_work_id(oa_uri: str | None) -> str | None:
+    """'https://openalex.org/W12345' → 'W12345', else None."""
+    if not oa_uri:
+        return None
+    m = re.search(r"(W\d+)", oa_uri)
+    return m.group(1) if m else None
+
+
+def build_atlas(subfields: list[Subfield], *,
+                 db_arxiv_ids: set[str] | None = None,
+                 db_oa_ids: set[str] | None = None,
                  n_per_subfield: int = 8, year_max: int | None = None,
                  sleep: float = 0.5) -> list[dict[str, Any]]:
     """Return one record per subfield with its canon papers + DB coverage.
 
-    db_arxiv_ids is the set of base arxiv ids already in literature_methods
-    (stripped of version suffixes). Each canon paper is annotated with
-    in_db=True iff its arxiv_id (base form) is in that set.
+    A canon paper is in DB iff EITHER its base arxiv_id is in db_arxiv_ids
+    OR its OpenAlex work id is in db_oa_ids. This lets us recognise
+    journal-only canon (ingested via canon_ingest.ingest_canon_via_oa)
+    as covered.
+
+    Coverage definition: n_in_db / n_canon (every canon paper is now
+    ingestable — arxiv via arxiv_ingest, journal via canon_ingest — so
+    there's no longer a 'we can't reach this' denominator).
     """
-    db_set = {_arxiv_base(a) for a in db_arxiv_ids if a}
+    db_arxiv_set = {_arxiv_base(a) for a in (db_arxiv_ids or set()) if a}
+    db_oa_set = set(db_oa_ids or set())
     atlas: list[dict[str, Any]] = []
     for sf in subfields:
         papers = find_canon_papers(sf["query"], n=n_per_subfield,
@@ -60,7 +76,11 @@ def build_atlas(subfields: list[Subfield], *, db_arxiv_ids: set[str],
         n_in_db = 0
         for p in papers:
             base = _arxiv_base(p.get("arxiv_id"))
-            in_db = bool(base) and base in db_set
+            oa_work = _oa_work_id(p.get("oa_paper_id"))
+            in_db = (
+                (bool(base) and base in db_arxiv_set)
+                or (bool(oa_work) and oa_work in db_oa_set)
+            )
             if in_db:
                 n_in_db += 1
             annotated.append({
@@ -73,13 +93,8 @@ def build_atlas(subfields: list[Subfield], *, db_arxiv_ids: set[str],
                 "in_db": in_db,
             })
         n_canon = len(annotated)
-        # Coverage definition: of canon papers that exist on arxiv, how
-        # many do we already have. Canon papers with no arxiv presence
-        # (journal-only books like Bouchaud-Potters) are excluded from
-        # the denominator — we can't ingest them so they shouldn't lower
-        # the score.
         n_on_arxiv = sum(1 for p in annotated if p["arxiv_id"])
-        coverage = (n_in_db / n_on_arxiv) if n_on_arxiv else None
+        coverage = (n_in_db / n_canon) if n_canon else None
         atlas.append({
             "key": sf["key"],
             "name": sf["name"],
@@ -187,8 +202,8 @@ def _render_cell(entry: dict[str, Any]) -> str:
     cov = entry["coverage"]
     bg = _coverage_color(cov)
     pct_txt = "—" if cov is None else f"{int(round(cov * 100))}%"
-    frac_txt = (f"{entry['n_in_db']} / {entry['n_on_arxiv']} on arxiv "
-                f"(of {entry['n_canon']})")
+    frac_txt = (f"{entry['n_in_db']} / {entry['n_canon']} canon "
+                f"({entry['n_on_arxiv']} on arxiv)")
     cat_color = _CATEGORY_COLOR.get(entry["category"], "#888")
     name = html.escape(entry["name"])
     key = entry["key"]
@@ -229,8 +244,8 @@ def _render_section(entry: dict[str, Any]) -> str:
     cov = entry["coverage"]
     cov_txt = "—" if cov is None else f"{int(round(cov * 100))}%"
     meta = (f'coverage <b>{cov_txt}</b> · '
-            f'{entry["n_in_db"]} / {entry["n_on_arxiv"]} on-arxiv in DB · '
-            f'{entry["n_canon"]} canon total · '
+            f'{entry["n_in_db"]} / {entry["n_canon"]} canon in DB · '
+            f'{entry["n_on_arxiv"]} on arxiv · '
             f'query: <code>{html.escape(entry["query"])}</code>')
     return (f'<details id="sub-{entry["key"]}">'
             f'<summary><span style="display:inline-block;width:8px;height:8px;'
@@ -289,3 +304,38 @@ def missing_arxiv_ids(atlas: list[dict[str, Any]]) -> list[str]:
                 out.append(aid)
                 seen.add(aid)
     return out
+
+
+def missing_canon(atlas: list[dict[str, Any]]) -> dict[str, list[str]]:
+    """Split missing canon into two ingestion paths.
+
+    Returns {'arxiv': [arxiv_ids], 'oa_only': [openalex_work_uris]}.
+
+    Routing rule: if a canon paper has an arxiv_id, prefer the arxiv path
+    (full-text PDF → LLM mechanism extraction). If only OA-indexed, fall
+    back to the OA-metadata path (canon_ingest.ingest_canon_via_oa).
+
+    Dedup-aware: an arxiv_id (base form) or OA work id surfaced under
+    multiple subfields is emitted once.
+    """
+    arxiv_ids: list[str] = []
+    seen_arxiv: set[str] = set()
+    oa_ids: list[str] = []
+    seen_oa: set[str] = set()
+    for entry in atlas:
+        for p in entry["papers"]:
+            if p["in_db"]:
+                continue
+            aid = _arxiv_base(p.get("arxiv_id"))
+            if aid:
+                if aid not in seen_arxiv:
+                    arxiv_ids.append(aid)
+                    seen_arxiv.add(aid)
+                continue
+            oa = p.get("oa_paper_id")
+            if oa:
+                work = _oa_work_id(oa)
+                if work and work not in seen_oa:
+                    oa_ids.append(oa)
+                    seen_oa.add(work)
+    return {"arxiv": arxiv_ids, "oa_only": oa_ids}
