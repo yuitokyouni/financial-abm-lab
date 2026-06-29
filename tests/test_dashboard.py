@@ -156,23 +156,29 @@ def test_technique_catalog_includes_all_categories_and_renders_refs():
             or "tail exponent" in body.lower()
 
 
-def test_abm_family_grid_renders_all_eight_with_provenance():
+def test_abm_family_grid_renders_with_provenance():
     from fingerprint_atlas.dashboard import _abm_family_grid_html
     from fingerprint_atlas.abm_families import ABM_FAMILIES
     body = _abm_family_grid_html()
-    assert len(ABM_FAMILIES) == 8
-    assert body.count('class="fam-card"') == 8
+    n = len(ABM_FAMILIES)
+    assert n >= 8  # catalog grows but should never shrink below the baseline
+    assert body.count('class="fam-card"') == n
     # Source papers surface (provenance is the whole point)
     assert "Cont &amp; Bouchaud (2000)" in body
     assert "Lux &amp; Marchesi (1999)" in body
     assert "Gode &amp; Sunder (1993)" in body  # ZI provenance!
     assert "Challet &amp; Zhang (1997)" in body
+    # Alfarano-Lux-Wagner (the user's 'three-person ABM' question)
+    assert "Alfarano" in body and "Wagner" in body
     # ZI is flagged as a null hypothesis (the user's complaint)
     assert "NULL HYPOTHESIS" in body
-    # Epistemic-role callouts exist
-    assert body.count("epistemic role") == 8
+    # Epistemic-role callouts exist on every card
+    assert body.count("epistemic role") == n
     # Fidelity notes section appears (impl faithfulness, the user's complaint)
     assert "fidelity to source paper" in body
+    # SG card distinguishes YH005 (faithful reproduction) from YH006 (original)
+    assert "YH005" in body and "YH006" in body
+    assert "original hybrid" in body
 
 
 def test_markets_page_embeds_family_reference_and_distance_doc(tmp_path):

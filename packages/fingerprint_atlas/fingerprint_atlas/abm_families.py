@@ -195,18 +195,52 @@ ABM_FAMILIES: list[ABMFamily] = [
             "asymmetry)."
         ),
         "fidelity_notes": [
-            "Layer 1-2 implemented from the Physica A formulation; layer 3 "
-            "bankruptcy/entry follows JSSC.",
-            "YH006_1 found: under LOB friction, layer-2 round-trips fail to "
-            "execute and the wealth-dynamic mechanism stalls (81% survival "
-            "in LOB vs 99% bankruptcy in aggregate-supply baseline) — this "
-            "is a structural limit of SG, not an impl bug.",
+            "YH005 is this lab's faithful SG reproduction (layers 1-2 from "
+            "the Physica A formulation, layer 3 bankruptcy/entry from JSSC).",
+            "YH006 is NOT a faithful SG impl — it is an original hybrid that "
+            "uses SG as a base for a SG×LOB combination, with substantial "
+            "modifications because SG and LOB don't compose cleanly. The "
+            "81% survival vs 99% bankruptcy finding came from YH006_1's "
+            "experimental setup and documents an SG-cognition × LOB-friction "
+            "interaction, not a property of SG alone.",
         ],
         "epistemic_role": (
             "Most cognitively-explicit rule-based ABM in this catalog and "
             "the primary research target of this lab's master's program. "
             "Match here = signature consistent with explicit cognition + "
             "round-trip + wealth-dynamic mechanisms acting jointly."
+        ),
+    },
+    {
+        "key": "alfarano_lux_wagner",
+        "name": "Alfarano–Lux–Wagner (ALW)",
+        "source_paper": (
+            "Alfarano, Lux & Wagner (2008), J. Econ. Dyn. Control 32(1), "
+            "101-136; earlier: Alfarano, Lux & Wagner (2005), "
+            "Computational Economics 26(1), 19-49"
+        ),
+        "arxiv_id": None,
+        "mechanism": (
+            "Stochastic herding model with noise traders + fundamentalists; "
+            "the noise-trader sentiment follows a pairwise-meeting + self-"
+            "conversion process (Kirman-ant style). Analytical: stationary "
+            "distribution of sentiment is solvable, and time variation of "
+            "higher moments (kurtosis, vol clustering) is derivable in "
+            "closed form."
+        ),
+        "fidelity_notes": [
+            "Pairwise switching rate ε and conversion rate are calibrated "
+            "to the published estimates.",
+            "Closed-form moment expressions provide a non-simulation cross-"
+            "check — useful as a fingerprint validation reference.",
+            "Not currently present in the inverse-ABM distance heatmap; "
+            "added to this catalog for completeness pending registry impl.",
+        ],
+        "epistemic_role": (
+            "Analytical bridge between Kirman-ant herding and Lux-Marchesi. "
+            "Match here = sentiment-driven herding dynamics dominate the "
+            "observed signature, and the time-variation of higher moments "
+            "is the operational lens to read it through."
         ),
     },
     {
