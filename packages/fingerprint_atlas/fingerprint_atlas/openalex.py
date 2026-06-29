@@ -174,36 +174,54 @@ def find_concept_id(concept_name: str) -> str | None:
     return None
 
 
-def find_canon_papers(concept_id_or_name: str, *, n: int = 30,
+def find_canon_papers(query_or_concept: str, *, n: int = 30,
                        year_max: int | None = None) -> list[dict]:
-    """Top-N highest-cited papers under an OpenAlex concept.
+    """Top-N highest-cited papers about a topic.
 
-    Pass either the OpenAlex concept id ('C2779489203' or
-    'https://openalex.org/C2779489203') or a display name ('Minority game')
-    which we'll resolve via find_concept_id.
+    Two resolution paths:
+      (a) If `query_or_concept` is an OpenAlex concept id (CXXXXX or full
+          URI), or find_concept_id resolves the name to one, filter
+          /works by `concepts.id:`.
+      (b) Otherwise (fine-grained subfields like 'Minority game' that
+          aren't first-class OpenAlex concepts), fall back to direct
+          search `/works?search=...` and sort by cited_by_count.
 
-    Each entry: {oa_paper_id, arxiv_id (if any), title, year, cited_by_count,
-    doi, abstract_inverted_index}. arxiv_id is None for journal-only papers
-    we can't ingest via the arxiv API."""
-    # Resolve display name to concept id if needed
-    if "/" in concept_id_or_name or concept_id_or_name.startswith("C"):
-        m = re.search(r"(C\d+)", concept_id_or_name)
-        concept_id = m.group(1) if m else None
+    Path (b) is more reliable for narrow subfields — OpenAlex's concept
+    taxonomy is coarse (it has 'Stochastic game' but not 'Minority game')
+    while its title/abstract search reaches every paper.
+
+    Each entry: {oa_paper_id, arxiv_id, title, year, cited_by_count, doi}.
+    """
+    concept_id: str | None = None
+    if "/" in query_or_concept or query_or_concept.startswith("C"):
+        m = re.search(r"(C\d+)", query_or_concept)
+        if m:
+            concept_id = m.group(1)
     else:
-        full = find_concept_id(concept_id_or_name)
-        m = re.search(r"(C\d+)", full or "")
-        concept_id = m.group(1) if m else None
-    if not concept_id:
-        return []
-    f = [f"concepts.id:{concept_id}"]
-    if year_max is not None:
-        f.append(f"publication_year:<={year_max}")
-    qs = urllib.parse.urlencode({
-        "filter": ",".join(f),
+        full = find_concept_id(query_or_concept)
+        if full:
+            m = re.search(r"(C\d+)", full)
+            if m:
+                concept_id = m.group(1)
+
+    params = {
         "sort": "cited_by_count:desc",
         "per-page": min(n, 200),
         "select": "id,title,publication_year,cited_by_count,ids,doi,locations",
-    })
+    }
+    if concept_id:
+        filt = [f"concepts.id:{concept_id}"]
+        if year_max is not None:
+            filt.append(f"publication_year:<={year_max}")
+        params["filter"] = ",".join(filt)
+    else:
+        # Fallback path: direct search over title/abstract — works for
+        # subfields too narrow to have their own OpenAlex concept.
+        params["search"] = query_or_concept
+        if year_max is not None:
+            params["filter"] = f"publication_year:<={year_max}"
+
+    qs = urllib.parse.urlencode(params)
     url = f"{_OA_BASE}/works?{qs}"
     raw = _http_get_json(url)
     if not raw or not isinstance(raw.get("results"), list):

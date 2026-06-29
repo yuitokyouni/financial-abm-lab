@@ -618,9 +618,7 @@ def cmd_genealogy(args) -> int:
       --root-concept Y    pick the top-cited paper under that concept (the
                           'canon') and use it as root
     """
-    from .openalex import (
-        find_canon_papers, find_concept_id, fetch_paper,
-    )
+    from .openalex import find_canon_papers, fetch_paper
     from .genealogy import build_tree, render_html
     import os
     if args.root_arxiv_id:
@@ -683,24 +681,18 @@ def cmd_canon(args) -> int:
     that subfield cites. Found by querying OpenAlex for highest-cited
     works under the concept tag. Optional --auto-ingest pulls the ones
     that are on arxiv into the literature DB."""
-    from .openalex import find_canon_papers, find_concept_id
+    from .openalex import find_canon_papers
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
     already_in_db = {re.sub(r"v\d+$", "", r["arxiv_id"]) for r in rows}
 
-    print(f"resolving concept {args.concept!r}...")
-    concept_id = find_concept_id(args.concept) if not args.concept.startswith("C") \
-        else args.concept
-    if not concept_id:
-        print(f"no OpenAlex concept matches {args.concept!r}", file=sys.stderr)
-        return 1
-    print(f"OpenAlex concept id: {concept_id}")
-
-    canon = find_canon_papers(concept_id, n=args.n, year_max=args.year_max)
+    # find_canon_papers handles concept-id resolution AND a search
+    # fallback for narrow subfields OpenAlex doesn't have as a concept.
+    canon = find_canon_papers(args.concept, n=args.n, year_max=args.year_max)
     if not canon:
-        print("no canon papers returned.")
-        return 0
-    print(f"\ntop {len(canon)} canon paper(s) for concept {args.concept!r}:")
+        print(f"no canon papers returned for {args.concept!r}.")
+        return 1
+    print(f"top {len(canon)} canon paper(s) for {args.concept!r}:")
     arxiv_candidates: list[str] = []
     for r in canon:
         aid = r.get("arxiv_id")

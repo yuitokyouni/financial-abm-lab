@@ -102,3 +102,44 @@ def test_render_html_writes_self_contained_file(tmp_path):
     assert "vis-network" in body
     assert "W_root" in body and "W_a" in body
     assert "Root paper" in body
+
+
+def test_find_canon_papers_falls_back_to_search_when_no_concept(monkeypatch):
+    """When OpenAlex has no concept for the query (e.g. 'Minority game'),
+    find_canon_papers must fall back to /works?search=...&sort=cited_by_count
+    and return high-cited papers anyway."""
+    from fingerprint_atlas import openalex as oa
+    calls = []
+
+    def fake_http(url, **kw):
+        calls.append(url)
+        # First call: find_concept_id /concepts → empty
+        if "/concepts?" in url:
+            return {"results": []}
+        # Second call: find_concept_id fallback /works?search= → empty concepts
+        if "select=concepts" in url:
+            return {"results": [{"concepts": []}]}
+        # Third call: find_canon_papers /works?search= → real papers
+        if "search=Minority+game" in url or "search=Minority%20game" in url:
+            return {"results": [
+                {"id": "https://openalex.org/W1",
+                 "title": "Statistical mechanics of the minority game",
+                 "publication_year": 2000, "cited_by_count": 800,
+                 "ids": {"arxiv": "https://arxiv.org/abs/cond-mat/9909265"},
+                 "doi": "10.1/x"},
+                {"id": "https://openalex.org/W2",
+                 "title": "Minority game and the price of information",
+                 "publication_year": 2002, "cited_by_count": 300,
+                 "ids": {}, "doi": None},
+            ]}
+        return None
+
+    monkeypatch.setattr(oa, "_http_get_json", fake_http)
+    out = oa.find_canon_papers("Minority game", n=5)
+    assert len(out) == 2
+    assert out[0]["cited_by_count"] == 800
+    assert out[0]["arxiv_id"] == "cond-mat/9909265"
+    # Confirm the fallback path was actually used (not concept-id filter)
+    last_url = calls[-1]
+    assert "search=Minority" in last_url
+    assert "concepts.id" not in last_url
