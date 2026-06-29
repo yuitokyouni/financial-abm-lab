@@ -619,7 +619,7 @@ def cmd_genealogy(args) -> int:
                           'canon') and use it as root
     """
     from .openalex import find_canon_papers, fetch_paper
-    from .genealogy import build_tree, render_html
+    from .genealogy import build_tree, filter_tree, render_html
     import os
     if args.root_arxiv_id:
         meta = fetch_paper(args.root_arxiv_id)
@@ -662,6 +662,11 @@ def cmd_genealogy(args) -> int:
         depth=args.depth, per_node=args.per_node,
         min_cited_by=args.min_cited_by, sleep=args.sleep,
     )
+    if args.keywords:
+        before = len(tree["nodes"])
+        excluded = args.exclude_keywords.split(",") if args.exclude_keywords else []
+        tree = filter_tree(tree, args.keywords.split(","), excluded)
+        print(f"topical filter: kept {len(tree['nodes'])}/{before} nodes")
     print(f"\ntree: {len(tree['nodes'])} nodes, {len(tree['edges'])} edges")
 
     out_dir = os.path.dirname(os.path.abspath(args.out)) or "."
@@ -1279,6 +1284,15 @@ def main() -> int:
                       help="max children per node (top-cited kept)")
     p_gn.add_argument("--min-cited-by", type=int, default=0,
                       help="filter children with fewer than this many citations")
+    p_gn.add_argument(
+        "--keywords",
+        help=("comma-separated topical terms; removes non-matching branches "
+              "and merges duplicate titles"),
+    )
+    p_gn.add_argument(
+        "--exclude-keywords",
+        help="comma-separated terms to reject even when --keywords matches",
+    )
     p_gn.add_argument("--sleep", type=float, default=0.5)
     p_gn.add_argument("--out", default="notebooks/genealogy/tree.html")
 

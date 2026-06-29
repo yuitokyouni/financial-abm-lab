@@ -2,9 +2,6 @@
 from __future__ import annotations
 
 import os
-import tempfile
-
-import pytest
 
 
 def test_find_concept_id_resolves_display_name(monkeypatch):
@@ -102,6 +99,48 @@ def test_render_html_writes_self_contained_file(tmp_path):
     assert "vis-network" in body
     assert "W_root" in body and "W_a" in body
     assert "Root paper" in body
+
+
+def test_filter_tree_removes_noise_branch_and_merges_duplicate_titles():
+    from fingerprint_atlas.genealogy import filter_tree
+
+    tree = {
+        "nodes": [
+            {"id": "root", "label": "Minority Game", "concept": "root",
+             "depth": 0, "cited_by_count": 100},
+            {"id": "market", "label": "Adaptive market game",
+             "concept": "Economics", "depth": 1, "cited_by_count": 20},
+            {"id": "market-copy", "label": "Adaptive market game",
+             "concept": "Economics", "depth": 1, "cited_by_count": 10},
+            {"id": "useful", "label": "Minority game dynamics",
+             "concept": "Game theory", "depth": 2, "cited_by_count": 5},
+            {"id": "noise", "label": "Silicon fracture",
+             "concept": "Materials science", "depth": 1, "cited_by_count": 30},
+            {"id": "orphan", "label": "Market pricing",
+             "concept": "Finance", "depth": 2, "cited_by_count": 8},
+        ],
+        "edges": [
+            {"source": "root", "target": "market"},
+            {"source": "root", "target": "market-copy"},
+            {"source": "market", "target": "useful"},
+            {"source": "noise", "target": "orphan"},
+            {"source": "root", "target": "noise"},
+        ],
+    }
+
+    filtered = filter_tree(
+        tree,
+        ["minority", "market", "game theory"],
+        ["silicon"],
+    )
+
+    assert {node["id"] for node in filtered["nodes"]} == {
+        "root", "market", "useful",
+    }
+    assert filtered["edges"] == [
+        {"source": "market", "target": "useful"},
+        {"source": "root", "target": "market"},
+    ]
 
 
 def test_find_canon_papers_falls_back_to_search_when_no_concept(monkeypatch):

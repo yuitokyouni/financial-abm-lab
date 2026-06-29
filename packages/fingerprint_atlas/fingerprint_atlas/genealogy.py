@@ -17,8 +17,7 @@ from __future__ import annotations
 
 import html
 import json
-import math
-import time
+import re
 from typing import Any
 
 from .openalex import find_citing_papers, sleep_for_rate_limit
@@ -77,6 +76,75 @@ def build_tree(root_oa_id: str, *, root_arxiv_id: str | None,
         if not frontier:
             break
     return {"nodes": list(nodes.values()), "edges": edges}
+
+
+def filter_tree(tree: dict[str, Any], keywords: list[str],
+                exclude_keywords: list[str] | None = None) -> dict[str, Any]:
+    """Keep topical branches and merge duplicate OpenAlex title records."""
+    terms = [term.strip().casefold() for term in keywords if term.strip()]
+    excluded = [
+        term.strip().casefold()
+        for term in (exclude_keywords or [])
+        if term.strip()
+    ]
+    if not terms:
+        return tree
+
+    parents: dict[str, set[str]] = {}
+    for edge in tree["edges"]:
+        parents.setdefault(edge["target"], set()).add(edge["source"])
+
+    def matches(node: dict) -> bool:
+        text = f"{node.get('label') or ''} {node.get('concept') or ''}".casefold()
+        return (
+            any(term in text for term in terms)
+            and not any(term in text for term in excluded)
+        )
+
+    kept_ids = {
+        node["id"] for node in tree["nodes"]
+        if node.get("depth") == 0 or matches(node)
+    }
+    # Reject a matching descendant when every parent branch was rejected.
+    for node in sorted(tree["nodes"], key=lambda item: item.get("depth", 0)):
+        if node.get("depth") and node["id"] in kept_ids:
+            if not any(parent in kept_ids for parent in parents.get(node["id"], ())):
+                kept_ids.remove(node["id"])
+
+    canonical: dict[str, str] = {}
+    by_title: dict[str, dict] = {}
+    for node in tree["nodes"]:
+        if node["id"] not in kept_ids:
+            continue
+        title_key = re.sub(r"\W+", " ", node.get("label") or "").strip().casefold()
+        existing = by_title.get(title_key)
+        if existing is None:
+            by_title[title_key] = node
+            canonical[node["id"]] = node["id"]
+        elif (node.get("cited_by_count") or 0) > (
+                existing.get("cited_by_count") or 0):
+            canonical[existing["id"]] = node["id"]
+            canonical[node["id"]] = node["id"]
+            by_title[title_key] = node
+        else:
+            canonical[node["id"]] = existing["id"]
+
+    kept_nodes = list(by_title.values())
+    kept_node_ids = {node["id"] for node in kept_nodes}
+    edge_pairs = {
+        (canonical.get(edge["source"], edge["source"]),
+         canonical.get(edge["target"], edge["target"]))
+        for edge in tree["edges"]
+        if edge["source"] in kept_ids and edge["target"] in kept_ids
+    }
+    kept_edges = [
+        {"source": source, "target": target}
+        for source, target in sorted(edge_pairs)
+        if source != target
+        and source in kept_node_ids
+        and target in kept_node_ids
+    ]
+    return {"nodes": kept_nodes, "edges": kept_edges}
 
 
 _HTML_TEMPLATE = r"""<!DOCTYPE html>
