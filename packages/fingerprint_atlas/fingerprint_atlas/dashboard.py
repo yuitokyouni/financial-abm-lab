@@ -57,6 +57,15 @@ padding:9px 10px}.sfcard b{display:block;font-size:12px;margin-bottom:2px}
 .sfcard .cat{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.04em}
 .sfcard code{display:block;font-size:10px;background:#f5f5f5;padding:2px 4px;
 border-radius:2px;margin-top:4px;color:var(--muted)}
+.lookfor{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.lookfor summary{cursor:pointer;font-size:11px;color:var(--blue);
+font-weight:600;list-style:none;user-select:none}
+.lookfor summary::-webkit-details-marker{display:none}
+.lookfor summary::before{content:'▸ ';color:var(--muted)}
+.lookfor[open] summary::before{content:'▾ '}
+.lookfor p{font-size:11px;color:var(--ink);margin-top:6px;line-height:1.55}
+.lookfor ul{font-size:11px;color:var(--ink);margin:6px 0 0 0;padding-left:18px;line-height:1.5}
+.lookfor li{margin-bottom:3px}
 @media(max-width:850px){.shell{display:block}aside{position:static;height:auto;padding:14px}
 .brand{margin:0 6px 12px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}
 main{padding:22px 16px}.head{display:block}.status{margin-top:8px}.metrics{grid-template-columns:1fr 1fr}
@@ -127,8 +136,30 @@ def _copy_html(out_dir: Path, source: str, dest_name: str) -> str | None:
     return dest_name
 
 
+def _lookfor_block(lookfor: str | list[str] | None) -> str:
+    """Render the collapsible 'What to look for' block.
+
+    `lookfor` may be:
+      - None: emits nothing (no toggle)
+      - str: one paragraph of guidance
+      - list[str]: bulleted points (one per item)
+    """
+    if not lookfor:
+        return ""
+    if isinstance(lookfor, str):
+        body = f"<p>{html.escape(lookfor)}</p>"
+    else:
+        items = "".join(f"<li>{html.escape(item)}</li>" for item in lookfor)
+        body = f"<ul>{items}</ul>"
+    return (
+        '<details class="lookfor"><summary>What to look for</summary>'
+        f"{body}</details>"
+    )
+
+
 def _figure(out_dir: Path, source: str, title: str, note: str,
-            *, wide: bool = False) -> str:
+            *, wide: bool = False,
+            lookfor: str | list[str] | None = None) -> str:
     href = _copy_asset(out_dir, source)
     cls = "figure wide" if wide else "figure"
     if not href:
@@ -137,7 +168,9 @@ def _figure(out_dir: Path, source: str, title: str, note: str,
         f'<figure class="{cls}"><a href="{html.escape(href)}">'
         f'<img src="{html.escape(href)}" alt="{html.escape(title)}"></a>'
         f'<figcaption>{html.escape(title)}</figcaption>'
-        f'<p class="note">{html.escape(note)}</p></figure>'
+        f'<p class="note">{html.escape(note)}</p>'
+        f'{_lookfor_block(lookfor)}'
+        '</figure>'
     )
 
 
@@ -244,14 +277,41 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
         '</section>'
     )
 
+    pca_lookfor = [
+        "Tight per-family clusters: the model produces a consistent fingerprint "
+        "across its parameter sweep (a good calibration target).",
+        "Cross-family overlap: different mechanisms producing indistinguishable "
+        "surface statistics — a warning that the 6-feature space cannot tell "
+        "them apart, so inverse-ABM matching on those features is ambiguous.",
+        "Outlier runs sitting far from their family's cluster: parameter "
+        "regimes that flip the model into another regime — usually the "
+        "interesting boundary cases to investigate.",
+        "Direction of separation along PC1 / PC2: which stylized facts "
+        "dominate the principal axes (read the loadings to interpret).",
+    ]
+    distance_lookfor = [
+        "Which family wins each regime — crisis windows often match different "
+        "families than calm windows, suggesting mechanism switching in the "
+        "real market.",
+        "Gap between top-1 and top-2 distance: a small gap means low confidence "
+        "in the match. Treat the assignment as 'plausible' rather than 'best'.",
+        "Rows where every column is roughly equidistant: the 6-feature space "
+        "cannot discriminate that period's dynamics — extend features or "
+        "add ABM families.",
+        "Columns that never win: model families that look nothing like real "
+        "markets in any regime — either narrow target use, or miscalibrated.",
+    ]
+
     overview = metric_html + (
         '<section class="band"><h2>Core analysis</h2><div class="grid">'
         + _figure(out, str(root / "notebooks/atlas_v4/atlas.png"),
                   "ABM fingerprint PCA",
-                  "Model families in standardized fingerprint space.")
+                  "Model families in standardized fingerprint space.",
+                  lookfor=pca_lookfor)
         + _figure(out, str(root / "notebooks/inverse_abm_heatmap.png"),
                   "Real market × ABM distance",
-                  "Nearest model families across observed periods.")
+                  "Nearest model families across observed periods.",
+                  lookfor=distance_lookfor)
         + '</div></section><section class="band"><h2>Workstreams</h2><div class="links">'
         '<a href="markets.html"><b>Market Structure</b><span>PCA, feature distributions, '
         'and inverse-ABM distances</span><i>Open →</i></a>'
@@ -259,20 +319,33 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
         'matrix, and proposal evaluation diagnostics</span><i>Open →</i></a></div></section>'
     )
 
+    features_lookfor = [
+        "Families with near-zero variance on a feature: the model produces "
+        "an essentially constant value regardless of parameters (insensitive "
+        "dimension — fingerprint cannot probe that mechanism).",
+        "Families whose boxes overlap every other family on a feature: that "
+        "feature does not separate them — redundant or weak discriminator.",
+        "Long whiskers / outliers: parameter regimes that pull a model into "
+        "atypical fingerprint territory — useful for stress-testing the "
+        "calibration neighbourhood.",
+        "Cross-family ordering inconsistency between features: a family is "
+        "highest on one stylized fact but lowest on another — interpret the "
+        "trade-off as the mechanism's signature.",
+    ]
     markets = (
         '<section class="band"><h2>Fingerprint geometry</h2><div class="grid">'
         + _figure(out, str(root / "notebooks/atlas_v4/atlas.png"),
                   "PCA market atlas",
                   "Two principal components of standardized ABM fingerprints.",
-                  wide=True)
+                  wide=True, lookfor=pca_lookfor)
         + _figure(out, str(root / "notebooks/atlas_v4/features.png"),
                   "Feature distributions",
                   "Per-family distributions for fingerprint dimensions.",
-                  wide=True)
+                  wide=True, lookfor=features_lookfor)
         + _figure(out, str(root / "notebooks/inverse_abm_heatmap.png"),
                   "Real market × ABM distance heatmap",
                   "Lower distance indicates a closer empirical fingerprint match.",
-                  wide=True)
+                  wide=True, lookfor=distance_lookfor)
         + '</div></section>'
     )
 
@@ -290,6 +363,20 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
         canon_block = _canon_run_hint()
 
     # Coverage matrix — auto-render from current literature_methods rows.
+    coverage_lookfor = [
+        "Dense rows (high count across many columns): well-studied mechanisms "
+        "the corpus is biased toward. Don't propose new work here without a "
+        "differentiator.",
+        "Empty columns: stylized facts no paper in the corpus targets — either "
+        "blind spots of the field, or under-covered by ingestion. Cross-check "
+        "with canon-atlas to disambiguate.",
+        "Sparse cells inside otherwise-dense rows: 'this mechanism is well-"
+        "studied, but no one has tried it against this stylized fact' — the "
+        "most actionable gap to propose into.",
+        "Rows whose only tag is a generic OpenAlex concept (e.g. 'Economics'): "
+        "LLM mechanism extraction was too shallow for those papers; rerun "
+        "extraction with deeper prompts.",
+    ]
     cov_href = _ensure_coverage_png(out, rows)
     if cov_href:
         cov_block = (
@@ -298,11 +385,45 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
             '<figcaption>Mechanism × stylized fact coverage</figcaption>'
             '<p class="note">Auto-rendered from the current corpus. '
             'Dense rows are well-covered mechanisms; sparse cells are '
-            'research gaps to fill.</p></figure>'
+            'research gaps to fill.</p>'
+            f'{_lookfor_block(coverage_lookfor)}</figure>'
         )
     else:
         cov_block = ('<div class="empty">Coverage matrix unavailable '
                       '— DB has no mechanism-tagged rows yet.</div>')
+
+    pred_time_lookfor = [
+        "Downward trend in absolute error: the proposal-quality model is "
+        "learning from executed-outcome feedback (good signal).",
+        "Shrinking error variance: predictions are becoming more reliable "
+        "even if mean error is flat.",
+        "Sudden jumps in error: structural breaks — usually the judge model "
+        "changed, the corpus shifted, or the scoring metric was redefined. "
+        "Annotate the timeline against commit history to confirm.",
+        "Clusters of high-error proposals at a single date: a batched run "
+        "that targeted an unfamiliar mechanism family.",
+    ]
+    pred_family_lookfor = [
+        "Families with consistently high error: the proposal system's blind "
+        "spot — usually under-represented in the corpus or extracted with "
+        "shallow mechanism tags.",
+        "Families with near-zero error: possibly genuinely easy to predict, "
+        "or the model is over-fitted to that family's training proposals.",
+        "Wide error boxes (high variance): proposals against this family are "
+        "unreliable; needs more ingestion or human review of judge prompts.",
+        "Families with no proposals at all (missing box): proposal pipeline "
+        "never reaches that family — check the from-corpus sampling weights.",
+    ]
+    novelty_lookfor = [
+        "Points clustering on the diagonal y = x: well-calibrated judge — "
+        "predicted novelty matches measured novelty.",
+        "Systematic offset above the diagonal: judge over-predicts novelty "
+        "(hype bias). Below: judge under-predicts (conservative).",
+        "High-leverage outliers: proposals the judge missed (high actual, "
+        "low predicted) — extract their patterns into the judge prompt.",
+        "Strong vertical bands: predicted scores collapse to a few discrete "
+        "values — judge model is under-resolving the novelty dimension.",
+    ]
 
     research = (
         '<section class="band"><h2>Canon atlas</h2>' + canon_block + '</section>'
@@ -314,13 +435,16 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
         '<section class="band"><h2>Proposal diagnostics</h2><div class="grid">'
         + _figure(out, str(root / "notebooks/propose_analytics/prediction_error_over_time.png"),
                   "Prediction error over time",
-                  "Observed calibration drift across proposals.")
+                  "Observed calibration drift across proposals.",
+                  lookfor=pred_time_lookfor)
         + _figure(out, str(root / "notebooks/propose_analytics/prediction_error_by_family.png"),
                   "Prediction error by family",
-                  "Error distribution grouped by target model.")
+                  "Error distribution grouped by target model.",
+                  lookfor=pred_family_lookfor)
         + _figure(out, str(root / "notebooks/propose_analytics/novelty_calibration.png"),
                   "Novelty calibration",
-                  "Predicted novelty against executed outcomes.", wide=True)
+                  "Predicted novelty against executed outcomes.", wide=True,
+                  lookfor=novelty_lookfor)
         + '</div></section>'
     )
 

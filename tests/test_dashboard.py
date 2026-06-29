@@ -74,6 +74,57 @@ def test_build_dashboard_handles_missing_assets(tmp_path):
     assert "canon-atlas" in research  # the suggested command
 
 
+def test_lookfor_block_renders_paragraph_and_bullets():
+    from fingerprint_atlas.dashboard import _lookfor_block
+    # None / empty → nothing
+    assert _lookfor_block(None) == ""
+    assert _lookfor_block([]) == ""
+    # String → paragraph
+    out = _lookfor_block("Look at the diagonal.")
+    assert "<details" in out and "Look at the diagonal." in out
+    assert "<p>" in out
+    # List → bullets
+    out = _lookfor_block(["First point", "Second point"])
+    assert "<ul>" in out and "<li>First point</li>" in out
+    assert "<li>Second point</li>" in out
+
+
+def test_figures_include_what_to_look_for_toggle(tmp_path):
+    """Every rendered figure on Overview / Markets / Research must have
+    a 'What to look for' toggle. The toggle is the dashboard's expert
+    layer — keep it from regressing into a plain caption."""
+    from fingerprint_atlas.dashboard import build_dashboard
+
+    root = tmp_path / "repo"
+    for relative in [
+        "notebooks/atlas_v4/atlas.png",
+        "notebooks/atlas_v4/features.png",
+        "notebooks/inverse_abm_heatmap.png",
+        "notebooks/propose_analytics/prediction_error_over_time.png",
+        "notebooks/propose_analytics/prediction_error_by_family.png",
+        "notebooks/propose_analytics/novelty_calibration.png",
+    ]:
+        p = root / relative
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(b"x")
+
+    rows = [{"year": 2020, "mechanism_tags": "minority-game"}]
+    out = root / "dashboard"
+    build_dashboard(rows, str(out), repo_root=str(root))
+
+    for page in ["index.html", "markets.html", "research.html"]:
+        body = (out / page).read_text()
+        assert "What to look for" in body, f"{page} missing toggle summary"
+        assert '<details class="lookfor"' in body, f"{page} missing toggle"
+
+    # Spot-check distinctive guidance text on each page
+    overview = (out / "index.html").read_text()
+    assert "principal axes" in overview or "loadings" in overview
+    research = (out / "research.html").read_text()
+    assert "blind spot" in research  # appears in prediction-error-by-family
+    assert "diagonal" in research    # appears in novelty calibration
+
+
 def test_subfield_catalog_includes_all_categories():
     from fingerprint_atlas.dashboard import _subfield_catalog_html
     body = _subfield_catalog_html()
