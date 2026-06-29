@@ -217,9 +217,14 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
         if year_max is not None:
             filter_clauses.append(f"publication_year:<={year_max}")
     else:
-        # title_and_abstract.search hits papers whose title OR abstract
-        # contains the query. cited_by_count:>9 drops low-impact noise.
-        q_safe = urllib.parse.quote(query_or_concept, safe="")
+        # title_and_abstract.search defaults to OR'd word matching ('minority
+        # game' matches every paper with 'minority' OR 'game' anywhere).
+        # Wrap the query in double quotes to force exact-phrase matching —
+        # 'Minority game' becomes the literal phrase, dropping racial-
+        # minorities / gaming-addiction / etc noise. Combine with a
+        # citation floor (>9) to also kill low-impact phrase hits.
+        phrase = f'"{query_or_concept}"'
+        q_safe = urllib.parse.quote(phrase, safe="")
         filter_clauses = [f"title_and_abstract.search:{q_safe}",
                            "cited_by_count:>9"]
         if year_max is not None:
