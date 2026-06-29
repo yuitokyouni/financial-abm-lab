@@ -730,6 +730,43 @@ def cmd_canon(args) -> int:
     return 0
 
 
+def cmd_gap_mine(args) -> int:
+    """Detect under-explored cells in the (subfield × stylized-fact),
+    (abm_family × stylized-fact), and (technique × subfield) views.
+    Surfaces the top-N research gaps sorted by salience."""
+    from .gap_finder import find_gaps
+    import sqlite3
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    with sqlite3.connect(args.db) as con:
+        runs = [{"model_name": r[0], "fingerprint_json": r[1]}
+                 for r in con.execute(
+                     "SELECT model_name, fingerprint_json FROM runs"
+                 ).fetchall()]
+
+    views, top = find_gaps(rows, runs, top_n=args.top)
+    print(f"corpus: {len(rows)} papers, {len(runs)} runs")
+    for v in views:
+        nonzero = int((v.matrix > 0).sum()) if v.matrix.size else 0
+        total = int(v.matrix.sum()) if v.matrix.size else 0
+        print(f"  view {v.name}: {v.matrix.shape[0]}×{v.matrix.shape[1]}, "
+              f"{nonzero} non-zero cells, sum={total}")
+
+    print(f"\ntop {len(top)} gaps:\n")
+    for g in top:
+        print(f"  [{g.view}] sal={g.salience:.2f}  {g.row[:36]:36} × "
+              f"{g.col[:22]:22}")
+        print(f"      └─ {g.why}")
+    if args.json:
+        out = [{"view": g.view, "row": g.row, "col": g.col,
+                "value": g.value, "salience": g.salience,
+                "row_total": g.row_total, "col_total": g.col_total,
+                "why": g.why} for g in top]
+        print()
+        print(json.dumps(out, indent=2, ensure_ascii=False))
+    return 0
+
+
 def cmd_canon_atlas(args) -> int:
     """Sweep every subfield in subfields.SUBFIELDS, run canon detection,
     join with the local literature DB, render a single self-contained
@@ -836,16 +873,26 @@ def cmd_canon_atlas(args) -> int:
 def cmd_dashboard(args) -> int:
     """Build the static multi-page research dashboard."""
     import os
+    import sqlite3
 
     from .dashboard import build_dashboard
 
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
+    with sqlite3.connect(args.db) as con:
+        try:
+            runs = [{"model_name": r[0], "fingerprint_json": r[1]}
+                     for r in con.execute(
+                         "SELECT model_name, fingerprint_json FROM runs"
+                     ).fetchall()]
+        except sqlite3.OperationalError:
+            runs = []
     pages = build_dashboard(
         rows,
         args.out_dir,
         repo_root=os.getcwd(),
         canon_atlas=args.canon_atlas,
+        runs=runs,
     )
     print(f"wrote {len(pages)} dashboard pages to {args.out_dir}")
     print(f"open {pages[0]}")
@@ -1435,6 +1482,16 @@ def main() -> int:
     p_cn.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
     p_cn.add_argument("--min-relevance-to-keep", type=float, default=0.0)
 
+    p_gm = sub.add_parser(
+        "gap-mine",
+        help=("detect under-explored cells across 3 views (subfield × "
+              "stylized-fact / family × fact / technique × subfield); "
+              "print top-N gaps ranked by salience"),
+    )
+    p_gm.add_argument("--top", type=int, default=20)
+    p_gm.add_argument("--json", action="store_true",
+                      help="emit machine-readable JSON of the ranked gaps")
+
     p_ca = sub.add_parser(
         "canon-atlas",
         help=("sweep every subfield in subfields.SUBFIELDS, run canon "
@@ -1623,6 +1680,7 @@ def main() -> int:
                 "coverage": cmd_coverage,
                 "canon": cmd_canon,
                 "canon-atlas": cmd_canon_atlas,
+                "gap-mine": cmd_gap_mine,
                 "dashboard": cmd_dashboard,
                 "genealogy": cmd_genealogy,
                 "diagnose-concept": cmd_diagnose_concept}

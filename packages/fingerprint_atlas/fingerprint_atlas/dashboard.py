@@ -131,6 +131,26 @@ font-size:10px;letter-spacing:0.04em;display:block;margin-bottom:3px}
 .fam-card .fam-arxiv{font-family:ui-monospace,Menlo,Monaco,monospace;font-size:10px;
 color:var(--blue)}
 @media(max-width:850px){.fam-grid{grid-template-columns:1fr}}
+.gap-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+.gap-table th{background:#f5f5f5;text-align:left;padding:7px 10px;font-weight:600;
+border-bottom:1px solid var(--line);font-size:11px;text-transform:uppercase;
+letter-spacing:0.04em;color:var(--muted)}
+.gap-table td{padding:8px 10px;border-bottom:1px solid #eee;vertical-align:top}
+.gap-table .gap-view{display:inline-block;width:18px;height:18px;border-radius:3px;
+text-align:center;font-weight:700;font-size:10px;line-height:18px;color:#fff}
+.gap-view-A{background:#1f77b4}
+.gap-view-B{background:#d62728}
+.gap-view-C{background:#2ca02c}
+.gap-table .gap-sal{font-family:ui-monospace,Menlo,Monaco,monospace;font-size:11px;
+color:var(--muted)}
+.gap-table .gap-pair{font-weight:600;font-size:12px}
+.gap-table .gap-pair small{display:block;font-weight:400;color:var(--muted);
+font-size:10.5px;margin-top:2px;line-height:1.4}
+.gap-legend{display:flex;gap:14px;margin:8px 0 12px;font-size:11px;
+flex-wrap:wrap;color:var(--muted)}
+.gap-legend span{display:inline-flex;align-items:center;gap:5px}
+.gap-empty{padding:24px;border:1px dashed #aeb7c0;color:var(--muted);
+font-size:12px;background:#fff;text-align:center}
 @media(max-width:850px){.shell{display:block}aside{position:static;height:auto;padding:14px}
 .brand{margin:0 6px 12px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}
 main{padding:22px 16px}.head{display:block}.status{margin-top:8px}.metrics{grid-template-columns:1fr 1fr}
@@ -425,6 +445,64 @@ def _technique_catalog_html() -> str:
     return nav_strip + "".join(sections)
 
 
+def _gap_table_html(rows: list[dict[str, Any]], runs: list[dict[str, Any]],
+                     *, top_n: int = 15) -> str:
+    """Render the top-N research gaps as a 3-column table.
+
+    Columns: view chip (A/B/C colour), the (row × col) gap pair plus a
+    1-line 'why', salience score.
+    """
+    try:
+        from .gap_finder import find_gaps
+    except ImportError:
+        return ""
+    if not rows and not any(r.get("model_name", "").startswith(("real_",))
+                              for r in runs):
+        return ('<div class="gap-empty">Gap detection needs at least a '
+                'populated literature_methods + a few real-market runs. '
+                'Run <code>ingest-ids</code> + <code>populate_refs</code> '
+                'first.</div>')
+    try:
+        _views, top = find_gaps(rows, runs, top_n=top_n)
+    except Exception as exc:
+        return (f'<div class="gap-empty">gap detection failed: '
+                f'{html.escape(str(exc))}</div>')
+    if not top:
+        return ('<div class="gap-empty">No gaps with salience above '
+                'threshold — corpus may be too small, or every cell is '
+                'already well-populated.</div>')
+
+    view_titles = {
+        "A": "subfield × stylized-fact (paper count)",
+        "B": "ABM family × stylized-fact (σ from real-market)",
+        "C": "technique × subfield (paper overlap)",
+    }
+    legend = '<div class="gap-legend">'
+    for k in ["A", "B", "C"]:
+        legend += (f'<span><span class="gap-view gap-view-{k}">{k}</span>'
+                    f'{html.escape(view_titles[k])}</span>')
+    legend += '</div>'
+
+    table_rows: list[str] = []
+    for g in top:
+        view_chip = f'<span class="gap-view gap-view-{g.view}">{g.view}</span>'
+        pair = (f'<div class="gap-pair">{html.escape(g.row)} '
+                f'&times; {html.escape(g.col)}'
+                f'<small>{html.escape(g.why)}</small></div>')
+        sal = f'<span class="gap-sal">{g.salience:.2f}</span>'
+        table_rows.append(
+            f'<tr><td>{view_chip}</td><td>{pair}</td><td>{sal}</td></tr>'
+        )
+    return (
+        legend
+        + '<table class="gap-table">'
+        '<thead><tr><th style="width:42px">view</th>'
+        '<th>gap (row × column)</th>'
+        '<th style="width:80px">salience</th></tr></thead>'
+        f'<tbody>{"".join(table_rows)}</tbody></table>'
+    )
+
+
 def _abm_family_card(fam: dict) -> str:
     """One card per ABM family. Visible at rest: name + key + source paper +
     1-line mechanism. The epistemic role is highlighted in an amber callout
@@ -511,11 +589,15 @@ def _canon_run_hint() -> str:
 
 def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
                     repo_root: str = ".",
-                    canon_atlas: str = "canon_atlas.html") -> list[str]:
+                    canon_atlas: str = "canon_atlas.html",
+                    runs: list[dict[str, Any]] | None = None) -> list[str]:
     """Generate overview, market-analysis and research-coverage pages.
 
     Self-contained build: every asset is copied under `<out_dir>/assets/`
     and linked with same-dir paths so file:// access works.
+
+    `runs` is optional; when supplied, the Research Coverage page renders
+    the 'gap-mine' table (top research gaps detected across three views).
     """
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -531,10 +613,10 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
     )
 
     pca_lookfor = [
-        "Tight per-family clusters: the model produces a consistent fingerprint "
-        "across its parameter sweep (a good calibration target).",
+        "Tight per-family clusters: the model produces a consistent market-"
+        "feature vector across its parameter sweep (a good calibration target).",
         "Cross-family overlap: different mechanisms producing indistinguishable "
-        "surface statistics — a warning that the 6-feature space cannot tell "
+        "surface statistics — a warning that the feature space cannot tell "
         "them apart, so inverse-ABM matching on those features is ambiguous.",
         "Outlier runs sitting far from their family's cluster: parameter "
         "regimes that flip the model into another regime — usually the "
@@ -543,10 +625,11 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
         "dominate the principal axes (read the loadings to interpret).",
     ]
     distance_lookfor = [
-        "Distance metric: median L2 distance in the 6-dim standardised "
-        "fingerprint space — features are {Hill α (tail), volatility-"
-        "clustering ACF, leverage cross-correlation, return autocorrelation, "
-        "kurtosis, GARCH(1,1) persistence}; each feature is z-scored across "
+        "Distance metric: median L2 distance in the z-scored 9-dim 市場特徴量"
+        "ベクトル (market feature vector) space — components are "
+        "{volatility, kurtosis, Hill tail index, lag-1 return ACF, short |r| "
+        "ACF, leverage cross-correlation, long |r| ACF, |r| ACF decay rate, "
+        "aggregational-kurtosis decay}; each component is z-scored across "
         "all runs (ABM + real) before the distance is computed.",
         "ZI (zero_intelligence) is a NULL HYPOTHESIS not a behavioural model. "
         "Close to ZI = 'this period's dynamics are mostly mechanical / "
@@ -568,11 +651,11 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
     overview = metric_html + (
         '<section class="band"><h2>Core analysis</h2><div class="grid">'
         + _figure(out, str(root / "notebooks/atlas_v4/atlas.png"),
-                  "ABM fingerprint PCA",
-                  "Model families in standardized fingerprint space.",
+                  "ABM 市場特徴量ベクトル PCA",
+                  "Model families in the standardized market-feature-vector space.",
                   lookfor=pca_lookfor)
         + _figure(out, str(root / "notebooks/inverse_abm_heatmap.png"),
-                  "Real market × ABM distance",
+                  "実市場 × ABM 距離",
                   "Nearest model families across observed periods.",
                   lookfor=distance_lookfor)
         + '</div></section><section class="band"><h2>Workstreams</h2><div class="links">'
@@ -585,29 +668,30 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
     features_lookfor = [
         "Families with near-zero variance on a feature: the model produces "
         "an essentially constant value regardless of parameters (insensitive "
-        "dimension — fingerprint cannot probe that mechanism).",
+        "dimension — the market-feature vector cannot probe that mechanism).",
         "Families whose boxes overlap every other family on a feature: that "
         "feature does not separate them — redundant or weak discriminator.",
         "Long whiskers / outliers: parameter regimes that pull a model into "
-        "atypical fingerprint territory — useful for stress-testing the "
+        "atypical market-feature territory — useful for stress-testing the "
         "calibration neighbourhood.",
         "Cross-family ordering inconsistency between features: a family is "
         "highest on one stylized fact but lowest on another — interpret the "
         "trade-off as the mechanism's signature.",
     ]
     markets = (
-        '<section class="band"><h2>Fingerprint geometry</h2><div class="grid">'
+        '<section class="band"><h2>市場特徴量の幾何 (market-feature geometry)</h2>'
+        '<div class="grid">'
         + _figure(out, str(root / "notebooks/atlas_v4/atlas.png"),
-                  "PCA market atlas",
-                  "Two principal components of standardized ABM fingerprints.",
+                  "PCA 市場アトラス",
+                  "Two principal components of standardized ABM market-feature vectors.",
                   wide=True, lookfor=pca_lookfor)
         + _figure(out, str(root / "notebooks/atlas_v4/features.png"),
-                  "Feature distributions",
-                  "Per-family distributions for fingerprint dimensions.",
+                  "成分別分布 (per-feature distributions)",
+                  "Per-family distributions for each market-feature dimension.",
                   wide=True, lookfor=features_lookfor)
         + _figure(out, str(root / "notebooks/inverse_abm_heatmap.png"),
-                  "Real market × ABM distance heatmap",
-                  "Lower distance indicates a closer empirical fingerprint match.",
+                  "実市場 × ABM 距離ヒートマップ",
+                  "Lower distance = closer market-feature-vector match.",
                   wide=True, lookfor=distance_lookfor)
         + '</div></section>'
         '<section class="band"><h2>ABM family reference</h2>'
@@ -694,7 +778,16 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
         "values — judge model is under-resolving the novelty dimension.",
     ]
 
+    gap_html = _gap_table_html(rows, runs or [], top_n=15)
+
     research = (
+        '<section class="band"><h2>未試探の研究空白 (open research gaps)</h2>'
+        '<p class="sub">Three orthogonal views detect cells of the research '
+        'space that are empty / under-explored compared to their neighbours. '
+        'High-salience rows are concrete proposal candidates — pick one, '
+        'pass it through <code>propose</code> + <code>idea_plan</code> '
+        'to scaffold an experiment.</p>'
+        + gap_html + '</section>'
         '<section class="band"><h2>Canon atlas</h2>' + canon_block + '</section>'
         '<section class="band"><h2>Coverage matrix</h2>' + cov_block + '</section>'
         '<section class="band"><h2>Subfield catalog</h2>'
@@ -727,7 +820,7 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
                             "Corpus health and high-signal analytical outputs.",
                             "overview", overview),
         "markets.html": _page("Market Structure",
-                              "Fingerprint geometry and empirical model matching.",
+                              "市場特徴量ベクトルの幾何と実市場マッチング。",
                               "markets", markets),
         "research.html": _page("Research Coverage",
                                "Canon ingestion, subfield catalog, and proposal "

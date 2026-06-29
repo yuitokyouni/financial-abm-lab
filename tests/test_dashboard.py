@@ -214,6 +214,76 @@ def test_research_page_embeds_technique_catalog(tmp_path):
     assert "tail-stats" in research and "decision-rule" in research
 
 
+def test_research_page_renders_gap_table_with_runs(tmp_path):
+    """End-to-end: provide rows + runs to build_dashboard, the rendered
+    Research Coverage page must contain the gap-mine table with at least
+    one ranked gap (view B from family runs)."""
+    import json as _json
+    from fingerprint_atlas.dashboard import build_dashboard
+    from fingerprint_atlas.fingerprint import FEATURE_NAMES
+    n = len(FEATURE_NAMES)
+
+    def _runs(model, vec, k=3):
+        return [{"model_name": model,
+                 "fingerprint_json": _json.dumps(vec)} for _ in range(k)]
+
+    # Real-market with small std, two ABM families: one matching, one far.
+    real = _runs("real_spx", [0.0] * n) + _runs(
+        "real_btc", [1e-3] * n)
+    fam_match = _runs("lux_marchesi", [0.0] * n)
+    far = [0.0] * n
+    far[FEATURE_NAMES.index("leverage")] = 8.0
+    fam_far = _runs("minority_game", far)
+
+    out = tmp_path / "dashboard"
+    build_dashboard([], str(out), repo_root=str(tmp_path),
+                     runs=real + fam_match + fam_far)
+    research = (out / "research.html").read_text()
+    assert "未試探の研究空白" in research
+    assert "gap-mine" in research or "open research gaps" in research.lower()
+    # At least one gap row rendered (the leverage outlier is the obvious one)
+    assert "gap-view-B" in research
+    # ABM family appears as a gap row label
+    assert "minority_game" in research
+
+
+def test_research_page_shows_empty_message_when_no_runs(tmp_path):
+    from fingerprint_atlas.dashboard import build_dashboard
+    out = tmp_path / "dashboard"
+    build_dashboard([], str(out), repo_root=str(tmp_path))
+    research = (out / "research.html").read_text()
+    assert "未試探の研究空白" in research
+    # No runs + no rows → falls back to empty-state message
+    assert ("Gap detection needs" in research
+             or "No gaps with salience" in research)
+
+
+def test_japanese_relabeling_in_markets_page(tmp_path):
+    """User-facing labels must use 市場特徴量ベクトル where they previously
+    said 'fingerprint'. Code-side identifiers (FEATURE_NAMES etc.) stay
+    in English."""
+    from fingerprint_atlas.dashboard import build_dashboard
+    root = tmp_path / "repo"
+    (root / "notebooks/atlas_v4").mkdir(parents=True)
+    for relative in [
+        "notebooks/atlas_v4/atlas.png",
+        "notebooks/atlas_v4/features.png",
+        "notebooks/inverse_abm_heatmap.png",
+    ]:
+        p = root / relative
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(b"x")
+    out = root / "dashboard"
+    build_dashboard([], str(out), repo_root=str(root))
+    markets = (out / "markets.html").read_text()
+    # New Japanese labels present
+    assert "市場特徴量ベクトル" in markets
+    assert "市場特徴量の幾何" in markets
+    assert "実市場 × ABM 距離" in markets
+    # Old 'Fingerprint geometry' English heading must be GONE
+    assert "Fingerprint geometry" not in markets
+
+
 def test_coverage_matrix_renders_when_tagged_rows_present(tmp_path,
                                                             monkeypatch):
     """Coverage matrix PNG must be auto-rendered into assets/ when the
