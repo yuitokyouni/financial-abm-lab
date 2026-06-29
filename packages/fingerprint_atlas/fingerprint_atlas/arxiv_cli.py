@@ -735,6 +735,10 @@ def cmd_gap_mine(args) -> int:
     (abm_family × stylized-fact), and (technique × subfield) views.
     Surfaces the top-N research gaps sorted by salience."""
     from .gap_finder import find_gaps
+    from .i18n import (
+        translate_gap_row_col, family_gloss, fact_gloss, view_label,
+        view_gloss,
+    )
     import sqlite3
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
@@ -749,14 +753,29 @@ def cmd_gap_mine(args) -> int:
     for v in views:
         nonzero = int((v.matrix > 0).sum()) if v.matrix.size else 0
         total = int(v.matrix.sum()) if v.matrix.size else 0
-        print(f"  view {v.name}: {v.matrix.shape[0]}×{v.matrix.shape[1]}, "
-              f"{nonzero} non-zero cells, sum={total}")
+        ja = view_label(v.name)
+        print(f"  view {v.name} [{ja}]: {v.matrix.shape[0]}×"
+              f"{v.matrix.shape[1]}, {nonzero} non-zero, sum={total}")
+        print(f"     └─ {view_gloss(v.name)}")
 
     print(f"\ntop {len(top)} gaps:\n")
     for g in top:
-        print(f"  [{g.view}] sal={g.salience:.2f}  {g.row[:36]:36} × "
-              f"{g.col[:22]:22}")
+        row_ja, col_ja = translate_gap_row_col(g.view, g.row, g.col)
+        print(f"  [{g.view}] sal={g.salience:.2f}  {row_ja[:36]:36} × "
+              f"{col_ja[:22]:22}")
         print(f"      └─ {g.why}")
+        # Gloss the keys so the user knows what they refer to
+        if g.view == "B":
+            fg = family_gloss(g.row)
+            sg = fact_gloss(g.col)
+            if fg:
+                print(f"         {g.row}: {fg}")
+            if sg:
+                print(f"         {g.col}: {sg}")
+        elif g.view == "A":
+            sg = fact_gloss(g.col)
+            if sg:
+                print(f"         {g.col}: {sg}")
     if args.json:
         out = [{"view": g.view, "row": g.row, "col": g.col,
                 "value": g.value, "salience": g.salience,

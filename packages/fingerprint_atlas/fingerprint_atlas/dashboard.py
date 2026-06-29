@@ -472,23 +472,57 @@ def _gap_table_html(rows: list[dict[str, Any]], runs: list[dict[str, Any]],
                 'threshold — corpus may be too small, or every cell is '
                 'already well-populated.</div>')
 
-    view_titles = {
-        "A": "subfield × stylized-fact (paper count)",
-        "B": "ABM family × stylized-fact (σ from real-market)",
-        "C": "technique × subfield (paper overlap)",
+    try:
+        from .i18n import (
+            translate_gap_row_col, family_gloss, fact_gloss,
+            view_label, view_gloss,
+        )
+    except ImportError:
+        translate_gap_row_col = lambda v, r, c: (r, c)  # noqa: E731
+        family_gloss = fact_gloss = lambda k: ""        # noqa: E731
+        view_label = view_gloss = lambda k: ""          # noqa: E731
+
+    view_titles_en = {
+        "A": "subfield × stylized-fact",
+        "B": "ABM family × stylized-fact",
+        "C": "technique × subfield",
     }
     legend = '<div class="gap-legend">'
     for k in ["A", "B", "C"]:
+        ja = view_label(k) or view_titles_en[k]
+        en = view_titles_en[k]
         legend += (f'<span><span class="gap-view gap-view-{k}">{k}</span>'
-                    f'{html.escape(view_titles[k])}</span>')
+                    f'{html.escape(ja)} <small style="color:#999">'
+                    f'({html.escape(en)})</small></span>')
     legend += '</div>'
 
     table_rows: list[str] = []
     for g in top:
+        row_ja, col_ja = translate_gap_row_col(g.view, g.row, g.col)
         view_chip = f'<span class="gap-view gap-view-{g.view}">{g.view}</span>'
-        pair = (f'<div class="gap-pair">{html.escape(g.row)} '
-                f'&times; {html.escape(g.col)}'
-                f'<small>{html.escape(g.why)}</small></div>')
+        gloss_lines: list[str] = []
+        if g.view == "B":
+            fg = family_gloss(g.row)
+            sg = fact_gloss(g.col)
+            if fg:
+                gloss_lines.append(f'<i>{html.escape(g.row)}</i>: '
+                                    + html.escape(fg))
+            if sg:
+                gloss_lines.append(f'<i>{html.escape(g.col)}</i>: '
+                                    + html.escape(sg))
+        elif g.view == "A":
+            sg = fact_gloss(g.col)
+            if sg:
+                gloss_lines.append(html.escape(sg))
+        gloss_html = ("<br>".join(gloss_lines)
+                       and f'<small style="display:block;'
+                            f'margin-top:6px;color:#888;'
+                            f'font-size:10.5px;line-height:1.5">'
+                            f'{"<br>".join(gloss_lines)}</small>')
+        pair = (f'<div class="gap-pair">{html.escape(row_ja)} '
+                f'&times; {html.escape(col_ja)}'
+                f'<small>{html.escape(g.why)}</small>'
+                f'{gloss_html}</div>')
         sal = f'<span class="gap-sal">{g.salience:.2f}</span>'
         table_rows.append(
             f'<tr><td>{view_chip}</td><td>{pair}</td><td>{sal}</td></tr>'
