@@ -833,6 +833,25 @@ def cmd_canon_atlas(args) -> int:
     return 0
 
 
+def cmd_dashboard(args) -> int:
+    """Build the static multi-page research dashboard."""
+    import os
+
+    from .dashboard import build_dashboard
+
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    pages = build_dashboard(
+        rows,
+        args.out_dir,
+        repo_root=os.getcwd(),
+        canon_atlas=args.canon_atlas,
+    )
+    print(f"wrote {len(pages)} dashboard pages to {args.out_dir}")
+    print(f"open {pages[0]}")
+    return 0
+
+
 def cmd_enrich_via_oa(args) -> int:
     """OpenAlex equivalent of enrich-via-s2 — no API key required, 10
     req/s rate limit. Stores cited_by_count + top concepts + OA paperId."""
@@ -1438,6 +1457,14 @@ def main() -> int:
     p_ca.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
     p_ca.add_argument("--min-relevance-to-keep", type=float, default=0.0)
 
+    p_dash = sub.add_parser(
+        "dashboard",
+        help=("build a multi-page static dashboard for corpus coverage, "
+              "PCA fingerprints, market heatmaps, and proposal analytics"),
+    )
+    p_dash.add_argument("--out-dir", default="dashboard")
+    p_dash.add_argument("--canon-atlas", default="canon_atlas.html")
+
     p_eo = sub.add_parser(
         "enrich-via-oa",
         help=("backfill OpenAlex metadata (cited_by_count + concepts + "
@@ -1596,6 +1623,7 @@ def main() -> int:
                 "coverage": cmd_coverage,
                 "canon": cmd_canon,
                 "canon-atlas": cmd_canon_atlas,
+                "dashboard": cmd_dashboard,
                 "genealogy": cmd_genealogy,
                 "diagnose-concept": cmd_diagnose_concept}
     return handlers[args.cmd](args)
