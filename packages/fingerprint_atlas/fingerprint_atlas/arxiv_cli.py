@@ -571,6 +571,44 @@ def cmd_fix_arxiv_ids(args) -> int:
     return 0
 
 
+def cmd_diagnose_concept(args) -> int:
+    """Show what OpenAlex /concepts and /works return for a search query.
+    Useful when 'canon' / 'genealogy' returns 'no concept matches'."""
+    from .openalex import (
+        _http_get_json_with_status, _OA_BASE, find_concept_id,
+    )
+    import urllib.parse as _up
+    q = _up.quote(args.name)
+    url1 = f"{_OA_BASE}/concepts?search={q}&per-page=5"
+    print(f"GET {url1}")
+    status, body = _http_get_json_with_status(url1)
+    print(f"status: {status}")
+    if body and isinstance(body.get("results"), list):
+        print(f"  results ({len(body['results'])}):")
+        for c in body["results"][:5]:
+            print(f"    {c.get('id'):<40s}  {c.get('display_name')!r}  "
+                  f"(works: {c.get('works_count')})")
+    else:
+        print(f"  body keys: {list(body.keys()) if body else None}")
+
+    url2 = f"{_OA_BASE}/works?search={q}&per-page=5&select=id,title,concepts"
+    print(f"\nGET {url2}")
+    status, body = _http_get_json_with_status(url2)
+    print(f"status: {status}")
+    if body and isinstance(body.get("results"), list):
+        print(f"  top works' concepts:")
+        for w in body["results"][:5]:
+            concepts = [(c.get("display_name"), c.get("id"))
+                        for c in (w.get("concepts") or [])[:4]]
+            print(f"    {(w.get('title') or '')[:55]!r}")
+            for name, cid in concepts:
+                print(f"      - {name} ({cid})")
+
+    resolved = find_concept_id(args.name)
+    print(f"\nfind_concept_id resolved to: {resolved!r}")
+    return 0
+
+
 def cmd_genealogy(args) -> int:
     """Build a forward-citation tree from a root paper and render it as
     an interactive HTML force-graph (vis-network, CDN-loaded — no install).
@@ -1221,6 +1259,14 @@ def main() -> int:
     p_fa.add_argument("--sleep", type=float, default=0.5,
                       help="seconds between OpenAlex title searches")
 
+    p_dc2 = sub.add_parser(
+        "diagnose-concept",
+        help=("show raw OpenAlex /concepts and /works responses for a "
+              "search query — useful when canon/genealogy returns 'no "
+              "concept matches'"),
+    )
+    p_dc2.add_argument("name", help="concept display name to search for")
+
     p_gn = sub.add_parser(
         "genealogy",
         help=("interactive HTML force-graph of forward citations from a "
@@ -1418,7 +1464,8 @@ def main() -> int:
                 "atlas": cmd_atlas,
                 "coverage": cmd_coverage,
                 "canon": cmd_canon,
-                "genealogy": cmd_genealogy}
+                "genealogy": cmd_genealogy,
+                "diagnose-concept": cmd_diagnose_concept}
     return handlers[args.cmd](args)
 
 

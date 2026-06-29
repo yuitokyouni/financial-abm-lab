@@ -117,21 +117,61 @@ def find_concept_id(concept_name: str) -> str | None:
     """Look up the OpenAlex concept id (e.g. 'C2779489203') for a display
     name like 'Minority game'. Returns None if no match.
 
-    OpenAlex's concept taxonomy auto-tags every work — so this gives us a
-    way to find papers thematically related to a topic, separate from any
-    citation graph we have."""
-    q = urllib.parse.quote(concept_name)
-    url = f"{_OA_BASE}/concepts?search={q}&per-page=5"
-    raw = _http_get_json(url)
-    if not raw or not isinstance(raw.get("results"), list) or not raw["results"]:
-        return None
-    # Pick the closest title match (case-insensitive)
+    Two-stage search:
+      1) /concepts?search=...  (canonical, fast)
+      2) /works?search=... then aggregate concepts from the top results
+         (robust to /concepts deprecation / sparse topics)
+
+    OpenAlex started transitioning from 'concepts' to 'topics' in 2024,
+    so some subfields (esp. niche / mid-sized ones like 'Minority game')
+    return empty from /concepts but still appear as a tag on /works
+    results. Stage 2 catches those."""
     target = concept_name.lower().strip()
-    for c in raw["results"]:
-        if (c.get("display_name") or "").lower().strip() == target:
-            return c.get("id")
-    # Fallback: take the first result
-    return raw["results"][0].get("id")
+
+    # Stage 1: direct /concepts lookup.
+    q = urllib.parse.quote(concept_name)
+    url = f"{_OA_BASE}/concepts?search={q}&per-page=10"
+    raw = _http_get_json(url)
+    if raw and isinstance(raw.get("results"), list) and raw["results"]:
+        for c in raw["results"]:
+            if (c.get("display_name") or "").lower().strip() == target:
+                return c.get("id")
+        # Soft match: substring containment in either direction
+        for c in raw["results"]:
+            cname = (c.get("display_name") or "").lower().strip()
+            if cname and (target in cname or cname in target):
+                return c.get("id")
+        # Worst case: take first result if /concepts had ANY hits
+        return raw["results"][0].get("id")
+
+    # Stage 2: search /works and harvest the concepts attached to top results.
+    # More robust because most actual concept-tagging now happens at the
+    # works level, regardless of whether /concepts surfaces the taxonomy entry.
+    from collections import Counter
+    qs = urllib.parse.urlencode({
+        "search": concept_name, "per-page": 20, "select": "concepts",
+    })
+    url = f"{_OA_BASE}/works?{qs}"
+    raw = _http_get_json(url)
+    if not raw or not isinstance(raw.get("results"), list):
+        return None
+    matches: Counter = Counter()
+    for work in raw["results"]:
+        for c in (work.get("concepts") or []):
+            cname = (c.get("display_name") or "").lower().strip()
+            cid = c.get("id")
+            if not cid or not cname:
+                continue
+            # weight by both the concept's relevance in this work AND
+            # how often it appears across top-K works
+            if target == cname:
+                matches[(cid, c["display_name"])] += 5
+            elif target in cname or cname in target:
+                matches[(cid, c["display_name"])] += 2
+    if matches:
+        (best_id, _), _ = matches.most_common(1)[0]
+        return best_id
+    return None
 
 
 def find_canon_papers(concept_id_or_name: str, *, n: int = 30,
