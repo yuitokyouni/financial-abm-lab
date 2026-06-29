@@ -1,4 +1,6 @@
 notebooks/yahoo_cache/
+dashboard/assets/
+canon_atlas.html
 __pycache__/
 .ipynb_checkpoints/
 .venv/
