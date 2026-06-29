@@ -66,25 +66,46 @@ font-weight:600;list-style:none;user-select:none}
 .lookfor p{font-size:11px;color:var(--ink);margin-top:6px;line-height:1.55}
 .lookfor ul{font-size:11px;color:var(--ink);margin:6px 0 0 0;padding-left:18px;line-height:1.5}
 .lookfor li{margin-bottom:3px}
-.tech-cat{font-size:13px;font-weight:700;margin:18px 0 6px;color:var(--ink)}
-.tech-cat .count{font-size:11px;color:var(--muted);font-weight:400;margin-left:6px}
-.tech-card{background:var(--panel);border:1px solid var(--line);border-left:3px solid;
-padding:8px 10px;margin-bottom:6px;font-size:11px}
+.tech-nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px;
+padding:10px 12px;background:var(--panel);border:1px solid var(--line);
+border-radius:4px;font-size:11px}
+.tech-nav a{padding:3px 9px;border-radius:12px;text-decoration:none;
+color:var(--ink);background:#eef0f3;font-weight:600;border-left:2px solid;
+white-space:nowrap}
+.tech-nav a:hover{background:#dde2e8}
+.tech-nav a .count{margin-left:5px;color:var(--muted);font-weight:400;font-size:10px}
+.tech-section{background:var(--panel);border:1px solid var(--line);
+border-radius:4px;padding:14px 16px;margin-bottom:14px}
+.tech-section h3{font-size:14px;margin:0 0 4px;padding:0;
+display:flex;align-items:center;gap:8px}
+.tech-section h3 .swatch{display:inline-block;width:10px;height:10px;border-radius:2px}
+.tech-section h3 .count{font-size:11px;color:var(--muted);font-weight:400}
+.tech-section .desc{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.4}
+.tech-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tech-card{background:#fafbfc;border:1px solid var(--line);border-left:3px solid;
+padding:8px 10px;font-size:11px;min-width:0}
 .tech-card>summary{cursor:pointer;list-style:none;outline:none;user-select:none}
 .tech-card>summary::-webkit-details-marker{display:none}
-.tech-card>summary::before{content:'▸ ';color:var(--muted)}
+.tech-card>summary::before{content:'▸ ';color:var(--muted);font-size:9px}
 .tech-card[open]>summary::before{content:'▾ '}
-.tech-card b{font-size:12px}
-.tech-card .purpose{display:block;color:var(--muted);font-size:11px;margin-top:3px;
+.tech-card[open]{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.tech-card b{font-size:11.5px;line-height:1.3;display:block}
+.tech-card .purpose{display:block;color:var(--muted);font-size:10.5px;margin-top:3px;
 line-height:1.4}
+.tech-card .meta{display:flex;gap:6px;margin-top:5px;font-size:9.5px;
+color:var(--muted);text-transform:uppercase;letter-spacing:0.04em}
+.tech-card .meta span{padding:1px 5px;border-radius:2px;background:#eef0f3}
+.tech-card .meta .has{background:#dff3e6;color:#155724}
 .tech-card .field{margin-top:6px;font-size:10px}
 .tech-card .field-label{font-weight:600;color:var(--muted);text-transform:uppercase;
-letter-spacing:0.04em;margin-right:4px}
-.tech-card .field ul{margin:3px 0 0 0;padding-left:16px;font-size:10.5px;
-line-height:1.4;color:var(--ink)}
+letter-spacing:0.04em;display:block;margin-bottom:2px}
+.tech-card .field ul{margin:0;padding-left:14px;font-size:10.5px;
+line-height:1.45;color:var(--ink)}
 .tech-card .field li{margin-bottom:2px}
 .tech-card .field a{font-size:10.5px;word-break:break-all}
 .tech-card code{background:#f5f5f5;padding:1px 4px;border-radius:2px;font-size:10px}
+@media(max-width:1000px){.tech-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.tech-grid{grid-template-columns:1fr}}
 @media(max-width:850px){.shell{display:block}aside{position:static;height:auto;padding:14px}
 .brand{margin:0 6px 12px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}
 main{padding:22px 16px}.head{display:block}.status{margin-top:8px}.metrics{grid-template-columns:1fr 1fr}
@@ -254,13 +275,38 @@ _TECHNIQUE_CATEGORY_COLOR = {
     "learning-agent": "#17becf",
 }
 
+_TECHNIQUE_CATEGORY_DESC = {
+    "tail-stats": "Estimating tail exponents and bootstrap CIs over heavy-tailed returns.",
+    "sim-arch": "How the market loop is wired — matching engine, scheduling, message bus.",
+    "decision-rule": "The agent's choose-action core: chartist, MG, SG, Brock-Hommes, etc.",
+    "validation": "Does the simulator reproduce real markets? Stylized-fact battery + tests.",
+    "calibration": "Fit ABM parameters to observed data (grid / NN / ABC / PSO).",
+    "learning-agent": "RL + mechanistic interpretability of data-driven agents.",
+}
+
 
 def _technique_card(tech: dict) -> str:
-    """One expandable card per technique. Shows name + purpose at rest;
-    expands to gotchas / ref_papers / ref_repos / your_impl."""
+    """One expandable card per technique. Shows name + purpose + a
+    counts-meta strip at rest; expands to gotchas / refs / your_impl."""
     color = _TECHNIQUE_CATEGORY_COLOR.get(tech.get("category", ""), "#888")
     name = html.escape(tech["name"])
     purpose = html.escape(tech.get("purpose", ""))
+
+    n_gotchas = len(tech.get("gotchas") or [])
+    n_papers = len(tech.get("ref_papers") or [])
+    n_repos = len(tech.get("ref_repos") or [])
+    has_impl = bool(tech.get("your_impl"))
+    meta_chips = []
+    if n_gotchas:
+        meta_chips.append(f'<span>{n_gotchas} gotchas</span>')
+    if n_papers:
+        meta_chips.append(f'<span>{n_papers} papers</span>')
+    if n_repos:
+        meta_chips.append(f'<span>{n_repos} repos</span>')
+    if has_impl:
+        meta_chips.append('<span class="has">your impl</span>')
+    meta_strip = (f'<div class="meta">{"".join(meta_chips)}</div>'
+                   if meta_chips else "")
 
     parts: list[str] = []
     gotchas = tech.get("gotchas") or []
@@ -300,15 +346,19 @@ def _technique_card(tech: dict) -> str:
     return (
         f'<details class="tech-card" style="border-left-color:{color}">'
         f'<summary><b>{name}</b>'
-        f'<span class="purpose">{purpose}</span></summary>'
+        f'<span class="purpose">{purpose}</span>'
+        f'{meta_strip}</summary>'
         f'{"".join(parts)}</details>'
     )
 
 
 def _technique_catalog_html() -> str:
     """Catalog of implementation techniques, grouped by category.
-    Each technique is a collapsible card — name + purpose at rest,
-    gotchas/refs/links on click."""
+
+    Layout: a small jump-nav strip with category counts, then one
+    boxed section per category containing a 3-col grid of cards.
+    Each card collapses to name + purpose + counts; click expands.
+    """
     try:
         from .techniques import TECHNIQUES
     except ImportError:
@@ -317,23 +367,37 @@ def _technique_catalog_html() -> str:
     for t in TECHNIQUES:
         by_cat.setdefault(t.get("category", "other"), []).append(t)
 
-    # Stable category ordering (matches the catalog's mental model)
     cat_order = ["tail-stats", "sim-arch", "decision-rule",
                   "validation", "calibration", "learning-agent"]
+    cat_order = [c for c in cat_order if c in by_cat]
     cat_order += [c for c in by_cat if c not in cat_order]
 
-    blocks: list[str] = []
+    # Top jump-nav strip: one chip per category, links to anchors.
+    nav_chips: list[str] = []
     for cat in cat_order:
-        techs = by_cat.get(cat) or []
-        if not techs:
-            continue
         color = _TECHNIQUE_CATEGORY_COLOR.get(cat, "#888")
-        blocks.append(
-            f'<div class="tech-cat" style="color:{color}">{html.escape(cat)}'
-            f'<span class="count">({len(techs)})</span></div>'
+        nav_chips.append(
+            f'<a href="#tech-{html.escape(cat)}" style="border-left-color:{color}">'
+            f'{html.escape(cat)}'
+            f'<span class="count">{len(by_cat[cat])}</span></a>'
         )
-        blocks.extend(_technique_card(t) for t in techs)
-    return "".join(blocks)
+    nav_strip = f'<div class="tech-nav">{"".join(nav_chips)}</div>'
+
+    sections: list[str] = []
+    for cat in cat_order:
+        color = _TECHNIQUE_CATEGORY_COLOR.get(cat, "#888")
+        desc = _TECHNIQUE_CATEGORY_DESC.get(cat, "")
+        cards = "".join(_technique_card(t) for t in by_cat[cat])
+        sections.append(
+            f'<div class="tech-section" id="tech-{html.escape(cat)}">'
+            f'<h3><span class="swatch" style="background:{color}"></span>'
+            f'{html.escape(cat)}'
+            f'<span class="count">· {len(by_cat[cat])} techniques</span></h3>'
+            f'<p class="desc">{html.escape(desc)}</p>'
+            f'<div class="tech-grid">{cards}</div></div>'
+        )
+
+    return nav_strip + "".join(sections)
 
 
 def _subfield_catalog_html() -> str:
