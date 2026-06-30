@@ -67,7 +67,11 @@ def _summarise_families(families: list[dict]) -> list[dict]:
 
 
 def _summarise_papers(papers: list[dict], n: int = 8) -> list[dict]:
-    """Compact paper records for the LLM context (top-N by cite count)."""
+    """Compact paper records for the LLM context (top-N by cite count).
+
+    Sort key is the cite count alone — tuple comparison would fall
+    through to the dict on ties and raise TypeError on Python 3.11+.
+    """
     keyed = []
     for p in papers:
         cite = p.get("oa_cited_by_count") or 0
@@ -77,7 +81,7 @@ def _summarise_papers(papers: list[dict], n: int = 8) -> list[dict]:
             "year": p.get("year"),
             "cite": cite,
         }))
-    keyed.sort(reverse=True)
+    keyed.sort(key=lambda kv: kv[0], reverse=True)
     return [k[1] for k in keyed[:n]]
 
 

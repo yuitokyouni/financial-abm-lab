@@ -114,6 +114,23 @@ def test_insert_gap_proposal_persists_with_proposal_type_gap_mine(tmp_path):
     assert params["_gap"]["row"] == "Prospect theory in trading"
 
 
+def test_summarise_papers_tolerates_tied_cite_counts():
+    """Regression: tuple-sort tie-break used to compare dicts and
+    crash with 'unorderable types'."""
+    from fingerprint_atlas.gap_propose import _summarise_papers
+    papers = [
+        {"arxiv_id": "a.1", "title": "A", "year": 2020,
+         "oa_cited_by_count": 100},
+        {"arxiv_id": "a.2", "title": "B", "year": 2021,
+         "oa_cited_by_count": 100},  # same cite count — would crash on tie
+        {"arxiv_id": "a.3", "title": "C", "year": 2022,
+         "oa_cited_by_count": 100},
+    ]
+    out = _summarise_papers(papers, n=3)  # must not raise
+    assert len(out) == 3
+    assert {p["arxiv_id"] for p in out} == {"a.1", "a.2", "a.3"}
+
+
 def test_scope_corpus_handles_list_valued_mechanism_tags():
     """Regression: load_literature returns mechanism_tags as list[str],
     not str. _scope_corpus_to_gap must accept either form."""
