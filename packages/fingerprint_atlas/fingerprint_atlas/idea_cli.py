@@ -225,6 +225,49 @@ def cmd_run(args) -> int:
     return 0
 
 
+def cmd_promote_proposal(args) -> int:
+    """Promote a proposals-table row (esp. a gap_mine proposal) into an
+    ideas-table row so it can flow through judge → plan → scaffold.
+
+    Constructs idea_text from the proposal's rationale + target + gap
+    provenance, links proposal_ids back to the source row.
+    """
+    from .db import (ensure_ideas_schema, insert_idea, update_idea,
+                       load_proposals)
+    ensure_ideas_schema(args.db)
+    proposals = load_proposals(args.db)
+    src = next((p for p in proposals if p["id"] == args.proposal_id), None)
+    if src is None:
+        print(f"no proposal with id={args.proposal_id}", file=sys.stderr)
+        return 1
+
+    gap = (src.get("params") or {}).get("_gap") or {}
+    header_lines = [f"提案 #{src['id']} を idea として昇格"]
+    if src.get("proposal_type"):
+        header_lines.append(f"出自: proposal_type={src['proposal_type']}")
+    if gap:
+        header_lines.append(
+            f"発見元: gap view={gap.get('view')} / "
+            f"{gap.get('row')} × {gap.get('col')}"
+            + (f" (salience={gap.get('salience'):.2f})"
+                if isinstance(gap.get('salience'), (int, float)) else "")
+        )
+    header_lines.append(f"target_model: {src['target_model']}")
+    if src.get("params"):
+        clean_params = {k: v for k, v in src["params"].items()
+                          if k != "_gap"}
+        if clean_params:
+            header_lines.append(f"params: {json.dumps(clean_params, ensure_ascii=False)}")
+    idea_text = "\n".join(header_lines) + "\n\n" + src["rationale"]
+
+    idea_id = insert_idea(args.db, idea_text=idea_text, status="judged")
+    update_idea(args.db, idea_id, proposal_ids=[src["id"]])
+    print(f"proposal #{src['id']} → idea #{idea_id}")
+    print(f"\nidea_text:\n{idea_text}\n")
+    print(f"Next: `idea_cli --db {args.db} plan --id {idea_id}`")
+    return 0
+
+
 def cmd_list(args) -> int:
     ensure_ideas_schema(args.db)
     rows = load_ideas(args.db, status=args.status)
@@ -343,10 +386,18 @@ def main() -> int:
     p_sh = sub.add_parser("show", help="full record for one idea")
     p_sh.add_argument("--id", type=int, required=True)
 
+    p_pp = sub.add_parser(
+        "promote-proposal",
+        help=("turn a proposals-table row (esp. a gap_mine proposal) into "
+              "an ideas-table row so it can flow through plan / scaffold"),
+    )
+    p_pp.add_argument("--proposal-id", type=int, required=True)
+
     args = ap.parse_args()
     handlers = {
         "judge": cmd_judge, "plan": cmd_plan, "scaffold": cmd_scaffold,
         "run": cmd_run, "list": cmd_list, "show": cmd_show,
+        "promote-proposal": cmd_promote_proposal,
     }
     return handlers[args.cmd](args)
 

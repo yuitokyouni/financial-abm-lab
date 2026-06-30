@@ -36,34 +36,77 @@ _SYSTEM_PROMPT = """あなたは金融エージェントベース・モデル研
   subfield_or_family: 行ラベル (分野名 or ABM 家系名)
   stylized_fact: 列ラベル (target したい事実)
   evidence: 1行説明
-  available_families: 使える ABM 家系のリストと機構説明
+  available_families: 使える ABM 家系のリスト
+    各 entry に `params_allowed` (この family の registry が受け付ける
+    param key と範囲) と `mechanism` が付く
+  feature_names: 市場特徴量ベクトルの 9 成分(predicted_fingerprint の key)
+  already_used_families: 同バッチで既に proposal target にしたキー(多様化のため)
   related_papers: コーパス内の関連論文 (arxiv_id + title)
 
 出力 JSON:
 {
-  "target_model": "<available_families の中の key、または'new'>",
-  "params": {<想定パラメータ dict、未知なら空 {}>},
+  "target_model": "<available_families の中の key>",
+  "params": {<params_allowed の key だけを使う dict、範囲も尊重>},
   "rationale": "<2-4 文の日本語。(a) なぜこの空白が面白いか、(b) 想定機構、
                  (c) 評価基準/期待される結果 を含める。MANDATORY>",
-  "predicted_fingerprint": {<feature_name: 推定値>} or null,
-  "references": [<arxiv_id か 'oa:Wxxx'、related_papers から最大3つ>]
+  "predicted_fingerprint": {<feature_names の各 key に float 値。MANDATORY 非 null。
+                             仮説の方向が出る成分(例: long-memory なら acf_absret_long,
+                             acf_absret_decay)に具体値を入れ、無関係な成分は
+                             既存値の近似で良いが必ず全 9 成分を埋める>},
+  "references": [<arxiv_id か 'oa:Wxxx'、related_papers の中だけから最大3つ>]
 }
 
-注意:
-- rationale は空にしない。empty rationale は invalid。
-- target_model は available_families から選ぶ。'new' は本当に既存家系に
-  fit しない時のみ。
-- 'Prospect theory × regime-switching' のような認知バイアス × レジーム
-  系では `speculation_game` が natural target になりやすい。
-- 引用 (references) は LLM が知っている論文ではなく、related_papers に
-  実在する arxiv_id だけを使う(hallucination 禁止)。
+絶対に守る制約 (違反すると validate で reject される):
+1. `params` の key は target_model の `params_allowed` に含まれる key だけ。
+   新規パラメータ (memory_exponent 等) を勝手に作らない。提案する機構が
+   既存パラメータで表現できないなら rationale に「impl 拡張が必要」と
+   明示すること。
+2. `predicted_fingerprint` は MANDATORY 非 null。feature_names の 9 成分
+   すべてに float 値を入れる。仮説と無関係な成分は 0 や中央値で良いが
+   key は省略しない。
+3. `references` は related_papers のリストにある arxiv_id だけを使う。
+   LLM 内部知識からの hallucination は禁止。
+4. `target_model` は available_families の key だけ。'new' は禁止
+   (run できないため)。
+5. `already_used_families` に含まれる key は **可能なら避ける**。
+   同じ家系を連続提案しないように、同じ gap でも同等に妥当な別家系が
+   あればそちらを選ぶ。
+
+家系選択の指針:
+- 認知バイアス系 → speculation_game (3層認知)
+- 戦略切替/ヘテロジニアス → franke_westerhoff or lux_marchesi
+- 群集行動 → kirman_ant (将来) or lux_marchesi
+- LOB / 価格形成 → chiarella_iori
+- 構造的 null として → zero_intelligence
 """
 
 
-def _summarise_families(families: list[dict]) -> list[dict]:
-    return [{"key": f["key"], "name": f["name"],
-              "mechanism": f.get("mechanism", "")[:200]}
-             for f in families]
+def _summarise_families(families: list[dict],
+                         model_bounds: dict[str, dict] | None = None
+                         ) -> list[dict]:
+    """Compact family entries for the prompt. When `model_bounds` is
+    supplied, attach the per-family `params_allowed` dict so the LLM
+    cannot fabricate new param keys."""
+    out: list[dict] = []
+    for f in families:
+        item = {
+            "key": f["key"], "name": f["name"],
+            "mechanism": f.get("mechanism", "")[:200],
+        }
+        if model_bounds is not None:
+            bounds = model_bounds.get(f["key"])
+            if bounds is not None:
+                item["params_allowed"] = {
+                    k: list(v) if isinstance(v, tuple) else v
+                    for k, v in bounds.items()
+                }
+            else:
+                # Family in catalog but no LHS bounds → no registry entry,
+                # so the LLM can't usefully propose params for it.
+                item["params_allowed"] = {}
+                item["impl_status"] = "not-in-registry"
+        out.append(item)
+    return out
 
 
 def _summarise_papers(papers: list[dict], n: int = 8) -> list[dict]:
@@ -87,15 +130,28 @@ def _summarise_papers(papers: list[dict], n: int = 8) -> list[dict]:
 
 def build_proposal_payload(gap: dict, *,
                             corpus_papers: list[dict],
-                            families: list[dict]) -> dict:
-    """Assemble the user payload for the LLM, scoped to a single gap."""
+                            families: list[dict],
+                            model_bounds: dict[str, dict] | None = None,
+                            feature_names: list[str] | None = None,
+                            already_used_families: list[str] | None = None,
+                            ) -> dict:
+    """Assemble the user payload for the LLM, scoped to a single gap.
+
+    `model_bounds` (adapters.MODEL_BOUNDS) lets the LLM see the exact
+    param keys + ranges each family registers, so it stops inventing
+    new param names. `feature_names` enforces all 9 components in the
+    predicted_fingerprint. `already_used_families` is a soft-diversity
+    hint for the batch caller.
+    """
     return {
         "gap_view": gap.get("view"),
         "subfield_or_family": gap.get("row"),
         "stylized_fact": gap.get("col"),
         "evidence": gap.get("why", ""),
         "row_total_papers": int(gap.get("row_total", 0)),
-        "available_families": _summarise_families(families),
+        "available_families": _summarise_families(families, model_bounds),
+        "feature_names": list(feature_names or []),
+        "already_used_families": list(already_used_families or []),
         "related_papers": _summarise_papers(corpus_papers, n=8),
     }
 
@@ -103,6 +159,9 @@ def build_proposal_payload(gap: dict, *,
 def propose_from_gap(gap: dict, *,
                       corpus_papers: list[dict],
                       families: list[dict],
+                      model_bounds: dict[str, dict] | None = None,
+                      feature_names: list[str] | None = None,
+                      already_used_families: list[str] | None = None,
                       llm_model: str = DEFAULT_LLM_MODEL,
                       temperature: float = 0.6,
                       dry_run_response: dict | None = None) -> dict:
@@ -110,9 +169,20 @@ def propose_from_gap(gap: dict, *,
 
     Returns the validated proposal dict. Raises ValueError if the LLM
     output is malformed and unrecoverable.
+
+    Constraints applied during validation:
+      - target_model must be in `families` (no 'new')
+      - rationale must be non-empty
+      - if `model_bounds` is supplied: params keys must be a subset of
+        the target family's allowed param keys
+      - if `feature_names` is supplied: predicted_fingerprint must
+        cover all 9 components (no nulls / missing keys)
     """
-    payload = build_proposal_payload(gap, corpus_papers=corpus_papers,
-                                       families=families)
+    payload = build_proposal_payload(
+        gap, corpus_papers=corpus_papers, families=families,
+        model_bounds=model_bounds, feature_names=feature_names,
+        already_used_families=already_used_families,
+    )
     if dry_run_response is not None:
         result = dry_run_response
     else:
@@ -128,16 +198,33 @@ def propose_from_gap(gap: dict, *,
     if not rationale:
         raise ValueError("LLM returned empty rationale (mandatory field)")
     family_keys = {f["key"] for f in families}
-    if target != "new" and target not in family_keys:
+    if target not in family_keys:
         raise ValueError(f"target_model {target!r} not in available "
-                          f"families {sorted(family_keys)} or 'new'")
+                          f"families {sorted(family_keys)} "
+                          f"('new' is no longer accepted)")
+    params = result.get("params") or {}
+    if model_bounds is not None and target in model_bounds:
+        allowed = set(model_bounds[target].keys())
+        bad = [k for k in params if k not in allowed]
+        if bad:
+            raise ValueError(
+                f"params include keys not in registry for "
+                f"{target}: {bad}. Allowed: {sorted(allowed)}")
+    predicted_fp = result.get("predicted_fingerprint")
+    if feature_names:
+        if predicted_fp is None or not isinstance(predicted_fp, dict):
+            raise ValueError("predicted_fingerprint is mandatory non-null")
+        missing = [n for n in feature_names if predicted_fp.get(n) is None]
+        if missing:
+            raise ValueError(
+                f"predicted_fingerprint missing values for: {missing}")
     references = [r for r in (result.get("references") or [])
                    if isinstance(r, str) and r]
     return {
         "target_model": target,
-        "params": result.get("params") or {},
+        "params": params,
         "rationale": rationale,
-        "predicted_fingerprint": result.get("predicted_fingerprint"),
+        "predicted_fingerprint": predicted_fp,
         "predicted_novelty_distance": result.get("predicted_novelty_distance"),
         "references": references,
         "llm_model": llm_model,
@@ -217,8 +304,14 @@ def propose_from_top_gaps(db_path: str, *,
     """
     from .gap_finder import find_gaps
     from .abm_families import ABM_FAMILIES
+    from .adapters import MODEL_BOUNDS
+    from .fingerprint import FEATURE_NAMES
 
     _views, top = find_gaps(rows, runs, top_n=top_n)
+    # Only surface families that actually have a registry impl (LHS bounds)
+    # so the LLM can't pick targets the executor can't run.
+    runnable_families = [f for f in ABM_FAMILIES if f["key"] in MODEL_BOUNDS]
+    used: list[str] = []
     created: list[dict] = []
     for g in top:
         gap_dict = {
@@ -231,11 +324,16 @@ def propose_from_top_gaps(db_path: str, *,
         try:
             proposal = propose_from_gap(
                 gap_dict, corpus_papers=relevant,
-                families=list(ABM_FAMILIES), llm_model=llm_model,
+                families=runnable_families,
+                model_bounds=MODEL_BOUNDS,
+                feature_names=list(FEATURE_NAMES),
+                already_used_families=list(used),
+                llm_model=llm_model,
             )
         except Exception as exc:
             created.append({"_gap": gap_dict, "error": str(exc)})
             continue
+        used.append(proposal["target_model"])
         if not dry_run:
             pid = insert_gap_proposal(db_path, proposal)
             proposal["id"] = pid

@@ -84,6 +84,106 @@ def test_propose_from_gap_rejects_unknown_target_model():
                           dry_run_response=bad)
 
 
+def test_propose_from_gap_rejects_new_target_when_registry_required():
+    """'new' was historically allowed but now rejected — executor can't
+    run it, so accepting it would burn proposals."""
+    from fingerprint_atlas.gap_propose import propose_from_gap
+    bad = {"target_model": "new", "rationale": "x"}
+    import pytest
+    with pytest.raises(ValueError, match="not in available"):
+        propose_from_gap(_FAKE_GAP, corpus_papers=_FAKE_PAPERS,
+                          families=_FAKE_FAMILIES,
+                          dry_run_response=bad)
+
+
+def test_propose_from_gap_rejects_params_not_in_registry():
+    """When model_bounds is provided, fabricated param keys (the user's
+    actual #28 bug — memory_exponent was invented) must be rejected."""
+    from fingerprint_atlas.gap_propose import propose_from_gap
+    bad = {
+        "target_model": "speculation_game",
+        "params": {"N": 300, "memory_exponent": 0.4},  # last key is fake
+        "rationale": "Has a rationale.",
+        "predicted_fingerprint": {fn: 0.0 for fn in _FAKE_FEATURE_NAMES},
+    }
+    import pytest
+    with pytest.raises(ValueError, match="not in registry"):
+        propose_from_gap(
+            _FAKE_GAP, corpus_papers=_FAKE_PAPERS,
+            families=_FAKE_FAMILIES,
+            model_bounds={"speculation_game": {"N": (200, 400),
+                                                  "M": (3, 5)}},
+            feature_names=_FAKE_FEATURE_NAMES,
+            dry_run_response=bad,
+        )
+
+
+def test_propose_from_gap_rejects_null_or_missing_fingerprint():
+    """The #28 bug also dropped predicted_fingerprint to all-None.
+    feature_names enforcement must catch that."""
+    from fingerprint_atlas.gap_propose import propose_from_gap
+    import pytest
+    base = {
+        "target_model": "speculation_game",
+        "params": {"N": 300},
+        "rationale": "Has rationale.",
+    }
+    # null predicted_fp
+    with pytest.raises(ValueError, match="predicted_fingerprint is mandatory"):
+        propose_from_gap(
+            _FAKE_GAP, corpus_papers=_FAKE_PAPERS,
+            families=_FAKE_FAMILIES,
+            model_bounds={"speculation_game": {"N": (200, 400)}},
+            feature_names=_FAKE_FEATURE_NAMES,
+            dry_run_response={**base, "predicted_fingerprint": None},
+        )
+    # partial predicted_fp (one missing)
+    partial = {fn: 0.0 for fn in _FAKE_FEATURE_NAMES[:-1]}
+    with pytest.raises(ValueError, match="missing values"):
+        propose_from_gap(
+            _FAKE_GAP, corpus_papers=_FAKE_PAPERS,
+            families=_FAKE_FAMILIES,
+            model_bounds={"speculation_game": {"N": (200, 400)}},
+            feature_names=_FAKE_FEATURE_NAMES,
+            dry_run_response={**base, "predicted_fingerprint": partial},
+        )
+
+
+def test_propose_from_gap_diversity_hint_surfaces_in_payload():
+    """already_used_families goes through into the payload so the LLM
+    can avoid the same target."""
+    from fingerprint_atlas.gap_propose import build_proposal_payload
+    payload = build_proposal_payload(
+        _FAKE_GAP, corpus_papers=_FAKE_PAPERS, families=_FAKE_FAMILIES,
+        already_used_families=["lux_marchesi", "speculation_game"],
+    )
+    assert payload["already_used_families"] == [
+        "lux_marchesi", "speculation_game"]
+
+
+def test_summarise_families_attaches_params_allowed():
+    """B: model_bounds → params_allowed entry per family in the prompt."""
+    from fingerprint_atlas.gap_propose import _summarise_families
+    out = _summarise_families(
+        _FAKE_FAMILIES,
+        model_bounds={"speculation_game": {"N": (200, 400),
+                                              "M": (3, 5)}},
+    )
+    sg = next(f for f in out if f["key"] == "speculation_game")
+    assert sg["params_allowed"] == {"N": [200, 400], "M": [3, 5]}
+    # family without registry entry → empty + flagged
+    lm = next(f for f in out if f["key"] == "lux_marchesi")
+    assert lm["params_allowed"] == {}
+    assert lm.get("impl_status") == "not-in-registry"
+
+
+_FAKE_FEATURE_NAMES = [
+    "volatility", "kurtosis", "hill_tail_index", "acf_ret_l1",
+    "acf_absret_mean", "leverage", "acf_absret_long",
+    "acf_absret_decay", "agg_kurt_decay",
+]
+
+
 def test_insert_gap_proposal_persists_with_proposal_type_gap_mine(tmp_path):
     from fingerprint_atlas.gap_propose import insert_gap_proposal
     import sqlite3
@@ -169,6 +269,8 @@ def test_propose_from_top_gaps_end_to_end(tmp_path, monkeypatch):
     calls = {"n": 0}
 
     def fake_propose_from_gap(gap, *, corpus_papers, families, llm_model,
+                                model_bounds=None, feature_names=None,
+                                already_used_families=None,
                                 temperature=0.6, dry_run_response=None):
         calls["n"] += 1
         return {

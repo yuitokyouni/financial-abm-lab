@@ -169,8 +169,15 @@ def cmd_from_corpus(args) -> int:
 def cmd_list(args) -> int:
     ensure_proposals_schema(args.db)
     rows = load_proposals(args.db, status=args.status)
+    if getattr(args, "type", None):
+        rows = [r for r in rows if r.get("proposal_type") == args.type]
     if not rows:
-        scope = f" with status={args.status!r}" if args.status else ""
+        bits = []
+        if args.status:
+            bits.append(f"status={args.status!r}")
+        if getattr(args, "type", None):
+            bits.append(f"type={args.type!r}")
+        scope = (" with " + ", ".join(bits)) if bits else ""
         print(f"no proposals{scope}.")
         return 0
     for p in rows:
@@ -533,6 +540,9 @@ def main() -> int:
     p_ls = sub.add_parser("list", help="one-line summary per proposal")
     p_ls.add_argument("--status", default=None,
                       choices=["proposed", "approved", "rejected", "executed"])
+    p_ls.add_argument("--type", default=None,
+                      help="filter by proposal_type (e.g. param_sweep / "
+                           "gap_mine)")
 
     p_sh = sub.add_parser("show", help="full record for one proposal")
     p_sh.add_argument("id", type=int)
