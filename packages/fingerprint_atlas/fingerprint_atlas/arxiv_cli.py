@@ -730,6 +730,62 @@ def cmd_canon(args) -> int:
     return 0
 
 
+def cmd_glossary(args) -> int:
+    """Personal English↔Japanese terminology dictionary.
+
+    Subcommands:
+      list    — print every entry grouped by domain
+      lookup  — show one entry by English key
+      search  — substring match across en / ja / notes
+    """
+    from .glossary import GLOSSARY, lookup, search, all_domains
+    if args.sub == "list":
+        by_dom: dict[str, list] = {}
+        for e in GLOSSARY:
+            by_dom.setdefault(e.get("domain", "general"), []).append(e)
+        for dom in all_domains():
+            entries = by_dom.get(dom, [])
+            if not entries:
+                continue
+            print(f"\n=== {dom} ({len(entries)}) ===")
+            for e in entries:
+                print(f'  "{e["en"]}" → {e["ja_primary"]}')
+                also = e.get("ja_also") or []
+                if also:
+                    print(f"      also: {', '.join(also)}")
+                for a in (e.get("avoid") or []):
+                    print(f"      reject: {a['bad']} — {a['why']}")
+        return 0
+    if args.sub == "lookup":
+        if not args.term:
+            print("usage: glossary lookup <en-term>", file=sys.stderr)
+            return 2
+        e = lookup(args.term)
+        if not e:
+            print(f"no entry for {args.term!r}", file=sys.stderr)
+            return 1
+        print(json.dumps(e, indent=2, ensure_ascii=False))
+        return 0
+    if args.sub == "search":
+        if not args.term:
+            print("usage: glossary search <query>", file=sys.stderr)
+            return 2
+        hits = search(args.term)
+        if not hits:
+            print(f"no match for {args.term!r}")
+            return 0
+        for e in hits:
+            print(f'  [{e.get("domain","general"):<14}] '
+                  f'"{e["en"]}" → {e["ja_primary"]}')
+        return 0
+    if args.sub == "prompt":
+        from .glossary import format_for_prompt
+        print(format_for_prompt(domain=args.domain))
+        return 0
+    print(f"unknown subcommand {args.sub!r}", file=sys.stderr)
+    return 2
+
+
 def cmd_gap_mine(args) -> int:
     """Detect under-explored cells in the (subfield × stylized-fact),
     (abm_family × stylized-fact), and (technique × subfield) views.
@@ -1349,7 +1405,9 @@ def cmd_search(args) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
-    ap.add_argument("--db", required=True)
+    ap.add_argument("--db", default=None,
+                     help="path to abm_knowhow.db; required by every command "
+                          "except `glossary` (which is DB-free)")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     p_in = sub.add_parser("ingest", help="query arxiv + extract with Groq + store")
@@ -1500,6 +1558,17 @@ def main() -> int:
     p_cn.add_argument("--auto-ingest", action="store_true")
     p_cn.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
     p_cn.add_argument("--min-relevance-to-keep", type=float, default=0.0)
+
+    p_gl = sub.add_parser(
+        "glossary",
+        help=("personal EN↔JA terminology dict. Subcommands: list / "
+              "lookup <en> / search <query> / prompt [--domain X]"),
+    )
+    p_gl.add_argument("sub", choices=["list", "lookup", "search", "prompt"])
+    p_gl.add_argument("term", nargs="?", default=None)
+    p_gl.add_argument("--domain", default=None,
+                      help="for `prompt`: scope to a domain "
+                           "(financial-abm / ml / stats / general)")
 
     p_gm = sub.add_parser(
         "gap-mine",
@@ -1679,6 +1748,10 @@ def main() -> int:
                       help="seconds between paper snapshots (rate-limit padding)")
 
     args = ap.parse_args()
+    # `--db` is required for every command except DB-free utilities.
+    _db_free = {"glossary"}
+    if args.cmd not in _db_free and not args.db:
+        ap.error(f"--db is required for `{args.cmd}`")
     handlers = {"ingest": cmd_ingest, "ingest-ids": cmd_ingest_ids,
                 "list": cmd_list, "show": cmd_show,
                 "search": cmd_search, "backfill-code": cmd_backfill_code,
@@ -1700,6 +1773,7 @@ def main() -> int:
                 "canon": cmd_canon,
                 "canon-atlas": cmd_canon_atlas,
                 "gap-mine": cmd_gap_mine,
+                "glossary": cmd_glossary,
                 "dashboard": cmd_dashboard,
                 "genealogy": cmd_genealogy,
                 "diagnose-concept": cmd_diagnose_concept}

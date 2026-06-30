@@ -188,7 +188,9 @@ def _call_groq(system_prompt: str, user_payload: dict, model: str,
 
 
 def call_llm(system_prompt: str, user_payload: dict, model: str, *,
-             temperature: float = 0.4, max_retries: int = 2) -> dict:
+             temperature: float = 0.4, max_retries: int = 2,
+             generate_japanese: bool = False,
+             glossary_domain: str | None = None) -> dict:
     """Provider-agnostic LLM call. Returns a JSON object (dict).
 
     Picks provider by `model`:
@@ -197,10 +199,24 @@ def call_llm(system_prompt: str, user_payload: dict, model: str, *,
       - everything else (incl. openai/gpt-oss-120b, llama-*, etc.)
             → Groq (requires GROQ_API_KEY)
 
+    `generate_japanese=True` prepends the personal glossary
+    (fingerprint_atlas.glossary.format_for_prompt) to the system prompt
+    so the LLM uses the user's preferred renderings and avoids
+    Meiji-era literal coinages. Optionally scope with `glossary_domain`
+    (e.g. 'financial-abm' / 'ml' / 'stats') to keep the prompt short.
+
     Raises ImportError if the provider SDK isn't installed, RuntimeError if
     the API key is missing, and re-raises the last provider exception after
     transient retries are exhausted.
     """
+    if generate_japanese:
+        try:
+            from .glossary import format_for_prompt
+            gloss = format_for_prompt(domain=glossary_domain)
+            if gloss:
+                system_prompt = gloss + "\n\n---\n\n" + system_prompt
+        except ImportError:
+            pass
     if _is_openai_model(model):
         return _call_openai(
             system_prompt, user_payload,
