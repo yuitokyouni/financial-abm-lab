@@ -114,6 +114,24 @@ def test_insert_gap_proposal_persists_with_proposal_type_gap_mine(tmp_path):
     assert params["_gap"]["row"] == "Prospect theory in trading"
 
 
+def test_scope_corpus_handles_list_valued_mechanism_tags():
+    """Regression: load_literature returns mechanism_tags as list[str],
+    not str. _scope_corpus_to_gap must accept either form."""
+    from fingerprint_atlas.gap_propose import _scope_corpus_to_gap
+    rows = [
+        {"arxiv_id": "a.1", "mechanism_tags": ["prospect-theory"],
+         "oa_concepts": "Prospect theory"},
+        {"arxiv_id": "a.2", "mechanism_tags": "prospect-theory, disposition",
+         "oa_concepts": ""},
+        {"arxiv_id": "b.1", "mechanism_tags": ["herding"],
+         "oa_concepts": "Herding"},
+    ]
+    out = _scope_corpus_to_gap(rows, "Prospect theory in trading")
+    ids = {p["arxiv_id"] for p in out}
+    assert ids == {"a.1", "a.2"}
+    # Confirm list-valued and string-valued tags both worked
+
+
 def test_propose_from_top_gaps_end_to_end(tmp_path, monkeypatch):
     """End-to-end with the LLM call stubbed: gap-mine → proposal for
     each of N gaps → inserted into the DB."""

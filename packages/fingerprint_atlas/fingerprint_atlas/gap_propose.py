@@ -174,6 +174,31 @@ def insert_gap_proposal(db_path: str, proposal: dict) -> int:
     return pid
 
 
+def _tags_to_text(value: Any) -> str:
+    """Normalise mechanism_tags (which load_literature returns as a list)
+    OR oa_concepts (string) into a single lowercase haystack."""
+    if isinstance(value, list):
+        return " ".join(str(v) for v in value).lower()
+    return str(value or "").lower()
+
+
+def _scope_corpus_to_gap(rows: list[dict], row_label: str) -> list[dict]:
+    """Pick the papers most relevant to the gap's row label so the LLM
+    has focused context instead of all 400+ papers.
+    Heuristic: include a paper if any token of the row label substring-
+    matches its mechanism_tags or oa_concepts (case-insensitive)."""
+    tokens = [t for t in (row_label or "").lower().split() if len(t) > 2]
+    if not tokens:
+        return list(rows)[:30]
+    out: list[dict] = []
+    for p in rows:
+        haystack = (_tags_to_text(p.get("mechanism_tags")) + " "
+                     + _tags_to_text(p.get("oa_concepts")))
+        if any(tok in haystack for tok in tokens):
+            out.append(p)
+    return out
+
+
 def propose_from_top_gaps(db_path: str, *,
                            rows: list[dict],
                            runs: list[dict],
@@ -198,13 +223,7 @@ def propose_from_top_gaps(db_path: str, *,
             "row_total": g.row_total, "col_total": g.col_total,
             "why": g.why,
         }
-        # Scope corpus context to the subfield of the gap (cheap heuristic:
-        # all papers whose mechanism_tags contain any token of the row label)
-        row_low = (g.row or "").lower()
-        relevant = [p for p in rows
-                     if any(tok in (p.get("mechanism_tags") or "").lower()
-                              + " " + (p.get("oa_concepts") or "").lower()
-                             for tok in row_low.split())][:30]
+        relevant = _scope_corpus_to_gap(rows, g.row)[:30]
         try:
             proposal = propose_from_gap(
                 gap_dict, corpus_papers=relevant,
