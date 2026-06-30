@@ -786,6 +786,45 @@ def cmd_glossary(args) -> int:
     return 2
 
 
+def cmd_gap_propose(args) -> int:
+    """Run gap-mine, take top-N gaps, generate proposals via LLM, insert
+    into the `proposals` table with proposal_type='gap_mine'."""
+    from .gap_propose import propose_from_top_gaps
+    import sqlite3
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    with sqlite3.connect(args.db) as con:
+        runs = [{"model_name": r[0], "fingerprint_json": r[1]}
+                 for r in con.execute(
+                     "SELECT model_name, fingerprint_json FROM runs"
+                 ).fetchall()]
+
+    print(f"corpus: {len(rows)} papers, {len(runs)} runs")
+    print(f"generating proposals for top {args.top} gaps "
+          f"(model: {args.groq_model}, dry-run: {args.dry_run})...")
+    created = propose_from_top_gaps(
+        args.db, rows=rows, runs=runs, top_n=args.top,
+        llm_model=args.groq_model, dry_run=args.dry_run,
+    )
+    print(f"\ngenerated {len(created)} proposal candidate(s):\n")
+    for i, p in enumerate(created, 1):
+        if "error" in p:
+            g = p["_gap"]
+            print(f"  [{i}] FAIL: {g['view']} {g['row']} × {g['col']}")
+            print(f"      └─ {p['error']}")
+            continue
+        gap = p.get("_gap", {})
+        pid = p.get("id")
+        id_str = f"#{pid}" if pid is not None else "(dry)"
+        print(f"  [{i}] {id_str} target={p['target_model']} "
+              f"← gap {gap.get('view')} "
+              f"{gap.get('row')} × {gap.get('col')}")
+        print(f"      rationale: {p['rationale'][:160]}")
+        if p.get("references"):
+            print(f"      refs: {', '.join(p['references'][:3])}")
+    return 0
+
+
 def cmd_gap_mine(args) -> int:
     """Detect under-explored cells in the (subfield × stylized-fact),
     (abm_family × stylized-fact), and (technique × subfield) views.
@@ -1570,6 +1609,18 @@ def main() -> int:
                       help="for `prompt`: scope to a domain "
                            "(financial-abm / ml / stats / general)")
 
+    p_gp = sub.add_parser(
+        "gap-propose",
+        help=("run gap-mine, take the top-N gaps, LLM-draft a concrete "
+              "proposal per gap, insert each into the proposals table "
+              "with proposal_type='gap_mine'"),
+    )
+    p_gp.add_argument("--top", type=int, default=5,
+                      help="number of gaps to draft proposals for")
+    p_gp.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_gp.add_argument("--dry-run", action="store_true",
+                      help="generate proposals but DO NOT insert into DB")
+
     p_gm = sub.add_parser(
         "gap-mine",
         help=("detect under-explored cells across 3 views (subfield × "
@@ -1773,6 +1824,7 @@ def main() -> int:
                 "canon": cmd_canon,
                 "canon-atlas": cmd_canon_atlas,
                 "gap-mine": cmd_gap_mine,
+                "gap-propose": cmd_gap_propose,
                 "glossary": cmd_glossary,
                 "dashboard": cmd_dashboard,
                 "genealogy": cmd_genealogy,

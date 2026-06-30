@@ -259,7 +259,9 @@ def _call_groq_for_extraction(paper: dict, model: str,
     for attempt in range(max_retries + 1):
         try:
             return call_llm(EXTRACTION_SYSTEM_PROMPT, paper_payload, model,
-                            temperature=temperature, max_retries=0)
+                            temperature=temperature, max_retries=0,
+                            generate_japanese=True,
+                            glossary_domain="financial-abm")
         except Exception as exc:
             last_exc = exc
             msg = str(exc)

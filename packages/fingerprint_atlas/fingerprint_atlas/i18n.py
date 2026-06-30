@@ -53,41 +53,25 @@ ABM_FAMILY_JA: dict[str, tuple[str, str]] = {
 }
 
 
-# ----- stylized-fact English key → (Japanese label, 1-line gloss) ---------
+# ----- stylized-fact slug → glossary English key (single source of truth) --
 
-STYLIZED_FACT_JA: dict[str, tuple[str, str]] = {
-    "fat-tails": (
-        "ヘビーテール(厚い裾)",
-        "リターン分布の裾が正規分布より厚く、極端な変動が確率的に予想より多く起こる。",
-    ),
-    "vol-clustering": (
-        "ボラティリティクラスタリング",
-        "大きな変動の後には大きな変動が、小さな変動の後には小さな変動が続く。|r|の自己相関が長く続く。",
-    ),
-    "leverage": (
-        "レバレッジ効果(負の相関)",
-        "リターン下落の後にボラティリティが上がる。corr(r_t, σ²_{t+k}) < 0、5–10日スケール。",
-    ),
-    "long-memory": (
-        "長期記憶(volatility)",
-        "|r|の自己相関が冪乗則的にゆっくり減衰し、長期間相関が残る。",
-    ),
-    "regime-switching": (
-        "レジーム転換",
-        "市場の挙動が複数のレジーム(平常/危機/バブル等)を不連続に移動する。",
-    ),
-    "aggregational-gaussianity": (
-        "集計的ガウス性",
-        "高頻度では非ガウスだが、サンプリング間隔を延ばすにつれ分布が正規に近づく。",
-    ),
-    "absence-of-autocorr": (
-        "自己相関の欠如(無相関リターン)",
-        "リターンそのものの自己相関は近似的にゼロ。corr(r_t, r_{t+1}) ≈ 0 — 効率市場仮説の経験的根拠。",
-    ),
-    "herding": (
-        "群集行動(ハーディング)",
-        "エージェントが互いの行動を模倣することで、注文フローや意見が集団的に偏る。",
-    ),
+# Stylized-fact labels + glosses come from glossary.py to avoid drift.
+# This module owns only the mapping between gap_finder's hyphenated slug
+# and the glossary's English key — proper nouns (ABM families) and
+# gap-finder-internal terms (views) stay local.
+_FACT_TO_GLOSSARY_EN: dict[str, str] = {
+    "fat-tails": "fat tails",
+    "vol-clustering": "volatility clustering",
+    "leverage": "leverage effect",
+    "long-memory": "long memory",
+    "regime-switching": "regime",  # glossary stores it under 'regime'
+    "aggregational-gaussianity": "aggregational gaussianity",
+    "absence-of-autocorr": "absence of autocorrelation",
+    "herding": "herding",
+    # 'other' has no glossary entry — fall back to a static label below.
+}
+
+_FACT_FALLBACK: dict[str, tuple[str, str]] = {
     "other": ("その他", ""),
 }
 
@@ -118,14 +102,43 @@ def family_gloss(key: str) -> str:
     return info[1] if info else ""
 
 
+def _glossary_entry(slug: str) -> dict | None:
+    en = _FACT_TO_GLOSSARY_EN.get(slug)
+    if not en:
+        return None
+    try:
+        from .glossary import lookup
+        return lookup(en)
+    except ImportError:
+        return None
+
+
 def fact_label(key: str) -> str:
-    info = STYLIZED_FACT_JA.get(key)
-    return info[0] if info else key
+    """Japanese display label for a stylized-fact slug.
+
+    Single source of truth = glossary.py. The label is the glossary
+    primary; we append a short English subtitle in parens when the
+    glossary primary is pure katakana, to help the reader bridge to
+    the literature jargon (e.g. 'ヘビーテール (fat tails)').
+    """
+    e = _glossary_entry(key)
+    if e:
+        ja = e["ja_primary"]
+        # Add the English cue parenthetically when the JA is pure katakana
+        # and the glossary entry has an `en` we can echo.
+        if all(0x30A0 <= ord(c) <= 0x30FF or c in " ・"
+                for c in ja.replace("(", "")
+                          .replace(")", "")) and e.get("en"):
+            return f"{ja} ({e['en']})"
+        return ja
+    return _FACT_FALLBACK.get(key, (key, ""))[0]
 
 
 def fact_gloss(key: str) -> str:
-    info = STYLIZED_FACT_JA.get(key)
-    return info[1] if info else ""
+    e = _glossary_entry(key)
+    if e and e.get("notes"):
+        return e["notes"]
+    return _FACT_FALLBACK.get(key, (key, ""))[1]
 
 
 def view_label(name: str) -> str:

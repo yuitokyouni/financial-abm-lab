@@ -224,7 +224,9 @@ def _call_groq(system_prompt: str, user_payload: dict, model: str,
     change."""
     from .llm_client import call_llm
     return call_llm(system_prompt, user_payload, model,
-                    temperature=temperature, max_retries=max_retries)
+                    temperature=temperature, max_retries=max_retries,
+                    generate_japanese=True,
+                    glossary_domain="financial-abm")
 
 
 def extract_aspects(idea_text: str, groq_model: str = DEFAULT_GROQ_MODEL,

@@ -363,7 +363,9 @@ def _call_groq(system_prompt: str, user_payload: dict, model: str,
     OpenAI when `model` is an OpenAI chat model id, otherwise Groq."""
     from .llm_client import call_llm
     return call_llm(system_prompt, user_payload, model,
-                    temperature=temperature, max_retries=max_retries)
+                    temperature=temperature, max_retries=max_retries,
+                    generate_japanese=True,
+                    glossary_domain="financial-abm")
 
 
 def _validate_proposal(p: dict, n_features: int) -> tuple[bool, str]:
