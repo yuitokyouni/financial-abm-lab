@@ -83,6 +83,57 @@ def test_view_b_distance_from_real_per_family_per_fact():
     assert v.higher_is_gap is True
 
 
+def test_rank_top_gaps_drops_noise_columns_and_sparse_rows():
+    """'other' and rows below min_row_total must be dropped from ranking."""
+    from fingerprint_atlas.gap_finder import GapView, rank_top_gaps
+    import numpy as np
+    # 3 rows × 3 cols, row 0 is dense (10 total), row 1 dense (10), row 2 empty (0)
+    # 'other' is col 0, 'fat-tails' is col 1, 'leverage' is col 2
+    M = np.array([
+        [0, 5, 5],   # row 0: 'other' empty but row dense — should NOT surface
+        [10, 0, 0],  # row 1: 'other' has all the mass; 'fat-tails' empty IS a gap
+        [0, 0, 0],   # row 2: empty row, no gaps
+    ], dtype=float)
+    # Synthesise high salience everywhere so filtering is the only gate
+    S = np.ones_like(M) * 5.0
+    v = GapView(
+        name="A", title="t",
+        row_labels=["dense_a", "dense_b", "empty"],
+        col_labels=["other", "fat-tails", "leverage"],
+        matrix=M, salience=S, higher_is_gap=False, description="",
+    )
+    top = rank_top_gaps([v], top_n=20, min_row_total=3, min_col_total=1)
+    # 'other' column never appears
+    assert all(g.col != "other" for g in top)
+    # empty row 'empty' never appears (row_total = 0 < 3)
+    assert all(g.row != "empty" for g in top)
+    # row 1 (dense_b) has fat-tails AND leverage empty AND non-other,
+    # row+col density OK on fat-tails (col_total=5 from row 0)
+    cells = {(g.row, g.col) for g in top}
+    assert ("dense_b", "fat-tails") in cells
+    assert ("dense_b", "leverage") in cells
+
+
+def test_view_c_matches_version_stripped_arxiv_ids():
+    """A technique referencing 'adap-org/9708006' must match a DB row
+    stored as 'adap-org/9708006v3' (version suffix), and vice versa."""
+    from fingerprint_atlas import gap_finder
+    rows = [
+        {"arxiv_id": "adap-org/9708006v3",
+         "mechanism_tags": "minority game",
+         "stylized_facts_targeted": ""},
+    ]
+    techniques = [
+        {"key": "mg_strategy_selection", "name": "MG strategy selection",
+         "ref_papers": ["adap-org/9708006"]},  # no version suffix
+    ]
+    subfields = [{"key": "minority_game", "name": "Minority Game",
+                   "title_any": ["minority"]}]
+    v = gap_finder._build_view_c(rows, techniques, subfields)
+    # The technique's ref must match the DB row → 1
+    assert v.matrix[0, 0] == 1
+
+
 def test_view_c_zero_overlap_in_popular_cell_gets_high_salience():
     from fingerprint_atlas import gap_finder
     # 3 papers in "limit order book" subfield, 0 of them referenced by

@@ -203,30 +203,55 @@ def _build_view_b(runs_by_model: dict[str, list[dict]],
 def _build_view_c(rows: list[dict], techniques: list[dict],
                    subfields: list[dict]) -> GapView:
     """technique × subfield — count of papers in subfield S that reference
-    technique T (via T.ref_papers ∩ S's matching papers)."""
-    # Map paper arxiv_id → paper row (only those in DB).
-    by_arxiv = {p["arxiv_id"]: p for p in rows if p.get("arxiv_id")}
+    technique T (via T.ref_papers ∩ S's matching papers).
+
+    Key normalisation: arxiv ids stored in literature_methods may carry a
+    version suffix ('cond-mat/9908480v3'); technique.ref_papers usually
+    don't. Strip the suffix on BOTH sides when keying. Also accept the
+    OpenAlex synthetic id ('oa:Wxxxx') and treat the W-id as a backup
+    join key against techniques that cite an OA work directly.
+    """
+    by_key: dict[str, str] = {}  # normalised id → original arxiv_id
+    for p in rows:
+        aid = p.get("arxiv_id")
+        if not aid:
+            continue
+        base = re.sub(r"v\d+$", "", aid.strip())
+        by_key[base] = aid
+        # Also index by full id (with version) so exact-match refs work
+        if base != aid:
+            by_key[aid] = aid
+        # OpenAlex W-id indexed too (so a technique that cites 'W12345' or
+        # 'oa:W12345' matches an OA-ingested row).
+        m = re.search(r"(W\d+)", p.get("oa_paper_id") or aid)
+        if m:
+            by_key[m.group(1)] = aid
+            by_key[f"oa:{m.group(1)}"] = aid
+
     # For each subfield, find matching paper arxiv_ids in DB.
     subfield_papers: dict[str, set[str]] = {}
     for sf in subfields:
         keep = set()
-        for arx, p in by_arxiv.items():
-            tags = _split_tags(p.get("mechanism_tags")) + _split_tags(p.get("oa_concepts"))
+        for p in rows:
+            aid = p.get("arxiv_id")
+            if not aid:
+                continue
+            tags = (_split_tags(p.get("mechanism_tags"))
+                     + _split_tags(p.get("oa_concepts")))
             if _matches_subfield(tags, sf):
-                keep.add(arx)
+                keep.add(aid)
         subfield_papers[sf["key"]] = keep
 
     M = np.zeros((len(techniques), len(subfields)), dtype=int)
     for i, t in enumerate(techniques):
         t_papers = set()
         for ref in (t.get("ref_papers") or []):
-            # ref_papers may be DOIs, arxiv_ids, or 'oa:Wxxx'.
-            # Cross-check both raw and base-id-normalised forms.
-            base = re.sub(r"v\d+$", "", str(ref).strip())
-            if base in by_arxiv:
-                t_papers.add(base)
-            if ref in by_arxiv:
-                t_papers.add(ref)
+            r = str(ref).strip()
+            # Try in priority: raw, base (version-stripped), W-id
+            for candidate in (r, re.sub(r"v\d+$", "", r)):
+                if candidate in by_key:
+                    t_papers.add(by_key[candidate])
+                    break
         for j, sf in enumerate(subfields):
             M[i, j] = len(t_papers & subfield_papers[sf["key"]])
     salience = _salience_empty_in_dense_row(M)
@@ -320,14 +345,26 @@ def build_views(rows: list[dict], runs: list[dict],
     return views
 
 
+# Columns that are catch-all / meta and not meaningful as a 'gap' target.
+# 'other' in the stylized-fact axis groups everything that didn't fit a
+# canonical bucket, so an empty cell on the 'other' column tells us
+# nothing.
+_GAP_NOISE_COLS = frozenset({"other"})
+
+
 def rank_top_gaps(views: list[GapView], *, top_n: int = 20,
-                   view_weights: dict[str, float] | None = None
+                   view_weights: dict[str, float] | None = None,
+                   min_row_total: int = 3, min_col_total: int = 1
                    ) -> list[Gap]:
     """Flatten all view cells, sort by (weighted salience), take top-N.
 
-    For view A/C the salience formula already discounts cells with high
-    raw value, so empty-in-dense cells dominate naturally. For view B we
-    sort by raw distance since the salience is just normalised distance.
+    Filters applied before ranking:
+      - skip catch-all columns (`other`) — those are meta-buckets, not
+        actual stylized facts to target
+      - skip cells whose row OR column is too sparse to constitute a
+        meaningful gap (row_total < min_row_total, col_total < min_col_total)
+      - view A / C: skip cells with value > 0 (gap = empty)
+      - view B: skip cells with deviation < 0.5σ (not really a gap)
     """
     weights = {"A": 1.0, "B": 1.3, "C": 1.0}
     if view_weights:
@@ -339,27 +376,32 @@ def rank_top_gaps(views: list[GapView], *, top_n: int = 20,
         w = weights.get(v.name, 1.0)
         for i in range(v.matrix.shape[0]):
             for j in range(v.matrix.shape[1]):
+                col_label = v.col_labels[j]
+                if col_label in _GAP_NOISE_COLS:
+                    continue
                 val = float(v.matrix[i, j])
+                row_tot = float(v.matrix[i].sum())
+                col_tot = float(v.matrix[:, j].sum())
                 if v.higher_is_gap:
                     # view B: keep only cells with non-trivial deviation
                     if val < 0.5:
                         continue
                 else:
-                    # view A / C: keep only empty / very-sparse cells in
-                    # otherwise-populated row+column
-                    row_tot = float(v.matrix[i].sum())
-                    col_tot = float(v.matrix[:, j].sum())
-                    if val > 0 or row_tot + col_tot < 3:
+                    # view A / C: empty cell IS the gap, but row+col must
+                    # be dense enough for the empty cell to be interesting
+                    if val > 0:
+                        continue
+                    if row_tot < min_row_total or col_tot < min_col_total:
                         continue
                 sal = float(v.salience[i, j]) * w
                 all_gaps.append(Gap(
                     view=v.name,
                     row=v.row_labels[i],
-                    col=v.col_labels[j],
+                    col=col_label,
                     value=val,
                     salience=sal,
-                    row_total=float(v.matrix[i].sum()),
-                    col_total=float(v.matrix[:, j].sum()),
+                    row_total=row_tot,
+                    col_total=col_tot,
                     why=_gap_why(v, i, j),
                 ))
     all_gaps.sort(key=lambda g: g.salience, reverse=True)
