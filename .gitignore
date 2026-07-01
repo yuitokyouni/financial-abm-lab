@@ -12,4 +12,4 @@ data/*.db
 experiments/runs/
 
 *.parquet
-*.csv
+*.csvdashboard/*.html
