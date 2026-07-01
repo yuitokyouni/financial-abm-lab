@@ -564,6 +564,81 @@ def test_strip_arxiv_versions_migration(tmp_path, capsys):
     )
 
 
+def test_extract_untagged_lists_only_rows_needing_extraction(tmp_path, capsys):
+    """Untagged-with-usable-abstract go through; already-extracted stay;
+    'no abstract available' placeholder rows are skipped."""
+    import argparse
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+        update_literature_extraction,
+    )
+    from fingerprint_atlas.arxiv_cli import cmd_extract_untagged
+
+    db = str(tmp_path / "t.db")
+    ensure_literature_schema(db)
+    common = dict(authors="A", year=2024, published_date="2024-01-01",
+                   primary_category=None)
+    upsert_literature_metadata(db, arxiv_id="a/1", title="untagged, good abs",
+                                 abstract="real abstract content here",
+                                 source_kind="openalex", **common)
+    upsert_literature_metadata(db, arxiv_id="a/2", title="untagged, empty",
+                                 abstract="[no abstract available for oa:W1]",
+                                 source_kind="openalex", **common)
+    upsert_literature_metadata(db, arxiv_id="a/3", title="already tagged",
+                                 abstract="real abstract content here",
+                                 source_kind="arxiv", **common)
+    update_literature_extraction(
+        db, "a/3", mechanism_summary="x", mechanism_tags=["order-book"],
+        stylized_facts_targeted=["fat-tails"], novelty_signal=None,
+        relevance_score=0.5, extracted_by_model="test",
+    )
+
+    args = argparse.Namespace(db=db, groq_model="test", limit=0, dry_run=True)
+    assert cmd_extract_untagged(args) == 0
+    out = capsys.readouterr().out
+    assert "found 1 untagged" in out
+    assert "a/1" in out
+    assert "a/2" not in out
+    assert "a/3" not in out
+
+
+def test_stylized_fact_other_partitions_and_lists(tmp_path, capsys):
+    """'other'-only vs 'other + something' are counted separately; the
+    list-mode output surfaces both."""
+    import argparse
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+        update_literature_extraction,
+    )
+    from fingerprint_atlas.arxiv_cli import cmd_stylized_fact_other
+
+    db = str(tmp_path / "t.db")
+    ensure_literature_schema(db)
+    common = dict(authors="A", year=2024, published_date="2024-01-01",
+                   primary_category=None, source_kind="arxiv")
+    for aid, facts in [
+        ("only/1", ["other"]),
+        ("only/2", ["other"]),
+        ("mix/1", ["other", "fat-tails"]),
+        ("clean/1", ["vol-clustering"]),
+    ]:
+        upsert_literature_metadata(db, arxiv_id=aid, title=aid,
+                                     abstract="abs", **common)
+        update_literature_extraction(
+            db, aid, mechanism_summary=None, mechanism_tags=[],
+            stylized_facts_targeted=facts, novelty_signal=None,
+            relevance_score=None, extracted_by_model="test",
+        )
+
+    args = argparse.Namespace(db=db, groq_model="test", limit=0, retag=False)
+    assert cmd_stylized_fact_other(args) == 0
+    out = capsys.readouterr().out
+    assert "papers tagged with 'other' ONLY:  2" in out
+    assert "papers with 'other' + something:  1" in out
+    assert "only/1" in out and "mix/1" in out
+    assert "clean/1" not in out
+
+
 def test_default_queries_includes_coverage_gap_presets():
     """The 6 new presets for coverage-gap filling must be registered."""
     from fingerprint_atlas.arxiv_ingest import DEFAULT_QUERIES

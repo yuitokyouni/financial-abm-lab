@@ -506,6 +506,160 @@ def cmd_delete_rows(args) -> int:
     return 0
 
 
+def cmd_extract_untagged(args) -> int:
+    """Run LLM extraction on literature_methods rows that have no tags yet.
+
+    Targets rows where `extracted_by_model` is NULL (never went through
+    the LLM step — typically OA-only canon ingested by canon_ingest, and
+    any rows that skipped extract=True). Only rows with a non-empty
+    abstract are processed.
+
+    Idempotent per row: if a call fails or the LLM returns empty, we
+    increment extraction_attempts and move on (same as ingest()). Re-run
+    later to catch retries."""
+    from .arxiv_ingest import extract_paper_structured
+    from .db import update_literature_extraction
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    untagged = [
+        r for r in rows
+        if not r.get("extracted_by_model")
+        and (r.get("abstract") or "").strip()
+        and not (r.get("abstract") or "").startswith("[no abstract available")
+    ]
+    if not untagged:
+        print("no untagged rows with usable abstract — nothing to do.")
+        return 0
+
+    if args.limit and len(untagged) > args.limit:
+        untagged = untagged[: args.limit]
+
+    print(f"found {len(untagged)} untagged row(s) to extract "
+          f"({'DRY-RUN' if args.dry_run else 'live'}, "
+          f"model={args.groq_model}).")
+
+    if args.dry_run:
+        for r in untagged[:20]:
+            title = (r.get("title") or "")[:60]
+            print(f"  would extract  {r['arxiv_id']:<22s}  {title}")
+        if len(untagged) > 20:
+            print(f"  ... and {len(untagged) - 20} more")
+        return 0
+
+    ok = 0
+    failed = 0
+    for i, r in enumerate(untagged, start=1):
+        paper = {
+            "arxiv_id": r["arxiv_id"],
+            "title": r.get("title") or "",
+            "abstract": r.get("abstract") or "",
+            "comment": r.get("arxiv_comment"),
+        }
+        try:
+            ext = extract_paper_structured(paper, model=args.groq_model)
+            update_literature_extraction(
+                args.db, r["arxiv_id"],
+                mechanism_summary=ext["mechanism_summary"],
+                mechanism_tags=ext["mechanism_tags"],
+                stylized_facts_targeted=ext["stylized_facts_targeted"],
+                novelty_signal=ext["novelty_signal"],
+                relevance_score=ext["relevance_score"],
+                extracted_by_model=ext["extracted_by_model"],
+            )
+            ok += 1
+            tags = ", ".join(ext["mechanism_tags"][:3]) or "(no tags)"
+            print(f"  [{i:>3d}/{len(untagged)}] +ext  {r['arxiv_id']:<22s} "
+                  f"{tags}")
+        except Exception as exc:
+            failed += 1
+            print(f"  [{i:>3d}/{len(untagged)}] FAIL {r['arxiv_id']:<22s} "
+                  f"{type(exc).__name__}: {exc}",
+                  file=sys.stderr)
+    print(f"\ndone: extracted {ok}, failed {failed}, of {len(untagged)}.")
+    return 0 if not failed else 2
+
+
+def cmd_stylized_fact_other(args) -> int:
+    """List papers whose stylized_facts_targeted contains 'other'.
+
+    Use case: audit whether the LLM is dumping into the catch-all
+    because (a) the enum is missing a legitimate fact, (b) the paper
+    genuinely isn't about a stylized fact, or (c) the extractor was
+    lazy. With --retag the row is re-run through extraction (the enum
+    change may unstick it)."""
+    from .arxiv_ingest import extract_paper_structured
+    from .db import update_literature_extraction
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    only_other = []
+    with_other = []
+    for r in rows:
+        facts = [f.strip().lower() for f in (r.get("stylized_facts_targeted") or [])]
+        if not facts:
+            continue
+        if facts == ["other"]:
+            only_other.append(r)
+        elif "other" in facts:
+            with_other.append(r)
+
+    print(f"papers tagged with 'other' ONLY:  {len(only_other)}")
+    print(f"papers with 'other' + something:  {len(with_other)}")
+    total = len(only_other) + len(with_other)
+    if not total:
+        return 0
+
+    subset = only_other + with_other
+    if args.limit and len(subset) > args.limit:
+        subset = subset[: args.limit]
+
+    if not args.retag:
+        for r in subset:
+            facts = ", ".join(r.get("stylized_facts_targeted") or [])
+            title = (r.get("title") or "")[:55]
+            summary = (r.get("mechanism_summary") or "")[:90]
+            print()
+            print(f"  {r['arxiv_id']:<22s}  facts=[{facts}]")
+            print(f"      title: {title}")
+            print(f"      summary: {summary}")
+        print(f"\n(showed {len(subset)}/{total}). "
+              f"Re-run with --retag to re-extract them under the current "
+              f"stylized-fact enum.")
+        return 0
+
+    print(f"re-extracting {len(subset)} row(s) with model={args.groq_model}...")
+    ok = failed = still_other = 0
+    for i, r in enumerate(subset, start=1):
+        paper = {"arxiv_id": r["arxiv_id"], "title": r.get("title") or "",
+                  "abstract": r.get("abstract") or "",
+                  "comment": r.get("arxiv_comment")}
+        try:
+            ext = extract_paper_structured(paper, model=args.groq_model)
+            update_literature_extraction(
+                args.db, r["arxiv_id"],
+                mechanism_summary=ext["mechanism_summary"],
+                mechanism_tags=ext["mechanism_tags"],
+                stylized_facts_targeted=ext["stylized_facts_targeted"],
+                novelty_signal=ext["novelty_signal"],
+                relevance_score=ext["relevance_score"],
+                extracted_by_model=ext["extracted_by_model"],
+            )
+            new_facts = ext["stylized_facts_targeted"]
+            if new_facts == ["other"] or (len(new_facts) == 1 and "other" in new_facts):
+                still_other += 1
+                mark = "still-other"
+            else:
+                ok += 1
+                mark = ", ".join(new_facts[:3]) or "(no facts)"
+            print(f"  [{i:>3d}/{len(subset)}]  {r['arxiv_id']:<22s} → {mark}")
+        except Exception as exc:
+            failed += 1
+            print(f"  [{i:>3d}/{len(subset)}]  {r['arxiv_id']:<22s} FAIL "
+                  f"{type(exc).__name__}: {exc}", file=sys.stderr)
+    print(f"\ndone: {ok} reclassified, {still_other} still 'other', "
+          f"{failed} failed.")
+    return 0 if not failed else 2
+
+
 def cmd_fix_arxiv_ids(args) -> int:
     """One-shot migration: scan DB for arxiv_ids that look like an old-style
     paper with the category prefix stripped (e.g. '0101326v1' that should
@@ -1591,6 +1745,33 @@ def main() -> int:
     p_se.add_argument("query")
     p_se.add_argument("--limit", type=int, default=20)
 
+    p_eu = sub.add_parser(
+        "extract-untagged",
+        help=("run LLM extraction on rows that have no tags yet — mostly "
+              "OA-only canon ingested by canon_ingest without an "
+              "extraction pass. Idempotent; safe to re-run."),
+    )
+    p_eu.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL,
+                       help=("LLM used for extraction. Accepts a Groq-hosted "
+                             "model id or 'openai/<id>'."))
+    p_eu.add_argument("--limit", type=int, default=0,
+                       help="stop after N papers (0 = all untagged)")
+    p_eu.add_argument("--dry-run", action="store_true",
+                       help="list what would be extracted, without calling the LLM")
+
+    p_so = sub.add_parser(
+        "stylized-fact-other",
+        help=("list / re-classify papers whose stylized_facts_targeted "
+              "landed in 'other' (audit the extractor's catch-all bucket)"),
+    )
+    p_so.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL,
+                       help="LLM used when --retag is set")
+    p_so.add_argument("--limit", type=int, default=0,
+                       help="stop after N papers (0 = all matching)")
+    p_so.add_argument("--retag", action="store_true",
+                       help="re-run extraction on each match (useful after "
+                            "expanding the stylized-fact enum). Idempotent.")
+
     p_bf = sub.add_parser(
         "backfill-code",
         help=("for already-ingested papers without code_url, run abstract "
@@ -1933,6 +2114,8 @@ def main() -> int:
     if args.cmd not in _db_free and not args.db:
         ap.error(f"--db is required for `{args.cmd}`")
     handlers = {"ingest": cmd_ingest, "ingest-ids": cmd_ingest_ids,
+                "extract-untagged": cmd_extract_untagged,
+                "stylized-fact-other": cmd_stylized_fact_other,
                 "list": cmd_list, "show": cmd_show,
                 "search": cmd_search, "backfill-code": cmd_backfill_code,
                 "diagnose-code": cmd_diagnose_code,

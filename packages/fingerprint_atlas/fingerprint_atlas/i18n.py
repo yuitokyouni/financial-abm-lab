@@ -73,6 +73,17 @@ _FACT_TO_GLOSSARY_EN: dict[str, str] = {
 
 _FACT_FALLBACK: dict[str, tuple[str, str]] = {
     "other": ("その他", ""),
+    # Cont 2001 stylized facts not yet in glossary.py — add fallback labels
+    # so the fact_label / fact_gloss layer doesn't break when the enum
+    # picks them up.
+    "gain-loss-asymmetry": (
+        "上下非対称 (gain-loss asymmetry)",
+        "急な下落は緩やかな上昇より短い期間で起こる。ドローダウンとラリーの時間スケール差。",
+    ),
+    "volume-volatility-corr": (
+        "出来高−ボラティリティ相関 (volume-volatility correlation)",
+        "高ボラの期間ほど出来高も大きい。取引と分散の同時変動。",
+    ),
 }
 
 

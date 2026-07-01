@@ -142,11 +142,22 @@ Given a paper's title and abstract, return a single JSON object:
                      //           'sentiment-analysis', 'microstructure'
   "stylized_facts_targeted": [<0-5 stylized facts the paper claims to reproduce
                                or analyse>],
-                              // choose ONLY from this fixed list:
-                              //   'fat-tails', 'vol-clustering', 'leverage',
-                              //   'long-memory', 'regime-switching',
-                              //   'aggregational-gaussianity', 'absence-of-autocorr',
-                              //   'other'
+                              // choose ONLY from this fixed list (Cont 2001
+                              // + two ABM-specific targets):
+                              //   'fat-tails'                    heavy tails in returns
+                              //   'vol-clustering'               ARCH-like clustering
+                              //   'leverage'                     corr(r_t, sigma^2_{t+k}) < 0
+                              //   'long-memory'                  slow ACF decay in |r|
+                              //   'aggregational-gaussianity'    normal at low freq
+                              //   'absence-of-autocorr'          lag-1 ACF ~ 0 for r
+                              //   'gain-loss-asymmetry'          drawdowns faster than rallies
+                              //   'volume-volatility-corr'       high vol ↔ high volume
+                              //   'regime-switching'             discrete state changes
+                              //   'herding'                      correlated agent action
+                              //   'other'                        last-resort catch-all —
+                              //                                  use ONLY if the paper's
+                              //                                  target really doesn't
+                              //                                  match any label above
   "novelty_signal": "1 sentence describing what the paper claims is genuinely
                      novel relative to prior work, or null if no clear claim.",
   "relevance_score": <float 0..1, your estimate of how relevant this paper is

@@ -53,8 +53,10 @@ Output ONE JSON object with this shape (no prose around it):
   "switching_mechanism": "<1 sentence: how do agents adapt/switch, or null>",
   "price_formation": "<1 sentence: how does price emerge, or null>",
   "target_stylized_facts": [<0-5 of: "fat-tails", "vol-clustering", "leverage",
-                            "long-memory", "regime-switching",
-                            "aggregational-gaussianity", "absence-of-autocorr", "other">],
+                            "long-memory", "aggregational-gaussianity",
+                            "absence-of-autocorr", "gain-loss-asymmetry",
+                            "volume-volatility-corr", "regime-switching",
+                            "herding", "other">],
   "novelty_claim": "<1 sentence: what does the proposer think is new?>",
   "key_keywords": [<5-12 short ENGLISH keywords for DB search. The DB
                    methods table and literature abstracts are English, so

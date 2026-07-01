@@ -24,11 +24,23 @@ def _canonical_fact(s: str) -> str:
 
 
 # Canonical stylized-fact vocabulary the rest of the codebase uses
-# (matches idea_judge's target_stylized_facts enum).
+# (mirrored by extraction prompt in arxiv_ingest + CANONICAL_FACTS in
+# gap_finder — keep them in sync).
+#
+# Anchor: Cont 2001 "Empirical properties of asset returns: stylized
+# facts and statistical issues" (Quant. Finance 1:223-236). We adopt
+# Cont's list plus two mechanism-flavoured facts that show up in
+# financial-ABM lit (herding, regime-switching) since papers here
+# routinely target those as reproducible signatures.
 _CANONICAL_FACTS = [
+    # Cont 2001 canonical
     "fat-tails", "vol-clustering", "leverage", "long-memory",
-    "regime-switching", "aggregational-gaussianity",
-    "absence-of-autocorr", "herding", "other",
+    "aggregational-gaussianity", "absence-of-autocorr",
+    "gain-loss-asymmetry", "volume-volatility-corr",
+    # ABM-specific stylized targets
+    "regime-switching", "herding",
+    # catch-all — anything the LLM can't map cleanly
+    "other",
 ]
 
 

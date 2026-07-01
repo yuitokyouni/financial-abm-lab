@@ -39,12 +39,14 @@ from typing import Any
 import numpy as np
 
 
-# Canonical 9-fact vocabulary (mirror of coverage._CANONICAL_FACTS but
-# we duplicate to avoid coupling — coverage may change independently).
+# Canonical stylized-fact vocabulary (mirror of coverage._CANONICAL_FACTS;
+# both anchor on Cont 2001 + two ABM-specific facts).
 CANONICAL_FACTS = [
     "fat-tails", "vol-clustering", "leverage", "long-memory",
-    "regime-switching", "aggregational-gaussianity",
-    "absence-of-autocorr", "herding", "other",
+    "aggregational-gaussianity", "absence-of-autocorr",
+    "gain-loss-asymmetry", "volume-volatility-corr",
+    "regime-switching", "herding",
+    "other",
 ]
 
 # Which fingerprint dim(s) most directly probe each stylized fact.
