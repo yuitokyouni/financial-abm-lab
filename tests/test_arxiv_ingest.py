@@ -508,6 +508,62 @@ def test_extract_arxiv_id_preserves_old_style_category_prefix():
         "weird-no-marker") == "weird-no-marker")
 
 
+def test_strip_arxiv_versions_migration(tmp_path, capsys):
+    """The one-shot migration strips vN suffixes on existing rows, resolves
+    conflicts by keeping the base row + deleting the vN sibling, is
+    idempotent, and refuses to write without --yes."""
+    import sqlite3, argparse
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+    )
+    from fingerprint_atlas.arxiv_cli import cmd_strip_arxiv_versions
+
+    db = str(tmp_path / "t.db")
+    ensure_literature_schema(db)
+
+    common = dict(authors="A", year=2001, published_date="2001-01-01",
+                   primary_category=None, abstract="x", source_kind="arxiv")
+    upsert_literature_metadata(db, arxiv_id="cond-mat/0101326v1",
+                                 title="rename target", **common)
+    upsert_literature_metadata(db, arxiv_id="2503.00320",
+                                 title="base", **common)
+    upsert_literature_metadata(db, arxiv_id="2503.00320v2",
+                                 title="conflict — keep base", **common)
+    upsert_literature_metadata(db, arxiv_id="1909.03185",
+                                 title="already base", **common)
+
+    def _ids():
+        with sqlite3.connect(db) as con:
+            return sorted(r[0] for r in con.execute(
+                "SELECT arxiv_id FROM literature_methods"
+            ).fetchall())
+
+    before = _ids()
+
+    def _args(**kw):
+        a = argparse.Namespace(db=db, dry_run=False, yes=False)
+        for k, v in kw.items():
+            setattr(a, k, v)
+        return a
+
+    assert cmd_strip_arxiv_versions(_args(dry_run=True)) == 0
+    assert _ids() == before, "dry-run must not modify DB"
+
+    assert cmd_strip_arxiv_versions(_args()) == 0
+    assert _ids() == before, "default (no --yes) must not modify DB"
+
+    assert cmd_strip_arxiv_versions(_args(yes=True)) == 0
+    assert _ids() == sorted(
+        ["1909.03185", "2503.00320", "cond-mat/0101326"]
+    ), _ids()
+
+    # Idempotent second run: nothing more to do.
+    assert cmd_strip_arxiv_versions(_args(yes=True)) == 0
+    assert _ids() == sorted(
+        ["1909.03185", "2503.00320", "cond-mat/0101326"]
+    )
+
+
 def test_default_queries_includes_coverage_gap_presets():
     """The 6 new presets for coverage-gap filling must be registered."""
     from fingerprint_atlas.arxiv_ingest import DEFAULT_QUERIES

@@ -571,6 +571,77 @@ def cmd_fix_arxiv_ids(args) -> int:
     return 0
 
 
+def cmd_strip_arxiv_versions(args) -> int:
+    """One-shot migration: drop the vN suffix from every literature_methods
+    arxiv_id. Idempotent — arxiv_ids without a version are left alone.
+
+    Companion to the same fix in `_extract_arxiv_id_from_entry`: without
+    this pass, a DB that was ingested before the vN-strip fix will grow
+    duplicate rows (e.g. 'cond-mat/0101326v1' from the legacy row AND
+    'cond-mat/0101326' from the next ingest of the same paper).
+
+    Conflict handling: if a row with the base id already exists we KEEP
+    the base row and DELETE the vN one (the base is preferred because
+    that's what new code will look up). All metadata columns from the
+    vN row are lost — dry-run first to see what would be dropped.
+    """
+    import sqlite3
+    ensure_literature_schema(args.db)
+    with sqlite3.connect(args.db) as con:
+        con.row_factory = sqlite3.Row
+        rows = con.execute(
+            "SELECT arxiv_id, title FROM literature_methods "
+            "WHERE arxiv_id GLOB '*v[0-9]' OR arxiv_id GLOB '*v[0-9][0-9]'"
+        ).fetchall()
+        if not rows:
+            print("no rows with a vN suffix — nothing to do.")
+            return 0
+
+        base_ids = {r[0] for r in con.execute(
+            "SELECT arxiv_id FROM literature_methods "
+            "WHERE arxiv_id NOT GLOB '*v[0-9]' AND arxiv_id NOT GLOB '*v[0-9][0-9]'"
+        ).fetchall()}
+
+        renames: list[tuple[str, str]] = []
+        conflicts: list[tuple[str, str, str]] = []
+        for r in rows:
+            base = re.sub(r"v\d+$", "", r["arxiv_id"])
+            if base in base_ids:
+                conflicts.append((r["arxiv_id"], base, r["title"]))
+            else:
+                renames.append((r["arxiv_id"], base))
+                base_ids.add(base)
+
+        print(f"found {len(rows)} row(s) with vN suffix:")
+        for old, new in renames:
+            print(f"  rename  {old:<24s} → {new}")
+        for old, base, title in conflicts:
+            print(f"  DELETE  {old:<24s} (base {base} already exists)")
+            print(f"            title was: {title[:60]}")
+
+        if args.dry_run:
+            print(f"\n(dry-run) would rename {len(renames)}, "
+                  f"delete {len(conflicts)}. Re-run with --yes to commit.")
+            return 0
+        if not args.yes:
+            print(f"\nre-run with --yes to commit ({len(renames)} rename, "
+                  f"{len(conflicts)} delete).")
+            return 0
+
+        for old, new in renames:
+            con.execute(
+                "UPDATE literature_methods SET arxiv_id = ? WHERE arxiv_id = ?",
+                (new, old),
+            )
+        for old, _, _ in conflicts:
+            con.execute(
+                "DELETE FROM literature_methods WHERE arxiv_id = ?", (old,)
+            )
+        con.commit()
+    print(f"\nrenamed {len(renames)}, deleted {len(conflicts)}.")
+    return 0
+
+
 def cmd_diagnose_concept(args) -> int:
     """Show what OpenAlex /concepts and /works return for a search query.
     Useful when 'canon' / 'genealogy' returns 'no concept matches'."""
@@ -1550,6 +1621,17 @@ def main() -> int:
     p_fa.add_argument("--sleep", type=float, default=0.5,
                       help="seconds between OpenAlex title searches")
 
+    p_sv = sub.add_parser(
+        "strip-arxiv-versions",
+        help=("one-shot migration: drop vN suffix from every literature_methods "
+              "arxiv_id (companion to the ingest-side vN strip). "
+              "Dry-run by default; --yes to commit."),
+    )
+    p_sv.add_argument("--dry-run", action="store_true",
+                      help="print planned changes without touching the DB")
+    p_sv.add_argument("--yes", action="store_true",
+                      help="commit the migration (default: safe print-only)")
+
     p_dc2 = sub.add_parser(
         "diagnose-concept",
         help=("show raw OpenAlex /concepts and /works responses for a "
@@ -1843,6 +1925,7 @@ def main() -> int:
                 "expand-via-oa": cmd_expand_via_oa,
                 "diagnose-oa": cmd_diagnose_oa,
                 "fix-arxiv-ids": cmd_fix_arxiv_ids,
+                "strip-arxiv-versions": cmd_strip_arxiv_versions,
                 "delete-rows": cmd_delete_rows,
                 "atlas": cmd_atlas,
                 "coverage": cmd_coverage,
