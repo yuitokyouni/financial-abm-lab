@@ -57,14 +57,35 @@ _GENERIC_OA_CONCEPTS = frozenset({
 })
 
 
+#: Stylized-fact terms that should NEVER appear as a mechanism row —
+#: they belong on the fact column only. The extraction prompt still
+#: sometimes leaks these into mechanism_tags (e.g., a paper about the
+#: leverage effect gets tagged with 'leverage' as its primary
+#: mechanism), which then duplicates the same concept on both axes and
+#: creates spurious rows like `leverage (6)` or `long-memory (9)`. We
+#: skip these when picking the row's primary tag; the paper still lands
+#: on the right column via stylized_facts_targeted.
+_FACT_TERMS_NOT_MECHANISMS = frozenset({
+    "leverage", "long-memory", "fat-tails", "vol-clustering",
+    "absence-of-autocorr", "gain-loss-asymmetry",
+    "aggregational-gaussianity", "volume-volatility-corr",
+    "multifractal",  # data property, not a modeling technique
+    "volatility",     # too broad — real methods are GARCH / stoch-vol / etc
+})
+
+
 def _primary_tag(row: dict) -> str:
-    """Mirror of literature_map.primary_tag with one extra filter:
+    """Mirror of literature_map.primary_tag with two extra filters:
     generic OpenAlex top-level concepts (Computer science / Economics /
-    Business / etc) don't count as a mechanism label — they produce
-    rows that have no useful coverage signal."""
+    Business / etc) don't count as a mechanism label, and stylized-fact
+    terms (leverage / long-memory / fat-tails / …) are also skipped —
+    the extraction prompt occasionally leaks facts into mechanism_tags
+    and we don't want them duplicating on both matrix axes."""
     tags = row.get("mechanism_tags") or []
-    if tags:
-        return tags[0]
+    for t in tags:
+        norm = _canonical_fact(t)
+        if norm and norm not in _FACT_TERMS_NOT_MECHANISMS:
+            return t
     for concept in (row.get("oa_concepts") or "").split(","):
         c = concept.strip()
         if c and c not in _GENERIC_OA_CONCEPTS:

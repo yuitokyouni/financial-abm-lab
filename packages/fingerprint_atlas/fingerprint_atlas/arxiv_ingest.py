@@ -134,12 +134,32 @@ Given a paper's title and abstract, return a single JSON object:
   "mechanism_summary": "1-3 sentences describing the concrete mechanism / model /
                         method proposed. If the paper is not about a mechanism
                         but e.g. a survey, say so.",
-  "mechanism_tags": [<3-5 short keywords describing what KIND of mechanism it is>],
-                     // examples: 'herding', 'order-book', 'LLM-agent',
-                     //           'regime-switching', 'percolation',
-                     //           'minority-game', 'reinforcement-learning',
-                     //           'differentiable-ABM', 'calibration-method',
-                     //           'sentiment-analysis', 'microstructure'
+  "mechanism_tags": [<3-5 short keywords describing HOW the paper models
+                     the market — the mechanism, method, or agent
+                     architecture. NOT stylized-fact terms.>],
+                     // GOOD examples (methods / mechanisms):
+                     //   'order-book', 'LLM-agent', 'minority-game',
+                     //   'reinforcement-learning', 'Kirman-ant',
+                     //   'chartist-fundamentalist', 'percolation',
+                     //   'differentiable-ABM', 'calibration-method',
+                     //   'sentiment-analysis', 'microstructure',
+                     //   'Hawkes-process', 'GARCH', 'HMM',
+                     //   'stochastic-volatility', 'diffusion-model',
+                     //   'fractional-integration'  ← mechanism producing long memory
+                     //   'sign-vol-feedback'        ← mechanism producing leverage effect
+                     // BAD examples (these are stylized FACTS, put them
+                     // in stylized_facts_targeted, never here):
+                     //   'leverage'  'long-memory'  'fat-tails'
+                     //   'vol-clustering'  'absence-of-autocorr'
+                     //   'gain-loss-asymmetry'  'aggregational-gaussianity'
+                     //   'volume-volatility-corr'
+                     // BORDERLINE: 'regime-switching' and 'herding' are
+                     // both mechanisms AND facts. Use them as mechanism_tags
+                     // ONLY when the paper's METHOD is regime-switching
+                     // (e.g., MRS-GARCH, HMM) or herding-based (e.g., Kirman
+                     // ant). If the paper just OBSERVES those facts in data,
+                     // leave them out of mechanism_tags and put them in
+                     // stylized_facts_targeted instead.
   "stylized_facts_targeted": [<0-5 stylized facts the paper claims to reproduce
                                or analyse>],
                               // choose ONLY from this fixed list (Cont 2001
