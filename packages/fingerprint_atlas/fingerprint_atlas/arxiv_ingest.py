@@ -220,8 +220,12 @@ Given a paper's title and abstract, return a single JSON object:
                      // ant). If the paper just OBSERVES those facts in data,
                      // leave them out of mechanism_tags and put them in
                      // stylized_facts_targeted instead.
-  "stylized_facts_targeted": [<0-5 stylized facts the paper claims to reproduce
-                               or analyse>],
+  "stylized_facts_targeted": [<MULTI-LABEL: include EVERY stylized fact the
+                               paper measures, reproduces, or analyses on its
+                               simulated / empirical returns — NOT just the
+                               headline one. Papers routinely check 2-4 facts
+                               as byproducts of their main claim; capture
+                               ALL of them. Typical count is 2-4; upper cap 5.>],
                               // choose ONLY from this fixed list (Cont 2001
                               // return-observables + one ABM target):
                               //   'fat-tails'                    heavy tails in returns
@@ -237,6 +241,20 @@ Given a paper's title and abstract, return a single JSON object:
                               //                                  use ONLY if the paper's
                               //                                  target really doesn't
                               //                                  match any label above.
+                              // MULTI-LABEL EXAMPLES (to break the single-label
+                              // habit that biases towards headline facts only):
+                              //   A Lux-Marchesi paper that fits vol clustering
+                              //   AND fat tails AND leverage effect → tag ALL
+                              //   THREE, not just 'vol-clustering'.
+                              //   A GARCH-M paper showing fat tails, vol
+                              //   clustering, AND long memory in |r| → tag
+                              //   all three.
+                              //   A prospect-theory ABM that produces gain-
+                              //   loss asymmetry AND heavy tails → tag both.
+                              // If you're only tagging one fact, ask yourself
+                              // whether the paper actually measured that fact
+                              // in isolation, or whether you're just picking
+                              // the headline. Usually it's the latter.
                               // NOTE: 'herding' is NOT a fact — it's a mechanism.
                               // A paper about herding should end up with
                               // vol-clustering / fat-tails / volume-vol-corr

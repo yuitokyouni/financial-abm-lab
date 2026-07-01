@@ -570,6 +570,19 @@ def cmd_extract_untagged(args) -> int:
             print(f"including {len(defective)} previously-defective row(s) "
                   f"for retry (empty payload or non-ASCII tags).")
             untagged.extend(defective)
+    if getattr(args, "retag_all_extracted", False):
+        # Nuclear option: retag every extracted row, regardless of
+        # completeness. Use case: the extraction prompt changed
+        # substantively (e.g., single-label → multi-label) and we want
+        # the whole corpus rebuilt under the new contract.
+        extracted = [r for r in rows
+                      if r.get("extracted_by_model")
+                      and _has_usable_abstract(r)
+                      and r["arxiv_id"] not in {u["arxiv_id"] for u in untagged}]
+        if extracted:
+            print(f"including {len(extracted)} previously-extracted row(s) "
+                  f"for full retag (--retag-all-extracted).")
+            untagged.extend(extracted)
     parked = [
         r for r in rows
         if not r.get("extracted_by_model")
@@ -1932,6 +1945,11 @@ def main() -> int:
                             "back completely empty (no summary + no tags + "
                             "no relevance). Useful right after a prompt or "
                             "generate_japanese fix.")
+    p_eu.add_argument("--retag-all-extracted", action="store_true",
+                       help="nuclear option: retag every extracted row too. "
+                            "Use when the prompt contract changed (e.g., "
+                            "single-label → multi-label stylized_facts). "
+                            "Cost scales with the whole corpus.")
 
     p_so = sub.add_parser(
         "stylized-fact-other",

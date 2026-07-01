@@ -212,9 +212,15 @@ def render_heatmap(cov: dict, png_path: str, *, figsize=(12.0, 8.0),
     n_by_family = Counter(row_families)
     fam_summary = " · ".join(f"[{f}] {n_by_family[f]}"
                               for f in _FAMILY_ORDER if n_by_family[f])
-    ax.set_title(f"Literature coverage — "
-                  f"{cov['n_papers_classified']}/{cov['n_papers_total']} papers "
-                  f"({fam_summary})")
+    # The figure is a corpus theme distribution — which mechanism family
+    # targets which stylized fact. NOT a research-gap map: an empty cell
+    # can be an under-explored gap, a hard-to-measure fact, or a
+    # single-label extraction artifact. The 143/N split had the
+    # denominator as "everything ever ingested" which was misleading
+    # (only classified papers actually appear here). Drop it.
+    ax.set_title(f"Corpus theme distribution — mechanism × stylized fact\n"
+                  f"{cov['n_papers_classified']} classified papers  ·  "
+                  f"{fam_summary} families")
 
     # Cell annotations — count, '·' for empty, or 'N/A' for tautologies.
     for i in range(M.shape[0]):
