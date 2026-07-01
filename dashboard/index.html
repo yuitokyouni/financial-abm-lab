@@ -31,15 +31,74 @@ color:var(--muted)}.links i{font-style:normal;color:var(--blue);font-size:12px}
 .empty{padding:36px;border:1px dashed #aeb7c0;color:var(--muted);font-size:12px;
 background:#fff}.tag{display:inline-block;font-size:10px;padding:3px 6px;border-radius:3px;
 background:#e9f0fb;color:#174ea6;margin-left:6px}
+.runcmd{display:block;font-family:ui-monospace,Menlo,Monaco,monospace;font-size:11px;
+background:#0f1620;color:#dbe2e8;padding:8px 11px;border-radius:4px;margin-top:6px;
+overflow-x:auto;white-space:pre}
+.sfgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.sfcard{background:var(--panel);border:1px solid var(--line);border-left:3px solid;
+padding:9px 10px}.sfcard b{display:block;font-size:12px;margin-bottom:2px}
+.sfcard .cat{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:0.04em}
+.sfcard code{display:block;font-size:10px;background:#f5f5f5;padding:2px 4px;
+border-radius:2px;margin-top:4px;color:var(--muted)}
+.lookfor{margin-top:10px;border-top:1px solid var(--line);padding-top:8px}
+.lookfor summary{cursor:pointer;font-size:11px;color:var(--blue);
+font-weight:600;list-style:none;user-select:none}
+.lookfor summary::-webkit-details-marker{display:none}
+.lookfor summary::before{content:'▸ ';color:var(--muted)}
+.lookfor[open] summary::before{content:'▾ '}
+.lookfor p{font-size:11px;color:var(--ink);margin-top:6px;line-height:1.55}
+.lookfor ul{font-size:11px;color:var(--ink);margin:6px 0 0 0;padding-left:18px;line-height:1.5}
+.lookfor li{margin-bottom:3px}
+.tech-nav{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 18px;
+padding:10px 12px;background:var(--panel);border:1px solid var(--line);
+border-radius:4px;font-size:11px}
+.tech-nav a{padding:3px 9px;border-radius:12px;text-decoration:none;
+color:var(--ink);background:#eef0f3;font-weight:600;border-left:2px solid;
+white-space:nowrap}
+.tech-nav a:hover{background:#dde2e8}
+.tech-nav a .count{margin-left:5px;color:var(--muted);font-weight:400;font-size:10px}
+.tech-section{background:var(--panel);border:1px solid var(--line);
+border-radius:4px;padding:14px 16px;margin-bottom:14px}
+.tech-section h3{font-size:14px;margin:0 0 4px;padding:0;
+display:flex;align-items:center;gap:8px}
+.tech-section h3 .swatch{display:inline-block;width:10px;height:10px;border-radius:2px}
+.tech-section h3 .count{font-size:11px;color:var(--muted);font-weight:400}
+.tech-section .desc{font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.4}
+.tech-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tech-card{background:#fafbfc;border:1px solid var(--line);border-left:3px solid;
+padding:8px 10px;font-size:11px;min-width:0}
+.tech-card>summary{cursor:pointer;list-style:none;outline:none;user-select:none}
+.tech-card>summary::-webkit-details-marker{display:none}
+.tech-card>summary::before{content:'▸ ';color:var(--muted);font-size:9px}
+.tech-card[open]>summary::before{content:'▾ '}
+.tech-card[open]{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.tech-card b{font-size:11.5px;line-height:1.3;display:block}
+.tech-card .purpose{display:block;color:var(--muted);font-size:10.5px;margin-top:3px;
+line-height:1.4}
+.tech-card .meta{display:flex;gap:6px;margin-top:5px;font-size:9.5px;
+color:var(--muted);text-transform:uppercase;letter-spacing:0.04em}
+.tech-card .meta span{padding:1px 5px;border-radius:2px;background:#eef0f3}
+.tech-card .meta .has{background:#dff3e6;color:#155724}
+.tech-card .field{margin-top:6px;font-size:10px}
+.tech-card .field-label{font-weight:600;color:var(--muted);text-transform:uppercase;
+letter-spacing:0.04em;display:block;margin-bottom:2px}
+.tech-card .field ul{margin:0;padding-left:14px;font-size:10.5px;
+line-height:1.45;color:var(--ink)}
+.tech-card .field li{margin-bottom:2px}
+.tech-card .field a{font-size:10.5px;word-break:break-all}
+.tech-card code{background:#f5f5f5;padding:1px 4px;border-radius:2px;font-size:10px}
+@media(max-width:1000px){.tech-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.tech-grid{grid-template-columns:1fr}}
 @media(max-width:850px){.shell{display:block}aside{position:static;height:auto;padding:14px}
 .brand{margin:0 6px 12px}.nav{display:flex;overflow:auto}.nav a{white-space:nowrap}
 main{padding:22px 16px}.head{display:block}.status{margin-top:8px}.metrics{grid-template-columns:1fr 1fr}
 .metric:nth-child(2){border-right:0}.metric:nth-child(-n+2){border-bottom:1px solid var(--line)}
-.grid{grid-template-columns:1fr}.wide{grid-column:auto}.links a{grid-template-columns:1fr}}
+.grid{grid-template-columns:1fr}.wide{grid-column:auto}.links a{grid-template-columns:1fr}
+.sfgrid{grid-template-columns:1fr}}
 </style></head>
 <body><div class="shell"><aside><div class="brand">Financial ABM Lab
 <small>RESEARCH CONTROL SURFACE</small></div><nav class="nav"><a class="active" href="index.html">Overview</a><a class="" href="markets.html">Market Structure</a><a class="" href="research.html">Research Coverage</a></nav></aside>
 <main><header class="head"><div><h1>Research Overview</h1>
 <p class="sub">Corpus health and high-signal analytical outputs.</p></div>
-<div class="status">Static snapshot · local workspace</div></header><section class="metrics"><div class="metric"><b>338</b><span>papers in corpus</span></div><div class="metric"><b>266</b><span>mechanism-tagged</span></div><div class="metric"><b>518</b><span>distinct mechanisms</span></div><div class="metric"><b>29</b><span>years represented</span></div></section><section class="band"><h2>Core analysis</h2><div class="grid"><figure class="figure"><a href="../notebooks/atlas_v4/atlas.png"><img src="../notebooks/atlas_v4/atlas.png" alt="ABM fingerprint PCA"></a><figcaption>ABM fingerprint PCA</figcaption><p class="note">Model families in standardized fingerprint space.</p></figure><figure class="figure"><a href="../notebooks/inverse_abm_heatmap.png"><img src="../notebooks/inverse_abm_heatmap.png" alt="Real market × ABM distance"></a><figcaption>Real market × ABM distance</figcaption><p class="note">Nearest model families across observed periods.</p></figure></div></section><section class="band"><h2>Workstreams</h2><div class="links"><a href="markets.html"><b>Market Structure</b><span>PCA, feature distributions, and inverse-ABM distances</span><i>Open →</i></a><a href="research.html"><b>Research Coverage</b><span>Canon coverage and proposal evaluation diagnostics</span><i>Open →</i></a></div></section></main>
+<div class="status">Static snapshot · local workspace</div></header><section class="metrics"><div class="metric"><b>338</b><span>papers in corpus</span></div><div class="metric"><b>266</b><span>mechanism-tagged</span></div><div class="metric"><b>518</b><span>distinct mechanisms</span></div><div class="metric"><b>29</b><span>years represented</span></div></section><section class="band"><h2>Core analysis</h2><div class="grid"><figure class="figure"><a href="assets/atlas.png"><img src="assets/atlas.png" alt="ABM fingerprint PCA"></a><figcaption>ABM fingerprint PCA</figcaption><p class="note">Model families in standardized fingerprint space.</p><details class="lookfor"><summary>What to look for</summary><ul><li>Tight per-family clusters: the model produces a consistent fingerprint across its parameter sweep (a good calibration target).</li><li>Cross-family overlap: different mechanisms producing indistinguishable surface statistics — a warning that the 6-feature space cannot tell them apart, so inverse-ABM matching on those features is ambiguous.</li><li>Outlier runs sitting far from their family&#x27;s cluster: parameter regimes that flip the model into another regime — usually the interesting boundary cases to investigate.</li><li>Direction of separation along PC1 / PC2: which stylized facts dominate the principal axes (read the loadings to interpret).</li></ul></details></figure><figure class="figure"><a href="assets/inverse_abm_heatmap.png"><img src="assets/inverse_abm_heatmap.png" alt="Real market × ABM distance"></a><figcaption>Real market × ABM distance</figcaption><p class="note">Nearest model families across observed periods.</p><details class="lookfor"><summary>What to look for</summary><ul><li>Which family wins each regime — crisis windows often match different families than calm windows, suggesting mechanism switching in the real market.</li><li>Gap between top-1 and top-2 distance: a small gap means low confidence in the match. Treat the assignment as &#x27;plausible&#x27; rather than &#x27;best&#x27;.</li><li>Rows where every column is roughly equidistant: the 6-feature space cannot discriminate that period&#x27;s dynamics — extend features or add ABM families.</li><li>Columns that never win: model families that look nothing like real markets in any regime — either narrow target use, or miscalibrated.</li></ul></details></figure></div></section><section class="band"><h2>Workstreams</h2><div class="links"><a href="markets.html"><b>Market Structure</b><span>PCA, feature distributions, and inverse-ABM distances</span><i>Open →</i></a><a href="research.html"><b>Research Coverage</b><span>Canon coverage, coverage matrix, and proposal evaluation diagnostics</span><i>Open →</i></a></div></section></main>
 </div></body></html>
