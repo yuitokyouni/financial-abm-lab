@@ -694,12 +694,16 @@ def test_stylized_fact_other_partitions_and_lists(tmp_path, capsys):
 
 
 def test_default_queries_includes_coverage_gap_presets():
-    """The 6 new presets for coverage-gap filling must be registered."""
+    """The 6 first-gen + 5 second-gen presets for coverage-gap filling
+    must be registered. Regression guard against accidental deletes."""
     from fingerprint_atlas.arxiv_ingest import DEFAULT_QUERIES
-    expected = {"behavioral_finance", "herding_dynamics", "leverage_effect",
-                "regime_switching", "econophysics_classics", "low_freq_returns"}
-    assert expected.issubset(set(DEFAULT_QUERIES))
-    # Each preset must be a non-empty string with at least one cat: clause
-    for name in expected:
+    gen1 = {"behavioral_finance", "herding_dynamics", "leverage_effect",
+             "regime_switching", "econophysics_classics", "low_freq_returns"}
+    gen2 = {"llm_agent_stylized_facts", "prospect_theory_returns",
+             "volume_volatility_corr", "gain_loss_asymmetry",
+             "abm_order_book_2024"}
+    assert gen1.issubset(set(DEFAULT_QUERIES))
+    assert gen2.issubset(set(DEFAULT_QUERIES))
+    for name in gen1 | gen2:
         q = DEFAULT_QUERIES[name]
         assert q and "cat:" in q, f"{name} missing cat: clause"

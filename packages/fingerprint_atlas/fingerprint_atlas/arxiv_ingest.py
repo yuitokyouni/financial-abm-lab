@@ -119,6 +119,66 @@ DEFAULT_QUERIES = {
         'OR abs:"Hurst exponent" OR abs:"fractional integration" '
         'OR abs:"aggregational gaussianity" OR abs:"return distribution scaling")'
     ),
+    # ----- 2nd-generation gap presets (LLM-agent × Cont fact intersections) -----
+    # After the herding/family taxonomy pass, the coverage matrix showed
+    # every [ABM] row × {gain-loss-asymmetry, volume-volatility-corr,
+    # aggregational-gaussianity} was empty. These are hot topics in the
+    # 2024-2026 LLM-agent literature; papers likely exist, they just
+    # haven't been ingested. Each preset here targets one of those cells.
+    "llm_agent_stylized_facts": (
+        # LLM-agent papers that measure Cont-2001 return properties on
+        # their simulated markets. Fills [ABM] LLM-agent × {gain-loss,
+        # vol-corr, absence-of-autocorr} which is currently blank.
+        'cat:q-fin.* AND ('
+        'abs:"LLM agent" OR abs:"large language model agent" '
+        'OR abs:"generative agent" OR abs:"language model trader") '
+        'AND (abs:"stylized fact" OR abs:"volatility" '
+        'OR abs:"return distribution" OR abs:"heavy tail" '
+        'OR abs:"volume")'
+    ),
+    "prospect_theory_returns": (
+        # Bridges prospect-theory mechanism × Cont facts (esp. gain-loss
+        # asymmetry, which is theoretically the direct signature of loss
+        # aversion but 0 papers in our matrix currently). Constrain to
+        # simulation / agent-based to avoid a flood of empirical
+        # behavioural-finance surveys.
+        '(cat:q-fin.* OR cat:cs.MA) AND ('
+        'abs:"prospect theory" OR abs:"loss aversion" '
+        'OR abs:"reference-dependent") '
+        'AND (abs:"agent-based" OR abs:"simulation" '
+        'OR abs:"market model" OR abs:"ABM")'
+    ),
+    "volume_volatility_corr": (
+        # The Cont 2001 volume-volatility correlation fact. Barely any
+        # papers target it explicitly in our corpus — most vol papers
+        # just fit GARCH to prices.
+        'cat:q-fin.* AND ('
+        'abs:"volume volatility" OR abs:"volume-volatility" '
+        'OR abs:"trading volume" AND abs:"volatility clustering" '
+        'OR abs:"activity-volume" OR abs:"MDH" '
+        'OR abs:"mixture of distributions hypothesis")'
+    ),
+    "gain_loss_asymmetry": (
+        # Explicit target of the Cont-2001 gain/loss-asymmetry fact
+        # (drawdowns faster than rallies). Distinct from leverage
+        # effect — leverage is corr(r,σ²), gain-loss is time-scale
+        # asymmetry of first-passage.
+        'cat:q-fin.* AND ('
+        'abs:"gain-loss asymmetry" OR abs:"gain loss asymmetry" '
+        'OR abs:"asymmetric drawdown" OR abs:"drawup drawdown" '
+        'OR abs:"time-reversal asymmetry" '
+        'OR abs:"asymmetric first-passage")'
+    ),
+    "abm_order_book_2024": (
+        # Modern LOB-ABMs (ABIDES, PAMS, JAX-LOB, RustyPPO, etc). Fills
+        # [ABM] order-book row for the 2024-2026 wave that our current
+        # ingest presets systematically miss (they cap at cat:q-fin.TR
+        # keyword search which doesn't hit these tool-paper titles).
+        '(cat:q-fin.TR OR cat:cs.MA OR cat:cs.LG) AND ('
+        'abs:"limit order book" OR abs:"LOB simulator" '
+        'OR abs:"ABIDES" OR abs:"PAMS" OR abs:"JAX-LOB") '
+        'AND (abs:"agent" OR abs:"market simulator")'
+    ),
 }
 
 # Same default as propose.py — chosen after live A/B (see propose.py for notes).
