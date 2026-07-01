@@ -40,12 +40,16 @@ import numpy as np
 
 
 # Canonical stylized-fact vocabulary (mirror of coverage._CANONICAL_FACTS;
-# both anchor on Cont 2001 + two ABM-specific facts).
+# anchored on Cont 2001 return-observable facts + regime-switching as
+# an ABM-specific target that IS measurable from returns via HMM/MRS.
+# `herding` used to live here but was removed: it is a mechanism-level
+# concept whose observable signature is a composite of vol-clustering,
+# fat-tails, and volume-corr, not a first-order return-observable fact.
 CANONICAL_FACTS = [
     "fat-tails", "vol-clustering", "leverage", "long-memory",
     "aggregational-gaussianity", "absence-of-autocorr",
     "gain-loss-asymmetry", "volume-volatility-corr",
-    "regime-switching", "herding",
+    "regime-switching",
     "other",
 ]
 

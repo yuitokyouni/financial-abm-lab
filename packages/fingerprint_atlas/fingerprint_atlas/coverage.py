@@ -29,16 +29,22 @@ def _canonical_fact(s: str) -> str:
 #
 # Anchor: Cont 2001 "Empirical properties of asset returns: stylized
 # facts and statistical issues" (Quant. Finance 1:223-236). We adopt
-# Cont's list plus two mechanism-flavoured facts that show up in
-# financial-ABM lit (herding, regime-switching) since papers here
-# routinely target those as reproducible signatures.
+# Cont's 8 return-only observable facts, plus regime-switching which
+# is measurable from returns via HMM/MRS estimation.
+#
+# `herding` was previously here but was removed: it is a MECHANISM
+# (Kirman-ant, LSV cross-sectional imitation) whose observable
+# signature in return data is a COMPOSITE of vol-clustering, fat-tails,
+# and volume-corr — not a first-order stylized fact you can measure
+# from a return series alone. Papers doing "herding" get labelled with
+# whichever composite facts they actually target instead.
 _CANONICAL_FACTS = [
-    # Cont 2001 canonical
+    # Cont 2001 canonical (return-observable)
     "fat-tails", "vol-clustering", "leverage", "long-memory",
     "aggregational-gaussianity", "absence-of-autocorr",
     "gain-loss-asymmetry", "volume-volatility-corr",
-    # ABM-specific stylized targets
-    "regime-switching", "herding",
+    # Return-measurable ABM-specific target
+    "regime-switching",
     # catch-all — anything the LLM can't map cleanly
     "other",
 ]
@@ -87,6 +93,88 @@ _TOO_GENERIC_MECHANISMS = frozenset({
     "framework", "model",
 })
 
+#: Method-family taxonomy: which broad family a mechanism_tag belongs
+#: to. The corpus contains legitimate financial-modelling research
+#: across multiple families — pure ABM, econometric / statistical
+#: models, machine learning — and forcing them onto a single "ABM
+#: mechanism" axis loses information. We show them all with a family
+#: badge so the reader can see the split.
+#:
+#: Membership is by lowercase substring / exact match against the
+#: primary_tag. Unknown tags default to 'other'. New tags can be added
+#: by pattern: anything containing 'garch' / 'hmm' / 'markov' →
+#: statistical; anything with 'lstm' / 'transformer' / 'deep' → ml.
+_ABM_MECHANISM_TAGS = frozenset({
+    "minority-game", "order-book", "llm-agent", "chartist-fundamentalist",
+    "kirman-ant", "speculation-game", "adaptive-control",
+    "heterogeneous-agents", "heterogeneous-beliefs", "heterogeneous-expectations",
+    "prospect-theory", "behavioral-finance", "microstructure",
+    "market-microstructure", "market-making", "herding",
+    "opinion-dynamics", "asymmetric-trading", "rational-expectations",
+    "chartist", "fundamentalist", "microsimulation", "interacting-agents",
+    "adaptive-expectations", "el-farol",
+})
+
+_STAT_MODEL_TAGS = frozenset({
+    "regime-switching", "hmm", "hidden-markov", "markov-switching",
+    "mrs-garch", "garch", "arch", "e-garch", "egarch",
+    "stochastic-volatility", "tar", "setar", "tacarr",
+    "hawkes-process", "hawkes",
+    "fractional-brownian-motion", "fractional-integration",
+    "multifractal", "volterra", "log-periodogram", "semiparametric",
+    "score-driven", "gas", "gas-model", "power-law",
+    "levy-walk", "levy-flight", "levy",
+    "cointegration", "copulas",
+    "generative-model",
+    "diffusion-model",  # SDE-flavoured, not agent-based
+})
+
+_ML_MODEL_TAGS = frozenset({
+    "lstm", "transformer", "attention-mechanism", "attention",
+    "siamese-architecture", "contrastive-learning",
+    "variational-autoencoder", "vae", "generative-adversarial", "gan",
+    "graph-gaussian-process", "ppo", "actor-critic", "dqn",
+    "reinforcement-learning", "deep-learning", "neural-network",
+    "neural-networks", "machine-learning", "gradient-boosting",
+})
+
+
+def method_family(tag: str) -> str:
+    """Return the family bucket for a mechanism tag.
+
+    Returns one of: 'ABM' | 'stat' | 'ml' | 'other'. Case-insensitive
+    exact match against the three frozensets above, then a couple of
+    substring heuristics to catch model variants we haven't enumerated.
+    """
+    t = (tag or "").strip().lower().replace(" ", "-")
+    if not t:
+        return "other"
+    if t in _ABM_MECHANISM_TAGS:
+        return "ABM"
+    if t in _STAT_MODEL_TAGS:
+        return "stat"
+    if t in _ML_MODEL_TAGS:
+        return "ml"
+    # Substring heuristics for tag variants that slipped through.
+    if any(k in t for k in ("garch", "markov", "hmm", "hawkes",
+                              "levy", "volterra", "brownian",
+                              "multifractal", "score-driven")):
+        return "stat"
+    if any(k in t for k in ("lstm", "transformer", "attention",
+                              "neural", "-learning", "deep-",
+                              "reinforcement")):
+        return "ml"
+    if any(k in t for k in ("agent", "-game", "microstruct",
+                              "chartist", "fundamentalist",
+                              "prospect", "behavioral", "herd",
+                              "opinion", "rational-expectat")):
+        return "ABM"
+    return "other"
+
+
+_FAMILY_ORDER = ("ABM", "stat", "ml", "other")
+_FAMILY_BADGE = {"ABM": "🅐", "stat": "🅢", "ml": "🅜", "other": "·"}
+
 
 def _primary_tag(row: dict) -> str:
     """Mirror of literature_map.primary_tag with three extra filters:
@@ -128,13 +216,11 @@ def build_coverage(rows: list[dict], *, top_rows: int = 15,
     tag_counts = Counter(_primary_tag(r) for r in rows)
     # Drop rows whose papers have zero targeted-fact intersections — they
     # contribute nothing to the heatmap and just create visual noise.
-    candidate_tags = [t for t, _ in tag_counts.most_common(top_rows * 2)]
-    row_labels: list[str] = []
+    candidate_tags = [t for t, _ in tag_counts.most_common(top_rows * 3)]
+    kept: list[str] = []
     for t in candidate_tags:
-        if len(row_labels) >= top_rows:
+        if len(kept) >= top_rows:
             break
-        # quick relevance check: at least one paper with this tag has a
-        # canonical fact in its stylized_facts_targeted.
         has_any = False
         for r in rows:
             if _primary_tag(r) != t:
@@ -146,7 +232,16 @@ def build_coverage(rows: list[dict], *, top_rows: int = 15,
             if has_any:
                 break
         if has_any:
-            row_labels.append(t)
+            kept.append(t)
+    # Group rows by method family so ABM / stat / ml sit in contiguous
+    # bands. Within a family, keep the by-count order from tag_counts.
+    kept_by_family: dict[str, list[str]] = {f: [] for f in _FAMILY_ORDER}
+    for t in kept:
+        kept_by_family[method_family(t)].append(t)
+    row_labels: list[str] = []
+    for f in _FAMILY_ORDER:
+        row_labels.extend(kept_by_family[f])
+    row_families = [method_family(t) for t in row_labels]
     col_idx = {c: j for j, c in enumerate(cols)}
     row_idx = {t: i for i, t in enumerate(row_labels)}
 
@@ -176,6 +271,7 @@ def build_coverage(rows: list[dict], *, top_rows: int = 15,
 
     return {
         "row_labels": row_labels,
+        "row_families": row_families,
         "col_labels": cols,
         "matrix": M,
         "row_totals": M.sum(axis=1).tolist(),
@@ -199,6 +295,20 @@ def render_heatmap(cov: dict, png_path: str, *, figsize=(12.0, 8.0),
     row_labels = cov["row_labels"]
     col_labels = cov["col_labels"]
     excluded = cov.get("excluded_cells") or set()
+    if M.size == 0 or not row_labels:
+        # Empty corpus — write a placeholder PNG so callers get a file.
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.text(0.5, 0.5, "no data — ingest papers first",
+                 ha="center", va="center", fontsize=14, color="#666",
+                 transform=ax.transAxes)
+        ax.set_axis_off()
+        plt.tight_layout()
+        plt.savefig(png_path, dpi=dpi)
+        plt.close()
+        return
 
     # Prepare a display matrix where excluded cells are NaN so the
     # colour map treats them as "no data" instead of packing them into
@@ -213,15 +323,32 @@ def render_heatmap(cov: dict, png_path: str, *, figsize=(12.0, 8.0),
     vmax = max(int(finite_max), 2)  # >= 2 keeps vmin=0.5 < vmax non-singular
     im = ax.imshow(M_display, cmap=cmap, vmin=0.5, vmax=vmax, aspect="auto")
 
+    row_families = cov.get("row_families") or [""] * len(row_labels)
     ax.set_xticks(range(len(col_labels)))
     ax.set_xticklabels(col_labels, rotation=30, ha="right", fontsize=9)
     ax.set_yticks(range(len(row_labels)))
-    ax.set_yticklabels([f"{r} ({cov['row_totals'][i]})"
-                          for i, r in enumerate(row_labels)], fontsize=9)
+    _y_colors = {"ABM": "#1f6feb", "stat": "#a15c07", "ml": "#7c3aed",
+                  "other": "#666"}
+    ax.set_yticklabels(
+        [f"[{row_families[i] or 'other':>3s}] {r} ({cov['row_totals'][i]})"
+          for i, r in enumerate(row_labels)],
+        fontsize=9,
+    )
+    for i, fam in enumerate(row_families):
+        ax.get_yticklabels()[i].set_color(_y_colors.get(fam, "#333"))
+    # Horizontal separators between families so the reader sees the
+    # groups jump — ABM / stat / ml bands.
+    for i in range(1, len(row_families)):
+        if row_families[i] != row_families[i - 1]:
+            ax.axhline(i - 0.5, color="#444", linewidth=1.2)
     ax.set_xlabel("stylized fact targeted (paper extraction)")
-    ax.set_ylabel("primary mechanism tag")
+    ax.set_ylabel("primary mechanism tag (grouped by method family)")
+    n_by_family = Counter(row_families)
+    fam_summary = " · ".join(f"[{f}] {n_by_family[f]}"
+                              for f in _FAMILY_ORDER if n_by_family[f])
     ax.set_title(f"Literature coverage — "
-                  f"{cov['n_papers_classified']}/{cov['n_papers_total']} papers")
+                  f"{cov['n_papers_classified']}/{cov['n_papers_total']} papers "
+                  f"({fam_summary})")
 
     # Cell annotations — count, '·' for empty, or 'N/A' for tautologies.
     for i in range(M.shape[0]):
@@ -247,16 +374,17 @@ def render_markdown(cov: dict) -> str:
     rows = cov["row_labels"]
     M = cov["matrix"]
     excluded = cov.get("excluded_cells") or set()
-    lines = ["| mechanism (n) | " + " | ".join(cols) + " | total |"]
-    lines.append("|" + " --- |" * (len(cols) + 2))
+    families = cov.get("row_families") or [""] * len(rows)
+    lines = ["| family | mechanism (n) | " + " | ".join(cols) + " | total |"]
+    lines.append("|" + " --- |" * (len(cols) + 3))
     for i, r in enumerate(rows):
         cells = ["_N/A_" if (i, j) in excluded
                   else (str(M[i, j]) if M[i, j] > 0 else "·")
                  for j in range(len(cols))]
-        # row total excludes tautological diagonal
         row_total = sum(int(M[i, j]) for j in range(len(cols))
                          if (i, j) not in excluded)
-        lines.append(f"| **{r}** ({cov['row_totals'][i]}) | "
+        lines.append(f"| **{families[i] or 'other'}** | "
+                     f"**{r}** ({cov['row_totals'][i]}) | "
                      + " | ".join(cells) + f" | {row_total} |")
     # Column totals
     lines.append("| _total_ | "

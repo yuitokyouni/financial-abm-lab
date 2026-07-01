@@ -36,20 +36,25 @@ def _fake_rows() -> list[dict]:
 def test_build_coverage_counts_correctly():
     from fingerprint_atlas.coverage import build_coverage
     cov = build_coverage(_fake_rows(), top_rows=5)
-    # mechanism tags by paper count: minority-game 2, LLM-agent 2, Ising 1
+    # mechanism tags by paper count: minority-game 2, LLM-agent 2, Ising 1.
+    # LLM-agent's only paper with a canonical fact is a3 (herding, dropped
+    # from the enum) — a5's tag is 'something-weird' which is also dropped.
+    # So LLM-agent has zero mapped facts and is filtered out of the matrix.
     assert "minority-game" in cov["row_labels"]
-    assert "LLM-agent" in cov["row_labels"]
-    # fat-tails: 2 MG + 1 Ising = 3
+    assert "Ising-model" in cov["row_labels"]
+    # fat-tails: 2 MG + 1 Ising = 3 (Ising's 'herding' also drops silently)
     i_mg = cov["row_labels"].index("minority-game")
     j_ft = cov["col_labels"].index("fat-tails")
     assert cov["matrix"][i_mg, j_ft] == 2
     i_is = cov["row_labels"].index("Ising-model")
     assert cov["matrix"][i_is, j_ft] == 1
-    # herding: 1 LLM + 1 Ising = 2
-    j_he = cov["col_labels"].index("herding")
-    assert cov["matrix"][cov["row_labels"].index("LLM-agent"), j_he] == 1
+    # herding was removed from the fact enum — it's a mechanism, not a fact
+    assert "herding" not in cov["col_labels"]
     # something-weird gets silently dropped
     assert "something-weird" not in cov["col_labels"]
+    # families are attached per row
+    assert cov.get("row_families") is not None
+    assert len(cov["row_families"]) == len(cov["row_labels"])
 
 
 def test_render_markdown_has_totals():

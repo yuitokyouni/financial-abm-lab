@@ -163,7 +163,7 @@ Given a paper's title and abstract, return a single JSON object:
   "stylized_facts_targeted": [<0-5 stylized facts the paper claims to reproduce
                                or analyse>],
                               // choose ONLY from this fixed list (Cont 2001
-                              // + two ABM-specific targets):
+                              // return-observables + one ABM target):
                               //   'fat-tails'                    heavy tails in returns
                               //   'vol-clustering'               ARCH-like clustering
                               //   'leverage'                     corr(r_t, sigma^2_{t+k}) < 0
@@ -172,12 +172,17 @@ Given a paper's title and abstract, return a single JSON object:
                               //   'absence-of-autocorr'          lag-1 ACF ~ 0 for r
                               //   'gain-loss-asymmetry'          drawdowns faster than rallies
                               //   'volume-volatility-corr'       high vol ↔ high volume
-                              //   'regime-switching'             discrete state changes
-                              //   'herding'                      correlated agent action
+                              //   'regime-switching'             HMM-detectable state changes
                               //   'other'                        last-resort catch-all —
                               //                                  use ONLY if the paper's
                               //                                  target really doesn't
-                              //                                  match any label above
+                              //                                  match any label above.
+                              // NOTE: 'herding' is NOT a fact — it's a mechanism.
+                              // A paper about herding should end up with
+                              // vol-clustering / fat-tails / volume-vol-corr
+                              // etc as its facts (the observable signatures),
+                              // and 'herding' or a related mechanism name in
+                              // mechanism_tags.
   "novelty_signal": "1 sentence describing what the paper claims is genuinely
                      novel relative to prior work, or null if no clear claim.",
   "relevance_score": <float 0..1, your estimate of how relevant this paper is

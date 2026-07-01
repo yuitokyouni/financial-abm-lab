@@ -56,7 +56,10 @@ Output ONE JSON object with this shape (no prose around it):
                             "long-memory", "aggregational-gaussianity",
                             "absence-of-autocorr", "gain-loss-asymmetry",
                             "volume-volatility-corr", "regime-switching",
-                            "herding", "other">],
+                            "other". Note 'herding' is a mechanism,
+                            not a fact — use vol-clustering / fat-tails
+                            / volume-volatility-corr for its observable
+                            signatures.>],
   "novelty_claim": "<1 sentence: what does the proposer think is new?>",
   "key_keywords": [<5-12 short ENGLISH keywords for DB search. The DB
                    methods table and literature abstracts are English, so
