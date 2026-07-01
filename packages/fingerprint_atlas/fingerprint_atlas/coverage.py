@@ -73,19 +73,41 @@ _FACT_TERMS_NOT_MECHANISMS = frozenset({
     "volatility",     # too broad — real methods are GARCH / stoch-vol / etc
 })
 
+#: Mechanism-tag terms that ARE modelling flags but are so generic they
+#: don't inform the coverage matrix. Every paper in this corpus is an
+#: ABM by construction; a paper tagged 'agent-based-model' as its
+#: primary keyword is basically saying nothing. Skip these when picking
+#: the row label so the actual mechanism (further down mechanism_tags)
+#: gets promoted instead. If ALL of a paper's tags are generic, it
+#: falls through to oa_concepts / 'untagged' as before.
+_TOO_GENERIC_MECHANISMS = frozenset({
+    "agent-based", "agent-based-model", "agent-based-modeling",
+    "agent-based-simulation", "abm", "multi-agent", "multi-agent-model",
+    "agent-model", "simulation", "computational-model",
+    "framework", "model",
+})
+
 
 def _primary_tag(row: dict) -> str:
-    """Mirror of literature_map.primary_tag with two extra filters:
+    """Mirror of literature_map.primary_tag with three extra filters:
     generic OpenAlex top-level concepts (Computer science / Economics /
-    Business / etc) don't count as a mechanism label, and stylized-fact
-    terms (leverage / long-memory / fat-tails / …) are also skipped —
-    the extraction prompt occasionally leaks facts into mechanism_tags
-    and we don't want them duplicating on both matrix axes."""
+    Business / etc) don't count as a mechanism label; stylized-fact
+    terms (leverage / long-memory / fat-tails / …) are skipped so they
+    don't duplicate on both matrix axes; and too-generic ABM labels
+    (agent-based-model / simulation / framework — the corpus is 100%
+    ABMs, so tagging a paper 'agent-based-model' as its primary
+    mechanism says nothing) are also skipped in favour of the next,
+    more specific tag."""
     tags = row.get("mechanism_tags") or []
     for t in tags:
         norm = _canonical_fact(t)
-        if norm and norm not in _FACT_TERMS_NOT_MECHANISMS:
-            return t
+        if not norm:
+            continue
+        if norm in _FACT_TERMS_NOT_MECHANISMS:
+            continue
+        if norm in _TOO_GENERIC_MECHANISMS:
+            continue
+        return t
     for concept in (row.get("oa_concepts") or "").split(","):
         c = concept.strip()
         if c and c not in _GENERIC_OA_CONCEPTS:
