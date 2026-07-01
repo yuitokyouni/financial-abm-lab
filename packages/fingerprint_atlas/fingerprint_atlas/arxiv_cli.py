@@ -645,6 +645,12 @@ def cmd_extract_untagged(args) -> int:
             _sleep(args.sleep)
     print(f"\ndone: extracted {ok}, empty {empty}, failed {failed}, "
           f"of {len(untagged)}.")
+    if failed and empty == 0 and ok < len(untagged) // 2:
+        print("hint: bulk failure late in the run usually means TPD (Groq "
+              "daily budget) exhausted. Retry after reset, or switch "
+              "--groq-model to openai/gpt-4o-mini (paid but ~$0.15 per 1M "
+              "tokens = ≈ ¥20 for the remaining backlog).",
+              file=sys.stderr)
     return 0 if not failed else 2
 
 

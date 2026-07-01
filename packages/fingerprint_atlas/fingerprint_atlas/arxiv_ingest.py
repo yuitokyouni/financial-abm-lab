@@ -281,19 +281,32 @@ def _call_groq_for_extraction(paper: dict, model: str,
         except Exception as exc:
             last_exc = exc
             msg = str(exc)
-            # Distinguish recoverable rate-limit-window from hard quota /
-            # auth / billing errors (OpenAI reports both as HTTP 429).
+            # Recovery classification by explicit error CODE, not
+            # message keywords — Groq's 429 body carries an upsell URL
+            # (`.../settings/billing`) that used to false-positive the
+            # naive `"billing" in msg` check and skip all retries.
             unrecoverable = ("insufficient_quota" in msg
-                             or "invalid_api_key" in msg
-                             or "billing" in msg.lower())
+                             or "invalid_api_key" in msg)
             if unrecoverable:
                 raise
-            rate_limited = ("Rate limit reached" in msg
-                            or "rate_limit_exceeded" in msg
+            rate_limited = ("rate_limit_exceeded" in msg
+                            or "Rate limit reached" in msg
                             or "429" in msg)
+            # Groq exposes two separate 429s: TPM (tokens/min, refills
+            # in seconds) vs TPD (tokens/day, refills in minutes-to-
+            # hours). Only TPM is worth the 65s in-loop sleep — TPD
+            # never recovers inside that window, so we bail immediately
+            # with a clear message so the caller can switch model or
+            # come back tomorrow instead of burning the retry budget.
+            tpd = "tokens per day" in msg or "TPD" in msg
+            if tpd:
+                print(f"  (TPD quota exhausted on {paper['arxiv_id']}; "
+                      f"daily budget used up — retry logic can't help. "
+                      f"Wait until reset or switch --groq-model.)")
+                raise
             if attempt < max_retries and rate_limited:
-                print(f"  (rate limit on {paper['arxiv_id']}, sleeping 65s "
-                      f"before retry {attempt + 1}/{max_retries})")
+                print(f"  (TPM rate-limit on {paper['arxiv_id']}, "
+                      f"sleeping 65s before retry {attempt + 1}/{max_retries})")
                 time.sleep(65)
                 continue
             raise
