@@ -687,6 +687,51 @@ def cmd_stylized_fact_other(args) -> int:
     if args.limit and len(subset) > args.limit:
         subset = subset[: args.limit]
 
+    if args.summary:
+        # Group by primary mechanism_tag so 174 rows collapse to ~15-20
+        # buckets a human can eyeball. Sort each bucket by relevance
+        # ascending — lowest-score entries surface first as delete
+        # candidates.
+        from collections import defaultdict
+        buckets: dict[str, list[dict]] = defaultdict(list)
+        for r in subset:
+            tags = r.get("mechanism_tags") or []
+            primary = tags[0].strip().lower() if tags else "(untagged)"
+            buckets[primary].append(r)
+        # sort buckets by count desc
+        by_size = sorted(buckets.items(), key=lambda kv: -len(kv[1]))
+        print()
+        print(f"{'primary tag':<32s} {'n':>4s}  {'avg rel':>7s}  examples")
+        print("-" * 100)
+        for tag, entries in by_size:
+            entries.sort(key=lambda r: (r.get("relevance_score") or 0.0))
+            n = len(entries)
+            rels = [r.get("relevance_score") for r in entries
+                     if r.get("relevance_score") is not None]
+            avg_rel = sum(rels) / len(rels) if rels else 0.0
+            examples = " · ".join((e.get("title") or "")[:32]
+                                    for e in entries[:2])
+            print(f"  {tag:<30s} {n:>4d}  {avg_rel:>6.2f}   {examples}")
+        low_rel = [r for r in subset
+                    if (r.get("relevance_score") or 1.0) < args.min_relevance]
+        if args.min_relevance > 0:
+            print()
+            print(f"papers with relevance_score < {args.min_relevance}: "
+                  f"{len(low_rel)}")
+            print(f"(delete candidates — probably out-of-scope):")
+            for r in low_rel[:30]:
+                score = r.get("relevance_score")
+                title = (r.get("title") or "")[:55]
+                print(f"  [{(score if score is not None else 0):.2f}] "
+                      f"{r['arxiv_id']:<22s}  {title}")
+            if len(low_rel) > 30:
+                print(f"  ... and {len(low_rel) - 30} more")
+            print(f"\nto delete all {len(low_rel)}:")
+            ids = ",".join(r["arxiv_id"] for r in low_rel)
+            print(f"  python -m fingerprint_atlas.arxiv_cli --db <db> "
+                  f"delete-rows '{ids[:80]}...' --yes")
+        return 0
+
     if not args.retag:
         for r in subset:
             facts = ", ".join(r.get("stylized_facts_targeted") or [])
@@ -698,7 +743,7 @@ def cmd_stylized_fact_other(args) -> int:
             print(f"      summary: {summary}")
         print(f"\n(showed {len(subset)}/{total}). "
               f"Re-run with --retag to re-extract them under the current "
-              f"stylized-fact enum.")
+              f"stylized-fact enum, or --summary for a group-by-tag view.")
         return 0
 
     print(f"re-extracting {len(subset)} row(s) with model={args.groq_model}...")
@@ -733,6 +778,43 @@ def cmd_stylized_fact_other(args) -> int:
     print(f"\ndone: {ok} reclassified, {still_other} still 'other', "
           f"{failed} failed.")
     return 0 if not failed else 2
+
+
+def cmd_delete_low_relevance(args) -> int:
+    """Bulk-delete literature_methods rows with relevance_score < threshold.
+
+    Companion to stylized-fact-other --summary --min-relevance: after
+    eyeballing the summary, run this to actually prune the corpus of
+    obviously-out-of-scope papers. Rows without a relevance_score are
+    left alone (they haven't been extracted yet). Dry-run by default."""
+    import sqlite3
+    ensure_literature_schema(args.db)
+    rows = load_literature(args.db)
+    victims = [r for r in rows
+                if r.get("relevance_score") is not None
+                and r["relevance_score"] < args.threshold]
+    if not victims:
+        print(f"no rows with relevance_score < {args.threshold} — "
+              f"nothing to delete.")
+        return 0
+    print(f"{len(victims)} row(s) below threshold {args.threshold}:")
+    for r in victims[:30]:
+        score = r["relevance_score"]
+        title = (r.get("title") or "")[:60]
+        print(f"  [{score:.2f}] {r['arxiv_id']:<22s}  {title}")
+    if len(victims) > 30:
+        print(f"  ... and {len(victims) - 30} more")
+    if not args.yes:
+        print(f"\n(dry-run) re-run with --yes to actually delete "
+              f"{len(victims)} row(s).")
+        return 0
+    with sqlite3.connect(args.db) as con:
+        for r in victims:
+            con.execute("DELETE FROM literature_methods WHERE arxiv_id = ?",
+                        (r["arxiv_id"],))
+        con.commit()
+    print(f"\ndeleted {len(victims)} row(s).")
+    return 0
 
 
 def cmd_fix_arxiv_ids(args) -> int:
@@ -1859,6 +1941,26 @@ def main() -> int:
     p_so.add_argument("--retag", action="store_true",
                        help="re-run extraction on each match (useful after "
                             "expanding the stylized-fact enum). Idempotent.")
+    p_so.add_argument("--summary", action="store_true",
+                       help="collapse the list to primary-tag groups (count "
+                            "+ avg relevance). Much easier to eyeball 174 "
+                            "rows this way.")
+    p_so.add_argument("--min-relevance", type=float, default=0.0,
+                       help="with --summary, additionally list papers whose "
+                            "relevance_score is below this threshold — the "
+                            "clean out-of-scope delete candidates.")
+
+    p_dlr = sub.add_parser(
+        "delete-low-relevance",
+        help=("bulk delete literature_methods rows with relevance_score "
+              "below a threshold. Dry-run by default, --yes to commit."),
+    )
+    p_dlr.add_argument("--threshold", type=float, default=0.3,
+                        help="delete rows with relevance_score below this "
+                             "value (default 0.3 — matches the docstring in "
+                             "the extraction prompt)")
+    p_dlr.add_argument("--yes", action="store_true",
+                        help="commit the deletion (default: safe print-only)")
 
     p_bf = sub.add_parser(
         "backfill-code",
@@ -2220,6 +2322,7 @@ def main() -> int:
                 "fix-arxiv-ids": cmd_fix_arxiv_ids,
                 "strip-arxiv-versions": cmd_strip_arxiv_versions,
                 "delete-rows": cmd_delete_rows,
+                "delete-low-relevance": cmd_delete_low_relevance,
                 "atlas": cmd_atlas,
                 "coverage": cmd_coverage,
                 "canon": cmd_canon,
