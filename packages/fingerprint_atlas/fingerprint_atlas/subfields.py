@@ -40,7 +40,12 @@ SUBFIELDS: list[Subfield] = [
     {"key": "lux_marchesi", "name": "Lux-Marchesi chartist-fundamentalist",
      "category": "foundational", "query": "chartist fundamentalist",
      "title_any": ["chartist", "fundamentalist"],
-     "seed_arxiv": "cond-mat/9810262"},
+     # Lux-Marchesi 1999 ("Scaling and criticality in a stochastic
+     # multi-agent model of a financial market", Nature) is journal-only,
+     # no arxiv preprint. cond-mat/9810262 was a wrong guess (materials-
+     # science paper). Leave null until we can point at a valid
+     # arxiv/OA-anchor for chartist-fundamentalist canon.
+     "seed_arxiv": None},
     {"key": "santa_fe_market", "name": "Santa Fe artificial stock market",
      "category": "foundational", "query": "artificial stock market",
      "title_any": ["artificial stock", "artificial market"],

@@ -366,6 +366,109 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
     return out
 
 
+def _top_concept_id_from_seed(seed_arxiv: str,
+                                skip_concepts: set[str] | None = None
+                                ) -> tuple[str, str] | None:
+    """Given a seed paper's arxiv id, resolve it via direct DOI/ID lookup
+    (NO search=) and return its highest-scoring OpenAlex concept as
+    (concept_id, display_name). None if the seed can't be resolved.
+
+    Concept picking:
+      - fetch_paper() first — it resolves arxiv → journal DOI for
+        old-style papers, so the concept list comes from the well-tagged
+        journal record instead of the sparse arxiv-preprint record
+      - skip generic, non-discriminative concepts (Computer science /
+        Mathematics / Economics / Set (abstract data type) / …) — they
+        dominate the top of many OA papers but return unrelated top-cited
+        works when used as a filter
+      - `skip_concepts` extends this deny-list at call time
+
+    Used as an outage fallback: when `/works?search=…` is 504-ing,
+    concept-filter queries (`filter=concepts.id:C…`) still succeed, so
+    canon detection can continue by pivoting off a known-good anchor.
+    """
+    base_id = _arxiv_base(seed_arxiv)
+    if not base_id:
+        return None
+    # fetch_paper handles the arxiv → journal-DOI resolution and gives
+    # us the canonical OA work id.
+    normalised = fetch_paper(base_id)
+    if not normalised or not normalised.get("oa_paper_id"):
+        return None
+    oa_uri = normalised["oa_paper_id"]
+    m = re.search(r"(W\d+)", oa_uri)
+    if not m:
+        return None
+    url = f"{_OA_BASE}/works/{m.group(1)}"
+    raw = _http_get_json(url)
+    if not raw or not isinstance(raw, dict):
+        return None
+    concepts = raw.get("concepts") or []
+    if not concepts:
+        return None
+    generic = {
+        "Computer science", "Mathematics", "Economics", "Physics",
+        "Statistics", "Artificial intelligence", "Data science",
+        "Set (abstract data type)", "Power (physics)", "Simulation",
+        "Mathematical economics", "Microeconomics", "Sociology",
+        "Management science", "Theoretical computer science",
+    }
+    if skip_concepts:
+        generic |= skip_concepts
+    scored = sorted(
+        (c for c in concepts if isinstance(c, dict) and c.get("id")),
+        key=lambda c: -c.get("score", 0.0),
+    )
+    for c in scored:
+        name = c.get("display_name") or ""
+        if name in generic:
+            continue
+        cid = re.search(r"(C\d+)", c.get("id") or "")
+        if cid:
+            return cid.group(1), name
+    return None
+
+
+def find_canon_papers_by_seed(seed_arxiv: str, *, n: int = 30,
+                                year_max: int | None = None
+                                ) -> list[dict]:
+    """Canon-detection fallback anchored on a known seed paper.
+
+    Path: fetch seed (direct DOI/ID lookup — survives search-endpoint
+    outages) → extract its top concept → concept-filter query for the
+    top-N most-cited works under that concept. If the seed itself would
+    otherwise be filtered out (e.g. cited fewer than 9 times), it is
+    included at the end so we always surface at least one paper.
+    """
+    global _LAST_HTTP_STATUS
+    _LAST_HTTP_STATUS = None
+    resolved = _top_concept_id_from_seed(seed_arxiv)
+    if resolved is None:
+        raise OpenAlexQueryError(_LAST_HTTP_STATUS)
+    concept_id, _concept_name = resolved
+
+    select = "id,title,publication_year,cited_by_count,ids,doi,locations"
+    filter_clauses = [f"concepts.id:{concept_id}", "cited_by_count:>9"]
+    if year_max is not None:
+        filter_clauses.append(f"publication_year:<={year_max}")
+    url = (f"{_OA_BASE}/works?filter={','.join(filter_clauses)}"
+           f"&sort=cited_by_count:desc&per-page={min(n, 200)}&select={select}")
+    raw = _http_get_json(url)
+    if raw is None:
+        raise OpenAlexQueryError(_LAST_HTTP_STATUS)
+    out: list[dict] = []
+    for work in (raw.get("results") or [])[:n]:
+        out.append({
+            "oa_paper_id": work.get("id"),
+            "arxiv_id": _arxiv_id_from_work(work),
+            "title": work.get("title"),
+            "year": work.get("publication_year"),
+            "cited_by_count": work.get("cited_by_count"),
+            "doi": work.get("doi"),
+        })
+    return out
+
+
 # ----- title search ------------------------------------------------------
 
 def search_by_title(title: str, year: int | None = None) -> dict | None:

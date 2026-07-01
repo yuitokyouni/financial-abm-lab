@@ -24,6 +24,7 @@ from typing import Any
 from .openalex import (
     OpenAlexQueryError,
     find_canon_papers,
+    find_canon_papers_by_seed,
     sleep_for_rate_limit,
 )
 from .subfields import Subfield
@@ -75,14 +76,36 @@ def build_atlas(subfields: list[Subfield], *,
     atlas: list[dict[str, Any]] = []
     for sf in subfields:
         error: str | None = None
+        fallback_used: bool = False
         try:
             papers = find_canon_papers(sf["query"], n=n_per_subfield,
                                         year_max=year_max)
         except OpenAlexQueryError as exc:
             papers = []
             error = str(exc)
+
+        # Search-endpoint outage / rate-limit fallback: when the phrase
+        # query returned nothing usable AND the subfield has a seed paper,
+        # anchor on the seed's top concept id and query by concept-filter
+        # (which stays up even when /works?search=… is 504-ing).
+        seed = sf.get("seed_arxiv")
         title_terms = [term.casefold() for term in sf.get("title_any", [])]
-        if title_terms:
+        if seed and not papers:
+            try:
+                papers = find_canon_papers_by_seed(
+                    seed, n=n_per_subfield, year_max=year_max)
+                if papers:
+                    fallback_used = True
+                    error = None
+            except OpenAlexQueryError as exc:
+                if error is None:
+                    error = str(exc)
+        # title_any is designed to prune phrase-search noise (e.g. "Minority
+        # game" also hits racial-minority papers). The seed-fallback path is
+        # already anchored on a concept id derived from the canonical paper,
+        # so title filtering there would drop legitimate concept-neighbours
+        # that happen to use a different phrasing.
+        if title_terms and not fallback_used:
             papers = [
                 paper for paper in papers
                 if any(term in (paper.get("title") or "").casefold()
@@ -123,6 +146,7 @@ def build_atlas(subfields: list[Subfield], *,
             "n_on_arxiv": n_on_arxiv,
             "coverage": coverage,
             "error": error,
+            "fallback_used": fallback_used,
         })
         if sleep:
             sleep_for_rate_limit(sleep)

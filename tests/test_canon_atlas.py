@@ -137,6 +137,7 @@ def test_build_atlas_marks_openalex_failure(monkeypatch):
         raise OpenAlexQueryError(429)
 
     monkeypatch.setattr(canon_atlas, "find_canon_papers", fail)
+    monkeypatch.setattr(canon_atlas, "find_canon_papers_by_seed", fail)
     subfields = [{
         "key": "minority_game", "name": "Minority Game",
         "category": "foundational", "query": "Minority game",
@@ -147,6 +148,78 @@ def test_build_atlas_marks_openalex_failure(monkeypatch):
     assert atlas[0]["coverage"] is None
     assert atlas[0]["error"] == "OpenAlex query failed (HTTP 429)"
     assert atlas[0]["n_canon"] == 0
+    assert atlas[0]["fallback_used"] is False
+
+
+def test_build_atlas_uses_seed_fallback_when_phrase_search_fails(monkeypatch):
+    """When phrase-search 504s AND a seed_arxiv is set, canon detection
+    pivots to the seed's top concept id. Coverage is computed off the
+    fallback results and `fallback_used` is flagged."""
+    from fingerprint_atlas import canon_atlas
+    from fingerprint_atlas.openalex import OpenAlexQueryError
+
+    def phrase_search_dies(*args, **kwargs):
+        raise OpenAlexQueryError(504)
+
+    def seed_fallback_ok(seed, *, n, year_max=None):
+        assert seed == "adap-org/9708006"
+        return [
+            {"oa_paper_id": "https://openalex.org/W1", "arxiv_id": "0001.0001",
+             "title": "Game-theoretic canon 1", "year": 2001,
+             "cited_by_count": 500, "doi": "10.x/1"},
+            {"oa_paper_id": "https://openalex.org/W2", "arxiv_id": None,
+             "title": "Journal-only canon 2", "year": 2003,
+             "cited_by_count": 300, "doi": "10.x/2"},
+        ]
+
+    monkeypatch.setattr(canon_atlas, "find_canon_papers", phrase_search_dies)
+    monkeypatch.setattr(canon_atlas, "find_canon_papers_by_seed",
+                         seed_fallback_ok)
+    subfields = [{
+        "key": "minority_game", "name": "Minority Game",
+        "category": "foundational", "query": "Minority game",
+        "seed_arxiv": "adap-org/9708006",
+        # title_any MUST be suppressed on the fallback path — the seed
+        # concept-neighbours won't necessarily contain "minority".
+        "title_any": ["minority"],
+    }]
+
+    atlas = canon_atlas.build_atlas(
+        subfields, db_arxiv_ids={"0001.0001"}, sleep=0,
+    )
+
+    assert atlas[0]["fallback_used"] is True
+    assert atlas[0]["error"] is None
+    assert atlas[0]["n_canon"] == 2, atlas[0]
+    assert atlas[0]["n_in_db"] == 1
+    assert atlas[0]["coverage"] == 0.5
+
+
+def test_build_atlas_no_fallback_when_no_seed(monkeypatch):
+    """No seed → no fallback attempt → error propagates."""
+    from fingerprint_atlas import canon_atlas
+    from fingerprint_atlas.openalex import OpenAlexQueryError
+
+    def die(*args, **kwargs):
+        raise OpenAlexQueryError(504)
+
+    called = {"n": 0}
+    def seed_call(*args, **kwargs):
+        called["n"] += 1
+        raise OpenAlexQueryError(504)
+
+    monkeypatch.setattr(canon_atlas, "find_canon_papers", die)
+    monkeypatch.setattr(canon_atlas, "find_canon_papers_by_seed", seed_call)
+
+    atlas = canon_atlas.build_atlas([{
+        "key": "leverage_effect", "name": "Leverage effect",
+        "category": "stylized", "query": "leverage effect",
+        # seed_arxiv absent
+    }], sleep=0)
+
+    assert called["n"] == 0, "seed fallback must not fire without a seed"
+    assert atlas[0]["error"] == "OpenAlex query failed (HTTP 504)"
+    assert atlas[0]["fallback_used"] is False
 
 
 def test_missing_arxiv_ids_dedupes_and_skips_in_db():

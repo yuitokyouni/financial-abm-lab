@@ -1004,16 +1004,27 @@ def cmd_canon_atlas(args) -> int:
         cov = entry["coverage"]
         cov_txt = ("ERR" if entry.get("error") else
                    ("  —" if cov is None else f"{int(round(cov * 100)):>3d}%"))
+        marker = " (seed-fallback)" if entry.get("fallback_used") else ""
         print(f"  [{cov_txt}] {entry['n_in_db']:>2d}/{entry['n_canon']:>2d} "
-              f"canon ({entry['n_on_arxiv']} on arxiv)  ·  {entry['name']}")
+              f"canon ({entry['n_on_arxiv']} on arxiv)  ·  {entry['name']}"
+              f"{marker}")
 
     render_html(atlas, args.out)
     print(f"\nwrote {args.out}")
 
     failed = [entry for entry in atlas if entry.get("error")]
     if failed:
+        # Distinguish transient upstream outages (5xx / 429) from lookup
+        # misses so the user knows whether to retry vs edit subfields.py.
+        errors = " ".join(str(e.get("error") or "") for e in failed)
+        upstream = any(f"HTTP {c}" in errors for c in (429, 502, 503, 504))
+        hint = (" — OpenAlex upstream outage (5xx/429). "
+                "Retry in a few minutes; the seed-anchored fallback covered "
+                f"{sum(1 for e in atlas if e.get('fallback_used'))} subfield(s) "
+                "in this run."
+                if upstream else "")
         print(f"\nERROR: OpenAlex lookup failed for {len(failed)} subfield(s); "
-              "coverage is incomplete and auto-ingest was skipped.",
+              f"coverage is incomplete and auto-ingest was skipped.{hint}",
               file=sys.stderr)
         return 2
 
