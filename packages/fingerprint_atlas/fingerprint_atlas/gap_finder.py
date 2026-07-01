@@ -39,19 +39,10 @@ from typing import Any
 import numpy as np
 
 
-# Canonical stylized-fact vocabulary (mirror of coverage._CANONICAL_FACTS;
-# anchored on Cont 2001 return-observable facts + regime-switching as
-# an ABM-specific target that IS measurable from returns via HMM/MRS.
-# `herding` used to live here but was removed: it is a mechanism-level
-# concept whose observable signature is a composite of vol-clustering,
-# fat-tails, and volume-corr, not a first-order return-observable fact.
-CANONICAL_FACTS = [
-    "fat-tails", "vol-clustering", "leverage", "long-memory",
-    "aggregational-gaussianity", "absence-of-autocorr",
-    "gain-loss-asymmetry", "volume-volatility-corr",
-    "regime-switching",
-    "other",
-]
+# Fact vocabulary comes from taxonomy — the single source of truth. Re-
+# exported as CANONICAL_FACTS to preserve the existing module attribute
+# (tests, callers, dashboards import it from here).
+from .taxonomy import CANONICAL_FACTS  # noqa: F401  (re-export)
 
 # Which fingerprint dim(s) most directly probe each stylized fact.
 # Used by view B to pick the right axis when measuring family deviation.
