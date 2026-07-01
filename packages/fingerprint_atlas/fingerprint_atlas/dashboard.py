@@ -491,7 +491,9 @@ def _gap_table_html(rows: list[dict[str, Any]], runs: list[dict[str, Any]],
     for k in ["A", "B", "C"]:
         ja = view_label(k) or view_titles_en[k]
         en = view_titles_en[k]
-        legend += (f'<span><span class="gap-view gap-view-{k}">{k}</span>'
+        gloss = view_gloss(k)
+        tip = f' title="{html.escape(gloss)}"' if gloss else ""
+        legend += (f'<span{tip}><span class="gap-view gap-view-{k}">{k}</span>'
                     f'{html.escape(ja)} <small style="color:#999">'
                     f'({html.escape(en)})</small></span>')
     legend += '</div>'
@@ -611,12 +613,17 @@ def _subfield_catalog_html() -> str:
     return '<div class="sfgrid">' + "".join(cards) + '</div>'
 
 
-def _canon_run_hint() -> str:
-    """Inline command snippet so users can copy-paste to (re)generate canon."""
+def _canon_run_hint(db_path: str = "<your-db>.db") -> str:
+    """Inline command snippet so users can copy-paste to (re)generate canon.
+
+    `db_path` is echoed into the hint so the copy-paste command matches
+    the DB the user actually configured (previously hard-coded to a
+    specific local layout).
+    """
     return (
         '<div class="empty">Canon atlas not generated yet.'
         '<span class="runcmd">uv run python -m fingerprint_atlas.arxiv_cli \\\n'
-        '  --db ../test/knowhow/abm_knowhow.db canon-atlas \\\n'
+        f'  --db {html.escape(db_path)} canon-atlas \\\n'
         '  --out canon_atlas.html --auto-ingest-missing</span></div>'
     )
 
@@ -624,7 +631,8 @@ def _canon_run_hint() -> str:
 def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
                     repo_root: str = ".",
                     canon_atlas: str = "canon_atlas.html",
-                    runs: list[dict[str, Any]] | None = None) -> list[str]:
+                    runs: list[dict[str, Any]] | None = None,
+                    db_path: str | None = None) -> list[str]:
     """Generate overview, market-analysis and research-coverage pages.
 
     Self-contained build: every asset is copied under `<out_dir>/assets/`
@@ -747,7 +755,7 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
             'canon, ingestion coverage heatmap</span><i>Open →</i></a></div>'
         )
     else:
-        canon_block = _canon_run_hint()
+        canon_block = _canon_run_hint(db_path or "<your-db>.db")
 
     # Coverage matrix — auto-render from current literature_methods rows.
     coverage_lookfor = [
@@ -851,14 +859,17 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
 
     pages = {
         "index.html": _page("Research Overview",
-                            "Corpus health and high-signal analytical outputs.",
+                            "コーパスの健康度と主要な分析出力 "
+                            "(Corpus health and high-signal analytical outputs).",
                             "overview", overview),
         "markets.html": _page("Market Structure",
-                              "市場特徴量ベクトルの幾何と実市場マッチング。",
+                              "市場特徴量ベクトルの幾何と実市場マッチング "
+                              "(Market-feature geometry and real-market matching).",
                               "markets", markets),
         "research.html": _page("Research Coverage",
-                               "Canon ingestion, subfield catalog, and proposal "
-                               "diagnostics.",
+                               "Canon 取り込み・分野カタログ・提案診断 "
+                               "(Canon ingestion, subfield catalog, and proposal "
+                               "diagnostics).",
                                "research", research),
     }
     for filename, content in pages.items():

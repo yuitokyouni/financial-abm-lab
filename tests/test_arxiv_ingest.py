@@ -489,16 +489,21 @@ def test_query_arxiv_by_ids_strips_inline_comments(monkeypatch):
 
 def test_extract_arxiv_id_preserves_old_style_category_prefix():
     """Regression: cond-mat/0101326v1 used to be truncated to 0101326v1
-    by `rsplit('/', 1)[-1]`, breaking OpenAlex DOI lookups."""
+    by `rsplit('/', 1)[-1]`, breaking OpenAlex DOI lookups. Version
+    suffix is also stripped so DB rows are keyed on the base id
+    (consistent with openalex._arxiv_base and canon_atlas dedup)."""
     from fingerprint_atlas.arxiv_ingest import _extract_arxiv_id_from_entry
     assert (_extract_arxiv_id_from_entry(
-        "http://arxiv.org/abs/cond-mat/0101326v1") == "cond-mat/0101326v1")
+        "http://arxiv.org/abs/cond-mat/0101326v1") == "cond-mat/0101326")
     assert (_extract_arxiv_id_from_entry(
-        "http://arxiv.org/abs/physics/0503230v1") == "physics/0503230v1")
-    # New-style IDs unchanged
+        "http://arxiv.org/abs/physics/0503230v1") == "physics/0503230")
+    # New-style IDs: version stripped too.
     assert (_extract_arxiv_id_from_entry(
-        "http://arxiv.org/abs/2503.00320v2") == "2503.00320v2")
-    # Malformed input falls back to last segment
+        "http://arxiv.org/abs/2503.00320v2") == "2503.00320")
+    # Base ids (no version) unchanged.
+    assert (_extract_arxiv_id_from_entry(
+        "http://arxiv.org/abs/2503.00320") == "2503.00320")
+    # Malformed input falls back to last segment (still version-stripped).
     assert (_extract_arxiv_id_from_entry(
         "weird-no-marker") == "weird-no-marker")
 

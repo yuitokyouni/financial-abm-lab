@@ -146,3 +146,36 @@ SUBFIELDS: list[Subfield] = [
      "title_any": ["adaptive expectation", "learning", "expectation"],
      "seed_arxiv": None},
 ]
+
+
+def validate_subfields() -> list[str]:
+    """Return a list of warnings about SUBFIELDS entries.
+
+    Currently checks:
+      - keys are unique (duplicate slugs would collide in filenames /
+        genealogy indices).
+      - each seed_arxiv, if set, is a plausibly-shaped arxiv id (either
+        old-style 'category/nnnnnnn' or new-style 'YYMM.nnnnn'; version
+        suffix optional).
+
+    Returns an empty list if all checks pass. Called opportunistically by
+    canon_atlas (not at import time) so a stale seed doesn't break every
+    import.
+    """
+    import re as _re
+    warnings: list[str] = []
+    seen: dict[str, int] = {}
+    for i, s in enumerate(SUBFIELDS):
+        seen[s["key"]] = seen.get(s["key"], 0) + 1
+    for k, n in seen.items():
+        if n > 1:
+            warnings.append(f"duplicate subfield key: {k!r} appears {n} times")
+    aid_pat = _re.compile(r"^(?:[a-z-]+/\d+|\d{4}\.\d{4,6})(v\d+)?$")
+    for s in SUBFIELDS:
+        aid = s.get("seed_arxiv")
+        if aid and not aid_pat.match(aid):
+            warnings.append(
+                f"seed_arxiv {aid!r} on subfield {s['key']!r} does not look "
+                f"like an arxiv id (expected 'cat/nnnnn' or 'YYMM.nnnnn')"
+            )
+    return warnings

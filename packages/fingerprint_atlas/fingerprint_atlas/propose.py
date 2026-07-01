@@ -177,7 +177,8 @@ def _extract_arxiv_id(reference: str) -> str | None:
     return base + version
 
 
-def classify_references(references: list[str], db_path: str) -> dict[str, list[str]]:
+def classify_references(references: list[str], db_path: str,
+                         *, known_bases: set[str] | None = None) -> dict[str, list[str]]:
     """Bucket every reference into in_db / external_arxiv / non_arxiv.
 
     in_db          : arxiv id (base, version-stripped) is present in
@@ -193,9 +194,10 @@ def classify_references(references: list[str], db_path: str) -> dict[str, list[s
     # fresh DB where the user hasn't ingested any arxiv papers. Create it
     # (idempotent) so load_literature returns an empty list rather than
     # raising OperationalError.
-    ensure_literature_schema(db_path)
-    rows = load_literature(db_path)
-    known_bases = {_arxiv_base(r["arxiv_id"]) for r in rows}
+    if known_bases is None:
+        ensure_literature_schema(db_path)
+        rows = load_literature(db_path)
+        known_bases = {_arxiv_base(r["arxiv_id"]) for r in rows}
     result: dict[str, list[str]] = {"in_db": [], "external_arxiv": [], "non_arxiv": []}
     for ref in references:
         aid = _extract_arxiv_id(ref)
@@ -438,6 +440,12 @@ def propose_from_corpus(db_path: str, n: int = 5, *,
 
     accepted: list[dict] = []
     rejected: list[dict] = []
+    # Load once — reference validation runs per accepted proposal but the
+    # corpus doesn't change during the batch.
+    from .db import ensure_literature_schema, load_literature
+    ensure_literature_schema(db_path)
+    _lit_rows = load_literature(db_path)
+    _known_bases = {_arxiv_base(r["arxiv_id"]) for r in _lit_rows}
     for p in proposals:
         ok, err = _validate_proposal(p, len(FEATURE_NAMES))
         if not ok:
@@ -458,7 +466,8 @@ def propose_from_corpus(db_path: str, n: int = 5, *,
         # classify citations so the CLI can warn about hallucinated arxiv ids
         refs = p.get("references", [])
         if refs:
-            accepted_p["reference_validation"] = classify_references(refs, db_path)
+            accepted_p["reference_validation"] = classify_references(
+                refs, db_path, known_bases=_known_bases)
         accepted.append(accepted_p)
     return [{"accepted": accepted, "rejected": rejected,
              "llm_model": groq_model, "n_requested": n}]

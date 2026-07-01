@@ -49,6 +49,20 @@ def _column_exists(con: sqlite3.Connection, table: str, col: str) -> bool:
     return any(r[1] == col for r in rows)
 
 
+def _add_columns_if_missing(con: sqlite3.Connection, table: str,
+                             columns: list[tuple[str, str]]) -> None:
+    """Add each (name, type_decl) column to `table` if absent.
+
+    Runs one PRAGMA table_info() for the whole batch instead of one per
+    column (the previous per-check pattern was 12 PRAGMAs for the
+    literature_methods migration).
+    """
+    have = {r[1] for r in con.execute(f"PRAGMA table_info({table})").fetchall()}
+    for name, type_decl in columns:
+        if name not in have:
+            con.execute(f"ALTER TABLE {table} ADD COLUMN {name} {type_decl}")
+
+
 def ensure_runs_schema(db_path: str) -> None:
     """Create the `runs` table if absent. Idempotent; leaves `techniques` alone.
 
@@ -60,14 +74,12 @@ def ensure_runs_schema(db_path: str) -> None:
     os.makedirs(parent, exist_ok=True)
     with sqlite3.connect(db_path) as con:
         con.executescript(RUNS_SCHEMA)
-        if not _column_exists(con, "runs", "hill_raw"):
-            con.execute("ALTER TABLE runs ADD COLUMN hill_raw REAL")
-        if not _column_exists(con, "runs", "origin"):
-            con.execute("ALTER TABLE runs ADD COLUMN origin TEXT NOT NULL DEFAULT 'abm'")
-        if not _column_exists(con, "runs", "preference_label"):
-            con.execute("ALTER TABLE runs ADD COLUMN preference_label REAL")
-        if not _column_exists(con, "runs", "preference_labeled_at"):
-            con.execute("ALTER TABLE runs ADD COLUMN preference_labeled_at TEXT")
+        _add_columns_if_missing(con, "runs", [
+            ("hill_raw", "REAL"),
+            ("origin", "TEXT NOT NULL DEFAULT 'abm'"),
+            ("preference_label", "REAL"),
+            ("preference_labeled_at", "TEXT"),
+        ])
         for stmt in _RUNS_INDEXES:
             con.execute(stmt)
         con.commit()
@@ -244,62 +256,25 @@ def ensure_literature_schema(db_path: str) -> None:
         con.executescript(LITERATURE_SCHEMA)
         for stmt in _LITERATURE_INDEXES:
             con.execute(stmt)
-        # ALTER migrations for older DBs.
-        if not _column_exists(con, "literature_methods", "code_url"):
-            con.execute("ALTER TABLE literature_methods ADD COLUMN code_url TEXT")
-        if not _column_exists(con, "literature_methods", "code_url_source"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN code_url_source TEXT"
-            )
-        if not _column_exists(con, "literature_methods", "arxiv_comment"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN arxiv_comment TEXT"
-            )
-        if not _column_exists(con, "literature_methods", "pdf_scanned_at"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN pdf_scanned_at TEXT"
-            )
-        if not _column_exists(con, "literature_methods", "s2_paper_id"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN s2_paper_id TEXT"
-            )
-        if not _column_exists(con, "literature_methods", "s2_tldr"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN s2_tldr TEXT"
-            )
-        if not _column_exists(con, "literature_methods", "s2_influential_citation_count"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN s2_influential_citation_count INTEGER"
-            )
-        if not _column_exists(con, "literature_methods", "s2_fetched_at"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN s2_fetched_at TEXT"
-            )
-        if not _column_exists(con, "literature_methods", "oa_paper_id"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN oa_paper_id TEXT"
-            )
-        if not _column_exists(con, "literature_methods", "oa_cited_by_count"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN oa_cited_by_count INTEGER"
-            )
-        if not _column_exists(con, "literature_methods", "oa_concepts"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN oa_concepts TEXT"
-            )
-        if not _column_exists(con, "literature_methods", "oa_fetched_at"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN oa_fetched_at TEXT"
-            )
-        # source_kind distinguishes rows that came in via arxiv ingestion
-        # vs OpenAlex-only canon (for which arxiv_id is synthetic
-        # 'oa:Wxxxxx' and there is no PDF to scan). Downstream code that
-        # builds arxiv URLs or fetches arxiv PDFs must check this column.
-        if not _column_exists(con, "literature_methods", "source_kind"):
-            con.execute(
-                "ALTER TABLE literature_methods ADD COLUMN source_kind "
-                "TEXT NOT NULL DEFAULT 'arxiv'"
-            )
+        # ALTER migrations for older DBs. One PRAGMA sweep, then adds only
+        # the columns actually missing. source_kind (last row) distinguishes
+        # arxiv-ingested rows from OpenAlex-only canon (synthetic 'oa:Wxxxx'
+        # arxiv_id, no PDF); downstream URL/PDF fetchers must check it.
+        _add_columns_if_missing(con, "literature_methods", [
+            ("code_url", "TEXT"),
+            ("code_url_source", "TEXT"),
+            ("arxiv_comment", "TEXT"),
+            ("pdf_scanned_at", "TEXT"),
+            ("s2_paper_id", "TEXT"),
+            ("s2_tldr", "TEXT"),
+            ("s2_influential_citation_count", "INTEGER"),
+            ("s2_fetched_at", "TEXT"),
+            ("oa_paper_id", "TEXT"),
+            ("oa_cited_by_count", "INTEGER"),
+            ("oa_concepts", "TEXT"),
+            ("oa_fetched_at", "TEXT"),
+            ("source_kind", "TEXT NOT NULL DEFAULT 'arxiv'"),
+        ])
         con.commit()
 
 

@@ -38,6 +38,18 @@ _POLITE_MAILTO = "yuitokyouni+oa@gmail.com"  # OpenAlex etiquette param
 _USER_AGENT = "fingerprint-atlas/0.1 (mailto:" + _POLITE_MAILTO + ")"
 _LAST_HTTP_STATUS: int | None = None
 _RATE_LIMITED = False
+_RATE_LIMITED_AT: float | None = None
+# OpenAlex per-minute window is ~60 s. After 90 s of no traffic the lock
+# clears itself so a single 429 doesn't kill the rest of the session.
+_RATE_LIMIT_COOLDOWN_S = 90.0
+
+
+def reset_rate_limit() -> None:
+    """Public escape hatch for callers who want to force-clear the lock
+    (e.g. a canon-atlas retry loop after fixing the query)."""
+    global _RATE_LIMITED, _RATE_LIMITED_AT
+    _RATE_LIMITED = False
+    _RATE_LIMITED_AT = None
 
 
 class OpenAlexQueryError(RuntimeError):
@@ -70,18 +82,24 @@ def _http_get_json_with_status(url: str, timeout: float = _OA_TIMEOUT
 
 
 def _http_get_json(url: str, timeout: float = _OA_TIMEOUT) -> dict | None:
-    """One short backoff-retry on 429, then give up. OpenAlex's free tier
-    is generous enough that this is rarely triggered."""
-    global _LAST_HTTP_STATUS, _RATE_LIMITED
-    if _RATE_LIMITED:
-        _LAST_HTTP_STATUS = 429
-        return None
+    """One short backoff-retry on 429, then give up. Session-scoped rate
+    lock auto-clears after `_RATE_LIMIT_COOLDOWN_S` so a single 429 does
+    not permanently block the session."""
+    global _LAST_HTTP_STATUS, _RATE_LIMITED, _RATE_LIMITED_AT
+    if _RATE_LIMITED and _RATE_LIMITED_AT is not None:
+        if time.time() - _RATE_LIMITED_AT >= _RATE_LIMIT_COOLDOWN_S:
+            _RATE_LIMITED = False
+            _RATE_LIMITED_AT = None
+        else:
+            _LAST_HTTP_STATUS = 429
+            return None
     status, body = _http_get_json_with_status(url, timeout)
     if status == 429:
         time.sleep(5.0)
         status, body = _http_get_json_with_status(url, timeout)
         if status == 429:
             _RATE_LIMITED = True
+            _RATE_LIMITED_AT = time.time()
     _LAST_HTTP_STATUS = status
     return body if status == 200 else None
 

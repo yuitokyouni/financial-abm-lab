@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import os
+import re as _re
 import time
 from typing import Any
 
@@ -165,7 +166,6 @@ def query_arxiv_by_ids(arxiv_ids: list[str]) -> list[dict[str, Any]]:
     import arxiv
     # Defence: strip whitespace, drop trailing '# comment', drop version
     # suffix (arxiv id_list expects base ids; entry_id carries the version).
-    import re as _re
     cleaned: list[str] = []
     for raw in arxiv_ids:
         if not raw:
@@ -208,10 +208,11 @@ def _extract_arxiv_id_from_entry(entry_id: str) -> str:
     breaking DOI lookups (the canonical DOI is
     `10.48550/arXiv.cond-mat/0101326`, not `…/0101326`)."""
     marker = "/abs/"
-    i = entry_id.find(marker)
-    if i >= 0:
-        return entry_id[i + len(marker):]
-    return entry_id.rsplit("/", 1)[-1]
+    if (i := entry_id.find(marker)) >= 0:
+        raw = entry_id[i + len(marker):]
+    else:
+        raw = entry_id.rsplit("/", 1)[-1]
+    return _re.sub(r"v\d+$", "", raw)
 
 
 def query_arxiv(query: str, max_results: int = 50,
@@ -389,7 +390,9 @@ def ingest(db_path: str, *, query: str | None = None, max_results: int = 50,
                 url, source = resolve_code_url(
                     p["arxiv_id"], p["abstract"], p.get("comment"),
                 )
-            except Exception:
+            except (OSError, ValueError, KeyError, TypeError) as e:
+                if verbose:
+                    print(f"    code_url resolve failed: {type(e).__name__}: {e}")
                 url, source = None, None
             if url:
                 set_literature_code_url(db_path, p["arxiv_id"],

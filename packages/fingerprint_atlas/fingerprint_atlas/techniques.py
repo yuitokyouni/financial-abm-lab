@@ -123,7 +123,7 @@ TECHNIQUES: list[Technique] = [
          "Cannot reproduce LOB-specific microstructure noise.",
          "Bankruptcy / entry rules behave qualitatively differently vs LOB (Speculation Game finding).",
      ],
-     "ref_papers": ["adap-org/9708006"],
+     "ref_papers": ["1909.03185"],
      "ref_repos": []},
 
     {"key": "order_arrival_poisson",
@@ -388,3 +388,55 @@ TECHNIQUES: list[Technique] = [
      "ref_papers": [],
      "ref_repos": ["https://github.com/anthropic/sae"]},
 ]
+
+
+def _looks_like_ref(ref: str) -> bool:
+    r"""Does `ref` match one of the documented ref_papers formats?
+
+    Accepts:
+      - arxiv old-style   'cat/nnnnnnn' (with optional 'v\d+')
+      - arxiv new-style   'YYMM.nnnnn'  (with optional 'v\d+')
+      - DOI               '10.xxxx/…'
+      - OpenAlex synthetic 'oa:Wxxxxx'
+    """
+    import re as _re
+    if not isinstance(ref, str) or not ref:
+        return False
+    patterns = [
+        r"^[a-z-]+/\d+(v\d+)?$",         # old-style arxiv
+        r"^\d{4}\.\d{4,6}(v\d+)?$",      # new-style arxiv
+        r"^10\.\d{4,}/",                   # DOI
+        r"^oa:W\d+$",                       # OpenAlex synthetic id
+    ]
+    return any(_re.match(p, ref) for p in patterns)
+
+
+def validate_techniques() -> dict:
+    """Report coverage / format issues across the TECHNIQUES catalog.
+
+    Returns {
+        "total": int,
+        "with_refs": int,
+        "missing_refs": list[key],       # ref_papers == []
+        "malformed_refs": list[(key, ref)],
+    }
+    """
+    total = len(TECHNIQUES)
+    with_refs = 0
+    missing: list[str] = []
+    malformed: list[tuple[str, str]] = []
+    for t in TECHNIQUES:
+        refs = t.get("ref_papers") or []
+        if refs:
+            with_refs += 1
+            for r in refs:
+                if not _looks_like_ref(r):
+                    malformed.append((t["key"], r))
+        else:
+            missing.append(t["key"])
+    return {
+        "total": total,
+        "with_refs": with_refs,
+        "missing_refs": missing,
+        "malformed_refs": malformed,
+    }

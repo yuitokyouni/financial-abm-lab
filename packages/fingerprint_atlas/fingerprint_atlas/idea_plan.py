@@ -219,8 +219,11 @@ def scaffold_param_sweep(db_path: str, plan: dict, idea_id: int,
         )
     rationale = (ps.get("rationale") or "").strip()
     if len(rationale) < 20:
-        rationale = (rationale + "  (idea #{}, plan-generated, see ideas.id={})"
-                     .format(idea_id, idea_id))
+        raise ValueError(
+            f"param_sweep plan rationale is too short "
+            f"({len(rationale)} chars, need ≥20). "
+            f"Re-run `plan` with a clearer idea, or edit the rationale by hand."
+        )
     proposal_id = insert_proposal(
         db_path,
         proposal_type="param_sweep",
@@ -405,13 +408,25 @@ def scaffold(plan: dict, *, db_path: str, idea_id: int,
              packages_root: str, llm_model: str) -> dict:
     """Dispatcher: route to the right scaffolder by implementation_type."""
     impl = plan.get("implementation_type")
+    required_sub_key = {
+        "param_sweep": "param_sweep",
+        "mechanism_combo": "mechanism_combo",
+        "new_method": "new_method",
+    }
+    if impl not in required_sub_key:
+        raise ValueError(
+            f"unknown implementation_type {impl!r}; expected one of "
+            f"param_sweep / mechanism_combo / new_method"
+        )
+    sub_key = required_sub_key[impl]
+    if not plan.get(sub_key):
+        raise ValueError(
+            f"plan claims implementation_type={impl!r} but the "
+            f"corresponding '{sub_key}' sub-plan is missing/empty. "
+            f"Re-run `plan`."
+        )
     if impl == "param_sweep":
         return scaffold_param_sweep(db_path, plan, idea_id, llm_model=llm_model)
     if impl == "mechanism_combo":
         return scaffold_mechanism_combo(plan, idea_id, packages_root)
-    if impl == "new_method":
-        return scaffold_new_method(plan, idea_id, packages_root)
-    raise ValueError(
-        f"unknown implementation_type {impl!r}; expected one of "
-        f"param_sweep / mechanism_combo / new_method"
-    )
+    return scaffold_new_method(plan, idea_id, packages_root)

@@ -90,10 +90,17 @@ def cmd_plan(args) -> int:
     if not idea["judgment"]:
         print("idea has no judgment yet — run `judge` first.", file=sys.stderr)
         return 1
+    judgment = idea["judgment"]
+    required = {"verdict", "matches"}
+    missing = required - set(judgment.keys())
+    if missing:
+        print(f"judgment is malformed (missing keys: {sorted(missing)}) — "
+              f"re-run `judge` first.", file=sys.stderr)
+        return 1
     judgment_payload = {
         "aspects": idea["aspects"],
-        "verdict": idea["judgment"]["verdict"],
-        "matches": idea["judgment"]["matches"],
+        "verdict": judgment["verdict"],
+        "matches": judgment["matches"],
     }
     try:
         plan = make_plan(args.db, idea["idea_text"], judgment_payload,
@@ -120,6 +127,10 @@ def cmd_scaffold(args) -> int:
     if not idea["plan"]:
         print("idea has no plan yet — run `plan` first.", file=sys.stderr)
         return 1
+    if idea["status"] not in ("planned", "scaffolded", "executed"):
+        print(f"idea status is {idea['status']!r}; expected 'planned' "
+              f"(or later re-scaffold). Run `plan` first.", file=sys.stderr)
+        return 1
     try:
         result = scaffold(
             idea["plan"], db_path=args.db, idea_id=args.id,
@@ -135,7 +146,13 @@ def cmd_scaffold(args) -> int:
     if result.get("paths"):
         update_kwargs["scaffold_paths"] = result["paths"]
     if result.get("proposal_id") is not None:
-        update_kwargs["proposal_ids"] = [result["proposal_id"]]
+        # Append to any existing back-links (e.g. from a prior promote
+        # step) so re-scaffolding doesn't erase provenance.
+        existing = list(idea.get("proposal_ids") or [])
+        new_pid = int(result["proposal_id"])
+        if new_pid not in existing:
+            existing.append(new_pid)
+        update_kwargs["proposal_ids"] = existing
     update_idea(args.db, args.id, **update_kwargs)
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return 0
@@ -205,7 +222,7 @@ def cmd_run(args) -> int:
     if result.get("paths"):
         update_kwargs["scaffold_paths"] = result["paths"]
     if result.get("proposal_id") is not None:
-        update_kwargs["proposal_ids"] = [result["proposal_id"]]
+        update_kwargs["proposal_ids"] = [int(result["proposal_id"])]
     update_idea(args.db, idea_id, **update_kwargs)
     print(json.dumps(result, indent=2, ensure_ascii=False))
 

@@ -338,6 +338,22 @@ def execute_proposal(db_path: str, proposal_id: int, *, seed: int = 9000,
 
 def cmd_execute(args) -> int:
     """Thin CLI wrapper around `execute_proposal`."""
+    if getattr(args, "dry_run", False):
+        from .db import load_proposals
+        p = next((x for x in load_proposals(args.db) if x["id"] == args.id),
+                  None)
+        if p is None:
+            print(f"no proposal with id={args.id}", file=sys.stderr)
+            return 1
+        print(f"dry-run: proposal #{args.id}")
+        print(f"  target_model: {p['target_model']}")
+        print(f"  params: {json.dumps(p.get('params') or {}, indent=2, ensure_ascii=False)}")
+        return 0
+    if not getattr(args, "yes", False) and sys.stdin.isatty():
+        resp = input(f"execute proposal #{args.id}? [y/N] ").strip().lower()
+        if resp not in ("y", "yes"):
+            print("aborted.")
+            return 0
     try:
         execute_proposal(args.db, args.id, seed=args.seed, verbose=True)
     except ValueError as exc:
@@ -564,6 +580,11 @@ def main() -> int:
     p_ex = sub.add_parser("execute", help="run an approved proposal, measure, compare")
     p_ex.add_argument("id", type=int)
     p_ex.add_argument("--seed", type=int, default=9000)
+    p_ex.add_argument("--dry-run", action="store_true",
+                       help="print the target model + params without running")
+    p_ex.add_argument("--yes", "-y", action="store_true",
+                       help="skip the y/n confirmation before executing "
+                            "(useful for scripts / CI)")
 
     p_md = sub.add_parser("dump-md", help="export proposals as markdown")
     p_md.add_argument("--out", default="proposals/")

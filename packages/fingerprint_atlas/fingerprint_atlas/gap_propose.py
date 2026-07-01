@@ -18,6 +18,7 @@ generate_japanese=True, so glossary rules apply (no '富動学' / '指紋',
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from .llm_client import call_llm
@@ -218,8 +219,23 @@ def propose_from_gap(gap: dict, *,
         if missing:
             raise ValueError(
                 f"predicted_fingerprint missing values for: {missing}")
-    references = [r for r in (result.get("references") or [])
-                   if isinstance(r, str) and r]
+    references_raw = [r for r in (result.get("references") or [])
+                       if isinstance(r, str) and r]
+    # Filter references to those actually in the corpus that was shown to
+    # the LLM. Anything outside is treated as hallucination and dropped.
+    corpus_ids: set[str] = set()
+    for p in corpus_papers or []:
+        aid = (p.get("arxiv_id") or "").strip()
+        if aid:
+            corpus_ids.add(aid)
+            # Also accept the base form (without version suffix).
+            corpus_ids.add(re.sub(r"v\d+$", "", aid))
+        oa = (p.get("oa_paper_id") or "").strip()
+        if oa:
+            corpus_ids.add(oa)
+            if not oa.startswith("oa:") and oa.startswith("W"):
+                corpus_ids.add(f"oa:{oa}")
+    references = [r for r in references_raw if r in corpus_ids]
     return {
         "target_model": target,
         "params": params,
@@ -335,7 +351,10 @@ def propose_from_top_gaps(db_path: str, *,
             continue
         used.append(proposal["target_model"])
         if not dry_run:
-            pid = insert_gap_proposal(db_path, proposal)
-            proposal["id"] = pid
+            try:
+                pid = insert_gap_proposal(db_path, proposal)
+                proposal["id"] = pid
+            except Exception as exc:
+                proposal["insert_error"] = str(exc)
         created.append(proposal)
     return created

@@ -1007,6 +1007,7 @@ def cmd_dashboard(args) -> int:
         repo_root=os.getcwd(),
         canon_atlas=args.canon_atlas,
         runs=runs,
+        db_path=args.db,
     )
     print(f"wrote {len(pages)} dashboard pages to {args.out_dir}")
     print(f"open {pages[0]}")
@@ -1457,7 +1458,11 @@ def main() -> int:
     p_in.add_argument("--max", type=int, default=50, help="max papers per call")
     p_in.add_argument("--no-extract", action="store_true",
                       help="ingest metadata only (free, no Groq calls)")
-    p_in.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_in.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL,
+                      help=("LLM used for the extraction / classification step. "
+                            "Accepts a Groq-hosted model id (e.g. 'llama-3.1-70b') "
+                            "or an openai/-prefixed id (e.g. 'openai/gpt-4o-mini') "
+                            "which routes to the OpenAI API instead."))
     p_in.add_argument("--min-relevance-to-keep", type=float, default=0.0,
                       help="papers extracted below this relevance keep metadata only")
     p_in.add_argument("--quiet", action="store_true")
@@ -1473,7 +1478,11 @@ def main() -> int:
     g_ii.add_argument("--ids-file", help=("one arxiv_id per line, # comments "
                                            "and blanks ignored"))
     p_ii.add_argument("--no-extract", action="store_true")
-    p_ii.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_ii.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL,
+                      help=("LLM used for the extraction / classification step. "
+                            "Accepts a Groq-hosted model id (e.g. 'llama-3.1-70b') "
+                            "or an openai/-prefixed id (e.g. 'openai/gpt-4o-mini') "
+                            "which routes to the OpenAI API instead."))
     p_ii.add_argument("--min-relevance-to-keep", type=float, default=0.0)
     p_ii.add_argument("--quiet", action="store_true")
 
@@ -1595,7 +1604,11 @@ def main() -> int:
     p_cn.add_argument("--year-max", type=int, default=None,
                       help="exclude papers published after this year")
     p_cn.add_argument("--auto-ingest", action="store_true")
-    p_cn.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_cn.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL,
+                      help=("LLM used for the extraction / classification step. "
+                            "Accepts a Groq-hosted model id (e.g. 'llama-3.1-70b') "
+                            "or an openai/-prefixed id (e.g. 'openai/gpt-4o-mini') "
+                            "which routes to the OpenAI API instead."))
     p_cn.add_argument("--min-relevance-to-keep", type=float, default=0.0)
 
     p_gl = sub.add_parser(
@@ -1617,7 +1630,11 @@ def main() -> int:
     )
     p_gp.add_argument("--top", type=int, default=5,
                       help="number of gaps to draft proposals for")
-    p_gp.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_gp.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL,
+                      help=("LLM used for the extraction / classification step. "
+                            "Accepts a Groq-hosted model id (e.g. 'llama-3.1-70b') "
+                            "or an openai/-prefixed id (e.g. 'openai/gpt-4o-mini') "
+                            "which routes to the OpenAI API instead."))
     p_gp.add_argument("--dry-run", action="store_true",
                       help="generate proposals but DO NOT insert into DB")
 
@@ -1650,7 +1667,11 @@ def main() -> int:
                            "(default: all 25). Use canon-atlas without "
                            "--only to see available keys.")
     p_ca.add_argument("--auto-ingest-missing", action="store_true")
-    p_ca.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_ca.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL,
+                      help=("LLM used for the extraction / classification step. "
+                            "Accepts a Groq-hosted model id (e.g. 'llama-3.1-70b') "
+                            "or an openai/-prefixed id (e.g. 'openai/gpt-4o-mini') "
+                            "which routes to the OpenAI API instead."))
     p_ca.add_argument("--min-relevance-to-keep", type=float, default=0.0)
 
     p_dash = sub.add_parser(
@@ -1688,7 +1709,11 @@ def main() -> int:
     p_xo.add_argument("--limit", type=int, default=0)
     p_xo.add_argument("--sleep", type=float, default=0.5)
     p_xo.add_argument("--auto-ingest", action="store_true")
-    p_xo.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL)
+    p_xo.add_argument("--groq-model", default=DEFAULT_GROQ_MODEL,
+                      help=("LLM used for the extraction / classification step. "
+                            "Accepts a Groq-hosted model id (e.g. 'llama-3.1-70b') "
+                            "or an openai/-prefixed id (e.g. 'openai/gpt-4o-mini') "
+                            "which routes to the OpenAI API instead."))
     p_xo.add_argument("--min-relevance-to-keep", type=float, default=0.0)
 
     p_do = sub.add_parser(

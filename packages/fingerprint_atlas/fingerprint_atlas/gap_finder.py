@@ -153,6 +153,11 @@ def _build_view_b(runs_by_model: dict[str, list[dict]],
             fp = r.get("_fp")
             if fp is None:
                 continue
+            if len(fp) != len(feature_names):
+                # Skip runs whose fingerprint dim doesn't match current schema —
+                # e.g. persisted from an older feature set. Silent because this
+                # is expected during feature-set migrations.
+                continue
             for j, fn in enumerate(feature_names):
                 v = fp[j]
                 if np.isfinite(v):
@@ -166,6 +171,8 @@ def _build_view_b(runs_by_model: dict[str, list[dict]],
         for r in runs_by_model.get(k, []):
             fp = r.get("_fp")
             if fp is None:
+                continue
+            if len(fp) != len(feature_names):
                 continue
             for j, fn in enumerate(feature_names):
                 v = fp[j]
@@ -222,8 +229,10 @@ def _build_view_c(rows: list[dict], techniques: list[dict],
         if base != aid:
             by_key[aid] = aid
         # OpenAlex W-id indexed too (so a technique that cites 'W12345' or
-        # 'oa:W12345' matches an OA-ingested row).
-        m = re.search(r"(W\d+)", p.get("oa_paper_id") or aid)
+        # 'oa:W12345' matches an OA-ingested row). Only from the actual OA
+        # field — never from arxiv_id, which is a different namespace.
+        oa = p.get("oa_paper_id") or ""
+        m = re.search(r"(W\d+)", oa)
         if m:
             by_key[m.group(1)] = aid
             by_key[f"oa:{m.group(1)}"] = aid

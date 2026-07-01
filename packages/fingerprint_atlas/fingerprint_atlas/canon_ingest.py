@@ -52,6 +52,14 @@ def _already_in_db(db_path: str, synthetic_id: str) -> bool:
     return row is not None
 
 
+def _existing_arxiv_ids(db_path: str) -> set[str]:
+    """One-shot fetch of all arxiv_ids already in literature_methods, so we
+    don't run N separate SELECTs during a bulk ingest."""
+    with sqlite3.connect(db_path) as con:
+        rows = con.execute("SELECT arxiv_id FROM literature_methods").fetchall()
+    return {r[0] for r in rows if r[0]}
+
+
 def ingest_canon_via_oa(db_path: str, oa_work_ids: list[str], *,
                          sleep: float = 0.3,
                          verbose: bool = False) -> dict[str, Any]:
@@ -69,16 +77,21 @@ def ingest_canon_via_oa(db_path: str, oa_work_ids: list[str], *,
     now = _dt.datetime.now(_dt.timezone.utc).strftime(
         "%Y-%m-%dT%H:%M:%S") + "Z"
 
+    # One SELECT up-front instead of N. Newly-added ids inside this loop
+    # are tracked in the same set so intra-batch duplicates are also skipped.
+    seen = _existing_arxiv_ids(db_path)
+
     for i, oa_id in enumerate(oa_work_ids):
         synthetic = _synthetic_arxiv_id(oa_id)
         if not synthetic:
             summary["errors"].append({"oa_id": oa_id, "why": "bad-id"})
             continue
-        if _already_in_db(db_path, synthetic):
+        if synthetic in seen:
             summary["skipped"] += 1
             if verbose:
                 print(f"  [{i+1:>3d}] skip (already in DB): {synthetic}")
             continue
+        seen.add(synthetic)
 
         work = fetch_work_full(oa_id)
         if not work:
