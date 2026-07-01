@@ -68,8 +68,12 @@ FACT_TERMS_NOT_MECHANISMS: frozenset[str] = frozenset({
     "leverage", "long-memory", "fat-tails", "vol-clustering",
     "absence-of-autocorr", "gain-loss-asymmetry",
     "aggregational-gaussianity", "volume-volatility-corr",
-    "multifractal",  # data property, not a modelling technique
-    "volatility",     # too broad — real methods are GARCH / stoch-vol / etc
+    "volatility",  # too broad — real methods are GARCH / stoch-vol / etc
+    # NOTE: 'multifractal' was here but is legitimately ambiguous
+    # (Multifractal Random Walk IS a real modelling family from Bacry-
+    # Muzy-Delour). Keeping it as a stat mechanism is the less-lossy
+    # call; papers using multifractal analysis of returns as a fact
+    # get 'other' as fact instead.
 })
 
 #: Mechanism-tag terms that ARE modelling flags but are so generic they don't
