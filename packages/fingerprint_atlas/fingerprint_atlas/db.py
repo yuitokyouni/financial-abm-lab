@@ -313,6 +313,29 @@ def upsert_literature_metadata(
         return int(cur.lastrowid)
 
 
+def record_extraction_attempt(db_path: str, arxiv_id: str) -> None:
+    """Bump the attempt counter on a row without marking it extracted.
+
+    Use case: the LLM returned an empty payload (all-null summary +
+    empty tags). We don't want to write extracted_by_model — that would
+    hide the row from extract-untagged forever — but we do want to
+    track how many times we've tried so a retry loop can back off after
+    N failures.
+    """
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET "
+            "extraction_attempts = extraction_attempts + 1, updated_at = ? "
+            "WHERE arxiv_id = ?",
+            (now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
+
+
 def update_literature_extraction(
     db_path: str, arxiv_id: str, *,
     mechanism_summary: str | None,

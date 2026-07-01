@@ -514,19 +514,70 @@ def cmd_extract_untagged(args) -> int:
     any rows that skipped extract=True). Only rows with a non-empty
     abstract are processed.
 
-    Idempotent per row: if a call fails or the LLM returns empty, we
-    increment extraction_attempts and move on (same as ingest()). Re-run
-    later to catch retries."""
+    Retry policy:
+      - HTTP / network / rate-limit failures leave the row untagged and
+        attempts unchanged — the next run will pick it up naturally.
+      - LLM-returned-empty payloads (all-null summary + zero tags) bump
+        extraction_attempts but leave extracted_by_model NULL, so the
+        row is retried up to --max-attempts times (default 3), then
+        parked.
+
+    --sleep N inserts N seconds between calls to smooth TPM-based rate
+    limits (Groq free tier is 8k TPM — a >3k-token request every 1s can
+    trip this even with retry backoff)."""
+    from time import sleep as _sleep
     from .arxiv_ingest import extract_paper_structured
-    from .db import update_literature_extraction
+    from .db import update_literature_extraction, record_extraction_attempt
     ensure_literature_schema(args.db)
     rows = load_literature(args.db)
+    max_attempts = args.max_attempts
+
+    def _is_extraction_defective(row: dict) -> bool:
+        """Row was 'extracted' but the payload is unusable. Either:
+        (a) LLM gave nothing (empty summary + tags + relevance), OR
+        (b) mechanism_tags contain non-ASCII — the extraction contract
+            is English-only slugs; JA tokens split the coverage matrix
+            on tag equality (bug that shipped when generate_japanese
+            leaked into this path before the fix).
+        Worth retrying under the corrected prompt.
+        """
+        if not row.get("extracted_by_model"):
+            return False
+        summary = (row.get("mechanism_summary") or "").strip()
+        tags = row.get("mechanism_tags") or []
+        rel = row.get("relevance_score")
+        if not summary and not tags and rel is None:
+            return True
+        if any(not t.isascii() for t in tags):
+            return True
+        return False
+
+    def _has_usable_abstract(row: dict) -> bool:
+        a = (row.get("abstract") or "").strip()
+        return bool(a) and not a.startswith("[no abstract available")
+
     untagged = [
         r for r in rows
         if not r.get("extracted_by_model")
-        and (r.get("abstract") or "").strip()
-        and not (r.get("abstract") or "").startswith("[no abstract available")
+        and _has_usable_abstract(r)
+        and int(r.get("extraction_attempts") or 0) < max_attempts
     ]
+    if args.retry_empty_past:
+        defective = [r for r in rows
+                      if _is_extraction_defective(r)
+                      and _has_usable_abstract(r)]
+        if defective:
+            print(f"including {len(defective)} previously-defective row(s) "
+                  f"for retry (empty payload or non-ASCII tags).")
+            untagged.extend(defective)
+    parked = [
+        r for r in rows
+        if not r.get("extracted_by_model")
+        and int(r.get("extraction_attempts") or 0) >= max_attempts
+    ]
+    if parked:
+        print(f"({len(parked)} row(s) parked — attempts ≥ {max_attempts}; "
+              f"raise --max-attempts to keep trying.)")
     if not untagged:
         print("no untagged rows with usable abstract — nothing to do.")
         return 0
@@ -536,18 +587,19 @@ def cmd_extract_untagged(args) -> int:
 
     print(f"found {len(untagged)} untagged row(s) to extract "
           f"({'DRY-RUN' if args.dry_run else 'live'}, "
-          f"model={args.groq_model}).")
+          f"model={args.groq_model}, sleep={args.sleep}s).")
 
     if args.dry_run:
         for r in untagged[:20]:
             title = (r.get("title") or "")[:60]
-            print(f"  would extract  {r['arxiv_id']:<22s}  {title}")
+            attempts = int(r.get("extraction_attempts") or 0)
+            attempt_tag = f" (attempts={attempts})" if attempts else ""
+            print(f"  would extract  {r['arxiv_id']:<22s}  {title}{attempt_tag}")
         if len(untagged) > 20:
             print(f"  ... and {len(untagged) - 20} more")
         return 0
 
-    ok = 0
-    failed = 0
+    ok = empty = failed = 0
     for i, r in enumerate(untagged, start=1):
         paper = {
             "arxiv_id": r["arxiv_id"],
@@ -557,6 +609,25 @@ def cmd_extract_untagged(args) -> int:
         }
         try:
             ext = extract_paper_structured(paper, model=args.groq_model)
+        except Exception as exc:
+            failed += 1
+            print(f"  [{i:>3d}/{len(untagged)}] FAIL {r['arxiv_id']:<22s} "
+                  f"{type(exc).__name__}: {exc}",
+                  file=sys.stderr)
+            if args.sleep:
+                _sleep(args.sleep)
+            continue
+
+        is_empty = (not ext["mechanism_summary"]
+                    and not ext["mechanism_tags"]
+                    and ext["relevance_score"] is None)
+        if is_empty:
+            record_extraction_attempt(args.db, r["arxiv_id"])
+            empty += 1
+            attempts_now = int(r.get("extraction_attempts") or 0) + 1
+            print(f"  [{i:>3d}/{len(untagged)}] EMPTY {r['arxiv_id']:<22s} "
+                  f"(attempt {attempts_now}/{max_attempts})")
+        else:
             update_literature_extraction(
                 args.db, r["arxiv_id"],
                 mechanism_summary=ext["mechanism_summary"],
@@ -567,15 +638,13 @@ def cmd_extract_untagged(args) -> int:
                 extracted_by_model=ext["extracted_by_model"],
             )
             ok += 1
-            tags = ", ".join(ext["mechanism_tags"][:3]) or "(no tags)"
+            tags = ", ".join(ext["mechanism_tags"][:3]) or "(summary-only)"
             print(f"  [{i:>3d}/{len(untagged)}] +ext  {r['arxiv_id']:<22s} "
                   f"{tags}")
-        except Exception as exc:
-            failed += 1
-            print(f"  [{i:>3d}/{len(untagged)}] FAIL {r['arxiv_id']:<22s} "
-                  f"{type(exc).__name__}: {exc}",
-                  file=sys.stderr)
-    print(f"\ndone: extracted {ok}, failed {failed}, of {len(untagged)}.")
+        if args.sleep:
+            _sleep(args.sleep)
+    print(f"\ndone: extracted {ok}, empty {empty}, failed {failed}, "
+          f"of {len(untagged)}.")
     return 0 if not failed else 2
 
 
@@ -1758,6 +1827,19 @@ def main() -> int:
                        help="stop after N papers (0 = all untagged)")
     p_eu.add_argument("--dry-run", action="store_true",
                        help="list what would be extracted, without calling the LLM")
+    p_eu.add_argument("--sleep", type=float, default=0.0,
+                       help="seconds between calls (smooth TPM rate limits; "
+                            "Groq free tier is 8k TPM — 3.0 is a safe pace)")
+    p_eu.add_argument("--max-attempts", type=int, default=3,
+                       help="skip rows whose extraction_attempts already "
+                            "reached this cap (default 3). Prevents infinite "
+                            "retries on papers the LLM has repeatedly failed "
+                            "to extract from.")
+    p_eu.add_argument("--retry-empty-past", action="store_true",
+                       help="also retry rows that WERE extracted but came "
+                            "back completely empty (no summary + no tags + "
+                            "no relevance). Useful right after a prompt or "
+                            "generate_japanese fix.")
 
     p_so = sub.add_parser(
         "stylized-fact-other",

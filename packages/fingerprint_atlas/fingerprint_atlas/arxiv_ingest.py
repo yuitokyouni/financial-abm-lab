@@ -270,10 +270,14 @@ def _call_groq_for_extraction(paper: dict, model: str,
     last_exc: Exception | None = None
     for attempt in range(max_retries + 1):
         try:
+            # Structured extraction output is English-only (DB keys, tag
+            # matching, coverage matrix all key on the English slug). Do
+            # NOT inject the JA glossary — it leaked JA tokens into
+            # mechanism_tags for at least one paper (limited-rationality
+            # etc), which then split the coverage matrix on tag equality.
             return call_llm(EXTRACTION_SYSTEM_PROMPT, paper_payload, model,
                             temperature=temperature, max_retries=0,
-                            generate_japanese=True,
-                            glossary_domain="financial-abm")
+                            generate_japanese=False)
         except Exception as exc:
             last_exc = exc
             msg = str(exc)

@@ -593,13 +593,66 @@ def test_extract_untagged_lists_only_rows_needing_extraction(tmp_path, capsys):
         relevance_score=0.5, extracted_by_model="test",
     )
 
-    args = argparse.Namespace(db=db, groq_model="test", limit=0, dry_run=True)
+    args = argparse.Namespace(db=db, groq_model="test", limit=0, dry_run=True,
+                                sleep=0.0, max_attempts=3, retry_empty_past=False)
     assert cmd_extract_untagged(args) == 0
     out = capsys.readouterr().out
     assert "found 1 untagged" in out
     assert "a/1" in out
     assert "a/2" not in out
     assert "a/3" not in out
+
+
+def test_extract_untagged_retry_empty_past_flag_picks_up_defective(tmp_path,
+                                                                     capsys):
+    """--retry-empty-past adds back rows that were 'extracted' but came
+    back empty OR have non-ASCII (JA) tokens in mechanism_tags."""
+    import argparse
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+        update_literature_extraction,
+    )
+    from fingerprint_atlas.arxiv_cli import cmd_extract_untagged
+
+    db = str(tmp_path / "t.db")
+    ensure_literature_schema(db)
+    common = dict(authors="A", year=2024, published_date="2024-01-01",
+                   primary_category=None, source_kind="arxiv",
+                   abstract="a real abstract about herding.")
+
+    upsert_literature_metadata(db, arxiv_id="empty/1",
+                                 title="was extracted, came back empty", **common)
+    update_literature_extraction(
+        db, "empty/1", mechanism_summary=None, mechanism_tags=[],
+        stylized_facts_targeted=[], novelty_signal=None,
+        relevance_score=None, extracted_by_model="test",
+    )
+    upsert_literature_metadata(db, arxiv_id="jp/1",
+                                 title="JA tokens leaked into tags", **common)
+    update_literature_extraction(
+        db, "jp/1", mechanism_summary="限定合理性の話",
+        mechanism_tags=["限定合理性", "market-discipline"],
+        stylized_facts_targeted=["other"], novelty_signal=None,
+        relevance_score=0.5, extracted_by_model="test",
+    )
+    upsert_literature_metadata(db, arxiv_id="good/1",
+                                 title="clean extraction — do not touch", **common)
+    update_literature_extraction(
+        db, "good/1", mechanism_summary="clean",
+        mechanism_tags=["order-book", "microstructure"],
+        stylized_facts_targeted=["fat-tails"], novelty_signal=None,
+        relevance_score=0.9, extracted_by_model="test",
+    )
+
+    args = argparse.Namespace(db=db, groq_model="test", limit=0,
+                                dry_run=True, sleep=0.0, max_attempts=3,
+                                retry_empty_past=True)
+    assert cmd_extract_untagged(args) == 0
+    out = capsys.readouterr().out
+    assert "empty/1" in out
+    assert "jp/1" in out
+    assert "good/1" not in out
+    assert "2 previously-defective" in out
 
 
 def test_stylized_fact_other_partitions_and_lists(tmp_path, capsys):
