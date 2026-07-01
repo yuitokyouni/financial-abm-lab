@@ -160,6 +160,20 @@ def build_coverage(rows: list[dict], *, top_rows: int = 15,
             if j is not None:
                 M[i, j] += 1
 
+    # Mark tautological diagonal cells (row-name == column-name) as
+    # excluded — e.g., 'regime-switching × regime-switching' or
+    # 'herding × herding'. A paper whose mechanism IS regime-switching
+    # producing the regime-switching stylized fact is trivially true and
+    # doesn't inform coverage or gaps. Same for other future ABM-specific
+    # facts (herding). We keep the count for the markdown table
+    # (documentation) but flag which cells to grey out at render time.
+    excluded_cells: set[tuple[int, int]] = set()
+    for i, r_label in enumerate(row_labels):
+        r_norm = _canonical_fact(r_label)
+        j = col_idx.get(r_norm)
+        if j is not None:
+            excluded_cells.add((i, j))
+
     return {
         "row_labels": row_labels,
         "col_labels": cols,
@@ -169,6 +183,7 @@ def build_coverage(rows: list[dict], *, top_rows: int = 15,
         "n_papers_total": len(rows),
         "n_papers_classified": sum(1 for r in rows
                                     if _primary_tag(r) in row_idx),
+        "excluded_cells": excluded_cells,
     }
 
 
@@ -183,11 +198,20 @@ def render_heatmap(cov: dict, png_path: str, *, figsize=(12.0, 8.0),
     M = cov["matrix"]
     row_labels = cov["row_labels"]
     col_labels = cov["col_labels"]
+    excluded = cov.get("excluded_cells") or set()
+
+    # Prepare a display matrix where excluded cells are NaN so the
+    # colour map treats them as "no data" instead of packing them into
+    # the count scale (a tautological 7 was topping the whole matrix).
+    M_display = M.astype(float).copy()
+    for (i, j) in excluded:
+        M_display[i, j] = np.nan
 
     fig, ax = plt.subplots(figsize=figsize)
-    cmap = plt.cm.YlOrRd.with_extremes(under="white")
-    vmax = max(M.max(), 1)
-    im = ax.imshow(M, cmap=cmap, vmin=0.5, vmax=vmax, aspect="auto")
+    cmap = plt.cm.YlOrRd.with_extremes(under="white", bad="#e5e5e5")
+    finite_max = np.nanmax(M_display) if np.isfinite(M_display).any() else 1.0
+    vmax = max(int(finite_max), 2)  # >= 2 keeps vmin=0.5 < vmax non-singular
+    im = ax.imshow(M_display, cmap=cmap, vmin=0.5, vmax=vmax, aspect="auto")
 
     ax.set_xticks(range(len(col_labels)))
     ax.set_xticklabels(col_labels, rotation=30, ha="right", fontsize=9)
@@ -199,9 +223,13 @@ def render_heatmap(cov: dict, png_path: str, *, figsize=(12.0, 8.0),
     ax.set_title(f"Literature coverage — "
                   f"{cov['n_papers_classified']}/{cov['n_papers_total']} papers")
 
-    # Cell annotations — count or '·' for empty
+    # Cell annotations — count, '·' for empty, or 'N/A' for tautologies.
     for i in range(M.shape[0]):
         for j in range(M.shape[1]):
+            if (i, j) in excluded:
+                ax.text(j, i, "N/A", ha="center", va="center",
+                         color="#888", fontsize=7, style="italic")
+                continue
             v = M[i, j]
             ax.text(j, i, str(v) if v > 0 else "·",
                      ha="center", va="center",
@@ -218,13 +246,18 @@ def render_markdown(cov: dict) -> str:
     cols = cov["col_labels"]
     rows = cov["row_labels"]
     M = cov["matrix"]
+    excluded = cov.get("excluded_cells") or set()
     lines = ["| mechanism (n) | " + " | ".join(cols) + " | total |"]
     lines.append("|" + " --- |" * (len(cols) + 2))
     for i, r in enumerate(rows):
-        cells = [str(M[i, j]) if M[i, j] > 0 else "·"
+        cells = ["_N/A_" if (i, j) in excluded
+                  else (str(M[i, j]) if M[i, j] > 0 else "·")
                  for j in range(len(cols))]
+        # row total excludes tautological diagonal
+        row_total = sum(int(M[i, j]) for j in range(len(cols))
+                         if (i, j) not in excluded)
         lines.append(f"| **{r}** ({cov['row_totals'][i]}) | "
-                     + " | ".join(cells) + f" | {int(M[i, :].sum())} |")
+                     + " | ".join(cells) + f" | {row_total} |")
     # Column totals
     lines.append("| _total_ | "
                  + " | ".join(str(int(t)) for t in cov["col_totals"])
