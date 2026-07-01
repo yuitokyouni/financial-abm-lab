@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import html
 import json
+import os
 import re
 import time
 import urllib.error
@@ -36,6 +37,18 @@ _OA_BASE = "https://api.openalex.org"
 _OA_TIMEOUT = 15.0
 _POLITE_MAILTO = "yuitokyouni+oa@gmail.com"  # OpenAlex etiquette param
 _USER_AGENT = "fingerprint-atlas/0.1 (mailto:" + _POLITE_MAILTO + ")"
+
+
+def _api_key() -> str | None:
+    """OpenAlex API key from OPENALEX_API_KEY env var, or None.
+
+    As of late 2025 OpenAlex globally rate-limits anonymous /works?search
+    traffic under heavy load ("503 Search temporarily unavailable"). An
+    authenticated key gets you into the reliable pool + a free daily
+    credit allowance. Sign up (free): https://openalex.org/settings/api
+    """
+    key = (os.environ.get("OPENALEX_API_KEY") or "").strip()
+    return key or None
 _LAST_HTTP_STATUS: int | None = None
 _RATE_LIMITED = False
 _RATE_LIMITED_AT: float | None = None
@@ -68,6 +81,11 @@ def _arxiv_base(arxiv_id: str) -> str:
 def _http_get_json_with_status(url: str, timeout: float = _OA_TIMEOUT
                                 ) -> tuple[int | None, dict | None]:
     headers = {"User-Agent": _USER_AGENT, "Accept": "application/json"}
+    key = _api_key()
+    if key:
+        # OpenAlex supports both header and ?api_key=… — header is safer
+        # (keeps the key out of proxy access-logs and cache keys).
+        headers["Authorization"] = f"Bearer {key}"
     req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:

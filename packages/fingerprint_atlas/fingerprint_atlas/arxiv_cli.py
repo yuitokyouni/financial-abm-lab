@@ -1018,11 +1018,22 @@ def cmd_canon_atlas(args) -> int:
         # misses so the user knows whether to retry vs edit subfields.py.
         errors = " ".join(str(e.get("error") or "") for e in failed)
         upstream = any(f"HTTP {c}" in errors for c in (429, 502, 503, 504))
-        hint = (" — OpenAlex upstream outage (5xx/429). "
-                "Retry in a few minutes; the seed-anchored fallback covered "
-                f"{sum(1 for e in atlas if e.get('fallback_used'))} subfield(s) "
-                "in this run."
-                if upstream else "")
+        anon = not os.environ.get("OPENALEX_API_KEY")
+        if upstream and anon:
+            hint = (" — OpenAlex is 503'ing anonymous search traffic under "
+                    "heavy load. Get a free API key at "
+                    "https://openalex.org/settings/api and export it as "
+                    "OPENALEX_API_KEY. Authenticated requests are served "
+                    f"from the reliable pool. Fallback covered "
+                    f"{sum(1 for e in atlas if e.get('fallback_used'))} "
+                    "subfield(s) in this run.")
+        elif upstream:
+            hint = (" — OpenAlex 5xx/429 despite key set; retry in a few "
+                    "minutes. Fallback covered "
+                    f"{sum(1 for e in atlas if e.get('fallback_used'))} "
+                    "subfield(s) in this run.")
+        else:
+            hint = ""
         print(f"\nERROR: OpenAlex lookup failed for {len(failed)} subfield(s); "
               f"coverage is incomplete and auto-ingest was skipped.{hint}",
               file=sys.stderr)
