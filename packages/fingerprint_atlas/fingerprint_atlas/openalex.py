@@ -366,17 +366,24 @@ def find_canon_papers(query_or_concept: str, *, n: int = 30,
     return out
 
 
-def _top_concept_id_from_seed(seed_arxiv: str,
+def _top_concept_id_from_seed(seed: str,
                                 skip_concepts: set[str] | None = None
                                 ) -> tuple[str, str] | None:
-    """Given a seed paper's arxiv id, resolve it via direct DOI/ID lookup
-    (NO search=) and return its highest-scoring OpenAlex concept as
-    (concept_id, display_name). None if the seed can't be resolved.
+    """Given a seed paper, resolve it via direct DOI/ID lookup (NO search=)
+    and return its highest-scoring OpenAlex concept as (concept_id,
+    display_name). None if the seed can't be resolved.
+
+    `seed` accepts three forms:
+      - arxiv id, e.g. 'adap-org/9708006' or '1909.03185'
+      - OpenAlex W-id, e.g. 'W1537415400' (for journal-only papers with
+        no arxiv preprint — Lux-Marchesi Nature 1999 etc)
+      - the 'oa:W…' synthetic prefix used elsewhere in this codebase
 
     Concept picking:
-      - fetch_paper() first — it resolves arxiv → journal DOI for
-        old-style papers, so the concept list comes from the well-tagged
-        journal record instead of the sparse arxiv-preprint record
+      - fetch_paper() when arxiv-shaped — resolves arxiv → journal DOI
+        for old-style papers, so the concept list comes from the well-
+        tagged journal record instead of the sparse arxiv-preprint record
+      - direct /works/W… when OA-shaped
       - skip generic, non-discriminative concepts (Computer science /
         Mathematics / Economics / Set (abstract data type) / …) — they
         dominate the top of many OA papers but return unrelated top-cited
@@ -387,19 +394,26 @@ def _top_concept_id_from_seed(seed_arxiv: str,
     concept-filter queries (`filter=concepts.id:C…`) still succeed, so
     canon detection can continue by pivoting off a known-good anchor.
     """
-    base_id = _arxiv_base(seed_arxiv)
-    if not base_id:
+    if not seed:
         return None
-    # fetch_paper handles the arxiv → journal-DOI resolution and gives
-    # us the canonical OA work id.
-    normalised = fetch_paper(base_id)
-    if not normalised or not normalised.get("oa_paper_id"):
-        return None
-    oa_uri = normalised["oa_paper_id"]
-    m = re.search(r"(W\d+)", oa_uri)
-    if not m:
-        return None
-    url = f"{_OA_BASE}/works/{m.group(1)}"
+    # Resolve to a concrete W-id first.
+    m_oa = re.match(r"^(?:oa:)?(W\d+)$", seed.strip())
+    if m_oa:
+        work_id = m_oa.group(1)
+    else:
+        base_id = _arxiv_base(seed)
+        if not base_id:
+            return None
+        # fetch_paper handles the arxiv → journal-DOI resolution and gives
+        # us the canonical OA work id.
+        normalised = fetch_paper(base_id)
+        if not normalised or not normalised.get("oa_paper_id"):
+            return None
+        m = re.search(r"(W\d+)", normalised["oa_paper_id"])
+        if not m:
+            return None
+        work_id = m.group(1)
+    url = f"{_OA_BASE}/works/{work_id}"
     raw = _http_get_json(url)
     if not raw or not isinstance(raw, dict):
         return None
@@ -407,11 +421,19 @@ def _top_concept_id_from_seed(seed_arxiv: str,
     if not concepts:
         return None
     generic = {
+        # discipline-level (OA level 0-1) — too broad to be discriminative
         "Computer science", "Mathematics", "Economics", "Physics",
         "Statistics", "Artificial intelligence", "Data science",
+        "Sociology", "Chemistry", "Biology", "Materials science",
+        "Engineering", "Political science", "Medicine",
+        # broad method families that catch physics papers of every stripe
         "Set (abstract data type)", "Power (physics)", "Simulation",
-        "Mathematical economics", "Microeconomics", "Sociology",
+        "Scaling", "Criticality", "Statistical physics",
+        "Molecular dynamics", "Nonlinear system",
+        # sub-discipline sinks — still too big to be canon anchors
+        "Mathematical economics", "Microeconomics",
         "Management science", "Theoretical computer science",
+        "Econometrics", "Financial economics",
     }
     if skip_concepts:
         generic |= skip_concepts
@@ -429,20 +451,19 @@ def _top_concept_id_from_seed(seed_arxiv: str,
     return None
 
 
-def find_canon_papers_by_seed(seed_arxiv: str, *, n: int = 30,
+def find_canon_papers_by_seed(seed: str, *, n: int = 30,
                                 year_max: int | None = None
                                 ) -> list[dict]:
     """Canon-detection fallback anchored on a known seed paper.
 
     Path: fetch seed (direct DOI/ID lookup — survives search-endpoint
     outages) → extract its top concept → concept-filter query for the
-    top-N most-cited works under that concept. If the seed itself would
-    otherwise be filtered out (e.g. cited fewer than 9 times), it is
-    included at the end so we always surface at least one paper.
+    top-N most-cited works under that concept. `seed` accepts an arxiv
+    id or an OpenAlex W-id (see `_top_concept_id_from_seed`).
     """
     global _LAST_HTTP_STATUS
     _LAST_HTTP_STATUS = None
-    resolved = _top_concept_id_from_seed(seed_arxiv)
+    resolved = _top_concept_id_from_seed(seed)
     if resolved is None:
         raise OpenAlexQueryError(_LAST_HTTP_STATUS)
     concept_id, _concept_name = resolved
