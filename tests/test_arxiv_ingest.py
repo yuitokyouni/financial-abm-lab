@@ -684,7 +684,7 @@ def test_stylized_fact_other_partitions_and_lists(tmp_path, capsys):
         )
 
     args = argparse.Namespace(db=db, groq_model="test", limit=0, retag=False,
-                                summary=False, min_relevance=0.0)
+                                summary=False, min_relevance=0.0, sleep=0.0)
     assert cmd_stylized_fact_other(args) == 0
     out = capsys.readouterr().out
     assert "papers tagged with 'other' ONLY:  2" in out

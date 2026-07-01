@@ -746,7 +746,9 @@ def cmd_stylized_fact_other(args) -> int:
               f"stylized-fact enum, or --summary for a group-by-tag view.")
         return 0
 
-    print(f"re-extracting {len(subset)} row(s) with model={args.groq_model}...")
+    from time import sleep as _sleep
+    print(f"re-extracting {len(subset)} row(s) with model={args.groq_model}"
+          f"{f', sleep={args.sleep}s' if args.sleep else ''}...")
     ok = failed = still_other = 0
     for i, r in enumerate(subset, start=1):
         paper = {"arxiv_id": r["arxiv_id"], "title": r.get("title") or "",
@@ -775,6 +777,8 @@ def cmd_stylized_fact_other(args) -> int:
             failed += 1
             print(f"  [{i:>3d}/{len(subset)}]  {r['arxiv_id']:<22s} FAIL "
                   f"{type(exc).__name__}: {exc}", file=sys.stderr)
+        if args.sleep:
+            _sleep(args.sleep)
     print(f"\ndone: {ok} reclassified, {still_other} still 'other', "
           f"{failed} failed.")
     return 0 if not failed else 2
@@ -1949,6 +1953,10 @@ def main() -> int:
                        help="with --summary, additionally list papers whose "
                             "relevance_score is below this threshold — the "
                             "clean out-of-scope delete candidates.")
+    p_so.add_argument("--sleep", type=float, default=0.0,
+                       help="seconds between LLM calls when --retag is set "
+                            "(smooths Groq TPM rate-limits — 1.0 is a safe "
+                            "pace on gpt-4o-mini)")
 
     p_dlr = sub.add_parser(
         "delete-low-relevance",
