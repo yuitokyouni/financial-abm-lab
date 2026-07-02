@@ -34,7 +34,7 @@ for _p in (str(YH006_1), str(HERE)):
         sys.path.remove(_p)
     sys.path.insert(0, _p)
 
-from analysis import bin_variance_slope_pooled  # noqa: E402
+from analysis import bin_variance_slope_pooled, bin_zero_rate_slope_pooled  # noqa: E402
 from config import AGG_PARAMS, LOB_PARAMS, ENSEMBLE_SEED_BASE, ENSEMBLE_N_TRIALS  # noqa: E402
 from stats import bootstrap_ci  # noqa: E402
 
@@ -104,9 +104,13 @@ def compute_pooled_bin_var_4cond(
             continue
         pooled_rt = pd.concat(rt_dfs, ignore_index=True)
         pooled[cond] = bin_variance_slope_pooled(pooled_rt, K=15)
+        # C-1 fix: funnel slope (非ゼロ ΔG のみ) と、旧指標が実際に測っていた
+        # ゼロ率 slope を分離して両方ログする。
+        zero_rate_slope = bin_zero_rate_slope_pooled(pooled_rt, K=15)
         logger.info(
             f"[pooled] {cond}: pooled n_rt={len(pooled_rt):,} "
-            f"bin_var_slope_pooled={pooled[cond]:+.4f}"
+            f"bin_var_slope_pooled={pooled[cond]:+.4f} "
+            f"(zero-excluded funnel; zero_rate_slope={zero_rate_slope:+.4f})"
         )
     return pooled
 

@@ -144,6 +144,7 @@
 
 **確認済み (2×2 主結果)**:
 - **corr(\|ΔG\|, horizon) の交互作用 −0.27** (主 finding): aggregate では Pareto 初期化に対し robust (C0u 0.353 → C0p 0.347)、LOB では半減 (C2 0.61 → C3 0.33)。LOB が dynamic-wealth の自己組織化を弱め、初期 wealth heterogeneity を **funnel 形成の妨げに変換**する。
+  > ⚠️ **撤回済み (Phase 2 S3 / dossier §冒頭):** この単一 seed の interaction −0.27 は **100-trial ensemble で null と確定** (CI が 0 を跨ぐ)。「主 finding」として引用しないこと。加えて interaction を bin_var_slope 経由で見る場合は **C-1 (2026-07-02 監査)** の影響も受ける (ゼロ ΔG 対数フロア汚染で符号反転)。機構は dossier の「仮説 A revised」(wealth persistence 起源) を参照。
 - **world 効果 ≫ wealth 効果**: num_round_trips ÷10³ (LOB friction で round-trip 率が 1183x 減速)、α_hill −2 (LOB の基本 signature)、passive/active_hold 共に +0.09 (SG が約定できず holding 強制)。
 - **N scaling 補遺**: hold ratio は N 不変 (N 1000→100 で差 < 0.01)、α_hill は N 効果に強く依存 (旧表 −0.56 → 真値 −1.93、3.4x 過小評価)。**N を揃えなければ α 比較は意味がない**事実そのものが論文 material。
 
@@ -193,8 +194,18 @@
 | lifetime censoring 率 | 0.9% | 0.9% | 90.1% | 72.0% |
 | lifetime p25 | 227.0 | 224.0 | 1500.0 | 212.0 |
 
+> ⚠️ **C-1 (2026-07-02 監査):** 上表 `bin_var_slope` 行 (−0.314 / −0.324 / −0.036 /
+> −0.041) は **無効** — ゼロ ΔG の対数フロア汚染で符号反転する (非ゼロのみで再計算
+> すると +0.9〜+0.99、条件差は縮む)。`analysis.py` 修正済み、S1–S6 再集計が必要。
+> ゼロ率の horizon 依存は `bin_zero_rate_slope` で別途報告。
+
 **主 finding**:
 - **仮説 A primary evidence 確定**: LOB censoring_rate = 81.1% vs aggregate 0.9% (gap +80.1%)、median>T/2 trial 200/200。LOB friction が agent turnover を実際に抑制し、tail composition が persist する定量証拠。
+  > ⚠️ **撤回済み (Phase 2 S5.7 / dossier §主張の退役):** raw censoring 「81.1% vs 0.9%」
+  > は **horizon 交絡 (LOB と aggregate で T が ~33x 異なる) により retire**。matched-τ
+  > KM S(τ) 比較 (τ=1499) に置換され、gap は LOB 73–91% vs agg 1.3–1.8% (**52x/58x**) と
+  > して再確立された。また「仮説 A 単純版 (q 経路)」は S5 A1 ablation で **反証**され
+  > **「仮説 A revised」(wealth persistence 起源)** に更新済み。dossier を参照。
 - **C2 (LOB uniform)**: 全 agent が roughly 同 pace で生存 (p25=T、censoring 90%)。C3 (LOB pareto): 下位 25% が早期退場 (p25=212)。初期 wealth heterogeneity が LOB 環境では dynamics に残存。
 - **Interaction (C3−C2)−(C0p−C0u)**: rho_pearson = −0.020 [−0.042, +0.002]、CI が 0 を跨ぐ → plan A/B 分岐判定保留。S1-secondary (bootstrap 確定) 待ち。
 - **wealth_persistence_rho**: C2 = +0.237 [+0.216, +0.257] で有意、C3 ≈ 0 → LOB + uniform では初期 wealth rank が持続するが pareto 投入で壊れる非対称性を確認。

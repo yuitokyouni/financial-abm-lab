@@ -1,5 +1,17 @@
 # YH006_1 — Phase 2 結果サマリ
 
+> ⚠️ **訂正通知 (C-1, 2026-07-02 監査):** 本 README の `binVar slope` 列および
+> interaction の `bin_var_slope` 行は **無効**。旧 `bin_variance_slope` は ΔG=0 を
+> `log(1e-9)=−20.7` に写像していたため、指標が「ファネル」ではなく **ゼロ ΔG 頻度の
+> horizon プロファイル** を測っており、保存済み parquet で再計算すると **符号が反転**
+> する (C0u: 表の −0.2033 → 非ゼロのみで **+0.99**、C0p/C2/C3 も +0.9〜+0.98)。ゼロ率
+> は条件依存 (C0u 0.212 / C3 ~0.15 等) なので条件間比較・interaction も部分的にゼロ率の
+> ランキングになっていた。`analysis.py` は非ゼロ ΔG のみ使う実装に修正済み
+> (`exclude_zeros=True`)、ゼロ率の horizon 依存は `bin_zero_rate_slope` で分離報告する。
+> **下記テーブルの binVar 系数値・「microstructure 真効果」の結論・S5.5 ゲート判定は、
+> S1–S6 を再集計して再導出する必要がある** (funnel は生き残る見込みだが、条件差は縮む)。
+> 他指標 (Pearson/Spearman/Kendall/qreg/Hill 等) はこの訂正の対象外。
+
 ## Stage S1 (tentative) — Phase 1 データ再分析
 
 **実行範囲**: 4 / 4 条件で完走 (C0u, C0p, C2, C3)
