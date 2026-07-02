@@ -1,6 +1,6 @@
 # financial-abm-lab
 
-金融市場 Agent-Based Modeling 研究のモノレポ。散在していた研究リポを履歴ごと1つに収束させる器。
+金融市場 Agent-Based Modeling 研究のモノレポ。散在していた研究リポを履歴ごと1つに収束。
 設計と受け入れ条件は [`specs/001-monorepo-consolidation.md`](specs/001-monorepo-consolidation.md) が ground truth。
 
 ## 統合ステータス
