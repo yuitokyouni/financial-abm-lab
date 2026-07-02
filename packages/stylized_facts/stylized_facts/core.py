@@ -32,16 +32,31 @@ def _acf(series: np.ndarray, max_lag: int) -> np.ndarray:
     var = (xc ** 2).mean()
     if var == 0:
         return np.zeros(max_lag)
+    n_valid = xc.size
     out = np.empty(max_lag, dtype=np.float64)
     # NaN を含む場合は lag ごとに pair-wise で再計算する必要があるが、
-    # p>0 が圧倒的多数なら簡便化のため全体 demean → pair product → mean でよい。
-    # ただし NaN があるとペアのうち 1 つでも NaN なら積も NaN、np.nanmean で scraping。
+    # p>0 が圧倒的多数なら簡便化のため全体 demean → pair product → sum でよい。
+    # NaN があるとペアのうち 1 つでも NaN なら積も NaN、np.nansum で scraping。
     x_demeaned = np.where(mask, x - x[mask].mean(), np.nan)
     for lag in range(1, max_lag + 1):
         prod = x_demeaned[:-lag] * x_demeaned[lag:]
-        m = np.nanmean(prod)
-        out[lag - 1] = m / var
+        # minor #6: 標準的な biased 推定量は分子を有効点数 n で割る。旧実装は
+        # np.nanmean で分子を n-lag (有効ペア数) で割っており、大 lag を n/(n-lag)
+        # 倍に膨らませて log-log |ACF| 図がノイズ床を power-law 状に見せていた。
+        # n 正規化なら |ρ| <= 1 が保証され Bartlett 帯 (±z/√n) と整合する。
+        out[lag - 1] = np.nansum(prod) / (n_valid * var)
     return out
+
+
+def bartlett_conf_band(n: int, z: float = 1.96) -> float:
+    """白色雑音仮説下での ACF の近似信頼帯 (±z/√n)。
+
+    n は ACF 計算に使った有効サンプル数。z=1.96 で ~95%。ACF 図に有意帯を引く /
+    null 受け入れゲートの閾値を Bartlett ノイズ帯基準で設定するために使う (§6b)。
+    """
+    if n <= 0:
+        return float("nan")
+    return float(z / np.sqrt(n))
 
 
 def return_acf(returns: np.ndarray, max_lag: int = 50) -> np.ndarray:
@@ -313,9 +328,16 @@ def plot_hold_ratio(
     num_act = sim_result["num_active_hold"].astype(np.float64)
     num_pas = sim_result["num_passive_hold"].astype(np.float64)
     T = len(num_buy)
-    # N はログからは直接取れないが、num_buy+sell+act+pas+idle = N なので
-    # max 値の和が N、あるいは任意 step での和。ここでは step 毎の合算の最大値を使う。
-    N_est = int((num_buy + num_sell + num_act + num_pas).max())
+    # #7: 真の agent 数 N。旧実装は step 毎合算の最大値で推定していたが、どの step
+    # にも idle agent が居るため max 和は常に N を下回り (実測 N_est=983 vs 真値
+    # 1000)、action ratio を ~1.7% 過大・idle 率を相対 ~15% 過小に歪めていた。
+    # 真の N は同じ dict 内にある: final_wealth は per-agent 配列なので len が N。
+    fw = sim_result.get("final_wealth")
+    if fw is not None and np.asarray(fw).size > 0:
+        N_est = int(np.asarray(fw).size)
+    else:
+        # final_wealth が無い dict 用の後方互換フォールバック (max 和推定)。
+        N_est = int((num_buy + num_sell + num_act + num_pas).max())
     # idle は N - (他 4 つ)
     num_idle = np.clip(N_est - (num_buy + num_sell + num_act + num_pas), 0.0, None)
     # time-average (正規化は N で割る)
