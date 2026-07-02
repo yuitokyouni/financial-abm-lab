@@ -1,13 +1,20 @@
-"""Chiarella-Iori (CI) adapter — order-book-based heterogeneous agent model.
+"""Chiarella-Iori (CI) adapter — reduced-form price-impact heterogeneous model.
 
-Based on Chiarella, Iori & Perelló (2009).  Agents submit limit orders
-to a continuous double auction; price emerges from order matching rather
-than from a single aggregate-demand clearing equation (as in SG).
+**Loosely inspired by Chiarella, Iori & Perelló (2009); NOT a faithful
+continuous-double-auction reproduction.**  Three demand components —
+fundamentalist mean-reversion to a fixed fair value, chartist trend
+extrapolation, and Gaussian noise — are combined into a net order that moves a
+*scalar* pseudo best-bid/ask via a deterministic linear price-impact function.
 
-The tick_size intervention widens the order-book grid, mechanically
-increasing the bid-ask spread and reducing order-book depth.
-The transaction_tax intervention adds a per-trade cost, deterring
-marginal liquidity provision and amplifying volatility.
+There is **no limit-order book and no order matching**: `best_bid`, `best_ask`,
+`bid_depth`, and `ask_depth` are scalars updated by hand-tuned heuristics, and
+the fill price is `best_{bid,ask} + price_impact · net_order / depth`.  Price
+does not "emerge from order matching" — it is a reduced-form impact model with a
+maintained pseudo-spread.
+
+The tick_size intervention rounds prices to the grid.  The transaction_tax
+intervention scales net demand by (1 − rate) as a crude cost drag
+(see `_simulate_one_path`).
 """
 
 from __future__ import annotations
@@ -132,10 +139,12 @@ class CIAdapter:
             returns = self._simulate_one_path(rng_i)
             all_returns.append(returns)
 
-        avg_returns = np.mean(all_returns, axis=0)
+        # #23: パス平均は stylized facts を破壊するため、n_paths>1 は連結 (pool)。
+        # n_paths=1 は従来と完全一致 (parity 不変)。
+        returns_out = all_returns[0] if n_paths == 1 else np.concatenate(all_returns)
 
         return SimulatedMarketData(
-            returns=avg_returns,
+            returns=returns_out,
             seed=seed,
             n_paths=n_paths,
             model_id="ci_v0.1",
@@ -149,9 +158,10 @@ class CIAdapter:
         return ComplexitySpec(
             n_free_params=9,
             structural_description=(
-                "Continuous double-auction model with limit-order book, "
-                "heterogeneous agents (fund/chart/noise), and order-matching "
-                "price discovery (Chiarella, Iori & Perelló 2009)"
+                "Reduced-form price-impact model with heterogeneous demand "
+                "(fund/chart/noise) moving a scalar pseudo bid/ask — NO limit-order "
+                "book and NO order matching; loosely inspired by Chiarella, Iori & "
+                "Perelló (2009) but not a faithful CDA"
             ),
             description_length=9.0,
         )
@@ -195,9 +205,11 @@ class CIAdapter:
 
             net_order = a_fund * fund_order + a_chart * chart_order + a_noise * noise_order
 
-            cost = abs(net_order) * p.transaction_cost
-            if abs(net_order) > 0:
-                net_order *= max(0.0, 1.0 - cost / (abs(net_order) * mid + 1e-12))
+            if p.transaction_cost > 0:
+                # #22: 旧実装は cost/(|net_order|·mid) = rate/mid ≈ rate/100 の桁で
+                # 減衰させ、100% 課税でも tick 丸めで消える実質 no-op だった。
+                # transaction_cost は税率 (fraction) なので net demand を (1−rate) 倍に。
+                net_order *= max(0.0, 1.0 - p.transaction_cost)
 
             if net_order > 0:
                 fill_price = best_ask + p.price_impact * net_order / (ask_depth + 1e-6)

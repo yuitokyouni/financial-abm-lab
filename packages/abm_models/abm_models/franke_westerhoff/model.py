@@ -1,15 +1,22 @@
-"""Franke-Westerhoff (FW) adapter — structural stochastic model.
+"""Franke-Westerhoff (FW) adapter — reduced-form sentiment-switching toy.
 
-Based on Franke & Westerhoff (2012).  Two agent populations —
-fundamentalists and chartists — with endogenous sentiment-driven
-switching via transition probabilities.  The key mechanism is a
-non-linear feedback between past price movements and the fraction
-of chartists, producing volatility clustering, leverage, and fat tails.
+**Loosely inspired by Franke & Westerhoff (2012); NOT a faithful
+reproduction.**  Two demand components — fundamentalists mean-reverting to a
+fixed fair value and chartists extrapolating the last return — are
+Gaussian-perturbed and combined into a population-weighted excess demand that
+drives a linear price-impact update on a tick grid.
 
-The tick_size interventions affect the price discretization grid,
-altering the resolution of trend signals available to chartists.
-The transaction_tax intervention dampens speculative chartist demand
-by increasing round-trip costs.
+The chartist fraction n_c evolves by an *ad-hoc linear switching rule*:
+attraction toward chartism ∝ |last return| and toward fundamentalism ∝
+|mispricing|, each offset by a constant and clipped, with n_c clamped to
+[0.05, 0.95].  This is deliberately simpler than the actual FW (2012)
+mechanism: there is **no discrete-choice / logit attractiveness, no
+transition-probability formulation, no herding term, and no wealth**.  The
+`|return|·100` scaling is a hand-tuned heuristic, not a model constant.
+
+The tick_size intervention rounds the price increment to the grid.  The
+transaction_tax intervention scales excess demand by (1 − rate) as a crude
+round-trip-cost drag (see `_simulate_one_path`).
 """
 
 from __future__ import annotations
@@ -128,10 +135,14 @@ class FWAdapter:
             returns = self._simulate_one_path(rng_i)
             all_returns.append(returns)
 
-        avg_returns = np.mean(all_returns, axis=0)
+        # #23: パス間で returns を点平均すると kurtosis / vol clustering など測定
+        # 対象の stylized facts が破壊される (独立ノイズの平均は薄い尾に潰れる)。
+        # n_paths>1 は独立パスを連結 (pool) して返す。n_paths=1 は連結対象が 1 本
+        # なので従来と完全一致 (parity 不変)。
+        returns_out = all_returns[0] if n_paths == 1 else np.concatenate(all_returns)
 
         return SimulatedMarketData(
-            returns=avg_returns,
+            returns=returns_out,
             seed=seed,
             n_paths=n_paths,
             model_id="fw_v0.1",
@@ -147,9 +158,11 @@ class FWAdapter:
         return ComplexitySpec(
             n_free_params=6,
             structural_description=(
-                "Structural stochastic model with sentiment-driven "
-                "fundamentalist/chartist switching via transition probabilities "
-                "(Franke & Westerhoff 2012)"
+                "Reduced-form fundamentalist/chartist toy with ad-hoc linear "
+                "sentiment switching (attraction ∝ |last return| / |mispricing|, "
+                "clipped) driving a price-impact update — loosely inspired by "
+                "Franke & Westerhoff (2012) but NOT the discrete-choice / "
+                "transition-probability mechanism; no herding, no wealth"
             ),
             description_length=6.0,
         )
@@ -181,8 +194,11 @@ class FWAdapter:
             excess_demand = n_f * d_fund + n_c * d_chart + 0.1 * d_noise
 
             if p.transaction_cost > 0:
-                cost_drag = p.transaction_cost * abs(excess_demand)
-                excess_demand *= max(0.0, 1.0 - cost_drag / (abs(excess_demand) + 1e-10))
+                # #22: 旧実装は cost/(|ed|·mid) = rate/mid ≈ rate/100 の桁で demand を
+                # 減衰させており、100% 課税でも tick 丸めで消える実質 no-op だった。
+                # transaction_cost は税率 (fraction) なので demand を (1−rate) 倍に
+                # 減衰させるのが素直な意味論 (rate=1 → demand 0, rate=0.001 → ×0.999)。
+                excess_demand *= max(0.0, 1.0 - p.transaction_cost)
 
             dp = p.price_impact * excess_demand
 

@@ -109,10 +109,12 @@ class ZIAdapter:
             returns = self._simulate_one_path(rng_i)
             all_returns.append(returns)
 
-        avg_returns = np.mean(all_returns, axis=0)
+        # #23: パス平均は stylized facts を破壊するため、n_paths>1 は連結 (pool)。
+        # n_paths=1 は従来と完全一致 (parity 不変)。
+        returns_out = all_returns[0] if n_paths == 1 else np.concatenate(all_returns)
 
         return SimulatedMarketData(
-            returns=avg_returns,
+            returns=returns_out,
             seed=seed,
             n_paths=n_paths,
             model_id="zi_v0.2",

@@ -121,13 +121,15 @@ SEED: list[dict[str, Any]] = [
         "name": "chiarella_iori",
         "kind": "abm",
         "mechanism": (
-            "Continuous double auction with three trader types — fundamentalists "
-            "pulling price toward a fixed fair value, chartists extrapolating recent "
-            "trends, and noise traders. Each trader submits a limit order; price "
-            "discovery is via order matching against a discretised tick grid, with "
-            "a transaction-cost intervention parameter."
+            "Reduced-form price-impact model with three demand components — "
+            "fundamentalists pulling price toward a fixed fair value, chartists "
+            "extrapolating recent trends, and Gaussian noise. Net demand moves a "
+            "scalar pseudo bid/ask via a deterministic linear price-impact function "
+            "on a tick grid; there is NO limit-order book and NO order matching. "
+            "Loosely inspired by Chiarella, Iori & Perelló (2009) but not a faithful "
+            "continuous-double-auction implementation."
         ),
-        "references": ["Chiarella, Iori & Perelló 2009 (J. Econ. Dyn. Control)"],
+        "references": ["Chiarella, Iori & Perelló 2009 (loosely inspired, not faithful)"],
     },
     {
         "name": "zero_intelligence",
@@ -145,13 +147,16 @@ SEED: list[dict[str, Any]] = [
         "name": "franke_westerhoff",
         "kind": "abm",
         "mechanism": (
-            "Structural stochastic model with two populations — fundamentalists "
-            "and chartists — and an endogenous transition probability between them "
-            "driven by herding (α_o), predisposition (α_p), and wealth (α_w). "
-            "Returns are determined by population-weighted excess demand plus a "
-            "Gaussian noise component."
+            "Reduced-form fundamentalist/chartist model. Population-weighted excess "
+            "demand (fundamentalist mean-reversion + chartist extrapolation of the "
+            "last return + Gaussian noise) drives a price-impact update. The chartist "
+            "fraction evolves by an ad-hoc LINEAR switching rule (attraction ∝ "
+            "|last return| and |mispricing|, offset by a constant and clipped) — NOT "
+            "the discrete-choice / transition-probability mechanism of Franke & "
+            "Westerhoff (2012); no herding term and no wealth. Loosely inspired, not "
+            "faithful."
         ),
-        "references": ["Franke & Westerhoff 2012 (J. Econ. Dyn. Control)"],
+        "references": ["Franke & Westerhoff 2012 (loosely inspired, not faithful)"],
     },
     {
         "name": "garch11",
