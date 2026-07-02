@@ -55,5 +55,15 @@ class SpeculationGame:
         )
 
     def run(self, *, seed: int) -> dict[str, Any]:
-        fn = simulate if self.backend == "vectorized" else run_reference
+        # minor #5: 未知の backend 文字列を無検証で reference に silent fallback すると、
+        # 例えば "vectorised" の typo で意図せず低速な参照実装が走っても気づけない。
+        # 明示的に検証する。
+        if self.backend == "vectorized":
+            fn = simulate
+        elif self.backend == "reference":
+            fn = run_reference
+        else:
+            raise ValueError(
+                f"unknown backend {self.backend!r}; expected 'vectorized' or 'reference'"
+            )
         return fn(seed=seed, **self._params())

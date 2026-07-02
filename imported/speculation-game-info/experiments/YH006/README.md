@@ -180,8 +180,12 @@ funnel 形成の妨げに変換している。Phase 2 で bootstrap CI を取る
   N=1000 より粗い)。本節の corr / α_hill の N 不変性は T=50000 での観察値で、
   T 短化や別 N で再現するかは Phase 2 で確認。
 - **LOB artifact (Phase 1 既知)**:
-  - zero-fill open 率 ≈ 30 % (流動性不足で不一致)。LIMIT_ORDER (mid±10 %, ttl=3)
-    で置換し book O(N²) 経路は回避済。
+  - zero-fill open 率 ≈ 30 % (流動性不足で不一致)。実装は **MARKET_ORDER + 反対板
+    opposing-liquidity guard + 次 step self-cancel** で対処 (SPEC §3.2(c) 準拠、
+    `speculation_agent.py` の「設計 A'」)。guard が「マッチ不可な瞬間は submit しない」
+    ことで book 累積を抑え O(N²) cancel 経路を回避する。
+    (※ 旧 README に記していた「LIMIT_ORDER (mid±10 %, ttl=3) で置換」は **実装にも
+    git 履歴にも存在しない誤記** — 2026-07-02 監査 #17 で訂正。)
   - `lob_mtm` (PAMS cash + asset × price) は ±数千ドルに分散。これは SG sizing
     q=⌊w/B⌋ が cost basis を LOB 単位で負にする artifact、`sg_wealth` (cognitive)
     とは分離して追跡。
