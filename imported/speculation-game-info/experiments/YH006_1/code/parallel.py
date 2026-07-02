@@ -105,3 +105,40 @@ def run_parallel_trials(
         f"throughput={len(seeds) / max(elapsed, 1e-9):.2f} trial/s"
     )
     return sorted(results, key=lambda r: r[0])
+
+
+def assert_trials_complete(
+    cond: str,
+    seeds: List[int],
+    results: List[Tuple[int, float, int, int, Optional[str]]],
+    logger: logging.Logger,
+    strict: bool = True,
+) -> List[int]:
+    """run_parallel_trials の戻り値を検査し、失敗/欠落 trial を fail loudly させる。
+
+    監査 (#34): worker 例外は結果 tuple の末尾に traceback 文字列で返るが、多くの
+    ドライバが戻り値を捨てており、失敗 trial が無言で n を縮め seed ペアリングも
+    ずらしていた。ここで (a) err!=None の trial と (b) results から欠落した seed を
+    集計し、strict=True (既定) なら RuntimeError を投げる。
+
+    Returns: 失敗した seed のリスト (strict=False のとき呼び出し側が判断できるよう)。
+    """
+    got_seeds = {r[0] for r in results}
+    errored = sorted(r[0] for r in results if r[4] is not None)
+    missing = sorted(s for s in seeds if s not in got_seeds)
+    bad = sorted(set(errored) | set(missing))
+    if bad:
+        logger.error(
+            f"[parallel] cond={cond}: {len(bad)}/{len(seeds)} trial が失敗/欠落 "
+            f"(errored={errored}, missing={missing})"
+        )
+        if strict:
+            raise RuntimeError(
+                f"cond={cond}: {len(bad)}/{len(seeds)} trial が失敗/欠落 "
+                f"(errored={errored}, missing={missing}). ensemble を集計する前に "
+                f"再実行して完全性を確保すること。strict=False で握り潰しは可能だが "
+                f"n が縮み seed ペアリングがずれる点に注意。"
+            )
+    else:
+        logger.info(f"[parallel] cond={cond}: 全 {len(seeds)} trial 成功")
+    return errored

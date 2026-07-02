@@ -40,7 +40,7 @@ for _p in (str(YH006_1), str(HERE)):
     sys.path.insert(0, _p)
 
 from config import CONDITIONS, ENSEMBLE_SEED_BASE, ENSEMBLE_N_TRIALS, LOB_PARAMS  # noqa: E402
-from parallel import run_parallel_trials, default_n_workers  # noqa: E402
+from parallel import run_parallel_trials, default_n_workers, assert_trials_complete  # noqa: E402
 
 DATA_DIR = YH006_1 / "data"
 LOGS_DIR = YH006_1 / "logs"
@@ -231,7 +231,9 @@ def main() -> None:
     # ----- Step S5: 100 trial 並列実行 -----
     for cond in conds:
         cond_dir = DATA_DIR / cond
-        run_parallel_trials(cond, seeds, cond_dir, n_workers, logger, q_const=q_const)
+        # #34: 戻り値を捨てず失敗/欠落 trial を fail loudly させる。
+        results = run_parallel_trials(cond, seeds, cond_dir, n_workers, logger, q_const=q_const)
+        assert_trials_complete(cond, seeds, results, logger, strict=True)
 
     logger.info("=" * 70)
     logger.info("S5 A1 ablation ensemble (sim part) complete.")

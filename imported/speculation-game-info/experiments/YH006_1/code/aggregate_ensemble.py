@@ -47,7 +47,7 @@ from analysis import (  # noqa: E402
     skewness_high_low_diff, corr_winit_h_spearman,
 )
 from config import CONDITIONS, ENSEMBLE_SEED_BASE, ENSEMBLE_N_TRIALS, AGG_PARAMS  # noqa: E402
-from parallel import run_parallel_trials, default_n_workers  # noqa: E402
+from parallel import run_parallel_trials, default_n_workers, assert_trials_complete  # noqa: E402
 from stats import bootstrap_ci  # noqa: E402
 
 DATA_DIR = YH006_1 / "data"
@@ -208,9 +208,16 @@ def compute_trial_metrics(
 
 def aggregate_ensemble_summaries(
     cond: str, seeds: List[int], out_dir: Path, T_total: int, logger: logging.Logger,
+    strict: bool = True,
 ) -> pd.DataFrame:
-    """各 trial の parquet 4 種を読み込んで ensemble_summary 行を生成、結合 DataFrame を返す。"""
+    """各 trial の parquet 4 種を読み込んで ensemble_summary 行を生成、結合 DataFrame を返す。
+
+    #34: 欠落 parquet を `continue` で握り潰すと失敗 trial が無言で n を縮め、位置
+    ペアリングもずれる。欠落 seed を収集し、strict=True (既定) なら集計後に
+    RuntimeError で fail loudly させ、seed 集合の完全性を保証する。
+    """
     rows = []
+    missing = []
     for seed in seeds:
         try:
             rt_df = pd.read_parquet(out_dir / f"trial_{seed:04d}.parquet")
@@ -219,9 +226,16 @@ def aggregate_ensemble_summaries(
             wts_df = pd.read_parquet(out_dir / f"wealth_ts_{seed:04d}.parquet")
         except FileNotFoundError as e:
             logger.error(f"[summary] {cond} seed={seed}: parquet missing — {e}")
+            missing.append(seed)
             continue
         m = compute_trial_metrics(rt_df, agents_df, lt_df, wts_df, cond, seed, T_total)
         rows.append(m)
+    if missing:
+        msg = (f"[summary] {cond}: {len(missing)}/{len(seeds)} trial の parquet が欠落 "
+               f"(seeds={missing}). n が縮み条件間の seed ペアリングがずれるため集計不可。")
+        if strict:
+            raise RuntimeError(msg + " 欠落 trial を再実行するか strict=False で明示的に許容すること。")
+        logger.error(msg)
     return pd.DataFrame(rows)
 
 
@@ -542,7 +556,9 @@ def main() -> None:
     if not args.skip_trials:
         for cond in ACTIVE_CONDS:
             cond_dir = DATA_DIR / cond
-            run_parallel_trials(cond, seeds, cond_dir, n_workers, logger)
+            # #34: 戻り値を捨てず失敗/欠落 trial を fail loudly させる。
+            results = run_parallel_trials(cond, seeds, cond_dir, n_workers, logger)
+            assert_trials_complete(cond, seeds, results, logger, strict=True)
 
     # ----- Step C: ensemble_summary 集計 -----
     logger.info("--- aggregating ensemble_summary ---")
