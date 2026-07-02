@@ -2,6 +2,8 @@ notebooks/yahoo_cache/
 __pycache__/
 .ipynb_checkpoints/
 .venv/
+.venv-pams/
+.venv-yh007/
 .env
 
 data/raw/
