@@ -24,6 +24,7 @@ from pams.logs.market_step_loggers import MarketStepSaver  # noqa: E402
 from pams.runners import SequentialRunner  # noqa: E402
 
 from configs.c1 import make_config  # noqa: E402
+from mm_fcn_agent import MMFCNAgent  # noqa: E402
 
 DEFAULT_SEED = 777
 
@@ -46,6 +47,9 @@ def calibrate(
         prng=random.Random(seed),
         logger=saver,
     )
+    # #40: C1 config は FCN を "MMFCNAgent" クラスで宣言しているため、
+    # runner.main() 前に登録しないと class_finder が起動時にクラッシュする。
+    runner.class_register(MMFCNAgent)
     t0 = time.perf_counter()
     runner.main()
     elapsed = time.perf_counter() - t0

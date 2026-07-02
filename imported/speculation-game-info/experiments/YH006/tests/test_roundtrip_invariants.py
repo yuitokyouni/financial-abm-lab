@@ -70,11 +70,15 @@ def test_roundtrip_invariants():
         )
         dG_got = rt["delta_G"][valid]
         mismatch = int(np.sum(dG_expected != dG_got))
-        # 許容: main session 境界を跨ぐ round-trip は cognitive_prices の再構成と
-        # SG 側保持の entry_price_cog が 1 step ズレる可能性がある (warmup 捨て時の再縫合)。
-        # 50% 以下なら設計通り、それ以上なら実装 bug とみなす。
-        frac_mismatch = mismatch / len(dG_expected)
-        assert frac_mismatch < 0.5, f"delta_G mismatch rate too high: {frac_mismatch:.2%}"
+        # #37: delta_G = entry_action × (P[close_t] − P[open_t]) は cognitive_prices
+        # から厳密に再構成できる (複数 seed で実測 mismatch = 0.0000%)。旧許容 50%
+        # では 49% が壊れても通り回帰ガードとして無意味だったため、厳密一致を要求する。
+        # 万一 main session 境界の再縫合で off-by-one が生じるなら、その最初の 1 件で
+        # 落ちて設計上の仮定を再検討できる。
+        assert mismatch == 0, (
+            f"delta_G mismatch: {mismatch}/{len(dG_expected)} round-trips で "
+            f"entry_action×ΔP と保存 delta_G が不一致 (厳密一致を期待)"
+        )
 
 
 if __name__ == "__main__":

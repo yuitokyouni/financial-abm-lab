@@ -118,6 +118,15 @@ class SpeculationAgent(Agent):
         self.num_cancels_sent: int = 0
         # opposing-liquidity guard: 反対板 dry で submit を skip した回数
         self.num_liquidity_skips: int = 0
+        # C-2 fix: 信念 (position × entry_quantity) と実在庫 (asset_volumes) の
+        # 乖離を毎 step 検出してフラット化した回数。0 が健全 (在庫 desync なし)。
+        self.num_desync: int = 0
+        # #16: 部分 close で約定した filled 株分の実現損益は現状 G/wealth に記帳
+        # されず、残量が最終 close する時点の価格でのみ記帳される (= ドロップ)。
+        # cognitive round-trip を分割しない YH005 準拠を優先し意図的にドロップし、
+        # リーク量 (Σ ΔG_partial × filled) をここで計上して可視化する。意味論の
+        # 変更 (分割記帳) は research owner の決定待ち。
+        self.partial_close_leaked_dG_q: int = 0
         # Substitute event log: (t, dead_wealth, new_wealth) per event for
         # measurement 7 (dynamic-wealth layer activity diagnosis)
         self.substitute_events: List[tuple] = []
@@ -213,28 +222,41 @@ class SpeculationAgent(Agent):
         mu_t = hist.mu
         P_now = hist.P
 
-        # Stale-fill recovery: pending=None で asset_volumes != 0 = SG が把握しない
-        # 過去 MARKET_ORDER の遅延約定が残っている。次の reconcile で「新 open の
-        # actual_vol」と誤読されると entry_quantity が累積 (倍化) するので、ここで
-        # flatten MARKET_ORDER を送って position=0 に戻し、本 step は他の SG 行動を
-        # スキップする。Phase 2 S4 で発覚 (warmup→main 境界 + bankruptcy substitute
-        # 後 re-init 境界で 1.6-1.9% RT が q=2x で記録されていた)。
-        if self.pending_intent is None and self.position == 0:
-            stale_vol = int(self.asset_volumes.get(market_id, 0))
-            if stale_vol != 0:
-                flat_order = Order(
-                    agent_id=self.agent_id,
-                    market_id=market_id,
-                    is_buy=(stale_vol < 0),
-                    kind=MARKET_ORDER,
-                    volume=abs(stale_vol),
-                )
-                orders.append(flat_order)
-                self._outstanding.setdefault(market_id, []).append(flat_order)
-                self._record_action(t, "stale_flatten")
-                return orders
-
         self._reconcile(market_id, P_now)
+
+        # C-2 fix — "reality is truth" resync (毎 step, reconcile 直後):
+        # 信念 (position × entry_quantity) と実在庫 (asset_volumes) が乖離したら、
+        # 実在庫をフラット化して信念を position=0 にリセットする。これは旧
+        # stale-fill recovery (pending=None & position==0 のみ) を一般化したもの。
+        # 乖離源は 2 つ: (1) 遅延約定が SG 非把握の在庫を残す (position==0 で発覚)、
+        # (2) close の over-fill で実在庫が逆符号に反転 (_reconcile が正しく full-
+        # close 記帳し position=0 にした残余を、ここで flatten)。position!=0 の hold
+        # 中に約定がドリフトしても同じ経路で捕捉する。reconcile は必ず pending_intent
+        # を None にするため、この block は毎 step 走り再発を防ぐ。健全時は invariant
+        # が成立し発火しない (既存挙動と bit 一致)。
+        if self.pending_intent is None:
+            actual_vol = int(self.asset_volumes.get(market_id, 0))
+            expected_vol = int(self.position) * int(self.entry_quantity)
+            if actual_vol != expected_vol:
+                self.num_desync += 1
+                if actual_vol != 0:
+                    flat_order = Order(
+                        agent_id=self.agent_id,
+                        market_id=market_id,
+                        is_buy=(actual_vol < 0),
+                        kind=MARKET_ORDER,
+                        volume=abs(actual_vol),
+                    )
+                    orders.append(flat_order)
+                    self._outstanding.setdefault(market_id, []).append(flat_order)
+                # 破損した round-trip の信念を破棄し flat に戻す
+                self.position = 0
+                self.entry_action = 0
+                self.entry_price_cog = 0
+                self.entry_quantity = 0
+                self.entry_step = 0
+                self._record_action(t, "desync_flatten")
+                return orders
 
         # A3 ablation hook (Phase 2 S6): lifetime cap。base 実装は常に False を
         # 返すため default 経路は既存挙動と bit-一致 (後方互換 protocol)。
@@ -340,7 +362,16 @@ class SpeculationAgent(Agent):
             self.pending_quantity_sent = 0
 
         elif self.pending_intent == "close":
-            if actual_vol == 0:
+            # C-2 fix: 符号付き分類。entry_sign = self.position (閉じようとする側)。
+            #   entry_sign × actual_vol <= 0 : 在庫が 0 に到達 or 逆符号に反転
+            #     (over-fill) → 意図した round-trip は閉じた。entry_quantity 分の
+            #     ΔG を記帳し flat に戻す。逆符号の残余在庫は次 step の resync guard
+            #     が flatten する。
+            #   entry_sign × actual_vol > 0 かつ |actual_vol| < entry_quantity :
+            #     同符号で減少 → 部分約定。
+            #   それ以外 (同符号・不変) : close 未約定 (self-cancel)。
+            entry_sign = int(self.position)
+            if entry_sign * actual_vol <= 0:
                 self.close_full_matches += 1
                 dG = int(self.entry_action) * (int(self.close_price_cog) - int(self.entry_price_cog))
                 self.G[self.active_idx] += dG
@@ -370,14 +401,22 @@ class SpeculationAgent(Agent):
                 if self.sg_wealth < self.B:
                     self._substitute(t=int(self.close_step))
             elif abs(actual_vol) < self.entry_quantity:
+                # 同符号 (entry_sign × actual_vol > 0) で在庫が減少 = 部分約定。
+                # #16: filled 株分の実現損益 (ΔG_partial × filled) は記帳せずドロップ
+                # し、リーク量を診断計上する (上の counter コメント参照)。
+                filled = int(self.entry_quantity) - abs(actual_vol)
+                dG_partial = int(self.entry_action) * (
+                    int(self.close_price_cog) - int(self.entry_price_cog)
+                )
+                self.partial_close_leaked_dG_q += int(dG_partial) * int(filled)
                 self.position = 1 if actual_vol > 0 else -1
                 self.entry_quantity = abs(actual_vol)
                 self.num_partial_closes += 1
                 self.close_partial_matches += 1
             else:
-                # actual_vol == self.entry_quantity: close MARKET_ORDER が
-                # 前 step では約定せず、この step 冒頭で self-cancel された。
-                # 次 step で同 condition なら再度 MARKET_ORDER を送る。
+                # 同符号で |actual_vol| >= entry_quantity (実質不変): close
+                # MARKET_ORDER が前 step で約定せず、この step 冒頭で self-cancel
+                # された。次 step で同 condition なら再度 MARKET_ORDER を送る。
                 self.close_cancelled += 1
             self.pending_intent = None
             self.pending_action = 0

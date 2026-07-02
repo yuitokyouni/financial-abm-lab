@@ -222,6 +222,8 @@ def build_yh005_compatible_dict(
             "num_partial_closes": int(sum(a.num_partial_closes for a in sg_agents)),
             "num_zero_opens": int(sum(a.num_zero_opens for a in sg_agents)),
             "num_cancels_sent": int(sum(a.num_cancels_sent for a in sg_agents)),
+            "num_desync": int(sum(a.num_desync for a in sg_agents)),
+            "partial_close_leaked_dG_q": int(sum(a.partial_close_leaked_dG_q for a in sg_agents)),
             "close_submits": int(sum(a.close_submits for a in sg_agents)),
             "close_full_matches": int(sum(a.close_full_matches for a in sg_agents)),
             "close_partial_matches": int(sum(a.close_partial_matches for a in sg_agents)),

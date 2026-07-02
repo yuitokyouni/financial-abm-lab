@@ -98,19 +98,35 @@ def main() -> None:
     parser.add_argument("--num-sg", type=int, default=100)
     parser.add_argument("--max-normal-orders", type=int, default=500)
     parser.add_argument("--conditions", nargs="+", default=["C1", "C2", "C3"])
+    parser.add_argument(
+        "--c-ticks", type=float, default=None,
+        help="c_ticks を明示指定して calibration ファイル要件をバイパスする "
+             "(未指定なら outputs/C_ticks_calibration.json が必須)",
+    )
     args = parser.parse_args()
 
     out_dir = HERE / "outputs"
     out_dir.mkdir(exist_ok=True)
 
     calib_path = out_dir / "C_ticks_calibration.json"
-    if calib_path.exists():
+    if args.c_ticks is not None:
+        # 明示バイパス (テスト / 感度実験用)。値は呼び出し側の責任。
+        c_ticks = float(args.c_ticks)
+        print(f"[run_experiment] c_ticks = {c_ticks:.6f} (--c-ticks 明示指定)")
+    elif calib_path.exists():
         with open(calib_path) as f:
             c_ticks = float(json.load(f)["c_ticks"])
+        print(f"[run_experiment] c_ticks = {c_ticks:.6f} ({calib_path.name})")
     else:
-        c_ticks = 0.03
-        print(f"[run_experiment] warning: no calibration file, using c_ticks={c_ticks}")
-    print(f"[run_experiment] c_ticks = {c_ticks:.6f}")
+        # #41: 旧実装は c_ticks=0.03 へ silent fallback していた。SPEC 手順の実測は
+        # ~9.02 で約 300 倍小さく、量子化がほぼ全て ±2 に飽和し情報構造が別物になる。
+        # 無言のフォールバックは検出不能なので hard error にする。
+        raise SystemExit(
+            f"[run_experiment] FATAL: calibration ファイルが無い ({calib_path}). "
+            f"先に `python calibrate_c_ticks.py` を実行するか、感度実験なら "
+            f"`--c-ticks <値>` で明示指定してください。旧実装の silent fallback "
+            f"(c_ticks=0.03) は SPEC 実測 ~9.02 の約 1/300 で結果が別物になるため廃止。"
+        )
 
     for cond in args.conditions:
         print(f"\n[run_experiment] === {cond} ===")
