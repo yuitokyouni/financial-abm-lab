@@ -149,11 +149,17 @@ def propose_next_k(labeled_rows: Sequence[dict], unlabeled_rows: Sequence[dict],
     the k *most novel* rows by Euclidean distance from the labeled point(s)
     (or random if no labels yet — pure exploration cold start).
     """
+    # #10: NaN fingerprint 行を除外する。ラベル側に 1 つでも NaN があると
+    # standardize → ridge が全 NaN 化し、score の argsort[::-1] で NaN スコア候補が
+    # 最優先でラベリングに提示される。候補側の NaN 行も scoring 不能なので落とす。
+    labeled_rows = [r for r in labeled_rows if np.all(np.isfinite(r["fingerprint"]))]
+    unlabeled_rows = [r for r in unlabeled_rows if np.all(np.isfinite(r["fingerprint"]))]
+    if not unlabeled_rows:
+        return [], None
+
     X_lab = np.vstack([r["fingerprint"] for r in labeled_rows]) if labeled_rows else np.empty((0, 0))
     y_lab = np.array([r["preference_label"] for r in labeled_rows], dtype=float) if labeled_rows else np.array([])
-    X_unl = np.vstack([r["fingerprint"] for r in unlabeled_rows]) if unlabeled_rows else np.empty((0, 0))
-    if not len(unlabeled_rows):
-        return [], None
+    X_unl = np.vstack([r["fingerprint"] for r in unlabeled_rows])
 
     # standardise jointly so novelty distances live in the same space
     X_all = np.vstack([X_lab, X_unl]) if X_lab.size else X_unl

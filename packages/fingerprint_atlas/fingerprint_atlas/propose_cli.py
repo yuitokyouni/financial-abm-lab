@@ -255,12 +255,16 @@ def execute_proposal(db_path: str, proposal_id: int, *, seed: int = 9000,
     )
 
     # Compare predicted vs actual in standardised space.
+    # #9: fps_std は NaN fingerprint を除外した行列。new_idx はその除外後の行列に
+    # 対する index でなければならない。旧実装は未フィルタ all_runs の enumerate から
+    # index を取っており、先行 run に 1 つでも NaN があると index がずれて
+    # fps_std[new_idx] が別行 / 範囲外を参照し execute_proposal が確定クラッシュ、
+    # proposal は approved・run は commit 済みのまま残りリトライで重複 run を生んでいた。
     all_runs = load_runs(db_path)
-    fps_all = np.vstack([r["fingerprint"] for r in all_runs
-                         if np.all(np.isfinite(r["fingerprint"]))])
+    finite_runs = [r for r in all_runs if np.all(np.isfinite(r["fingerprint"]))]
+    fps_all = np.vstack([r["fingerprint"] for r in finite_runs])
     fps_std, mu_feat, sd_feat = standardize(fps_all)
-    new_idx = next((i for i, r in enumerate(all_runs)
-                    if r["id"] == run_id and np.all(np.isfinite(r["fingerprint"]))), None)
+    new_idx = next((i for i, r in enumerate(finite_runs) if r["id"] == run_id), None)
     actual_fp_dict = {name: float(v) for name, v in zip(FEATURE_NAMES, fp)}
 
     prediction_error = None
@@ -352,11 +356,17 @@ def cmd_auto(args) -> int:
         try:
             r = execute_proposal(args.db, pid, seed=seed, verbose=False)
             results.append(r)
+            # #13: pred_err / novelty は predicted_fingerprint が空、または DB に
+            # 1 run しか無い正常ケースで None になりうる。旧実装はこれを :.2f で整形
+            # して TypeError を投げ、直下の except が「成功した proposal」を FAILED
+            # として二重計上し exit 1 を返していた。None を安全に整形する。
             err = r["prediction_error"]
             nov = r["actual_novelty_distance"]
+            err_s = f"{err:.2f}" if err is not None else "n/a"
+            nov_s = f"{nov:.2f}" if nov is not None else "n/a"
             print(f"  ✓ [{i}/{len(summary['accepted'])}] #{pid:<3d} "
                   f"{r['target_model']:<20s} "
-                  f"pred_err={err:.2f} nov={nov:.2f} ({r['elapsed_s']:.1f}s)")
+                  f"pred_err={err_s} nov={nov_s} ({r['elapsed_s']:.1f}s)")
         except Exception as exc:
             failures.append({"proposal_id": pid, "error": str(exc)})
             print(f"  ✗ [{i}/{len(summary['accepted'])}] #{pid:<3d} FAILED: {exc}",

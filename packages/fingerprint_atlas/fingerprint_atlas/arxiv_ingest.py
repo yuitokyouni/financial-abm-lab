@@ -259,14 +259,17 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
                 print(f"  ! {p['arxiv_id']}: extraction failed: {exc}")
             continue
 
-        # apply relevance filter (do NOT delete row; mark with low score)
-        if (ext["relevance_score"] is not None
-                and ext["relevance_score"] < min_relevance_to_keep):
-            n_dropped += 1
-            if verbose:
-                print(f"  - {p['arxiv_id']} relevance {ext['relevance_score']:.2f} below "
-                      f"threshold {min_relevance_to_keep}, keeping metadata but skipping extract")
-            continue
+        # #12: relevance filter。閾値未満でも抽出結果は **必ず永続化** する。
+        # 旧実装は `continue` で抽出結果を破棄しており extracted_by_model が空のまま
+        # → already_extracted が永久に False → 週次 CI が同じ論文を毎週 Groq に
+        # 再抽出し、確率的な relevance_score が閾値を跨いだ回だけ偶然永続化される
+        # seed 依存挙動になっていた (コメントの「mark with low score」意図とも逆)。
+        # 低スコアで永続化しておけば load_literature(min_relevance=...) が active
+        # context から除外するので、再抽出せず一貫する。
+        below_threshold = (
+            ext["relevance_score"] is not None
+            and ext["relevance_score"] < min_relevance_to_keep
+        )
 
         update_literature_extraction(
             db_path, p["arxiv_id"],
@@ -277,12 +280,20 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
             relevance_score=ext["relevance_score"],
             extracted_by_model=ext["extracted_by_model"],
         )
-        n_extracted += 1
-        if verbose:
-            rel = ext["relevance_score"]
-            tags = ",".join(ext["mechanism_tags"][:3])
-            print(f"  + {p['arxiv_id']} [{p['year']}] rel={rel}  tags=[{tags}]  "
-                  f"{p['title'][:70]}")
+
+        if below_threshold:
+            n_dropped += 1
+            if verbose:
+                print(f"  - {p['arxiv_id']} relevance {ext['relevance_score']:.2f} below "
+                      f"threshold {min_relevance_to_keep}, persisted with low score "
+                      f"(excluded from active context, not re-extracted)")
+        else:
+            n_extracted += 1
+            if verbose:
+                rel = ext["relevance_score"]
+                tags = ",".join(ext["mechanism_tags"][:3])
+                print(f"  + {p['arxiv_id']} [{p['year']}] rel={rel}  tags=[{tags}]  "
+                      f"{p['title'][:70]}")
 
         # arxiv-friendly pacing already enforced by arxiv.Client; Groq has
         # its own per-key rate limit (we just keep the loop sequential).

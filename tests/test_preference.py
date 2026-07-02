@@ -225,3 +225,42 @@ def test_db_preference_round_trip():
         update_preference(db, rid, +1.5)
         rows2 = load_runs(db, labeled=True)
         assert len(rows2) == 1 and rows2[0]["preference_label"] == pytest.approx(1.5)
+
+
+# ----- 6. NaN fingerprint robustness (audit #10) ---------------------------
+
+def _row(rid, fp, label=None, model="m"):
+    return {"id": rid, "model_name": model, "fingerprint": np.asarray(fp, dtype=float),
+            "preference_label": label}
+
+
+def test_propose_next_k_ignores_nan_fingerprints():
+    """audit #10: NaN fingerprint 行が ridge を汚染したり NaN スコア候補が最優先で
+    提示されたりしないこと。ラベル側・候補側どちらの NaN も無視される。"""
+    d = 9
+    rng = np.random.default_rng(0)
+    good = lambda: rng.standard_normal(d)
+    nan_fp = np.full(d, np.nan)
+
+    labeled = [_row(1, good(), 1.0), _row(2, good(), -1.0),
+               _row(3, nan_fp, 0.5)]                       # poisoned label row
+    unlabeled = [_row(10 + i, good()) for i in range(4)]
+    unlabeled.append(_row(99, nan_fp))                     # NaN candidate row
+
+    proposals, model = propose_next_k(labeled, unlabeled, k=5)
+
+    assert proposals, "候補が返らなかった"
+    # NaN 候補 (id=99) は提案されない
+    assert all(p.row_id != 99 for p in proposals), "NaN fingerprint 候補が提案された"
+    # 全 acquisition が有限 (NaN が最優先で来ていない)
+    assert all(np.isfinite(p.acquisition) for p in proposals), "NaN acquisition が提案に混入"
+    assert all(np.isfinite(p.mu) and np.isfinite(p.sigma) for p in proposals)
+
+
+def test_propose_next_k_all_nan_unlabeled_returns_empty():
+    """候補が全て NaN fingerprint なら空を返す (クラッシュしない)。"""
+    d = 9
+    labeled = [_row(1, np.zeros(d), 1.0), _row(2, np.ones(d), -1.0)]
+    unlabeled = [_row(10, np.full(d, np.nan)), _row(11, np.full(d, np.nan))]
+    proposals, model = propose_next_k(labeled, unlabeled, k=3)
+    assert proposals == []

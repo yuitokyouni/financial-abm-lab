@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 from typing import Any
 
 import numpy as np
@@ -334,10 +335,21 @@ def summarize_corpus(db_path: str, *, literature_top_n: int = 7) -> dict[str, An
 
     # Literature: load all and pick the top N. The DB may be empty (no
     # ingestion yet) — return [] in that case rather than failing.
+    # #14: 旧実装は全例外を無言で握り潰し「空文献」に丸めていたため、propose が
+    # 常に空の文献コンテキストで走っていることが隠蔽されていた (ロード失敗と本当に
+    # 空の区別もつかない)。失敗は警告し、空のときも警告する。
     try:
         literature_all = load_literature(db_path)
-    except Exception:
+    except Exception as exc:
+        print(f"[propose] warning: literature load failed "
+              f"({type(exc).__name__}: {exc}); empty literature context",
+              file=sys.stderr)
         literature_all = []
+    if not literature_all:
+        print("[propose] warning: literature context is EMPTY — proposals will have no "
+              "prior-art grounding. On a CI rebuild this means the ingested literature "
+              "snapshot (data/literature_methods.json) was not materialised into the DB "
+              "before propose ran.", file=sys.stderr)
     literature_for_prompt = _select_literature_for_context(literature_all, top_n=literature_top_n)
 
     return {

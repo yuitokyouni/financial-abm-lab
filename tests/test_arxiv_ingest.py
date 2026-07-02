@@ -233,3 +233,62 @@ def test_summarize_corpus_includes_literature():
     # _select_literature_for_context, so both appear. Order matters:
     assert lit_ids.index("2412.10000") < lit_ids.index("2412.10001")
     assert ctx["n_literature_total"] == 2
+
+
+# ---- relevance-threshold persistence (audit #12) --------------------------
+
+def _fake_paper(arxiv_id="2501.00001"):
+    return {
+        "arxiv_id": arxiv_id, "title": "Fake paper", "authors": "A, B",
+        "year": 2025, "published_date": "2025-01-02T00:00:00Z",
+        "primary_category": "q-fin.TR", "abstract": "abstract body",
+    }
+
+
+def _fake_extract(relevance):
+    def _inner(paper, groq_model):
+        return {
+            "mechanism_summary": "some mechanism",
+            "mechanism_tags": ["herding"],
+            "stylized_facts_targeted": ["fat_tails"],
+            "novelty_signal": "n/a",
+            "relevance_score": relevance,
+            "extracted_by_model": groq_model,
+        }
+    return _inner
+
+
+def test_below_threshold_extraction_is_persisted_not_dropped(monkeypatch):
+    """audit #12: relevance が閾値未満でも抽出結果は永続化され (extracted_by_model が
+    セットされ)、次回 ingest で再抽出されないこと。旧実装は破棄していたため毎週
+    Groq に再抽出していた。"""
+    import fingerprint_atlas.arxiv_ingest as ai
+
+    db = _tmpdb()
+    monkeypatch.setattr(ai, "query_arxiv", lambda q, max_results=50: [_fake_paper()])
+    monkeypatch.setattr(ai, "extract_paper_structured", _fake_extract(0.2))
+
+    summary = ai.ingest(db, query="x", min_relevance_to_keep=0.5, verbose=False)
+    assert summary["n_dropped_below_relevance"] == 1
+    assert summary["n_extracted"] == 0
+
+    # 永続化されている: extracted_by_model がセットされ relevance は低スコアのまま
+    rows = load_literature(db)
+    assert len(rows) == 1
+    assert rows[0]["extracted_by_model"], "below-threshold で extracted_by_model が空 (破棄された)"
+    assert rows[0]["relevance_score"] == pytest.approx(0.2)
+
+    # active context (min_relevance フィルタ) からは除外される
+    assert load_literature(db, min_relevance=0.5) == []
+
+    # 2 回目の ingest では再抽出されない (already_extracted → skip)
+    calls = {"n": 0}
+
+    def _counting_extract(paper, groq_model):
+        calls["n"] += 1
+        return _fake_extract(0.2)(paper, groq_model)
+
+    monkeypatch.setattr(ai, "extract_paper_structured", _counting_extract)
+    summary2 = ai.ingest(db, query="x", min_relevance_to_keep=0.5, verbose=False)
+    assert calls["n"] == 0, "below-threshold 論文が再抽出された (#12 未修正)"
+    assert summary2["n_skipped_already_extracted"] == 1
