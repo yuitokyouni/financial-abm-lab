@@ -177,7 +177,8 @@ def _extract_arxiv_id(reference: str) -> str | None:
     return base + version
 
 
-def classify_references(references: list[str], db_path: str) -> dict[str, list[str]]:
+def classify_references(references: list[str], db_path: str,
+                         *, known_bases: set[str] | None = None) -> dict[str, list[str]]:
     """Bucket every reference into in_db / external_arxiv / non_arxiv.
 
     in_db          : arxiv id (base, version-stripped) is present in
@@ -193,9 +194,10 @@ def classify_references(references: list[str], db_path: str) -> dict[str, list[s
     # fresh DB where the user hasn't ingested any arxiv papers. Create it
     # (idempotent) so load_literature returns an empty list rather than
     # raising OperationalError.
-    ensure_literature_schema(db_path)
-    rows = load_literature(db_path)
-    known_bases = {_arxiv_base(r["arxiv_id"]) for r in rows}
+    if known_bases is None:
+        ensure_literature_schema(db_path)
+        rows = load_literature(db_path)
+        known_bases = {_arxiv_base(r["arxiv_id"]) for r in rows}
     result: dict[str, list[str]] = {"in_db": [], "external_arxiv": [], "non_arxiv": []}
     for ref in references:
         aid = _extract_arxiv_id(ref)
@@ -359,55 +361,13 @@ def summarize_corpus(db_path: str, *, literature_top_n: int = 7) -> dict[str, An
 
 def _call_groq(system_prompt: str, user_payload: dict, model: str,
                temperature: float = 0.7, max_retries: int = 2) -> dict:
-    """Single Groq chat-completion call returning parsed JSON.
-
-    Retries up to `max_retries` times on the specific Groq 400
-    'json_validate_failed' / 'Failed to validate JSON' error — that one is
-    a transient sampling quirk of gpt-oss-120b under JSON mode, not a
-    prompt error. Each retry bumps temperature by +0.1 to perturb sampling.
-    Other errors (rate limit, auth, network) re-raise immediately.
-    """
-    try:
-        from groq import Groq
-    except ImportError as e:
-        raise ImportError(
-            "groq SDK not installed. Add it with `uv add groq` or "
-            "`pip install groq`."
-        ) from e
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY environment variable not set.")
-    client = Groq(api_key=api_key)
-    last_exc: Exception | None = None
-    for attempt in range(max_retries + 1):
-        try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user",
-                     "content": json.dumps(user_payload, ensure_ascii=False)},
-                ],
-                response_format={"type": "json_object"},
-                temperature=temperature,
-            )
-            raw = resp.choices[0].message.content
-            return json.loads(raw)
-        except Exception as exc:
-            last_exc = exc
-            msg = str(exc)
-            transient = (
-                "json_validate_failed" in msg
-                or "Failed to validate JSON" in msg
-            )
-            if attempt < max_retries and transient:
-                temperature = min(1.0, temperature + 0.1)
-                print(f"  (groq retry {attempt + 1}/{max_retries} after "
-                      f"JSON-validate failure; bumping temperature to "
-                      f"{temperature:.2f})")
-                continue
-            raise
-    raise last_exc  # safety net (unreachable)
+    """Backwards-compatible alias for `llm_client.call_llm`. Routes to
+    OpenAI when `model` is an OpenAI chat model id, otherwise Groq."""
+    from .llm_client import call_llm
+    return call_llm(system_prompt, user_payload, model,
+                    temperature=temperature, max_retries=max_retries,
+                    generate_japanese=True,
+                    glossary_domain="financial-abm")
 
 
 def _validate_proposal(p: dict, n_features: int) -> tuple[bool, str]:
@@ -480,6 +440,12 @@ def propose_from_corpus(db_path: str, n: int = 5, *,
 
     accepted: list[dict] = []
     rejected: list[dict] = []
+    # Load once — reference validation runs per accepted proposal but the
+    # corpus doesn't change during the batch.
+    from .db import ensure_literature_schema, load_literature
+    ensure_literature_schema(db_path)
+    _lit_rows = load_literature(db_path)
+    _known_bases = {_arxiv_base(r["arxiv_id"]) for r in _lit_rows}
     for p in proposals:
         ok, err = _validate_proposal(p, len(FEATURE_NAMES))
         if not ok:
@@ -500,7 +466,8 @@ def propose_from_corpus(db_path: str, n: int = 5, *,
         # classify citations so the CLI can warn about hallucinated arxiv ids
         refs = p.get("references", [])
         if refs:
-            accepted_p["reference_validation"] = classify_references(refs, db_path)
+            accepted_p["reference_validation"] = classify_references(
+                refs, db_path, known_bases=_known_bases)
         accepted.append(accepted_p)
     return [{"accepted": accepted, "rejected": rejected,
              "llm_model": groq_model, "n_requested": n}]

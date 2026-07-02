@@ -1,0 +1,165 @@
+name: methods-annotate
+
+# Daily annotation queue: pick one method whose commentary fields are
+# still empty, draft notes via the configured LLM, open a PR. The human
+# reviewer edits the markdown file in the PR; on merge, the same file
+# becomes the import source for `methods_cli import-md` locally.
+#
+# Cost: ~$0.01 per draft with openai/gpt-4o-mini.
+
+on:
+  schedule:
+    # Daily 08:00 UTC = 17:00 JST.
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      n_drafts:
+        description: "How many methods to draft this run"
+        required: false
+        default: "1"
+      model:
+        description: "LLM model id (openai/gpt-4o-mini default)"
+        required: false
+        default: "openai/gpt-4o-mini"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  annotate:
+    runs-on: ubuntu-latest
+    env:
+      DB_PATH: data/abm_knowhow.db
+      DRAFTS_DIR: methods_drafts/${{ github.run_id }}
+      N_DRAFTS: ${{ github.event.inputs.n_drafts || '1' }}
+      LLM_MODEL: ${{ github.event.inputs.model || 'openai/gpt-4o-mini' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.11
+
+      - name: Sync workspace
+        run: uv sync
+
+      - name: Rebuild DB from sources (seed methods + literature snapshot)
+        run: |
+          mkdir -p data
+          uv run python -m fingerprint_atlas.methods_cli --db "$DB_PATH" seed
+          # If a literature_methods snapshot exists, restore it so drafts
+          # benefit from arxiv context.
+          if [ -f data/literature_methods.json ]; then
+            uv run python <<'PY'
+          import json, os
+          from fingerprint_atlas.db import (
+              ensure_literature_schema, upsert_literature_metadata,
+              update_literature_extraction,
+          )
+          DB = os.environ["DB_PATH"]
+          ensure_literature_schema(DB)
+          for r in json.load(open("data/literature_methods.json")):
+              upsert_literature_metadata(
+                  DB, arxiv_id=r["arxiv_id"], title=r["title"],
+                  authors=r["authors"], year=r["year"],
+                  published_date=r["published_date"],
+                  primary_category=r["primary_category"], abstract=r["abstract"],
+              )
+              if r.get("extracted_by_model"):
+                  update_literature_extraction(
+                      DB, r["arxiv_id"],
+                      mechanism_summary=r["mechanism_summary"],
+                      mechanism_tags=r["mechanism_tags"],
+                      stylized_facts_targeted=r["stylized_facts_targeted"],
+                      novelty_signal=r["novelty_signal"],
+                      relevance_score=r["relevance_score"],
+                      extracted_by_model=r["extracted_by_model"],
+                  )
+          PY
+          fi
+
+      - name: Pick next method(s) to draft
+        id: pick
+        run: |
+          NAMES=$(uv run python -m fingerprint_atlas.methods_cli \
+            --db "$DB_PATH" queue-next --n "$N_DRAFTS")
+          if [ -z "$NAMES" ]; then
+            echo "::notice::no methods left to annotate; exiting cleanly"
+            echo "names=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Newline-separated list goes into GITHUB_OUTPUT via heredoc.
+          {
+            echo "names<<EOF"
+            echo "$NAMES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Draft notes for each method
+        if: steps.pick.outputs.names != ''
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          case "$LLM_MODEL" in
+            openai/gpt-4o*|openai/gpt-4-turbo*|openai/gpt-4.1*|openai/gpt-3.5*|openai/o1*|openai/o3*|openai/o4*)
+              if [ -z "$OPENAI_API_KEY" ]; then
+                echo "::error::OPENAI_API_KEY secret is not set but LLM_MODEL=$LLM_MODEL routes to OpenAI."
+                exit 1
+              fi
+              ;;
+            *)
+              if [ -z "$GROQ_API_KEY" ]; then
+                echo "::error::GROQ_API_KEY secret is not set but LLM_MODEL=$LLM_MODEL routes to Groq."
+                exit 1
+              fi
+              ;;
+          esac
+          mkdir -p "$DRAFTS_DIR"
+          while IFS= read -r NAME; do
+            [ -z "$NAME" ] && continue
+            uv run python -m fingerprint_atlas.methods_cli \
+              --db "$DB_PATH" draft-to-file "$NAME" \
+              --groq-model "$LLM_MODEL" \
+              --out "$DRAFTS_DIR/$NAME.md"
+          done <<< "${{ steps.pick.outputs.names }}"
+          ls -la "$DRAFTS_DIR"
+
+      - name: Open PR with annotation drafts
+        if: steps.pick.outputs.names != ''
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: annotate/${{ github.run_id }}
+          base: main
+          add-paths: |
+            methods_drafts/**
+          commit-message: "annotate: drafts for today's methods queue"
+          title: "Methods annotation drafts — ${{ github.run_id }}"
+          body: |
+            Daily annotation drafts from `${{ env.LLM_MODEL }}`.
+
+            Files: `methods_drafts/${{ github.run_id }}/<method>.md`
+
+            **How to review**
+            1. Open each markdown file and edit the four sections
+               (novelty_notes / mechanism_strengths / mechanism_weaknesses /
+               research_questions / tags). Delete a section's body to
+               clear it; the parser ignores anything before the first
+               `## section` heading.
+            2. Commit your edits to this PR branch.
+            3. Merge.
+            4. Locally:
+               ```
+               git pull
+               for f in methods_drafts/${{ github.run_id }}/*.md; do
+                 name=$(basename "$f" .md)
+                 uv run python -m fingerprint_atlas.methods_cli \
+                   --db ../test/knowhow/abm_knowhow.db import-md "$name" "$f"
+               done
+               ```
+          delete-branch: true

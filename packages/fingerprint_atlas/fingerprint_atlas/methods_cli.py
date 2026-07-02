@@ -297,6 +297,76 @@ def cmd_draft(db_path: str, name: str, *,
     return 0
 
 
+def cmd_queue_next(db_path: str, n: int) -> int:
+    """Print the next N method names whose commentary fields are all empty.
+    Used by the daily annotation workflow to pick today's target."""
+    ensure_methods_schema(db_path)
+    rows = list_methods(db_path)
+    todo = [m for m in rows if not _has_commentary(m)]
+    if not todo:
+        print("(no methods left to annotate)", file=sys.stderr)
+        return 0
+    for m in todo[:n]:
+        print(m.name)
+    return 0
+
+
+def cmd_draft_to_file(db_path: str, name: str, *,
+                      groq_model: str, temperature: float, out: str) -> int:
+    """Like `draft`, but write the rendered draft markdown to `out` instead
+    of opening an editor. The output format matches what `edit` produces,
+    so `import-md` round-trips it back into the DB after human review."""
+    from . import methods_draft
+    ensure_methods_schema(db_path)
+    m = get_method(db_path, name)
+    if m is None:
+        print(f"no method named {name!r}; try `methods seed` first.", file=sys.stderr)
+        return 1
+    print(f"asking {groq_model} to draft notes for {name}...")
+    result = methods_draft.draft_notes_for_method(
+        db_path, name, groq_model=groq_model, temperature=temperature,
+    )
+    draft = result["draft"]
+    rendered = _render_edit_file(m)
+    for sec in SECTIONS:
+        marker = f"\n## {sec}\n"
+        next_marker = None
+        i = SECTIONS.index(sec)
+        if i + 1 < len(SECTIONS):
+            next_marker = f"\n## {SECTIONS[i + 1]}\n"
+        start = rendered.find(marker)
+        if start == -1:
+            continue
+        body_start = start + len(marker)
+        body_end = rendered.find(next_marker, body_start) if next_marker else len(rendered)
+        rendered = rendered[:body_start] + (draft[sec] or "") + "\n" + rendered[body_end:]
+    os.makedirs(os.path.dirname(os.path.abspath(out)) or ".", exist_ok=True)
+    with open(out, "w") as fh:
+        fh.write(rendered)
+    print(f"wrote draft for {name} -> {out}")
+    return 0
+
+
+def cmd_import_md(db_path: str, name: str, path: str) -> int:
+    """Parse a previously-rendered methods edit file and write the four
+    SECTIONS back into the DB. Counterpart to `draft-to-file` — the daily
+    workflow drafts to a file, the human reviews + edits in a PR, then a
+    post-merge invocation of this command lands the result.
+
+    Idempotent: re-importing the same file produces the same DB state."""
+    ensure_methods_schema(db_path)
+    m = get_method(db_path, name)
+    if m is None:
+        print(f"no method named {name!r}; try `methods seed` first.", file=sys.stderr)
+        return 1
+    with open(path) as fh:
+        text = fh.read()
+    vals = _parse_edit_file(text)
+    update_method(db_path, name, **vals)
+    print(f"imported {path} -> method {name!r}")
+    return 0
+
+
 def cmd_normalize_newlines(db_path: str, dry_run: bool) -> int:
     """One-shot maintenance: replace literal '\\n' in commentary columns with
     actual newlines. Useful after an LLM draft that double-escaped newlines."""
@@ -444,6 +514,31 @@ def main() -> int:
     p_da.add_argument("--kind", action="append", default=[],
                       help="filter by kind: abm | synthetic | llm_method")
 
+    p_qn = sub.add_parser(
+        "queue-next",
+        help=("print the next N method names whose commentary is still empty "
+              "— used by the daily annotation workflow"),
+    )
+    p_qn.add_argument("--n", type=int, default=1)
+
+    p_df = sub.add_parser(
+        "draft-to-file",
+        help=("non-interactive draft: write rendered markdown to --out "
+              "instead of opening an editor (for CI / batch use)"),
+    )
+    p_df.add_argument("name")
+    p_df.add_argument("--out", required=True)
+    p_df.add_argument("--groq-model", default="openai/gpt-oss-120b")
+    p_df.add_argument("--temperature", type=float, default=0.5)
+
+    p_im = sub.add_parser(
+        "import-md",
+        help=("parse a previously-rendered methods edit file (e.g. one a "
+              "human edited in a PR) and write the four SECTIONS back to DB"),
+    )
+    p_im.add_argument("name")
+    p_im.add_argument("path")
+
     args = ap.parse_args()
     if args.cmd == "seed":
         return cmd_seed(args.db, args.overwrite_mechanism)
@@ -467,6 +562,15 @@ def main() -> int:
                              temperature=args.temperature,
                              only_empty=not args.include_already_annotated,
                              kinds=args.kind or None)
+    if args.cmd == "queue-next":
+        return cmd_queue_next(args.db, args.n)
+    if args.cmd == "draft-to-file":
+        return cmd_draft_to_file(args.db, args.name,
+                                  groq_model=args.groq_model,
+                                  temperature=args.temperature,
+                                  out=args.out)
+    if args.cmd == "import-md":
+        return cmd_import_md(args.db, args.name, args.path)
     return 1
 
 

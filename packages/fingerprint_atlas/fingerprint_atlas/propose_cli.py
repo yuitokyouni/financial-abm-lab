@@ -169,8 +169,15 @@ def cmd_from_corpus(args) -> int:
 def cmd_list(args) -> int:
     ensure_proposals_schema(args.db)
     rows = load_proposals(args.db, status=args.status)
+    if getattr(args, "type", None):
+        rows = [r for r in rows if r.get("proposal_type") == args.type]
     if not rows:
-        scope = f" with status={args.status!r}" if args.status else ""
+        bits = []
+        if args.status:
+            bits.append(f"status={args.status!r}")
+        if getattr(args, "type", None):
+            bits.append(f"type={args.type!r}")
+        scope = (" with " + ", ".join(bits)) if bits else ""
         print(f"no proposals{scope}.")
         return 0
     for p in rows:
@@ -201,6 +208,38 @@ def cmd_reject(args) -> int:
     ensure_proposals_schema(args.db)
     update_proposal_status(args.db, args.id, status="rejected")
     print(f"proposal #{args.id} -> rejected")
+    return 0
+
+
+def cmd_reject_template(args) -> int:
+    """Sweep all non-rejected proposals; reject any whose rationale matches
+    the template blacklist that the post-blacklist `from-corpus` validator
+    now rejects up-front. Cleans out rows generated before the validator
+    landed, which were polluting idea_judge ranking context."""
+    from .propose import _RATIONALE_TEMPLATE_BLACKLIST
+    ensure_proposals_schema(args.db)
+    rows = load_proposals(args.db)
+    hit_ids: list[tuple[int, str]] = []
+    for p in rows:
+        if (p.get("status") or "") == "rejected":
+            continue
+        rationale = p.get("rationale") or ""
+        for phrase in _RATIONALE_TEMPLATE_BLACKLIST:
+            if phrase in rationale:
+                hit_ids.append((p["id"], phrase))
+                break
+    if not hit_ids:
+        print("no template-rationale proposals found.")
+        return 0
+    if args.dry_run:
+        print(f"would reject {len(hit_ids)} proposal(s):")
+        for pid, phrase in hit_ids:
+            print(f"  #{pid:<3d} (matched: {phrase!r})")
+        return 0
+    for pid, phrase in hit_ids:
+        update_proposal_status(args.db, pid, status="rejected")
+        print(f"  #{pid:<3d} -> rejected (matched: {phrase!r})")
+    print(f"rejected {len(hit_ids)} proposal(s).")
     return 0
 
 
@@ -299,6 +338,22 @@ def execute_proposal(db_path: str, proposal_id: int, *, seed: int = 9000,
 
 def cmd_execute(args) -> int:
     """Thin CLI wrapper around `execute_proposal`."""
+    if getattr(args, "dry_run", False):
+        from .db import load_proposals
+        p = next((x for x in load_proposals(args.db) if x["id"] == args.id),
+                  None)
+        if p is None:
+            print(f"no proposal with id={args.id}", file=sys.stderr)
+            return 1
+        print(f"dry-run: proposal #{args.id}")
+        print(f"  target_model: {p['target_model']}")
+        print(f"  params: {json.dumps(p.get('params') or {}, indent=2, ensure_ascii=False)}")
+        return 0
+    if not getattr(args, "yes", False) and sys.stdin.isatty():
+        resp = input(f"execute proposal #{args.id}? [y/N] ").strip().lower()
+        if resp not in ("y", "yes"):
+            print("aborted.")
+            return 0
     try:
         execute_proposal(args.db, args.id, seed=args.seed, verbose=True)
     except ValueError as exc:
@@ -501,6 +556,9 @@ def main() -> int:
     p_ls = sub.add_parser("list", help="one-line summary per proposal")
     p_ls.add_argument("--status", default=None,
                       choices=["proposed", "approved", "rejected", "executed"])
+    p_ls.add_argument("--type", default=None,
+                      help="filter by proposal_type (e.g. param_sweep / "
+                           "gap_mine)")
 
     p_sh = sub.add_parser("show", help="full record for one proposal")
     p_sh.add_argument("id", type=int)
@@ -511,9 +569,22 @@ def main() -> int:
     p_rj = sub.add_parser("reject", help="mark proposal status=rejected")
     p_rj.add_argument("id", type=int)
 
+    p_rt = sub.add_parser(
+        "reject-template",
+        help=("bulk-reject all proposals whose rationale matches the template "
+              "blacklist (cleans rows generated before the validator landed)"),
+    )
+    p_rt.add_argument("--dry-run", action="store_true",
+                      help="print what would be rejected without modifying the DB")
+
     p_ex = sub.add_parser("execute", help="run an approved proposal, measure, compare")
     p_ex.add_argument("id", type=int)
     p_ex.add_argument("--seed", type=int, default=9000)
+    p_ex.add_argument("--dry-run", action="store_true",
+                       help="print the target model + params without running")
+    p_ex.add_argument("--yes", "-y", action="store_true",
+                       help="skip the y/n confirmation before executing "
+                            "(useful for scripts / CI)")
 
     p_md = sub.add_parser("dump-md", help="export proposals as markdown")
     p_md.add_argument("--out", default="proposals/")
@@ -544,7 +615,9 @@ def main() -> int:
     args = ap.parse_args()
     handlers = {
         "from-corpus": cmd_from_corpus, "list": cmd_list, "show": cmd_show,
-        "approve": cmd_approve, "reject": cmd_reject, "execute": cmd_execute,
+        "approve": cmd_approve, "reject": cmd_reject,
+        "reject-template": cmd_reject_template,
+        "execute": cmd_execute,
         "dump-md": cmd_dump_md, "analytics": cmd_analytics, "auto": cmd_auto,
     }
     return handlers[args.cmd](args)

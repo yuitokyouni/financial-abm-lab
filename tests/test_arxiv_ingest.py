@@ -233,3 +233,477 @@ def test_summarize_corpus_includes_literature():
     # _select_literature_for_context, so both appear. Order matters:
     assert lit_ids.index("2412.10000") < lit_ids.index("2412.10001")
     assert ctx["n_literature_total"] == 2
+
+
+# ---- code_url extraction (regex only; PWC fetch is network-bound) -------
+
+def test_extract_github_from_text_finds_canonical_url():
+    from fingerprint_atlas.code_links import extract_github_from_text
+    abstract = (
+        "We propose TRIBE, an LLM-augmented bond-market ABM. "
+        "Source code available at https://github.com/Alicia-V/TRIBE-bond ."
+    )
+    assert extract_github_from_text(abstract) == "https://github.com/Alicia-V/TRIBE-bond"
+
+
+def test_extract_github_strips_trailing_punctuation_and_git_suffix():
+    from fingerprint_atlas.code_links import extract_github_from_text
+    assert (extract_github_from_text("Code: https://github.com/foo/bar.git).")
+            == "https://github.com/foo/bar")
+    assert (extract_github_from_text("see (https://github.com/foo/bar-baz),")
+            == "https://github.com/foo/bar-baz")
+
+
+def test_extract_github_returns_none_on_no_match():
+    from fingerprint_atlas.code_links import extract_github_from_text
+    assert extract_github_from_text(None) is None
+    assert extract_github_from_text("") is None
+    assert extract_github_from_text("no github link here, https://example.com/foo") is None
+
+
+def test_set_literature_code_url_roundtrip():
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+        load_literature, set_literature_code_url,
+    )
+    with tempfile.TemporaryDirectory() as td:
+        db = f"{td}/lit.db"
+        ensure_literature_schema(db)
+        upsert_literature_metadata(
+            db, arxiv_id="2503.99999v1", title="x", authors="A",
+            year=2025, published_date="2025-03-01T00:00:00Z",
+            primary_category="q-fin.TR", abstract="see https://github.com/foo/bar",
+        )
+        set_literature_code_url(db, "2503.99999v1",
+                                code_url="https://github.com/foo/bar",
+                                source="abstract")
+        rows = load_literature(db)
+        assert rows[0]["code_url"] == "https://github.com/foo/bar"
+        assert rows[0]["code_url_source"] == "abstract"
+
+
+def test_code_snapshot_roundtrip_and_load_by_arxiv_ids():
+    from fingerprint_atlas.db import (
+        ensure_code_snapshot_schema, upsert_code_snapshot, load_code_snapshots,
+    )
+    with tempfile.TemporaryDirectory() as td:
+        db = f"{td}/lit.db"
+        ensure_code_snapshot_schema(db)
+        upsert_code_snapshot(
+            db, arxiv_id="2503.99999v1",
+            code_url="https://github.com/foo/bar",
+            readme_excerpt="# bar\n\nA cool project.",
+            file_tree="src/\nREADME.md\nsetup.py",
+            status="ok",
+        )
+        upsert_code_snapshot(  # second row, will be excluded by filter
+            db, arxiv_id="2410.00001v1",
+            code_url="https://github.com/baz/qux",
+            readme_excerpt="qux", file_tree=None, status="ok",
+        )
+        snaps = load_code_snapshots(db, ["2503.99999v1"])
+        assert set(snaps) == {"2503.99999v1"}
+        assert "A cool project" in snaps["2503.99999v1"]["readme_excerpt"]
+        # update overwrites
+        upsert_code_snapshot(
+            db, arxiv_id="2503.99999v1",
+            code_url="https://github.com/foo/bar",
+            readme_excerpt="new readme", file_tree=None, status="no_readme",
+        )
+        snaps = load_code_snapshots(db, ["2503.99999v1"])
+        assert snaps["2503.99999v1"]["status"] == "no_readme"
+        assert snaps["2503.99999v1"]["readme_excerpt"] == "new readme"
+
+
+def test_make_plan_injects_code_snapshots_into_payload():
+    """When a candidate paper has a cached snapshot, plan payload should
+    expose candidate_literature_code so the LLM can reference real
+    file/class structure."""
+    from fingerprint_atlas.db import (
+        ensure_code_snapshot_schema, upsert_code_snapshot,
+    )
+    from fingerprint_atlas.idea_plan import make_plan
+    with tempfile.TemporaryDirectory() as td:
+        db = f"{td}/p.db"
+        ensure_code_snapshot_schema(db)
+        upsert_code_snapshot(
+            db, arxiv_id="2503.00320v2",
+            code_url="https://github.com/example/tribe",
+            readme_excerpt="# TRIBE\n\nA bond-market ABM.",
+            file_tree="tribe/\nREADME.md",
+            status="ok",
+        )
+        captured = {}
+
+        def fake_make_plan_response(*_a, **_kw):
+            return {"implementation_type": "param_sweep",
+                    "param_sweep": {}, "references": []}
+
+        # Monkey-patch _call_groq to capture payload, then return fake plan.
+        from fingerprint_atlas import idea_plan
+        orig = idea_plan._call_groq
+
+        def spy(_prompt, payload, _model, **_kw):
+            captured["payload"] = payload
+            return fake_make_plan_response()
+
+        idea_plan._call_groq = spy
+        try:
+            make_plan(
+                db, "tribe-style idea",
+                {
+                    "aspects": {}, "verdict": {},
+                    "matches": {
+                        "methods": [],
+                        "literature": [{
+                            "arxiv_id": "2503.00320v2",
+                            "title": "TRIBE",
+                            "code_url": "https://github.com/example/tribe",
+                        }],
+                        "proposals": [],
+                    },
+                },
+            )
+        finally:
+            idea_plan._call_groq = orig
+        clc = captured["payload"]["candidate_literature_code"]
+        assert len(clc) == 1
+        assert clc[0]["arxiv_id"] == "2503.00320v2"
+        assert "TRIBE" in (clc[0]["readme_excerpt"] or "")
+
+
+def test_resolve_code_url_uses_comment_when_abstract_misses():
+    from fingerprint_atlas.code_links import resolve_code_url
+    url, src = resolve_code_url(
+        "2503.99999v1",
+        abstract="A study of X with no link.",
+        comment="14 pages, code at https://github.com/foo/bar",
+    )
+    assert url == "https://github.com/foo/bar"
+    assert src == "comment"
+
+
+def test_set_arxiv_comment_roundtrip():
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata, load_literature,
+        set_arxiv_comment,
+    )
+    with tempfile.TemporaryDirectory() as td:
+        db = f"{td}/lit.db"
+        ensure_literature_schema(db)
+        upsert_literature_metadata(
+            db, arxiv_id="2503.99999v1", title="x", authors="A",
+            year=2025, published_date="2025-03-01T00:00:00Z",
+            primary_category="q-fin.TR", abstract="no link",
+        )
+        set_arxiv_comment(db, "2503.99999v1",
+                          "14 pages, code at https://github.com/foo/bar")
+        rows = load_literature(db)
+        assert "github.com/foo/bar" in rows[0]["arxiv_comment"]
+
+
+def test_extract_github_matches_bare_no_protocol():
+    """PDFs and arxiv comments often print 'Code: github.com/foo/bar'
+    without the https:// prefix."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    assert (extract_github_from_text("Code available at github.com/foo/bar.")
+            == "https://github.com/foo/bar")
+
+
+def test_extract_github_repairs_pdf_linewraps():
+    """pypdf-extracted text often splits long URLs across two lines."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    wrapped = "Code: https://github.com/Alicia/\nTRIBE-bond\nfor source."
+    assert (extract_github_from_text(wrapped)
+            == "https://github.com/Alicia/TRIBE-bond")
+    hyphenated = "see https://github.com/foo/very-long-\nrepo-name (paper §3)"
+    assert (extract_github_from_text(hyphenated)
+            == "https://github.com/foo/very-long-repo-name")
+
+
+def test_extract_github_prefers_authors_own_repo_over_tool_citation():
+    """A paper that cites Baichuan as its base model and ALSO releases its
+    own code should surface the OWN repo, not the base-model link, even
+    though the base-model citation appears first in document order."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    text = (
+        "We fine-tune Baichuan (https://github.com/baichuan-inc/Baichuan-13B) "
+        "on financial dialogue. "
+        "Our code is available at https://github.com/the-authors/finance-paper."
+    )
+    assert (extract_github_from_text(text)
+            == "https://github.com/the-authors/finance-paper")
+
+
+def test_extract_github_proximity_phrases():
+    """Various phrasings that should pick the URL right after them."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    for prefix in (
+        "Source code: https://github.com/x/y",
+        "We release https://github.com/x/y .",
+        "Implementation is available at https://github.com/x/y",
+        "Open-source at https://github.com/x/y",
+    ):
+        assert extract_github_from_text(prefix) == "https://github.com/x/y", prefix
+
+
+def test_extract_github_falls_back_when_no_authors_hint():
+    """If no 'code available' phrase exists, return the first match."""
+    from fingerprint_atlas.code_links import extract_github_from_text
+    text = "We use https://github.com/foo/bar for stuff."
+    assert extract_github_from_text(text) == "https://github.com/foo/bar"
+
+
+def test_query_arxiv_by_ids_strips_inline_comments(monkeypatch):
+    """Regression: --ids-file lines like '1909.03185  # Katahira' used to
+    forward the '#'-suffix to arxiv → HTTP 400. Pure unit test, no network:
+    we monkeypatch arxiv.Client.results and only verify the cleaned id_list
+    that reaches arxiv.Search."""
+    import fingerprint_atlas.arxiv_ingest as ai
+    seen: dict = {}
+
+    class _FakeClient:
+        def __init__(self, *a, **kw): pass
+        def results(self, search):
+            seen["id_list"] = list(search.id_list)
+            return iter([])
+
+    class _FakeSearch:
+        def __init__(self, *, id_list):
+            self.id_list = id_list
+
+    monkeypatch.setattr("arxiv.Client", _FakeClient)
+    monkeypatch.setattr("arxiv.Search", _FakeSearch)
+
+    ai.query_arxiv_by_ids([
+        "1909.03185        # Katahira & Chen 2019 — Speculation Game",
+        "cond-mat/9712151  # Challet & Zhang",
+        "  2104.10058v2",  # version suffix gets stripped
+        "",                # empty skipped
+        "# whole-line comment",  # comment-only line skipped
+    ])
+    assert seen["id_list"] == [
+        "1909.03185", "cond-mat/9712151", "2104.10058",
+    ]
+
+
+def test_extract_arxiv_id_preserves_old_style_category_prefix():
+    """Regression: cond-mat/0101326v1 used to be truncated to 0101326v1
+    by `rsplit('/', 1)[-1]`, breaking OpenAlex DOI lookups. Version
+    suffix is also stripped so DB rows are keyed on the base id
+    (consistent with openalex._arxiv_base and canon_atlas dedup)."""
+    from fingerprint_atlas.arxiv_ingest import _extract_arxiv_id_from_entry
+    assert (_extract_arxiv_id_from_entry(
+        "http://arxiv.org/abs/cond-mat/0101326v1") == "cond-mat/0101326")
+    assert (_extract_arxiv_id_from_entry(
+        "http://arxiv.org/abs/physics/0503230v1") == "physics/0503230")
+    # New-style IDs: version stripped too.
+    assert (_extract_arxiv_id_from_entry(
+        "http://arxiv.org/abs/2503.00320v2") == "2503.00320")
+    # Base ids (no version) unchanged.
+    assert (_extract_arxiv_id_from_entry(
+        "http://arxiv.org/abs/2503.00320") == "2503.00320")
+    # Malformed input falls back to last segment (still version-stripped).
+    assert (_extract_arxiv_id_from_entry(
+        "weird-no-marker") == "weird-no-marker")
+
+
+def test_strip_arxiv_versions_migration(tmp_path, capsys):
+    """The one-shot migration strips vN suffixes on existing rows, resolves
+    conflicts by keeping the base row + deleting the vN sibling, is
+    idempotent, and refuses to write without --yes."""
+    import sqlite3, argparse
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+    )
+    from fingerprint_atlas.arxiv_cli import cmd_strip_arxiv_versions
+
+    db = str(tmp_path / "t.db")
+    ensure_literature_schema(db)
+
+    common = dict(authors="A", year=2001, published_date="2001-01-01",
+                   primary_category=None, abstract="x", source_kind="arxiv")
+    upsert_literature_metadata(db, arxiv_id="cond-mat/0101326v1",
+                                 title="rename target", **common)
+    upsert_literature_metadata(db, arxiv_id="2503.00320",
+                                 title="base", **common)
+    upsert_literature_metadata(db, arxiv_id="2503.00320v2",
+                                 title="conflict — keep base", **common)
+    upsert_literature_metadata(db, arxiv_id="1909.03185",
+                                 title="already base", **common)
+
+    def _ids():
+        with sqlite3.connect(db) as con:
+            return sorted(r[0] for r in con.execute(
+                "SELECT arxiv_id FROM literature_methods"
+            ).fetchall())
+
+    before = _ids()
+
+    def _args(**kw):
+        a = argparse.Namespace(db=db, dry_run=False, yes=False)
+        for k, v in kw.items():
+            setattr(a, k, v)
+        return a
+
+    assert cmd_strip_arxiv_versions(_args(dry_run=True)) == 0
+    assert _ids() == before, "dry-run must not modify DB"
+
+    assert cmd_strip_arxiv_versions(_args()) == 0
+    assert _ids() == before, "default (no --yes) must not modify DB"
+
+    assert cmd_strip_arxiv_versions(_args(yes=True)) == 0
+    assert _ids() == sorted(
+        ["1909.03185", "2503.00320", "cond-mat/0101326"]
+    ), _ids()
+
+    # Idempotent second run: nothing more to do.
+    assert cmd_strip_arxiv_versions(_args(yes=True)) == 0
+    assert _ids() == sorted(
+        ["1909.03185", "2503.00320", "cond-mat/0101326"]
+    )
+
+
+def test_extract_untagged_lists_only_rows_needing_extraction(tmp_path, capsys):
+    """Untagged-with-usable-abstract go through; already-extracted stay;
+    'no abstract available' placeholder rows are skipped."""
+    import argparse
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+        update_literature_extraction,
+    )
+    from fingerprint_atlas.arxiv_cli import cmd_extract_untagged
+
+    db = str(tmp_path / "t.db")
+    ensure_literature_schema(db)
+    common = dict(authors="A", year=2024, published_date="2024-01-01",
+                   primary_category=None)
+    upsert_literature_metadata(db, arxiv_id="a/1", title="untagged, good abs",
+                                 abstract="real abstract content here",
+                                 source_kind="openalex", **common)
+    upsert_literature_metadata(db, arxiv_id="a/2", title="untagged, empty",
+                                 abstract="[no abstract available for oa:W1]",
+                                 source_kind="openalex", **common)
+    upsert_literature_metadata(db, arxiv_id="a/3", title="already tagged",
+                                 abstract="real abstract content here",
+                                 source_kind="arxiv", **common)
+    update_literature_extraction(
+        db, "a/3", mechanism_summary="x", mechanism_tags=["order-book"],
+        stylized_facts_targeted=["fat-tails"], novelty_signal=None,
+        relevance_score=0.5, extracted_by_model="test",
+    )
+
+    args = argparse.Namespace(db=db, groq_model="test", limit=0, dry_run=True,
+                                sleep=0.0, max_attempts=3, retry_empty_past=False)
+    assert cmd_extract_untagged(args) == 0
+    out = capsys.readouterr().out
+    assert "found 1 untagged" in out
+    assert "a/1" in out
+    assert "a/2" not in out
+    assert "a/3" not in out
+
+
+def test_extract_untagged_retry_empty_past_flag_picks_up_defective(tmp_path,
+                                                                     capsys):
+    """--retry-empty-past adds back rows that were 'extracted' but came
+    back empty OR have non-ASCII (JA) tokens in mechanism_tags."""
+    import argparse
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+        update_literature_extraction,
+    )
+    from fingerprint_atlas.arxiv_cli import cmd_extract_untagged
+
+    db = str(tmp_path / "t.db")
+    ensure_literature_schema(db)
+    common = dict(authors="A", year=2024, published_date="2024-01-01",
+                   primary_category=None, source_kind="arxiv",
+                   abstract="a real abstract about herding.")
+
+    upsert_literature_metadata(db, arxiv_id="empty/1",
+                                 title="was extracted, came back empty", **common)
+    update_literature_extraction(
+        db, "empty/1", mechanism_summary=None, mechanism_tags=[],
+        stylized_facts_targeted=[], novelty_signal=None,
+        relevance_score=None, extracted_by_model="test",
+    )
+    upsert_literature_metadata(db, arxiv_id="jp/1",
+                                 title="JA tokens leaked into tags", **common)
+    update_literature_extraction(
+        db, "jp/1", mechanism_summary="限定合理性の話",
+        mechanism_tags=["限定合理性", "market-discipline"],
+        stylized_facts_targeted=["other"], novelty_signal=None,
+        relevance_score=0.5, extracted_by_model="test",
+    )
+    upsert_literature_metadata(db, arxiv_id="good/1",
+                                 title="clean extraction — do not touch", **common)
+    update_literature_extraction(
+        db, "good/1", mechanism_summary="clean",
+        mechanism_tags=["order-book", "microstructure"],
+        stylized_facts_targeted=["fat-tails"], novelty_signal=None,
+        relevance_score=0.9, extracted_by_model="test",
+    )
+
+    args = argparse.Namespace(db=db, groq_model="test", limit=0,
+                                dry_run=True, sleep=0.0, max_attempts=3,
+                                retry_empty_past=True)
+    assert cmd_extract_untagged(args) == 0
+    out = capsys.readouterr().out
+    assert "empty/1" in out
+    assert "jp/1" in out
+    assert "good/1" not in out
+    assert "2 previously-defective" in out
+
+
+def test_stylized_fact_other_partitions_and_lists(tmp_path, capsys):
+    """'other'-only vs 'other + something' are counted separately; the
+    list-mode output surfaces both."""
+    import argparse
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+        update_literature_extraction,
+    )
+    from fingerprint_atlas.arxiv_cli import cmd_stylized_fact_other
+
+    db = str(tmp_path / "t.db")
+    ensure_literature_schema(db)
+    common = dict(authors="A", year=2024, published_date="2024-01-01",
+                   primary_category=None, source_kind="arxiv")
+    for aid, facts in [
+        ("only/1", ["other"]),
+        ("only/2", ["other"]),
+        ("mix/1", ["other", "fat-tails"]),
+        ("clean/1", ["vol-clustering"]),
+    ]:
+        upsert_literature_metadata(db, arxiv_id=aid, title=aid,
+                                     abstract="abs", **common)
+        update_literature_extraction(
+            db, aid, mechanism_summary=None, mechanism_tags=[],
+            stylized_facts_targeted=facts, novelty_signal=None,
+            relevance_score=None, extracted_by_model="test",
+        )
+
+    args = argparse.Namespace(db=db, groq_model="test", limit=0, retag=False,
+                                summary=False, min_relevance=0.0, sleep=0.0)
+    assert cmd_stylized_fact_other(args) == 0
+    out = capsys.readouterr().out
+    assert "papers tagged with 'other' ONLY:  2" in out
+    assert "papers with 'other' + something:  1" in out
+    assert "only/1" in out and "mix/1" in out
+    assert "clean/1" not in out
+
+
+def test_default_queries_includes_coverage_gap_presets():
+    """The 6 first-gen + 5 second-gen presets for coverage-gap filling
+    must be registered. Regression guard against accidental deletes."""
+    from fingerprint_atlas.arxiv_ingest import DEFAULT_QUERIES
+    gen1 = {"behavioral_finance", "herding_dynamics", "leverage_effect",
+             "regime_switching", "econophysics_classics", "low_freq_returns"}
+    gen2 = {"llm_agent_stylized_facts", "prospect_theory_returns",
+             "volume_volatility_corr", "gain_loss_asymmetry",
+             "abm_order_book_2024"}
+    assert gen1.issubset(set(DEFAULT_QUERIES))
+    assert gen2.issubset(set(DEFAULT_QUERIES))
+    for name in gen1 | gen2:
+        q = DEFAULT_QUERIES[name]
+        assert q and "cat:" in q, f"{name} missing cat: clause"

@@ -49,6 +49,20 @@ def _column_exists(con: sqlite3.Connection, table: str, col: str) -> bool:
     return any(r[1] == col for r in rows)
 
 
+def _add_columns_if_missing(con: sqlite3.Connection, table: str,
+                             columns: list[tuple[str, str]]) -> None:
+    """Add each (name, type_decl) column to `table` if absent.
+
+    Runs one PRAGMA table_info() for the whole batch instead of one per
+    column (the previous per-check pattern was 12 PRAGMAs for the
+    literature_methods migration).
+    """
+    have = {r[1] for r in con.execute(f"PRAGMA table_info({table})").fetchall()}
+    for name, type_decl in columns:
+        if name not in have:
+            con.execute(f"ALTER TABLE {table} ADD COLUMN {name} {type_decl}")
+
+
 def ensure_runs_schema(db_path: str) -> None:
     """Create the `runs` table if absent. Idempotent; leaves `techniques` alone.
 
@@ -60,14 +74,12 @@ def ensure_runs_schema(db_path: str) -> None:
     os.makedirs(parent, exist_ok=True)
     with sqlite3.connect(db_path) as con:
         con.executescript(RUNS_SCHEMA)
-        if not _column_exists(con, "runs", "hill_raw"):
-            con.execute("ALTER TABLE runs ADD COLUMN hill_raw REAL")
-        if not _column_exists(con, "runs", "origin"):
-            con.execute("ALTER TABLE runs ADD COLUMN origin TEXT NOT NULL DEFAULT 'abm'")
-        if not _column_exists(con, "runs", "preference_label"):
-            con.execute("ALTER TABLE runs ADD COLUMN preference_label REAL")
-        if not _column_exists(con, "runs", "preference_labeled_at"):
-            con.execute("ALTER TABLE runs ADD COLUMN preference_labeled_at TEXT")
+        _add_columns_if_missing(con, "runs", [
+            ("hill_raw", "REAL"),
+            ("origin", "TEXT NOT NULL DEFAULT 'abm'"),
+            ("preference_label", "REAL"),
+            ("preference_labeled_at", "TEXT"),
+        ])
         for stmt in _RUNS_INDEXES:
             con.execute(stmt)
         con.commit()
@@ -237,13 +249,32 @@ _LITERATURE_INDEXES = [
 
 
 def ensure_literature_schema(db_path: str) -> None:
-    """Idempotent literature_methods table create."""
+    """Idempotent literature_methods table create + ALTER migrations."""
     parent = os.path.dirname(db_path) or "."
     os.makedirs(parent, exist_ok=True)
     with sqlite3.connect(db_path) as con:
         con.executescript(LITERATURE_SCHEMA)
         for stmt in _LITERATURE_INDEXES:
             con.execute(stmt)
+        # ALTER migrations for older DBs. One PRAGMA sweep, then adds only
+        # the columns actually missing. source_kind (last row) distinguishes
+        # arxiv-ingested rows from OpenAlex-only canon (synthetic 'oa:Wxxxx'
+        # arxiv_id, no PDF); downstream URL/PDF fetchers must check it.
+        _add_columns_if_missing(con, "literature_methods", [
+            ("code_url", "TEXT"),
+            ("code_url_source", "TEXT"),
+            ("arxiv_comment", "TEXT"),
+            ("pdf_scanned_at", "TEXT"),
+            ("s2_paper_id", "TEXT"),
+            ("s2_tldr", "TEXT"),
+            ("s2_influential_citation_count", "INTEGER"),
+            ("s2_fetched_at", "TEXT"),
+            ("oa_paper_id", "TEXT"),
+            ("oa_cited_by_count", "INTEGER"),
+            ("oa_concepts", "TEXT"),
+            ("oa_fetched_at", "TEXT"),
+            ("source_kind", "TEXT NOT NULL DEFAULT 'arxiv'"),
+        ])
         con.commit()
 
 
@@ -251,12 +282,17 @@ def upsert_literature_metadata(
     db_path: str, *,
     arxiv_id: str, title: str, authors: str, year: int,
     published_date: str, primary_category: str | None, abstract: str,
+    source_kind: str = "arxiv",
 ) -> int:
     """Insert a paper's raw metadata if absent; return the row id.
 
     Idempotent: re-ingesting the same arxiv_id is a no-op. LLM extraction is
     a separate step (`update_literature_extraction`) so we don't lose
     extraction results on a metadata refresh.
+
+    source_kind: 'arxiv' for arxiv preprints (arxiv_id is real, PDF fetch
+    works), 'openalex' for journal canon ingested from OpenAlex metadata
+    (arxiv_id is a synthetic 'oa:Wxxxxx', no PDF).
     """
     import datetime as _dt
     now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
@@ -268,12 +304,36 @@ def upsert_literature_metadata(
             return int(existing[0])
         cur = con.execute(
             "INSERT INTO literature_methods (arxiv_id, title, authors, year, "
-            "published_date, primary_category, abstract, ingested_at, updated_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?)",
+            "published_date, primary_category, abstract, ingested_at, "
+            "updated_at, source_kind) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?)",
             (arxiv_id, title, authors, int(year), published_date,
-             primary_category, abstract, now, now),
+             primary_category, abstract, now, now, source_kind),
         )
         return int(cur.lastrowid)
+
+
+def record_extraction_attempt(db_path: str, arxiv_id: str) -> None:
+    """Bump the attempt counter on a row without marking it extracted.
+
+    Use case: the LLM returned an empty payload (all-null summary +
+    empty tags). We don't want to write extracted_by_model — that would
+    hide the row from extract-untagged forever — but we do want to
+    track how many times we've tried so a retry loop can back off after
+    N failures.
+    """
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET "
+            "extraction_attempts = extraction_attempts + 1, updated_at = ? "
+            "WHERE arxiv_id = ?",
+            (now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
 
 
 def update_literature_extraction(
@@ -308,11 +368,19 @@ def update_literature_extraction(
 def load_literature(db_path: str, *, min_relevance: float | None = None,
                     tag: str | None = None, max_results: int | None = None
                     ) -> list[dict[str, Any]]:
+    # Defensive: a fresh DB may not have ingested any papers yet — make
+    # this a soft no-op rather than an OperationalError.
+    ensure_literature_schema(db_path)
     sql = ("SELECT id, arxiv_id, title, authors, year, published_date, "
            "primary_category, abstract, mechanism_summary, mechanism_tags, "
            "stylized_facts_targeted, novelty_signal, relevance_score, "
            "extracted_by_model, extraction_attempts, user_notes, user_tags, "
-           "ingested_at, updated_at FROM literature_methods")
+           "ingested_at, updated_at, code_url, code_url_source, arxiv_comment, "
+           "pdf_scanned_at, s2_paper_id, s2_tldr, "
+           "s2_influential_citation_count, s2_fetched_at, "
+           "oa_paper_id, oa_cited_by_count, oa_concepts, oa_fetched_at, "
+           "source_kind "
+           "FROM literature_methods")
     where: list[str] = []
     args: list[Any] = []
     if min_relevance is not None:
@@ -342,6 +410,296 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
             "extracted_by_model": r[13], "extraction_attempts": r[14],
             "user_notes": r[15] or "", "user_tags": r[16] or "",
             "ingested_at": r[17], "updated_at": r[18],
+            "code_url": r[19], "code_url_source": r[20],
+            "arxiv_comment": r[21], "pdf_scanned_at": r[22],
+            "s2_paper_id": r[23], "s2_tldr": r[24],
+            "s2_influential_citation_count": r[25], "s2_fetched_at": r[26],
+            "oa_paper_id": r[27], "oa_cited_by_count": r[28],
+            "oa_concepts": r[29], "oa_fetched_at": r[30],
+            "source_kind": r[31] or "arxiv",
+        })
+    return out
+
+
+CODE_SNAPSHOT_SCHEMA = """
+CREATE TABLE IF NOT EXISTS literature_code_snapshots (
+    id              INTEGER PRIMARY KEY,
+    arxiv_id        TEXT NOT NULL UNIQUE,
+    code_url        TEXT NOT NULL,
+    readme_excerpt  TEXT,           -- first ~3K chars; structure-of-repo signal for LLM plan prompts
+    file_tree       TEXT,           -- newline-separated top-level paths (capped)
+    status          TEXT NOT NULL,  -- 'ok' | 'no_readme' | 'error'
+    error_msg       TEXT,
+    fetched_at      TEXT NOT NULL
+);
+"""
+
+
+def ensure_code_snapshot_schema(db_path: str) -> None:
+    with sqlite3.connect(db_path) as con:
+        con.executescript(CODE_SNAPSHOT_SCHEMA)
+        con.commit()
+
+
+def upsert_code_snapshot(db_path: str, *, arxiv_id: str, code_url: str,
+                          readme_excerpt: str | None, file_tree: str | None,
+                          status: str, error_msg: str | None = None) -> None:
+    ensure_code_snapshot_schema(db_path)
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        con.execute(
+            "INSERT INTO literature_code_snapshots "
+            "(arxiv_id, code_url, readme_excerpt, file_tree, status, error_msg, fetched_at) "
+            "VALUES (?,?,?,?,?,?,?) "
+            "ON CONFLICT(arxiv_id) DO UPDATE SET "
+            "code_url=excluded.code_url, readme_excerpt=excluded.readme_excerpt, "
+            "file_tree=excluded.file_tree, status=excluded.status, "
+            "error_msg=excluded.error_msg, fetched_at=excluded.fetched_at",
+            (arxiv_id, code_url, readme_excerpt, file_tree, status, error_msg, now),
+        )
+        con.commit()
+
+
+def load_code_snapshots(db_path: str, arxiv_ids: list[str] | None = None
+                         ) -> dict[str, dict[str, Any]]:
+    """Return arxiv_id → snapshot dict. If `arxiv_ids` is given, restrict
+    to that set (no error if some are absent — snapshot is best-effort)."""
+    ensure_code_snapshot_schema(db_path)
+    sql = ("SELECT arxiv_id, code_url, readme_excerpt, file_tree, status, "
+           "error_msg, fetched_at FROM literature_code_snapshots")
+    args: tuple = ()
+    if arxiv_ids:
+        placeholders = ",".join("?" * len(arxiv_ids))
+        sql += f" WHERE arxiv_id IN ({placeholders})"
+        args = tuple(arxiv_ids)
+    out: dict[str, dict[str, Any]] = {}
+    with sqlite3.connect(db_path) as con:
+        for r in con.execute(sql, args).fetchall():
+            out[r[0]] = {
+                "arxiv_id": r[0], "code_url": r[1],
+                "readme_excerpt": r[2], "file_tree": r[3],
+                "status": r[4], "error_msg": r[5], "fetched_at": r[6],
+            }
+    return out
+
+
+def set_s2_metadata(db_path: str, arxiv_id: str, *,
+                     s2_paper_id: str | None,
+                     s2_tldr: str | None,
+                     s2_influential_citation_count: int | None) -> None:
+    """Persist Semantic Scholar enrichment for a paper. All fields are
+    optional; pass None to clear or skip a particular signal."""
+    ensure_literature_schema(db_path)
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET s2_paper_id = ?, s2_tldr = ?, "
+            "s2_influential_citation_count = ?, s2_fetched_at = ? "
+            "WHERE arxiv_id = ?",
+            (s2_paper_id, s2_tldr,
+             None if s2_influential_citation_count is None else int(s2_influential_citation_count),
+             now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
+
+
+def set_oa_metadata(db_path: str, arxiv_id: str, *,
+                     oa_paper_id: str | None,
+                     oa_cited_by_count: int | None,
+                     oa_concepts: str | None) -> None:
+    """Persist OpenAlex enrichment for a paper. concepts is stored as a
+    comma-separated string (e.g. 'Econophysics, Agent-based model')."""
+    ensure_literature_schema(db_path)
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET oa_paper_id = ?, oa_cited_by_count = ?, "
+            "oa_concepts = ?, oa_fetched_at = ? WHERE arxiv_id = ?",
+            (oa_paper_id,
+             None if oa_cited_by_count is None else int(oa_cited_by_count),
+             oa_concepts, now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
+
+
+def mark_pdf_scanned(db_path: str, arxiv_id: str) -> None:
+    """Stamp the row so subsequent `scan-pdfs-for-code` runs skip it,
+    regardless of whether the scan found a link."""
+    ensure_literature_schema(db_path)
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET pdf_scanned_at = ? WHERE arxiv_id = ?",
+            (now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
+
+
+def set_arxiv_comment(db_path: str, arxiv_id: str, comment: str | None) -> None:
+    """Persist the arxiv author-comment field (often contains 'code at github...')."""
+    ensure_literature_schema(db_path)
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET arxiv_comment = ? WHERE arxiv_id = ?",
+            (comment, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
+
+
+def set_literature_code_url(db_path: str, arxiv_id: str, *,
+                             code_url: str | None, source: str) -> None:
+    """Persist a code-repo URL for a paper. `source` ∈ {'abstract', 'comment', 'pwc'}
+    so we know how confident the link is."""
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "UPDATE literature_methods SET code_url = ?, code_url_source = ?, "
+            "updated_at = ? WHERE arxiv_id = ?",
+            (code_url, source, now, arxiv_id),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no literature row with arxiv_id={arxiv_id}")
+        con.commit()
+
+
+# ============================================================================
+# ideas — natural-language idea descriptions + LLM judgments + plans + scaffolds
+# ============================================================================
+
+IDEAS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS ideas (
+    id                  INTEGER PRIMARY KEY,
+    idea_text           TEXT NOT NULL,
+    aspects_json        TEXT,         -- structured aspects extracted by LLM
+    judgment_json       TEXT,         -- novelty verdict + matches
+    judgment_llm_model  TEXT,
+    plan_json           TEXT,         -- implementation plan
+    plan_llm_model      TEXT,
+    scaffold_paths      TEXT,         -- comma-separated file paths
+    proposal_ids        TEXT,         -- comma-separated proposals.id values
+    status              TEXT NOT NULL DEFAULT 'judged',  -- judged | planned | scaffolded | executed | rejected
+    user_notes          TEXT NOT NULL DEFAULT '',
+    created_at          TEXT NOT NULL,
+    updated_at          TEXT NOT NULL
+);
+"""
+
+_IDEAS_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_ideas_status ON ideas(status)",
+]
+
+
+def ensure_ideas_schema(db_path: str) -> None:
+    parent = os.path.dirname(db_path) or "."
+    os.makedirs(parent, exist_ok=True)
+    with sqlite3.connect(db_path) as con:
+        con.executescript(IDEAS_SCHEMA)
+        for stmt in _IDEAS_INDEXES:
+            con.execute(stmt)
+        con.commit()
+
+
+def insert_idea(db_path: str, *,
+                idea_text: str,
+                aspects: dict[str, Any] | None = None,
+                judgment: dict[str, Any] | None = None,
+                judgment_llm_model: str | None = None,
+                status: str = "judged") -> int:
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            "INSERT INTO ideas (idea_text, aspects_json, judgment_json, "
+            "judgment_llm_model, status, created_at, updated_at) "
+            "VALUES (?,?,?,?,?,?,?)",
+            (idea_text,
+             json.dumps(aspects, ensure_ascii=False) if aspects else None,
+             json.dumps(judgment, ensure_ascii=False, default=_json_default) if judgment else None,
+             judgment_llm_model, status, now, now),
+        )
+        return int(cur.lastrowid)
+
+
+def update_idea(db_path: str, idea_id: int, *,
+                aspects: dict | None = None,
+                judgment: dict | None = None,
+                judgment_llm_model: str | None = None,
+                plan: dict | None = None,
+                plan_llm_model: str | None = None,
+                scaffold_paths: list[str] | None = None,
+                proposal_ids: list[int] | None = None,
+                status: str | None = None,
+                user_notes: str | None = None) -> None:
+    import datetime as _dt
+    now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+    sets = []
+    args: list[Any] = []
+    for col, val in [
+        ("aspects_json", json.dumps(aspects, ensure_ascii=False) if aspects is not None else None),
+        ("judgment_json", json.dumps(judgment, ensure_ascii=False, default=_json_default) if judgment is not None else None),
+        ("judgment_llm_model", judgment_llm_model),
+        ("plan_json", json.dumps(plan, ensure_ascii=False, default=_json_default) if plan is not None else None),
+        ("plan_llm_model", plan_llm_model),
+        ("scaffold_paths", ",".join(scaffold_paths) if scaffold_paths is not None else None),
+        ("proposal_ids", ",".join(str(i) for i in proposal_ids) if proposal_ids is not None else None),
+        ("status", status),
+        ("user_notes", user_notes),
+    ]:
+        if val is not None:
+            sets.append(f"{col} = ?")
+            args.append(val)
+    if not sets:
+        return
+    sets.append("updated_at = ?")
+    args.append(now)
+    args.append(int(idea_id))
+    with sqlite3.connect(db_path) as con:
+        cur = con.execute(
+            f"UPDATE ideas SET {', '.join(sets)} WHERE id = ?",
+            tuple(args),
+        )
+        if cur.rowcount == 0:
+            raise KeyError(f"no idea with id={idea_id}")
+        con.commit()
+
+
+def load_ideas(db_path: str, status: str | None = None) -> list[dict[str, Any]]:
+    sql = ("SELECT id, idea_text, aspects_json, judgment_json, judgment_llm_model, "
+           "plan_json, plan_llm_model, scaffold_paths, proposal_ids, status, "
+           "user_notes, created_at, updated_at FROM ideas")
+    args: tuple = ()
+    if status is not None:
+        sql += " WHERE status = ?"
+        args = (status,)
+    sql += " ORDER BY id"
+    with sqlite3.connect(db_path) as con:
+        rows = con.execute(sql, args).fetchall()
+    out = []
+    for r in rows:
+        out.append({
+            "id": r[0], "idea_text": r[1],
+            "aspects": json.loads(r[2]) if r[2] else None,
+            "judgment": json.loads(r[3]) if r[3] else None,
+            "judgment_llm_model": r[4],
+            "plan": json.loads(r[5]) if r[5] else None,
+            "plan_llm_model": r[6],
+            "scaffold_paths": [p for p in (r[7] or "").split(",") if p],
+            "proposal_ids": [int(i) for i in (r[8] or "").split(",") if i],
+            "status": r[9], "user_notes": r[10] or "",
+            "created_at": r[11], "updated_at": r[12],
         })
     return out
 

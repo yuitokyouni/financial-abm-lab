@@ -1,4 +1,6 @@
 notebooks/yahoo_cache/
+dashboard/assets/
+canon_atlas.html
 __pycache__/
 .ipynb_checkpoints/
 .venv/
@@ -10,4 +12,4 @@ data/*.db
 experiments/runs/
 
 *.parquet
-*.csv
+*.csvdashboard/*.html

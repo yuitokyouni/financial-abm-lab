@@ -1,0 +1,26 @@
+LLM-as-agent + mechanistic interpretability で認知バイアスの因果機構を調べる方法論。
+
+従来の財務 ABM は heterogeneous bounded-rational agents の集団力学をシミュレートして
+stylized facts (fat tails / vol clustering 等) を再現することが主眼だった。本提案は
+逆方向で、LLM (TransformerLens 等で内部活性に介入可能なオープン重みモデル) を
+single-turn の取引判断主体として置き、その隠れ表現の中に reference-point dependence
+や disposition effect (Shefrin-Statman 1985, Odean 1998) を司る方向ベクトルが
+**因果的に**存在するかを検証する。
+
+具体機構:
+- paired-state アンサンブル: 同一資産文脈で参照点(購入価格 / 全期間最高値 ATH)だけ
+  振った状態ペアを生成し、それぞれの売り確率 P(sell) を logit-based に抽出。
+- 線形プローブ (difference-in-means): ペア間の活性差を平均して候補方向 v_ATH を同定。
+- 介入: 同定した方向に対し knock-out (射影除去) / rescue (再注入) / amplification
+  (用量反応) を活性層に適用し、ATH 条件付き売り非対称が方向依存かを検証。
+- specificity controls: caution / cash preference / fundamental valuation 等の
+  named control 方向と直交化し、効果が v_ATH 固有であることを示す。
+
+新規性主張: 市場ダイナミクス再現ではなく LLM 内部表現の neural correlates of
+behavioral biases に踏み込む。集団行動の emergent property をブラックボックスとして
+扱う既存 ABM 系譜とは異なり、個体エージェントの認知バイアスを mech-interp で
+white-box 化する。閉ループ市場 (Stage 5+) に拡張すれば、認知レベル介入が
+aggregate stylized facts をどう変えるかという因果接続が初めて可能になる。
+
+target stylized facts (initial scope): disposition effect, ATH-conditional sell
+asymmetry. 集約レベル fat tails / vol clustering は scope 外 (single-turn のため)。
