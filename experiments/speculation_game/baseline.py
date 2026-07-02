@@ -26,8 +26,8 @@ def run_baseline(seed: int = 777) -> dict:
     )
     print(f"[YH005 baseline] seed={seed} num_substitutions={res['num_substitutions']}")
     print(f"  std(r)   = {summary['std']:.4e}")
-    print(f"  vol_acf  = " + ", ".join(f"τ={l}:{summary['vol_acf'][l]:+.4f}" for l in summary["vol_acf"]))
-    print(f"  kurt     = " + ", ".join(f"w={w}:{summary['kurt'][w]:+.2f}" for w in summary["kurt"]))
+    print("  vol_acf  = " + ", ".join(f"τ={lag}:{summary['vol_acf'][lag]:+.4f}" for lag in summary["vol_acf"]))
+    print("  kurt     = " + ", ".join(f"w={w}:{summary['kurt'][w]:+.2f}" for w in summary["kurt"]))
     print(f"  Hill α   = {summary['hill_alpha']:.3f}")
     return summary
 

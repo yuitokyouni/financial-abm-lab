@@ -29,7 +29,7 @@ from typing import Sequence
 
 import numpy as np
 
-from .fingerprint import distance_matrix, standardize
+from .fingerprint import standardize
 
 
 @dataclass

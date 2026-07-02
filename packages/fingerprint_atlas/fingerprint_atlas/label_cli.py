@@ -33,14 +33,13 @@ import json
 import os
 import platform
 import subprocess
-import sys
 import tempfile
 
 import numpy as np
 
 from .db import load_runs, update_preference
 from .fingerprint import FEATURE_NAMES
-from .preference import propose_next_k, Proposal
+from .preference import propose_next_k
 
 
 VALID_LABELS = {"-2": -2.0, "-1": -1.0, "0": 0.0,

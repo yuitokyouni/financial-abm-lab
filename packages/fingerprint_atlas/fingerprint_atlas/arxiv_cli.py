@@ -57,7 +57,7 @@ def cmd_ingest(args) -> int:
     print("\n--- summary ---")
     print(json.dumps({k: v for k, v in summary.items() if k != "errors"}, indent=2))
     if summary["errors"]:
-        print(f"\nfirst 3 errors:")
+        print("\nfirst 3 errors:")
         for e in summary["errors"][:3]:
             print("  -", e)
     return 0 if summary["n_errors"] == 0 else 1

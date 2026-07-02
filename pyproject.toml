@@ -26,6 +26,11 @@ dev = [
     "mypy",
     "ipykernel",
 ]
+# #36: imported/speculation-game-info の YH005/YH006 テストは pams を要する。
+# CI の experiments ジョブでこの extra を入れて自動検証する。
+experiments = [
+    "pams==0.2.2",
+]
 
 # --- uv workspace (spec 001 C1): packages/ 配下を共有コアとして管理 ---
 [tool.uv.workspace]

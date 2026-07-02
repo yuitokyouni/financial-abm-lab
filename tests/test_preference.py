@@ -23,7 +23,6 @@ import numpy as np
 import pytest
 
 from fingerprint_atlas.db import ensure_runs_schema, insert_run, load_runs, update_preference
-from fingerprint_atlas.fingerprint import FEATURE_NAMES
 from fingerprint_atlas.preference import (
     PreferenceModel, novelty_score, ucb_acquisition, propose_next_k,
 )
@@ -239,7 +238,10 @@ def test_propose_next_k_ignores_nan_fingerprints():
     提示されたりしないこと。ラベル側・候補側どちらの NaN も無視される。"""
     d = 9
     rng = np.random.default_rng(0)
-    good = lambda: rng.standard_normal(d)
+
+    def good():
+        return rng.standard_normal(d)
+
     nan_fp = np.full(d, np.nan)
 
     labeled = [_row(1, good(), 1.0), _row(2, good(), -1.0),

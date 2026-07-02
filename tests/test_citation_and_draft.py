@@ -109,7 +109,9 @@ def test_methods_draft_dry_run_returns_filled_draft():
 
 def test_methods_draft_raises_for_unknown_method():
     db = _tmpdb()
-    ensure_runs_schema(db); ensure_literature_schema(db); seed_methods(db)
+    ensure_runs_schema(db)
+    ensure_literature_schema(db)
+    seed_methods(db)
     with pytest.raises(KeyError):
         draft_notes_for_method(db, "totally_unknown_method",
                                 dry_run_response={"novelty_notes": "x"})
@@ -118,7 +120,9 @@ def test_methods_draft_raises_for_unknown_method():
 def test_methods_draft_handles_partial_llm_response():
     """LLM might omit a field; the draft must still produce a valid dict."""
     db = _tmpdb()
-    ensure_runs_schema(db); ensure_literature_schema(db); seed_methods(db)
+    ensure_runs_schema(db)
+    ensure_literature_schema(db)
+    seed_methods(db)
     result = draft_notes_for_method(
         db, "lux_marchesi",
         dry_run_response={"novelty_notes": "only this field"},

@@ -316,7 +316,8 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
     where: list[str] = []
     args: list[Any] = []
     if min_relevance is not None:
-        where.append("relevance_score >= ?"); args.append(float(min_relevance))
+        where.append("relevance_score >= ?")
+        args.append(float(min_relevance))
     if tag is not None:
         # Tags are stored as ", "-joined strings; normalise both sides by
         # stripping spaces so the LIKE match works regardless of leading
@@ -327,7 +328,8 @@ def load_literature(db_path: str, *, min_relevance: float | None = None,
         sql += " WHERE " + " AND ".join(where)
     sql += " ORDER BY COALESCE(relevance_score, -1) DESC, year DESC, id DESC"
     if max_results is not None:
-        sql += " LIMIT ?"; args.append(int(max_results))
+        sql += " LIMIT ?"
+        args.append(int(max_results))
     with sqlite3.connect(db_path) as con:
         rows = con.execute(sql, tuple(args)).fetchall()
     out = []
@@ -429,9 +431,11 @@ def load_runs(db_path: str, model_name: str | None = None,
     where: list[str] = []
     args: list[Any] = []
     if model_name is not None:
-        where.append("model_name = ?"); args.append(model_name)
+        where.append("model_name = ?")
+        args.append(model_name)
     if origin is not None:
-        where.append("origin = ?"); args.append(origin)
+        where.append("origin = ?")
+        args.append(origin)
     if labeled is True:
         where.append("preference_label IS NOT NULL")
     elif labeled is False:

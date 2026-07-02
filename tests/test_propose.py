@@ -13,17 +13,14 @@ Covers:
 """
 from __future__ import annotations
 
-import json
-import os
 import tempfile
 
-import numpy as np
 import pytest
 
 from fingerprint_atlas.adapters import build_model, series_for_fingerprint
 from fingerprint_atlas.db import (
     ensure_proposals_schema, ensure_runs_schema, insert_proposal, insert_run,
-    load_proposals, load_runs, update_proposal_status,
+    load_proposals, update_proposal_status,
 )
 from fingerprint_atlas.fingerprint import FEATURE_NAMES, fingerprint
 from fingerprint_atlas.methods import seed_methods

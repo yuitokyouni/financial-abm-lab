@@ -259,7 +259,7 @@ def cmd_draft(db_path: str, name: str, *,
 
     if apply:
         update_method(db_path, name, **draft)
-        print(f"  -> applied draft directly to DB (no review)")
+        print("  -> applied draft directly to DB (no review)")
         return 0
 
     # Otherwise, render an edit-format scratch file pre-filled with the draft,

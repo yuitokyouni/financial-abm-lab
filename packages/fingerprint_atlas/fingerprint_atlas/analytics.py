@@ -88,8 +88,8 @@ def plot_prediction_error_by_family(db_path: str, out_png: str) -> dict:
     data = [[r["prediction_error"] for r in rows if r["target_model"] == fam]
             for fam in families]
     fig, ax = plt.subplots(figsize=(10, 5))
-    bp = ax.boxplot(data, tick_labels=families, showmeans=True,
-                    meanline=True, widths=0.55)
+    ax.boxplot(data, tick_labels=families, showmeans=True,
+               meanline=True, widths=0.55)
     # add individual points on top of the boxes
     for i, fam_errors in enumerate(data, start=1):
         x_jitter = np.random.default_rng(42 + i).normal(loc=i, scale=0.06,

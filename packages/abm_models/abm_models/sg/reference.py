@@ -29,7 +29,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import numpy as np
 
 from .history import quantize_price_change, shift_in, mu_capacity

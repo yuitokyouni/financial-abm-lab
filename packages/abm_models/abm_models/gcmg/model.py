@@ -136,7 +136,6 @@ class GCMGMarket:
             winning_side = -1 if excess > 0 else 1
         bit = 1 if winning_side == 1 else 0
         self.history = ((self.history << 1) | bit) & self.mask
-        N = actions.size
         A_count = int((actions == 1).sum())
         self.attendance_log.append(A_count)
         self.active_log.append(n_active)

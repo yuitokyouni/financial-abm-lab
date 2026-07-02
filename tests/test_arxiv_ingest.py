@@ -10,7 +10,7 @@ import tempfile
 import pytest
 
 from fingerprint_atlas.arxiv_ingest import (
-    EXTRACTION_SYSTEM_PROMPT, _coerce_relevance, extract_paper_structured,
+    _coerce_relevance, extract_paper_structured,
 )
 from fingerprint_atlas.db import (
     ensure_literature_schema, load_literature,

@@ -19,7 +19,9 @@ jobs:
       - name: Sync workspace
         run: uv sync --extra dev
       - name: Lint (packages + experiments)
-        run: uv run ruff check packages experiments src tests || true
+        # minor #3: 旧 `|| true` は ruff を無力化して lint が絶対に CI を落とせな
+        # かった。ゲートとして機能させるため除去。
+        run: uv run ruff check packages experiments src tests
       - name: Test (fast; slow parity excluded)
         run: uv run pytest -m "not slow"
       - name: Structure check
@@ -30,3 +32,23 @@ jobs:
             test -d "imported/$d"
           done
           echo "monorepo structure OK"
+
+  # #36: 最優先研究線 YH005/YH006 の自動検証。pams を要し、各 experiment は独自の
+  # sys.path / 同名モジュール (configs 等) を持つため、workspace テストとは別ジョブで
+  # experiment ごとに個別 invocation する (まとめると collection が衝突する)。
+  experiments:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Sync workspace (+ experiments extra = pams)
+        run: uv sync --extra dev --extra experiments
+      - name: YH005 tests (SG parity / stylized facts)
+        working-directory: imported/speculation-game-info/experiments/YH005
+        run: uv run --project ${{ github.workspace }} pytest tests/ -q
+      - name: YH006 tests (LOB inventory sync / round-trip invariants / wealth)
+        working-directory: imported/speculation-game-info/experiments/YH006
+        run: uv run --project ${{ github.workspace }} pytest tests/ -q

@@ -273,7 +273,6 @@ def plot_deltaG_vs_horizon(
 ) -> dict:
     """2D histogram: x = horizon, y = ΔG, color = log10(count). 論文2 Fig. 7 相当."""
     import matplotlib.pyplot as plt
-    from matplotlib.colors import LogNorm
 
     horizon = (round_trips["close_t"] - round_trips["open_t"]).astype(np.int64)
     dG = round_trips["delta_G"].astype(np.float64)

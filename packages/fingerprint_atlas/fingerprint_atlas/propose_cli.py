@@ -238,7 +238,7 @@ def execute_proposal(db_path: str, proposal_id: int, *, seed: int = 9000,
         series, kind = series_for_fingerprint(p["target_model"], result)
         fp = fingerprint(series, compute_hill=(kind == "returns"))
         hill_r = hill_tail_index_raw(series) if kind == "returns" else None
-    except Exception as exc:
+    except Exception:
         update_proposal_status(db_path, proposal_id, status="rejected")
         raise
 

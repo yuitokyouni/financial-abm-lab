@@ -157,14 +157,14 @@ def fingerprint(returns: np.ndarray, *, compute_hill: bool = True) -> np.ndarray
     hill = hill_tail_index(r) if compute_hill else HILL_ALPHA_CAP
     acf_ret = _autocorr(r, 1)
     absr = np.abs(r)
-    acf_abs_short = float(np.mean([_autocorr(absr, l) for l in range(1, 6)]))
+    acf_abs_short = float(np.mean([_autocorr(absr, lag) for lag in range(1, 6)]))
     if len(r) > 2:
         lev = _autocorr_cross(r[:-1], r[1:] ** 2)
     else:
         lev = 0.0
     # v4 additions
     if len(absr) > 50:
-        acf_abs_long = float(np.mean([_autocorr(absr, l) for l in range(20, 51)]))
+        acf_abs_long = float(np.mean([_autocorr(absr, lag) for lag in range(20, 51)]))
         acf_decay = _acf_decay_slope(absr)
     else:
         acf_abs_long = float("nan")

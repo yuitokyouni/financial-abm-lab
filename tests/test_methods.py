@@ -10,14 +10,13 @@
 """
 from __future__ import annotations
 
-import os
 import tempfile
 
 import pytest
 
 from abm_models import REGISTRY
 from fingerprint_atlas.methods import (
-    SEED, Method, ensure_methods_schema, get_method, list_methods,
+    SEED, ensure_methods_schema, get_method, list_methods,
     seed_methods, update_method,
 )
 from fingerprint_atlas.methods_cli import _parse_edit_file, _render_edit_file
