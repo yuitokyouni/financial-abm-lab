@@ -28,6 +28,7 @@ from .taxonomy import (
     TOO_GENERIC_MECHANISMS,
     canonical_fact,
     method_family,
+    normalise_mechanism_tag,
 )
 
 # ---------------------------------------------------------------------------
@@ -48,24 +49,27 @@ def _primary_tag(row: dict) -> str:
     Business / etc) don't count as a mechanism label; stylized-fact
     terms (leverage / long-memory / fat-tails / …) are skipped so they
     don't duplicate on both matrix axes; and too-generic ABM labels
-    (agent-based-model / simulation / framework — the corpus is 100%
-    ABMs, so tagging a paper 'agent-based-model' as its primary
-    mechanism says nothing) are also skipped in favour of the next,
-    more specific tag."""
+    (agent-based-model / simulation / framework) are also skipped in
+    favour of the next, more specific tag.
+
+    Returns the NORMALISED, ALIAS-RESOLVED slug — 'Minority-Game' and
+    'minority-game' collapse into one row, 'limit-order-book' folds
+    into 'order-book'. Case variants used to split into duplicate
+    matrix rows."""
     tags = row.get("mechanism_tags") or []
     for t in tags:
-        norm = _canonical_fact(t)
+        norm = normalise_mechanism_tag(t)
         if not norm:
             continue
         if norm in _FACT_TERMS_NOT_MECHANISMS:
             continue
         if norm in _TOO_GENERIC_MECHANISMS:
             continue
-        return t
+        return norm
     for concept in (row.get("oa_concepts") or "").split(","):
         c = concept.strip()
         if c and c not in _GENERIC_OA_CONCEPTS:
-            return c
+            return normalise_mechanism_tag(c)
     return "untagged"
 
 
@@ -112,22 +116,34 @@ def build_coverage(rows: list[dict], *, top_rows: int = 15,
     row_idx = {t: i for i, t in enumerate(row_labels)}
 
     M = np.zeros((len(row_labels), len(cols)), dtype=int)
+    row_papers = [0] * len(row_labels)
+    n_facts_per_paper: list[int] = []
     for r in rows:
         i = row_idx.get(_primary_tag(r))
         if i is None:
             continue
-        for raw_fact in (r.get("stylized_facts_targeted") or []):
-            j = col_idx.get(_canonical_fact(raw_fact))
-            if j is not None:
-                M[i, j] += 1
+        facts = {_canonical_fact(f)
+                  for f in (r.get("stylized_facts_targeted") or [])}
+        facts &= set(cols)
+        # 'other' is a last-resort catch-all. When the paper ALSO has a
+        # real fact, counting 'other' inflates that column into the
+        # biggest in the matrix (multi-label extraction made the LLM
+        # emit 'other' alongside real facts). Keep 'other' only when
+        # it's the paper's ONLY mapped fact.
+        if "other" in facts and len(facts) > 1:
+            facts.discard("other")
+        if not facts:
+            continue
+        row_papers[i] += 1
+        n_facts_per_paper.append(len(facts))
+        for f in facts:
+            M[i, cols.index(f)] += 1
 
     # Mark tautological diagonal cells (row-name == column-name) as
-    # excluded — e.g., 'regime-switching × regime-switching' or
-    # 'herding × herding'. A paper whose mechanism IS regime-switching
-    # producing the regime-switching stylized fact is trivially true and
-    # doesn't inform coverage or gaps. Same for other future ABM-specific
-    # facts (herding). We keep the count for the markdown table
-    # (documentation) but flag which cells to grey out at render time.
+    # excluded — e.g., 'regime-switching × regime-switching'. A paper
+    # whose mechanism IS regime-switching producing the regime-switching
+    # stylized fact is trivially true and doesn't inform coverage or
+    # gaps. Flagged so render greys them out.
     excluded_cells: set[tuple[int, int]] = set()
     for i, r_label in enumerate(row_labels):
         r_norm = _canonical_fact(r_label)
@@ -135,16 +151,23 @@ def build_coverage(rows: list[dict], *, top_rows: int = 15,
         if j is not None:
             excluded_cells.add((i, j))
 
+    mean_facts = (sum(n_facts_per_paper) / len(n_facts_per_paper)
+                   if n_facts_per_paper else 0.0)
     return {
         "row_labels": row_labels,
         "row_families": row_families,
         "col_labels": cols,
         "matrix": M,
+        # cell-sums per row (multi-label: a 3-fact paper adds 3 here)
         "row_totals": M.sum(axis=1).tolist(),
+        # DISTINCT papers per row — this is what the row label shows.
+        # row_totals == row_papers ⟺ extraction is effectively
+        # single-label; the gap between them measures multi-label reach.
+        "row_papers": row_papers,
         "col_totals": M.sum(axis=0).tolist(),
         "n_papers_total": len(rows),
-        "n_papers_classified": sum(1 for r in rows
-                                    if _primary_tag(r) in row_idx),
+        "n_papers_classified": sum(row_papers),
+        "mean_facts_per_paper": round(mean_facts, 2),
         "excluded_cells": excluded_cells,
     }
 
@@ -190,13 +213,16 @@ def render_heatmap(cov: dict, png_path: str, *, figsize=(12.0, 8.0),
     im = ax.imshow(M_display, cmap=cmap, vmin=0.5, vmax=vmax, aspect="auto")
 
     row_families = cov.get("row_families") or [""] * len(row_labels)
+    # Row label count = DISTINCT papers (fall back to cell-sum for covs
+    # built by an older build_coverage without row_papers).
+    row_n = cov.get("row_papers") or cov["row_totals"]
     ax.set_xticks(range(len(col_labels)))
     ax.set_xticklabels(col_labels, rotation=30, ha="right", fontsize=9)
     ax.set_yticks(range(len(row_labels)))
     _y_colors = {"ABM": "#1f6feb", "stat": "#a15c07", "ml": "#7c3aed",
                   "other": "#666"}
     ax.set_yticklabels(
-        [f"[{row_families[i] or 'other':>3s}] {r} ({cov['row_totals'][i]})"
+        [f"[{row_families[i] or 'other':>3s}] {r} ({row_n[i]})"
           for i, r in enumerate(row_labels)],
         fontsize=9,
     )
@@ -218,9 +244,12 @@ def render_heatmap(cov: dict, png_path: str, *, figsize=(12.0, 8.0),
     # single-label extraction artifact. The 143/N split had the
     # denominator as "everything ever ingested" which was misleading
     # (only classified papers actually appear here). Drop it.
+    mean_facts = cov.get("mean_facts_per_paper")
+    facts_note = (f"  ·  {mean_facts} facts/paper"
+                   if mean_facts else "")
     ax.set_title(f"Corpus theme distribution — mechanism × stylized fact\n"
                   f"{cov['n_papers_classified']} classified papers  ·  "
-                  f"{fam_summary} families")
+                  f"{fam_summary} families{facts_note}")
 
     # Cell annotations — count, '·' for empty, or 'N/A' for tautologies.
     for i in range(M.shape[0]):

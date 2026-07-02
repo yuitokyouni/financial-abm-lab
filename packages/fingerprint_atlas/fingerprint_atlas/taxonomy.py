@@ -136,6 +136,7 @@ STAT_MODEL_TAGS: frozenset[str] = frozenset({
     "cointegration", "copulas",
     "generative-model",
     "diffusion-model",  # SDE-flavoured, not agent-based
+    "queue-reactive",   # Huang-Lehalle-Rosenbaum stochastic LOB model
 })
 
 ML_MODEL_TAGS: frozenset[str] = frozenset({
@@ -183,3 +184,37 @@ def method_family(tag: str) -> str:
 
 #: Display order for the row bands in the coverage matrix.
 FAMILY_ORDER: tuple[str, ...] = ("ABM", "stat", "ml", "other")
+
+
+#: Alias map: normalised tag variant → canonical mechanism slug. Applied
+#: after canonical_fact() normalisation (lowercase + hyphens), so keys
+#: here must be in that form. Catches the LLM's synonym drift — the same
+#: mechanism appearing as 'limit-order-book' vs 'order-book' split into
+#: two matrix rows in Yo's post-retag heatmap.
+TAG_ALIASES: dict[str, str] = {
+    "limit-order-book": "order-book",
+    "lob": "order-book",
+    "order-book-model": "order-book",
+    "market-maker": "market-making",
+    "minority-games": "minority-game",
+    "hawkes": "hawkes-process",
+    "hidden-markov": "hmm",
+    "hidden-markov-model": "hmm",
+    "markov-switching": "regime-switching",
+    "reinforcement": "reinforcement-learning",
+    "rl": "reinforcement-learning",
+    "marl": "multi-agent-reinforcement-learning",
+    "llm-agents": "llm-agent",
+    "large-language-model-agent": "llm-agent",
+}
+
+
+def normalise_mechanism_tag(tag: str) -> str:
+    """Lowercase-slug a mechanism tag and resolve known aliases.
+
+    'Minority-Game' → 'minority-game';  'limit-order-book' → 'order-book'.
+    This is what coverage/_primary_tag should emit so case variants and
+    synonyms collapse into one matrix row.
+    """
+    slug = canonical_fact(tag)
+    return TAG_ALIASES.get(slug, slug)

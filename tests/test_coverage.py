@@ -36,17 +36,15 @@ def _fake_rows() -> list[dict]:
 def test_build_coverage_counts_correctly():
     from fingerprint_atlas.coverage import build_coverage
     cov = build_coverage(_fake_rows(), top_rows=5)
-    # mechanism tags by paper count: minority-game 2, LLM-agent 2, Ising 1.
-    # LLM-agent's only paper with a canonical fact is a3 (herding, dropped
-    # from the enum) — a5's tag is 'something-weird' which is also dropped.
-    # So LLM-agent has zero mapped facts and is filtered out of the matrix.
+    # Row labels are normalised lowercase slugs now (case variants used
+    # to split one mechanism into two rows).
     assert "minority-game" in cov["row_labels"]
-    assert "Ising-model" in cov["row_labels"]
+    assert "ising-model" in cov["row_labels"]
     # fat-tails: 2 MG + 1 Ising = 3 (Ising's 'herding' also drops silently)
     i_mg = cov["row_labels"].index("minority-game")
     j_ft = cov["col_labels"].index("fat-tails")
     assert cov["matrix"][i_mg, j_ft] == 2
-    i_is = cov["row_labels"].index("Ising-model")
+    i_is = cov["row_labels"].index("ising-model")
     assert cov["matrix"][i_is, j_ft] == 1
     # herding was removed from the fact enum — it's a mechanism, not a fact
     assert "herding" not in cov["col_labels"]
@@ -55,6 +53,59 @@ def test_build_coverage_counts_correctly():
     # families are attached per row
     assert cov.get("row_families") is not None
     assert len(cov["row_families"]) == len(cov["row_labels"])
+    # distinct-papers-per-row is tracked separately from cell sums:
+    # MG has 2 papers; the first has 2 facts so cell-sum is 3.
+    assert cov["row_papers"][i_mg] == 2
+    assert cov["row_totals"][i_mg] == 3
+    assert cov["mean_facts_per_paper"] > 1.0
+
+
+def test_build_coverage_case_variants_collapse_to_one_row():
+    """'Minority-Game' vs 'minority-game' used to split into two matrix
+    rows. Both must land in one normalised row now."""
+    from fingerprint_atlas.coverage import build_coverage
+    rows = [
+        {"arxiv_id": "c1", "title": "MG cased",
+         "mechanism_tags": ["Minority-Game"], "oa_concepts": "",
+         "stylized_facts_targeted": ["fat-tails"]},
+        {"arxiv_id": "c2", "title": "MG lower",
+         "mechanism_tags": ["minority-game"], "oa_concepts": "",
+         "stylized_facts_targeted": ["fat-tails"]},
+        {"arxiv_id": "c3", "title": "LOB alias",
+         "mechanism_tags": ["limit-order-book"], "oa_concepts": "",
+         "stylized_facts_targeted": ["vol-clustering"]},
+    ]
+    cov = build_coverage(rows, top_rows=5)
+    assert cov["row_labels"].count("minority-game") == 1
+    assert "Minority-Game" not in cov["row_labels"]
+    # limit-order-book aliases into order-book (ABM family)
+    assert "order-book" in cov["row_labels"]
+    assert "limit-order-book" not in cov["row_labels"]
+    i_mg = cov["row_labels"].index("minority-game")
+    j_ft = cov["col_labels"].index("fat-tails")
+    assert cov["matrix"][i_mg, j_ft] == 2
+
+
+def test_build_coverage_suppresses_other_when_real_facts_present():
+    """Multi-label extraction emits 'other' alongside real facts; counting
+    it inflates the other column into the matrix maximum. 'other' should
+    count ONLY when it's the paper's sole mapped fact."""
+    from fingerprint_atlas.coverage import build_coverage
+    rows = [
+        {"arxiv_id": "o1", "title": "real fact + other",
+         "mechanism_tags": ["order-book"], "oa_concepts": "",
+         "stylized_facts_targeted": ["fat-tails", "other"]},
+        {"arxiv_id": "o2", "title": "only other",
+         "mechanism_tags": ["order-book"], "oa_concepts": "",
+         "stylized_facts_targeted": ["other"]},
+    ]
+    cov = build_coverage(rows, top_rows=5)
+    i = cov["row_labels"].index("order-book")
+    j_other = cov["col_labels"].index("other")
+    j_ft = cov["col_labels"].index("fat-tails")
+    assert cov["matrix"][i, j_ft] == 1
+    # only o2 counts toward 'other'; o1's tag-along 'other' is dropped
+    assert cov["matrix"][i, j_other] == 1
 
 
 def test_render_markdown_has_totals():
