@@ -278,6 +278,63 @@ def ensure_literature_schema(db_path: str) -> None:
         con.commit()
 
 
+# Columns we round-trip in a snapshot. `id` is excluded (autoincrement,
+# not portable across DBs); everything else — including ALL enrichment
+# columns (code_url, s2_*, oa_*, user_notes/tags, source_kind) — is
+# captured so a dump→restore is lossless. The old workflow restore only
+# re-wrote metadata + extraction fields and silently dropped the rest.
+_SNAPSHOT_COLUMNS = [
+    "arxiv_id", "title", "authors", "year", "published_date",
+    "primary_category", "abstract", "mechanism_summary", "mechanism_tags",
+    "stylized_facts_targeted", "novelty_signal", "relevance_score",
+    "extracted_by_model", "extraction_attempts", "user_notes", "user_tags",
+    "ingested_at", "updated_at", "code_url", "code_url_source",
+    "arxiv_comment", "pdf_scanned_at", "s2_paper_id", "s2_tldr",
+    "s2_influential_citation_count", "s2_fetched_at", "oa_paper_id",
+    "oa_cited_by_count", "oa_concepts", "oa_fetched_at", "source_kind",
+]
+
+
+def dump_literature_snapshot(db_path: str) -> list[dict[str, Any]]:
+    """Return every literature_methods row as a list of plain dicts,
+    ALL columns included (full fidelity). Round-trips losslessly through
+    restore_literature_snapshot. Order is stable (by arxiv_id) so the
+    committed JSON has a deterministic diff."""
+    ensure_literature_schema(db_path)
+    cols = ", ".join(_SNAPSHOT_COLUMNS)
+    with sqlite3.connect(db_path) as con:
+        con.row_factory = sqlite3.Row
+        rows = con.execute(
+            f"SELECT {cols} FROM literature_methods ORDER BY arxiv_id"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def restore_literature_snapshot(db_path: str, rows: list[dict],
+                                 *, replace: bool = True) -> int:
+    """Write snapshot rows into literature_methods with full fidelity.
+
+    replace=True uses INSERT OR REPLACE keyed on arxiv_id's UNIQUE
+    constraint, so restoring is idempotent and updates existing rows
+    without dropping enrichment columns. Returns the number of rows
+    written. Unknown keys in a row are ignored; missing keys default to
+    NULL (so an older snapshot missing a newly-added column still loads).
+    """
+    ensure_literature_schema(db_path)
+    verb = "INSERT OR REPLACE" if replace else "INSERT OR IGNORE"
+    cols = _SNAPSHOT_COLUMNS
+    placeholders = ", ".join("?" for _ in cols)
+    sql = (f"{verb} INTO literature_methods ({', '.join(cols)}) "
+           f"VALUES ({placeholders})")
+    n = 0
+    with sqlite3.connect(db_path) as con:
+        for r in rows:
+            con.execute(sql, tuple(r.get(c) for c in cols))
+            n += 1
+        con.commit()
+    return n
+
+
 def upsert_literature_metadata(
     db_path: str, *,
     arxiv_id: str, title: str, authors: str, year: int,

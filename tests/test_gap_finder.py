@@ -13,6 +13,51 @@ def _runs(model: str, fingerprint: list[float], n: int = 3) -> list[dict]:
     ]
 
 
+def test_matches_subfield_handles_space_needles_and_token_boundaries():
+    """Regression for the hyphen-vs-space matcher bug: 5 of 25 subfields
+    (limit_order_book etc.) had space-containing title_any needles that
+    could never match hyphen-normalised tags."""
+    from fingerprint_atlas.gap_finder import _matches_subfield, _split_tags
+    lob = {"key": "limit_order_book", "name": "Limit order book",
+            "title_any": ["limit order book", "order book"]}
+    # a paper tagged 'limit-order-book' must now match
+    assert _matches_subfield(_split_tags(["limit-order-book"]), lob) is True
+    assert _matches_subfield(_split_tags(["order-book", "microstructure"]), lob) is True
+    # single-token needle still matches a multi-token tag
+    mg = {"key": "minority_game", "name": "Minority Game",
+           "title_any": ["minority"]}
+    assert _matches_subfield(_split_tags(["minority-game"]), mg) is True
+    # token-boundary: 'market' does NOT match inside 'supermarket'
+    mk = {"key": "market_making", "name": "Market making",
+           "title_any": ["market"]}
+    assert _matches_subfield(_split_tags(["supermarket-x"]), mk) is False
+    assert _matches_subfield(_split_tags(["market-making"]), mk) is True
+
+
+def test_view_a_other_only_papers_do_not_inflate_row_density():
+    """A subfield whose papers are tagged ONLY 'other' must not accrue
+    row density (which would make every real-fact column a spurious
+    max-salience gap)."""
+    from fingerprint_atlas import gap_finder
+    rows = [
+        {"arxiv_id": "o.1", "mechanism_tags": "minority game",
+         "stylized_facts_targeted": "other"},
+        {"arxiv_id": "o.2", "mechanism_tags": "minority game",
+         "stylized_facts_targeted": "other"},
+        # a real-fact paper that ALSO carries a tag-along 'other'
+        {"arxiv_id": "o.3", "mechanism_tags": "minority game",
+         "stylized_facts_targeted": "fat-tails,other"},
+    ]
+    subfields = [{"key": "minority_game", "name": "Minority Game",
+                   "title_any": ["minority"]}]
+    v = gap_finder._build_view_a(rows, subfields)
+    facts = gap_finder.CANONICAL_FACTS
+    # only o.3's fat-tails counts; 'other' contributes nothing
+    assert v.matrix[0].sum() == 1
+    assert v.matrix[0, facts.index("fat-tails")] == 1
+    assert v.matrix[0, facts.index("other")] == 0
+
+
 def test_view_a_empty_in_dense_row_gets_high_salience():
     from fingerprint_atlas import gap_finder
     rows = [

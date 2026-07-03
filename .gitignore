@@ -12,4 +12,5 @@ data/*.db
 experiments/runs/
 
 *.parquet
-*.csvdashboard/*.html
+*.csv
+dashboard/*.html

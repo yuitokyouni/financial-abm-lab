@@ -725,24 +725,38 @@ def cmd_stylized_fact_other(args) -> int:
             examples = " · ".join((e.get("title") or "")[:32]
                                     for e in entries[:2])
             print(f"  {tag:<30s} {n:>4d}  {avg_rel:>6.2f}   {examples}")
+        # relevance_score == 0.0 means 'fully unrelated' (the extraction
+        # prompt's own convention), so it MUST count as a delete
+        # candidate. A falsy `or 1.0` used to skip exactly these — and it
+        # also disagreed with delete-low-relevance, which uses the same
+        # `is not None` check below.
         low_rel = [r for r in subset
-                    if (r.get("relevance_score") or 1.0) < args.min_relevance]
+                    if r.get("relevance_score") is not None
+                    and r["relevance_score"] < args.min_relevance]
         if args.min_relevance > 0:
             print()
-            print(f"papers with relevance_score < {args.min_relevance}: "
-                  f"{len(low_rel)}")
+            print(f"papers (among 'other'-tagged) with relevance_score < "
+                  f"{args.min_relevance}: {len(low_rel)}")
             print(f"(delete candidates — probably out-of-scope):")
             for r in low_rel[:30]:
-                score = r.get("relevance_score")
                 title = (r.get("title") or "")[:55]
-                print(f"  [{(score if score is not None else 0):.2f}] "
+                print(f"  [{r['relevance_score']:.2f}] "
                       f"{r['arxiv_id']:<22s}  {title}")
             if len(low_rel) > 30:
                 print(f"  ... and {len(low_rel) - 30} more")
-            print(f"\nto delete all {len(low_rel)}:")
-            ids = ",".join(r["arxiv_id"] for r in low_rel)
-            print(f"  python -m fingerprint_atlas.arxiv_cli --db <db> "
-                  f"delete-rows '{ids[:80]}...' --yes")
+            if low_rel:
+                # Full id list, NO --yes: delete-rows dry-runs by default so
+                # the user gets a preview before committing. Truncating the
+                # list (with a bogus '...' token) + --yes previously deleted
+                # only a prefix subset while claiming to delete all.
+                ids = ",".join(r["arxiv_id"] for r in low_rel)
+                print(f"\nto review-then-delete these {len(low_rel)} "
+                      f"(dry-run first, then add --yes):")
+                print(f"  python -m fingerprint_atlas.arxiv_cli --db <db> "
+                      f"delete-rows '{ids}'")
+                print(f"note: `delete-low-relevance --threshold "
+                      f"{args.min_relevance}` prunes the WHOLE corpus by "
+                      f"score, not just these 'other' rows.")
         return 0
 
     if not args.retag:
@@ -762,39 +776,101 @@ def cmd_stylized_fact_other(args) -> int:
     from time import sleep as _sleep
     print(f"re-extracting {len(subset)} row(s) with model={args.groq_model}"
           f"{f', sleep={args.sleep}s' if args.sleep else ''}...")
-    ok = failed = still_other = 0
+    ok = failed = still_other = empty = 0
     for i, r in enumerate(subset, start=1):
         paper = {"arxiv_id": r["arxiv_id"], "title": r.get("title") or "",
                   "abstract": r.get("abstract") or "",
                   "comment": r.get("arxiv_comment")}
         try:
             ext = extract_paper_structured(paper, model=args.groq_model)
-            update_literature_extraction(
-                args.db, r["arxiv_id"],
-                mechanism_summary=ext["mechanism_summary"],
-                mechanism_tags=ext["mechanism_tags"],
-                stylized_facts_targeted=ext["stylized_facts_targeted"],
-                novelty_signal=ext["novelty_signal"],
-                relevance_score=ext["relevance_score"],
-                extracted_by_model=ext["extracted_by_model"],
-            )
-            new_facts = ext["stylized_facts_targeted"]
-            if new_facts == ["other"] or (len(new_facts) == 1 and "other" in new_facts):
-                still_other += 1
-                mark = "still-other"
-            else:
-                ok += 1
-                mark = ", ".join(new_facts[:3]) or "(no facts)"
-            print(f"  [{i:>3d}/{len(subset)}]  {r['arxiv_id']:<22s} → {mark}")
         except Exception as exc:
             failed += 1
             print(f"  [{i:>3d}/{len(subset)}]  {r['arxiv_id']:<22s} FAIL "
                   f"{type(exc).__name__}: {exc}", file=sys.stderr)
+            if args.sleep:
+                _sleep(args.sleep)
+            continue
+        # Empty-payload guard (mirrors cmd_extract_untagged): a blank LLM
+        # response would otherwise OVERWRITE this row's existing tags /
+        # summary / relevance with nulls and be miscounted as a success —
+        # permanently destroying a good extraction. Skip instead; the row
+        # keeps its current (imperfect) extraction rather than losing it.
+        is_empty = (not ext["mechanism_summary"]
+                    and not ext["mechanism_tags"]
+                    and ext["relevance_score"] is None)
+        if is_empty:
+            empty += 1
+            print(f"  [{i:>3d}/{len(subset)}]  {r['arxiv_id']:<22s} → "
+                  f"EMPTY (kept existing extraction)")
+            if args.sleep:
+                _sleep(args.sleep)
+            continue
+        update_literature_extraction(
+            args.db, r["arxiv_id"],
+            mechanism_summary=ext["mechanism_summary"],
+            mechanism_tags=ext["mechanism_tags"],
+            stylized_facts_targeted=ext["stylized_facts_targeted"],
+            novelty_signal=ext["novelty_signal"],
+            relevance_score=ext["relevance_score"],
+            extracted_by_model=ext["extracted_by_model"],
+        )
+        new_facts = ext["stylized_facts_targeted"]
+        if new_facts == ["other"] or (len(new_facts) == 1 and "other" in new_facts):
+            still_other += 1
+            mark = "still-other"
+        else:
+            ok += 1
+            mark = ", ".join(new_facts[:3]) or "(no facts)"
+        print(f"  [{i:>3d}/{len(subset)}]  {r['arxiv_id']:<22s} → {mark}")
         if args.sleep:
             _sleep(args.sleep)
     print(f"\ndone: {ok} reclassified, {still_other} still 'other', "
-          f"{failed} failed.")
+          f"{empty} empty (skipped), {failed} failed.")
     return 0 if not failed else 2
+
+
+def cmd_snapshot_save(args) -> int:
+    """Dump the whole literature_methods table to a JSON file (full
+    fidelity — every column, including enrichment). This JSON is the
+    version-controllable source of truth for the corpus: commit it so
+    the atlas/coverage/gap figures are reproducible and CI has data to
+    restore. Without it the corpus lives only in a local .db that git
+    ignores (data/*.db) — a single point of failure."""
+    import json as _json
+    from .db import dump_literature_snapshot
+    rows = dump_literature_snapshot(args.db)
+    out = args.out
+    parent = os.path.dirname(out)
+    if parent:
+        os.makedirs(parent, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as fh:
+        _json.dump(rows, fh, indent=2, ensure_ascii=False, default=str)
+    print(f"wrote {len(rows)} literature rows to {out}")
+    if len(rows) == 0:
+        print("WARNING: 0 rows — is --db pointing at the populated DB? "
+              "Nothing to snapshot.", file=sys.stderr)
+        return 1
+    print(f"next: git add {out} && git commit  (this is your corpus backup)")
+    return 0
+
+
+def cmd_snapshot_restore(args) -> int:
+    """Load a JSON snapshot back into literature_methods (full fidelity,
+    idempotent INSERT OR REPLACE keyed on arxiv_id). Used by CI to
+    materialise the corpus each run, and locally to rebuild a fresh DB
+    from the committed snapshot."""
+    import json as _json
+    from .db import restore_literature_snapshot
+    if not os.path.exists(args.snapshot):
+        print(f"no snapshot at {args.snapshot} — nothing to restore.",
+              file=sys.stderr)
+        return 1
+    with open(args.snapshot, encoding="utf-8") as fh:
+        rows = _json.load(fh)
+    n = restore_literature_snapshot(args.db, rows,
+                                     replace=not args.no_replace)
+    print(f"restored {n} rows into {args.db} from {args.snapshot}")
+    return 0
 
 
 def cmd_delete_low_relevance(args) -> int:
@@ -1988,6 +2064,27 @@ def main() -> int:
     p_dlr.add_argument("--yes", action="store_true",
                         help="commit the deletion (default: safe print-only)")
 
+    p_ss = sub.add_parser(
+        "snapshot-save",
+        help=("dump the whole literature_methods table to a JSON file "
+              "(full fidelity). COMMIT this file — it is the reproducible, "
+              "version-controlled backup of your corpus."),
+    )
+    p_ss.add_argument("--out", default="data/literature_methods.json",
+                       help="output JSON path (default: data/literature_methods.json)")
+
+    p_sr = sub.add_parser(
+        "snapshot-restore",
+        help=("load a JSON snapshot back into literature_methods "
+              "(idempotent, full fidelity). Rebuilds a fresh DB from the "
+              "committed corpus backup."),
+    )
+    p_sr.add_argument("--snapshot", default="data/literature_methods.json",
+                       help="snapshot JSON path (default: data/literature_methods.json)")
+    p_sr.add_argument("--no-replace", action="store_true",
+                       help="INSERT OR IGNORE instead of REPLACE (keep existing "
+                            "rows untouched, only add missing ones)")
+
     p_bf = sub.add_parser(
         "backfill-code",
         help=("for already-ingested papers without code_url, run abstract "
@@ -2349,6 +2446,8 @@ def main() -> int:
                 "strip-arxiv-versions": cmd_strip_arxiv_versions,
                 "delete-rows": cmd_delete_rows,
                 "delete-low-relevance": cmd_delete_low_relevance,
+                "snapshot-save": cmd_snapshot_save,
+                "snapshot-restore": cmd_snapshot_restore,
                 "atlas": cmd_atlas,
                 "coverage": cmd_coverage,
                 "canon": cmd_canon,

@@ -74,14 +74,32 @@ def _split_tags(raw: Any) -> list[str]:
 
 
 def _matches_subfield(paper_tags: list[str], subfield: dict) -> bool:
-    """A paper matches a subfield iff any of its mechanism_tags or
-    oa_concepts contains a subfield title_any token (case-insensitive
-    substring)."""
-    title_any = [t.lower() for t in (subfield.get("title_any") or [])]
-    if not title_any:
-        title_any = [subfield["name"].split()[0].lower()]
-    haystack = " ".join(paper_tags).lower()
-    return any(needle in haystack for needle in title_any)
+    """A paper matches a subfield iff one of the subfield's title_any
+    needles appears as a contiguous hyphen-delimited token run inside any
+    of the paper's mechanism_tags / oa_concepts.
+
+    Two bugs this fixes vs the old raw-substring version:
+      1. paper_tags are hyphen-normalised ('limit-order-book') but
+         title_any needles carry spaces ('limit order book'), so a raw
+         substring test NEVER matched 5 of 25 subfields. We normalise the
+         needle the same way, so 'order book' -> 'order-book' matches.
+      2. Raw substring let 'market' match inside 'supermarket'. Requiring
+         the needle to align on hyphen-token boundaries removes that
+         class of false positive while still letting 'minority' match
+         'minority-game' (contiguous token sub-run)."""
+    needles = subfield.get("title_any") or [subfield["name"].split()[0]]
+    # paper_tags already passed through _norm_tag (lowercase, space->hyphen)
+    tag_token_sets = [t.split("-") for t in paper_tags]
+    for raw in needles:
+        ndl_tokens = _norm_tag(raw).split("-")
+        L = len(ndl_tokens)
+        if not L:
+            continue
+        for toks in tag_token_sets:
+            if any(toks[s:s + L] == ndl_tokens
+                    for s in range(len(toks) - L + 1)):
+                return True
+    return False
 
 
 # ----- views --------------------------------------------------------------
@@ -108,12 +126,19 @@ def _build_view_a(rows: list[dict], subfields: list[dict]
         tags = _split_tags(paper.get("mechanism_tags"))
         concepts = _split_tags(paper.get("oa_concepts"))
         paper_facts = _split_tags(paper.get("stylized_facts_targeted"))
-        if not paper_facts:
+        # Mirror coverage.build_coverage: 'other' is a last-resort
+        # catch-all, not a gap target. Drop it when the paper also has a
+        # real fact; a paper whose ONLY fact is 'other' contributes
+        # nothing. Otherwise 'other'-only subfields accrue high row
+        # density and every real-fact column reads as a max-salience
+        # "empty cell in a dense row" — a spurious gap.
+        real_facts = [f for f in paper_facts if f != "other"]
+        if not real_facts:
             continue
         haystack_tags = tags + concepts
         for i, sf in enumerate(subfields):
             if _matches_subfield(haystack_tags, sf):
-                for f in paper_facts:
+                for f in real_facts:
                     if f in facts:
                         M[i, facts.index(f)] += 1
     salience = _salience_empty_in_dense_row(M)
