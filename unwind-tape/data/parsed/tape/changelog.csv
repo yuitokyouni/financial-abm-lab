@@ -1,0 +1,26 @@
+change_id,sheet,cell_or_range,change_type,details,reason/instruction
+C001,Event_Tape_v0.1,Header row A1:BQ1,schema_add,"disclosure_time, after_close, quantity_basis, value_basis, initial_offer_shares, final_offer_shares, OA_exercised_shares, buyback_cancellation, lockup_days, lead_underwriter, seller_breakdown, activist_pressure, drift_ann_to_pricing, recovery_60d を追加",変更1
+C002,Event_Tape_v0.1,G005 / L001,row_correction,"value_basis=resolution_max, quantity_basis=resolution_max, sold_value_JPY=150億円を決議上限として保持。notesに4,920,000株×2,938円=約144.5億円および実績leg追加予定を記載",変更4
+C003,Event_Tape_v0.1,G004 / L001,row_correction,value_basis=estimate_close_price。notesにReuters推定値である旨を追記,変更4
+C004,Event_Tape_v0.1,G008 / L001,row_correction,"disclosure_time=15:40, after_close=TRUE, seller_breakdownを指定値で入力, initial_offer_shares=32,697,900, buyback_size_shares=14,000,000, buyback_value_JPY=1,000億円, buyback_window=2026-03-03 to 2026-03-04, buyback_cancellation=TRUE, activist_pressure=TRUE",変更4
+C005,Event_Tape_v0.1,G008 / L001 route_notes/notes,text_sync,条件決定期間2026-03-09〜2026-03-12、自己株取得に伴い買取引受・OAの売出株式数が減少し得る旨、DeNA売却背景の旧村上系アクティビスト関与報道を追記,変更4
+C006,Event_Tape_v0.1,G009:G011,row_add,信越化学、イビデン、ニチレイをTier2_candidate/status=candidateで追加。数値欄は空欄、notes=要一次資料,変更5
+C007,Lists,A1:L10,sheet_rebuild,1フィールド=1列、先頭行=フィールド名に再構成。新enumを追加しField_Dictionaryと同期,変更2
+C008,Baseline_Spec,Row 6 / Step 3.5,row_insert,選択関数 P(route | 観測量) の推定を追加。route係数は記述統計で因果効果ではないこと、ABM検証ターゲットを明記,変更3
+C009,Source_Log,Header + S004/S009,schema_add_and_notes,archived列を追加し全行FALSEで初期化。Aisin URL異常とYahoo CDN直リンクに一次PDF保存必須メモを追加,変更4
+C010,Sampling_Frame,New sheet,sheet_add,2023-01-01〜2026-06-30の母集団定義ドラフトを追加,変更6
+C011,README,A1:B9,doc_sync,v0.2方針、day0規則、サンプル方針、データ未取得方針を同期,変更7
+C012,Field_Dictionary,A1:D70,doc_sync,Event_Tape全69列の定義を追加し、enum/計算列/day0規則を同期,変更7
+C013,Changelog,New sheet,sheet_add,変更セル/範囲一覧を作成,変更7
+C014,Event_Tape,sheet,rename,シート名をEvent_Tape_v0.1→Event_Tapeに変更(バージョンはワークブック側で管理),v0.3監査
+C015,Event_Tape,bool列,normalize,support_*/after_close/buyback_cancellation/activist_pressureをTRUE/FALSE表記に統一,v0.3監査
+C016,Event_Tape,quantity/value_basis,fill,announced_totalを新設しG002-G008へ付与。G008L001 value=estimate_close_price、L002=executed_actual,v0.3監査
+C017,Event_Tape,r8/r9/r10 notes,append,G007金額根拠・G008 OA要確認・L002有報整合(S011)を注記,v0.3監査
+C018,Event_Tape,r11-r13,fill,候補行に証券コード(4063/4062/2871)・市場・報道コンテキストを追加。数値欄は空欄のまま,v0.3監査
+C019,Lists,quantity/value_basis,add,announced_totalを追加,v0.3監査
+C020,Field_Dictionary,basis行,update,basis各値の定義を明記,v0.3監査
+C021,Dashboard,B3-B18,formula,ハードコード集計を数式(COUNTA/COUNTIF)に復元、範囲を400行に拡張、candidate件数を追加,v0.3監査
+C022,Source_Log,S011,add,任天堂2026年3月期有報を追加(L002実績の裏付け),v0.3監査
+C023,Event_Tape,enum列,validation,Lists参照のデータ検証を主要enum列とbool列に設定(2:400行),v0.3監査
+C024,Event_Tape,D2,freeze,先頭3列を固定表示,v0.3監査
+C025,README/Dashboard,A1,update,タイトルをv0.3に更新、v0.3改修行を追記,v0.3監査

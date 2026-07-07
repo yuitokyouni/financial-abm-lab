@@ -1,0 +1,70 @@
+field,type,description,entry_notes
+event_group_id,text,一連の政策保有株削減・売却意思決定を束ねる親ID,同一案件の売出し・自己株買い・条件決定・結果開示は同じgroup_id
+event_leg_id,text,実際の売却/吸収/価格決定/結果開示の単位,1行=issuer×route×tranche/leg。legは売主別に分割しない
+status,enum,入力状態,seeded/candidate/needs_source_check/needs_price_data/complete/exclude
+issuer_code,text,発行体の証券コード,不明・未検証は空欄
+issuer_name,text,発行体名,一次資料未取得の候補行は社名のみ可
+issuer_market,text,市場区分,不明は空欄
+seller_name,text,売主名の概略,詳細売主別株数はseller_breakdownに名称:株数;区切りで記録
+seller_type,enum,売主タイプ,nonlife_insurer/bank/trust_bank/business_company/parent_or_affiliate/financial_institutionsなど
+relationship,text,発行体と売主の関係,政策保有・親会社・取引先・退職給付信託など
+event_tier,enum,イベント確度/用途,Tier1_confirmed=確定売却、Tier2_candidate=候補/方針、Tier3_overhang=背景圧力
+event_role,enum,legの役割,announcement/pricing/settlement/trade/buyback_decision/buyback_result/policy_intentなど
+sale_route,enum,売りが市場に出る構造,secondary_offering/toSTNeT_3/share_forward/block_trade/open_market_sale/market_sale_undetermined/mixed/unknown
+absorption_route,enum,発行体・引受・銀行などがどう吸収したか,public_offering/toSTNeT_3_buyback/issuer_buyback/underwriter_inventory/counterparty_bank_forward/public_market/unknownなど
+support_buyback,bool,自己株買い支援の有無,既存枠・同時発表・ToSTNeT-3などはbuyback_method/route_notesへ
+support_OA,bool,オーバーアロットメント有無,最大株数はOA_shares_max、実行株数はOA_exercised_shares
+support_lockup,bool,ロックアップ有無,日数はlockup_days
+support_stabilization,bool,安定操作・シンジケート支援等の有無,不明は空欄
+disclosure_time,time,開示時刻 HH:MM,TDnet等で確認。日付とは分ける
+after_close,bool,引け後開示か,day 0 = 反応可能な最初の立会。引け後開示なら翌営業日をday 0とする
+announce_datetime,date,開示日,disclosure_timeと併用。市場反応日はafter_close規則で調整
+pricing_date,date,条件決定日,期間しか分からない場合は空欄にしnotes/route_notesに記載
+settlement_date,date,受渡日,不明は空欄
+trade_date,date,実施/取引日,ToSTNeT-3等の実行日
+quantity_basis,enum,株数の根拠,resolution_max=決議上の上限 / announced_total=発表時の総量・契約総量 / priced_final=条件決定後の確定値 / estimate_close_price=終値ベース推定 / executed_actual=執行実績
+value_basis,enum,金額の根拠,resolution_max=決議上の上限 / announced_total=発表時の総量・契約総量 / priced_final=条件決定後の確定値 / estimate_close_price=終値ベース推定 / executed_actual=執行実績
+initial_offer_shares,number,当初売出株式数,需要/失敗リスク観測量。OAは別列
+final_offer_shares,number,最終売出株式数,自己株買い応募・条件変更後の株数。未確認は空欄
+OA_shares_max,number,OA最大株数,オーバーアロットメント上限
+OA_exercised_shares,number,OA実行株数,需要と失敗リスクの観測量。未確認は空欄
+sold_shares,number,売却/取得株数または当該legの株数,複数売主の合算。売主別はseller_breakdown
+sold_value_JPY,number,売却金額/想定総額（円）,value_basisで根拠を区別。推定値・上限はnotesへ
+pre_holding_shares,number,売却前保有株数,不明は空欄
+post_holding_shares,number,売却後保有株数,不明は空欄
+ADV20_shares,number,発表前20営業日平均出来高,価格データ取得後に入力
+ADV60_shares,number,発表前60営業日平均出来高,価格データ取得後に入力
+free_float_shares,number,浮動株数,size/free_float計算用
+market_cap_JPY,number,時価総額（円）,size/market cap計算用
+size_ADV20_calc,formula,sold_shares / ADV20_shares,"=IF(AND(sold_shares,ADV20),sold_shares/ADV20,"""")"
+size_ADV60_calc,formula,sold_shares / ADV60_shares,"=IF(AND(sold_shares,ADV60),sold_shares/ADV60,"""")"
+size_free_float_calc,formula,sold_shares / free_float_shares,短期需給でなく構造的吸収余力を見る
+size_market_cap_calc,formula,sold_value_JPY / market_cap_JPY,金額ベースの相対規模
+offer_price_JPY,number,売出価格・買取価格,不明は空欄
+previous_close_JPY,number,条件決定/決議前の基準終値,discount計算用
+discount_calc,formula,offer_price_JPY / previous_close_JPY - 1,offer_priceとprevious_close入力後に自動計算
+buyback_size_shares,number,自己株買い上限/実績株数,quantity_basis/value_basisと合わせて解釈
+buyback_value_JPY,number,自己株買い上限/実績金額,不明は空欄
+buyback_method,text,自己株買い方法,ToSTNeT-3/市場買付/公開買付など
+buyback_window,text,自己株買い期間/実施時刻,期間・時刻を文字列で記録
+buyback_cancellation,bool,取得全株/一部の消却有無,TRUE/FALSE。不明は空欄
+lockup_days,number,ロックアップ日数,不明は空欄
+lead_underwriter,text,主幹事/リード引受証券,不明は空欄
+seller_breakdown,text,売主別株数,「名称:株数;」区切り。legは売主別に分割しない
+activist_pressure,enum,アクティビスト圧力の有無,TRUE/FALSE/unknown。不明はunknownまたは空欄
+announcement_CAR_m1_p1,number,"発表日前後CAR[-1,+1]",価格データ取得後に入力
+announcement_CAR_0_p1,number,"発表日から翌日のCAR[0,+1]",day0規則に従う
+pricing_CAR_m1_p1,number,"条件決定日前後CAR[-1,+1]",価格データ取得後に入力
+settlement_CAR_m1_p1,number,"受渡日前後CAR[-1,+1]",価格データ取得後に入力
+drift_ann_to_pricing,formula,発表日day0から条件決定日までのドリフト,価格データ取得後に計算。v0.2では空欄
+recovery_5d,number,5営業日回復,価格データ取得後に入力
+recovery_20d,number,20営業日回復,価格データ取得後に入力
+recovery_60d,formula,60営業日回復,価格データ取得後に計算。v0.2では空欄
+abnormal_volume_0_p3,number,発表後0〜3営業日の異常出来高,価格/出来高データ取得後に入力
+route_notes,text,売却構造・支援条件のメモ,条件決定期間や売出株式数変動可能性など
+mechanism_hypothesis,text,想定メカニズム仮説,ABM候補判定の理由
+ABM_candidate_flag,enum,ABM候補フラグ,Yes/No/Maybe。残差が構造タグに集中する場合のみYes
+confidence_policy_holding,enum,政策保有株売却とみなせる強度,A_explicit_policy_holding/B_strong_inference/C_possible_only/D_not_policy_holding
+source_primary_url,text,一次資料URL,TDnet/会社PDF/EDINET等
+source_secondary_url,text,二次資料URL,Reuters等。一次資料優先
+notes,text,注記・不明値理由,明記値以外は空欄とし、理由をここに書く

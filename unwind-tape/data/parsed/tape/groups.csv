@@ -1,0 +1,12 @@
+event_group_id,issuer_code,issuer_name,issuer_market,event_tier,confidence_policy_holding,ABM_candidate_flag
+G001,6902,DENSO,TSE Prime,Tier1_confirmed,B_strong_inference,No
+G002,6201,Toyota Industries,TSE Prime / NSE Premier,Tier1_confirmed,A_explicit_policy_holding,Yes
+G003,7259,Aisin,TSE Prime / NSE Premier,Tier1_confirmed,A_explicit_policy_holding,Yes
+G004,7267,Honda Motor,TSE Prime,Tier1_confirmed,A_explicit_policy_holding,Yes
+G005,8154,Kaga Electronics,TSE Prime,Tier1_confirmed,A_explicit_policy_holding,Yes
+G006,3950,The Pack,TSE Prime,Tier1_confirmed,B_strong_inference,Maybe
+G007,4246,Daikyo Nishikawa,TSE Prime,Tier1_confirmed,A_explicit_policy_holding,Yes
+G008,7974,Nintendo,TSE Prime,Tier1_confirmed,A_explicit_policy_holding,Yes
+G009,4063,信越化学,TSE Prime,Tier2_candidate,,
+G010,4062,イビデン,TSE Prime,Tier2_candidate,,
+G011,2871,ニチレイ,TSE Prime,Tier2_candidate,,

@@ -1,0 +1,12 @@
+key,value
+Sampling_Frame v0.2 draft,
+period_start,2023-01-01
+period_end,2026-06-30
+population_candidate_1,TDnet開示の「株式の売出し」× 政策保有・持ち合い関連キーワード
+population_candidate_2,TDnet開示の「自己株式の取得(ToSTNeT-3含む)」× 政策保有・持ち合い関連キーワード
+population_candidate_3,TDnet開示の「自己株式の公開買付け」× 政策保有・持ち合い関連キーワード
+population_candidate_4,EDINET変更報告書
+population_candidate_5,有価証券報告書の特定投資株式テーブルの年次差分
+exclude_candidate_1,新株発行を伴う公募
+exclude_candidate_2,非公開化TOB
+status,ドラフト。母集団定義の確定はユーザーが行う。

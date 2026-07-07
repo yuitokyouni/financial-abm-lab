@@ -1,0 +1,10 @@
+Policy Holding Sale Event Tape v0.3: ''
+改修日: '2026-07-07'
+目的: 政策保有株式の解消・売却イベントを、売却構造・吸収/支援パッケージ・流動性制約・価格影響に分解して記録するための台帳。
+v0.2方針: データ創作禁止。指示書に明記された値と既存v0.1の値のみ保持し、不明値は空欄＋notesで理由を記録する。Web取得・外部データ追加なし。
+イベント単位: 1行=issuer × route × tranche/leg。親イベントevent_group_idと子イベントevent_leg_idを分離。売主別分割はせずseller_breakdownに「名称:株数;」で記録する。
+day0規則: day 0 = 反応可能な最初の立会。disclosure_timeとafter_closeを使い、引け後開示なら翌営業日をday 0とする。
+分析方針: まず構造タグ付きイベントTCAを作り、size/ADV・square-root・route/support FE・route choiceで説明できない残差パターンだけをABM候補にする。
+主分析サンプル: Tier1_confirmedかつconfidence A/Bを主分析対象にする。Tier2_candidateは候補、Tier3_overhangは背景変数として扱う。
+注意: CAR、ADV、free float、時価総額、drift/recovery等は価格データ取得後に入力・計算する。v0.2では価格系列取得を行っていない。
+v0.3改修: '監査修正: シート名Event_Tape化、Dashboard数式復元、basisにannounced_total追加・全行付与、TRUE/FALSE表記統一、候補行に証券コード付与、任天堂L002を有報と突合(S011)、enumデータ検証と先頭列固定を追加'

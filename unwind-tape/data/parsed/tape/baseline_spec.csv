@@ -1,0 +1,9 @@
+Step,Model,Formula / Test,Decision Rule
+0,Sample definition,Main sample = Tier1_confirmed and confidence A/B,Do not mix Tier2/3 into execution-impact regressions
+1,Size/ADV,impact = α + β log(size / ADV20),"If this explains everything, ABM is unnecessary"
+2,Square-root impact,impact = Y × σ × sqrt(Q/V),Use as external-impact benchmark
+3,Route/support FE,impact ~ log(size/ADV) + log(size/free_float) + vol + seller_type + route + buyback_support + OA + industry FE + month FE,Route係数は記述統計。route is endogenously selected; do not read as causal effect.
+3.5,Route choice / selection function,"Estimate P(route | observables). route is endogenously selected, so Step 3 route coefficients are descriptive rather than causal.","ABM validation targets: (a) overlapping size/ADV band where multiple routes coexist, (b) contrast events with vs without buyback support."
+4,Discount model,discount ~ size/ADV + volatility + route + seller_type + OA + buyback_support,Separate pricing concession from announcement CAR
+5,Residual clustering,residual ~ low free float × large size × no buyback etc.,ABM only where residuals are non-random and mechanism-like
+6,ABM candidate,"Scenario search around route boundary, buyback absorption, front-running/liquidity withdrawal, low-liquidity tail",No ABM if residuals are just noise

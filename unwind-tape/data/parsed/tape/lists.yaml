@@ -1,0 +1,77 @@
+status:
+- seeded
+- candidate
+- needs_source_check
+- needs_price_data
+- complete
+- exclude
+event_tier:
+- Tier1_confirmed
+- Tier2_candidate
+- Tier3_overhang
+event_role:
+- announcement
+- pricing
+- settlement
+- trade
+- buyback_decision
+- buyback_result
+- policy_intent
+- other
+sale_route:
+- secondary_offering
+- toSTNeT_3
+- share_forward
+- block_trade
+- open_market_sale
+- market_sale_undetermined
+- self_tender_offer
+- mixed
+- unknown
+absorption_route:
+- public_offering
+- toSTNeT_3_buyback
+- issuer_buyback
+- underwriter_inventory
+- counterparty_bank_forward
+- public_market
+- none
+- unknown
+seller_type:
+- nonlife_insurer
+- bank
+- trust_bank
+- business_company
+- parent_or_affiliate
+- financial_institutions
+- mixed_financials
+- mixed
+- unknown
+quantity_basis:
+- resolution_max
+- priced_final
+- estimate_close_price
+- executed_actual
+- announced_total
+value_basis:
+- resolution_max
+- priced_final
+- estimate_close_price
+- executed_actual
+- announced_total
+ABM_candidate_flag:
+- 'Yes'
+- 'No'
+- Maybe
+confidence_policy_holding:
+- A_explicit_policy_holding
+- B_strong_inference
+- C_possible_only
+- D_not_policy_holding
+activist_pressure:
+- 'TRUE'
+- 'FALSE'
+- unknown
+bool:
+- 'TRUE'
+- 'FALSE'

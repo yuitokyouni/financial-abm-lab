@@ -5,17 +5,19 @@
 日本株の「一定期間内解消(unwind)」イベントを組成する tape 研究プロジェクト。groups.csv(イベント群) と legs.csv(各 leg = 個別公表) を突合し、AR/CAR を出す。データ基盤 3 タスクの構成:
 
 - **A. JPX 立会外取引情報の日次キャプチャ** (実装済・cron 化予定)
-- **B. xlsx → CSV 正規化 + PDF アーカイバ** (v0.2 xlsx 供給待ち)
-- **C. J-Quants で日次四本値 + AR/CAR エンジン** (B 依存)
+- **B. xlsx → CSV 正規化 + PDF アーカイバ + build round-trip** (v0.3 で完了)
+- **C. J-Quants で日次四本値 + AR/CAR エンジン** (B 完了、着手指示待ち)
 
 進捗と受け入れ条件の一次情報は `HANDOFF.md`。
 
 ## Stack / entrypoints
-- 言語/環境: Python 3.11+。依存: `requests`, `openpyxl`, `PyYAML`, stdlib (Task A のみ現状)。
-  以後 B/C で `pandas`, `pyarrow` が追加。他リポパッケージへ import しない。
+- 言語/環境: Python 3.11+。依存: `requests`, `openpyxl`, `PyYAML`, stdlib。
+  Task C で `pandas`, `pyarrow`, J-Quants HTTP client を追加予定。他リポパッケージへ import しない。
 - Task A entrypoint: `unwind-tape/scripts/fetch_jpx_offauction.py` (単体で完結)
 - Task A config: `unwind-tape/configs/jpx_offauction.yaml`
 - Task A cron 例: `unwind-tape/cron/jpx_offauction.crontab`
+- Task B pipeline: `migrate_xlsx_to_csv.py` → `archive_pdfs.py` → `validate_tape.py` → `build_tape.py`
+- Task B canonical CSVs: `unwind-tape/data/parsed/tape/{groups,legs,sources}.csv, lists.yaml`
 
 ## Conventions
 - **データ創作は厳禁**。欠損は空欄のまま、`data/gaps_report.md` に列挙。
@@ -42,17 +44,43 @@
 - **HTTP UA**: 明示ヘッダ("unwind-tape-fetch/0.x ...")。JPX は素の Python UA を 403 する。
 - **stdlib HTML parser のみ**: bs4/lxml 依存を持たない。パーサ差替時は _TableCollector の rowspan 挙動を再検証する。
 
+## Task B Fixed Invariants
+- **CSV が一次データ**: v0.3 以降、xlsx は `build_tape.py` の生成物。CSV を直接編集して build する運用。
+- **group 昇格の原則**: 全 leg で不変な identity 系のみ groups.csv に置く。leg 間で異なり得る解釈 (mechanism_hypothesis / activist_pressure) は legs.csv に残す。昇格判定は `migrate_xlsx_to_csv.py` の `GROUP_COLUMNS` にハードコード。
+- **URL 保全**: xlsx の URL が truncated (末尾 `...`) でも、source_id は prefix match で解決するが URL 文字列自体は truncated のまま legs.csv に残す (**データ創作禁止**)。
+- **数値埋まり + source_id 必須** (Tier1_confirmed のみ): URL のみで source_id 未解決なら validator が WARN → Source_Log への追加を促す。
+- **basis 整合性**: `quantity_basis/value_basis=resolution_max` のとき `sold_shares × previous_close_JPY ≤ sold_value_JPY × 1.01` を検証 (価格が揃わないケースは skip)。
+- **PDF アーカイブ**: 供給 PDF は `inputs/pdfs_supplied/` に pin。archiver は seed 優先 → HTTP fallback。sha256 は `data/raw/pdfs/manifest.jsonl` に (Reuters 401 等の失敗は gaps_report.md へ)。
+- **build_tape 前 validate**: `build_tape.py` は先に `validate_tape.py` を呼び、ERROR ありなら xlsx 生成を abort。WARN のみなら生成する。
+
 ## Runtime layout
 ```
 unwind-tape/
-  CLAUDE.md, HANDOFF.md, README.md
+  CLAUDE.md, HANDOFF.md, README.md, .gitignore
   configs/jpx_offauction.yaml
-  scripts/fetch_jpx_offauction.py
+  scripts/
+    fetch_jpx_offauction.py       # Task A
+    migrate_xlsx_to_csv.py        # Task B: 一次移行 (xlsx→CSV)
+    archive_pdfs.py               # Task B: sources.csv URL → data/raw/pdfs/
+    validate_tape.py              # Task B: enum/FK/date order/basis/source_id
+    build_tape.py                 # Task B: CSV→xlsx round-trip
   cron/jpx_offauction.crontab
-  data/                      # .gitignore 対象(生データ)
-    raw/jpx_offauction/{page}/manifest.jsonl
-    raw/jpx_offauction/{page}/{YYYY-MM-DD}/*.{xlsx,html}
-    parsed/jpx_offauction/{page}.csv
-    gaps_report.md            # コミット対象
-    logs/jpx_fetch_YYYY-MM-DD.log
+  inputs/                         # git-tracked (ユーザ供給の source of truth)
+    tape_versions/v0.3/policy_holding_sale_event_tape_v0_3.xlsx
+    pdfs_supplied/{S0XX}__*.pdf   # 供給PDF + 初回DL pin (10件)
+    */manifest.jsonl              # sha256 込み
+  data/                           # 一部 gitignore
+    raw/
+      jpx_offauction/{page}/…    # gitignored (Task A の生成物、成長する)
+      pdfs/{S0XX}__*.{pdf,html}  # git-tracked (Task B アーカイブ、10件+manifest)
+    parsed/
+      jpx_offauction/*.csv        # gitignored
+      tape/                       # git-tracked (Task B canonical CSV)
+        groups.csv, legs.csv, sources.csv, lists.yaml,
+        field_dictionary.csv, sampling_frame.csv, baseline_spec.csv,
+        changelog.csv, readme.yaml,
+        migration_report.md, validate_report.md,
+        policy_holding_sale_event_tape_regenerated.xlsx  # gitignored
+    logs/                         # gitignored
+    gaps_report.md                # git-tracked (欠損履歴)
 ```
