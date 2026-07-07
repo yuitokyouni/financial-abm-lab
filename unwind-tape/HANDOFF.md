@@ -218,11 +218,30 @@ Mac + Light プラン + V2 API キーで `jquants_fetch.py` を実行、25/25 en
 - fins_summary: 11 銘柄 × 20〜23 件
 - listed_info: **10/11 件** (1 銘柄が未取得 — CAR 計算には不使用の補助データなので non-blocking。原因は未調査)
 
-これで V2 の認証・endpoint・response envelope の実装が実データで裏付けられた。次は `car_engine.py` を回して `car_report.md` の G004/G008 を手計算と突合するフェーズ (C5)。
+これで V2 の認証・endpoint・response envelope の実装が実データで裏付けられた。
+
+### ✅ car_engine.py 実データ実行成功 (2026-07-08) — G004/G008 の CAR が出力された
+
+実データ実行で以下の V1→V2 フィールド名リネームを実機確認・修正済み:
+
+| 概念 | V1 | V2 (実確認) |
+|---|---|---|
+| 営業日区分 | `HolidayDivision` | `HolDiv` |
+| 四本値 | `Close`/`Open`/`High`/`Low` | `C`/`O`/`H`/`L` |
+| 出来高 | `Volume` | `Vo` |
+| 調整後終値 | `AdjustmentClose` | `AdjC` |
+| 調整後出来高 | `AdjustmentVolume` | `AdjVo` |
+| 調整係数 | `AdjustmentFactor` | `AdjFactor` (変化なし) |
+| 開示日 (fins) | `DisclosedDate` | `DiscDate` |
+
+**未解決 (R2 が的中)**: `/fins/summary` に V1 の「期末発行済株式数」に相当する直接フィールドが無い。最も近い代替は `AvgSh` (期中平均株式数、EPS算出用)。`load_fins_shares` はこれを **近似値として使用**し、`market_cap_JPY` の detail に `(approx: period-average shares, not period-end)` と明記するようにした。正確な期末株式数が必要なら EDINET 等の外部ソース併用を検討 (plan_report.md R2 の代替案参照)。
+
+9/12 leg で CAR 計算成功 (G001-G008)。残り3件 (G009-G011) は Tier2_candidate で `announce_datetime` 空欄のため意図通り未計算。
 
 ### 完了条件の残 (C5)
 
-- G004 (Honda) と G008 (Nintendo) の CAR が手計算と一致 — engine 実行後にユーザが検証
+- G004 (Honda) と G008 (Nintendo) の CAR が手計算と一致 — **`car_report.md` に数値は出た。次はユーザが手計算と突合する番。**
+- market_cap は AvgSh 近似のため、手計算でも同じ近似を使うか、正確な株式数で別途計算するか要判断
 - 一致しない場合は `configs/car.yaml` の day 0 規則・estimation window を調整、または `PREREG.md` を先に確定させて config を合わせる
 
 ### モデル切替

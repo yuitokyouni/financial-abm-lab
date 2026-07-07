@@ -476,6 +476,36 @@ def test_load_daily_quotes_ok_with_single_letter_fields(tmp_path):
     assert df["Volume"].iloc[0] == 5000
 
 
+def test_load_daily_quotes_ok_with_v2_real_field_names(tmp_path):
+    """V2 の実データ (daily_quotes) を確認済み: Volume='Vo', AdjustmentVolume='AdjVo',
+    AdjustmentClose='AdjC', AdjustmentFactor はそのまま 'AdjFactor' (2026-07-08)。
+    """
+    p = tmp_path / "quotes.jsonl"
+    _write_jsonl(p, [{"Date": "2024-01-01", "O": 99.0, "H": 101.0, "L": 98.0, "C": 100.0,
+                      "Vo": 5000, "AdjC": 99.5, "AdjVo": 4990, "AdjFactor": 1.0,
+                      "Code": "1234", "LL": 90.0, "UL": 110.0, "Va": 500000}])
+    df = load_daily_quotes(p)
+    assert df["Close"].iloc[0] == 100.0
+    assert df["Volume"].iloc[0] == 5000
+    assert df["AdjustmentClose"].iloc[0] == 99.5
+    assert df["AdjustmentVolume"].iloc[0] == 4990
+    assert df["AdjustmentFactor"].iloc[0] == 1.0
+
+
+def test_load_fins_shares_uses_avgsh_as_approx_with_disc_date(tmp_path):
+    """V2 実データ確認済み: /fins/summary に期末発行済株式数の直接フィールドは無く、
+    最も近い代替は AvgSh (期中平均株式数)。開示日フィールドも DisclosedDate ではなく
+    DiscDate (2026-07-08)。
+    """
+    p = tmp_path / "fins.jsonl"
+    _write_jsonl(p, [{"DiscDate": "2024-06-30", "AvgSh": "12345678", "Code": "1234"}])
+    df = load_fins_shares(p, logging.getLogger("test"))
+    assert len(df) == 1
+    assert df["DisclosedDate"].iloc[0] == "2024-06-30"
+    assert df["shares_outstanding"].iloc[0] == 12345678.0
+    assert df.attrs.get("shares_outstanding_is_approx") is True
+
+
 def test_load_trading_calendar_raises_when_no_candidate_matches(tmp_path):
     p = tmp_path / "cal.jsonl"
     _write_jsonl(p, [{"Date": "2024-01-01", "SomeUnknownField": "1"}])

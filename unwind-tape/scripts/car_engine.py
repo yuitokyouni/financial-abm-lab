@@ -155,14 +155,14 @@ def load_trading_calendar(path: Path) -> pd.DataFrame:
     return df
 
 
-# V2 はフィールド名を大胆に短縮する傾向が実データで確認されている
-# (HolidayDivision→HolDiv、さらに topix では Close→C, Open→O, High→H, Low→L まで
-# 単一文字に短縮されていた)。daily_quotes も同じ命名規則を採る可能性が高いため
-# Close/Volume 含め候補リスト方式にする。
+# V2 はフィールド名を大胆に短縮する傾向が実データで確認されている:
+#   HolidayDivision→HolDiv, Close→C, Open→O, High→H, Low→L,
+#   AdjustmentClose→AdjC, AdjustmentFactor→AdjFactor(そのまま),
+#   Volume→Vo, AdjustmentVolume→AdjVo (2026-07-08 実データで確認)。
 CLOSE_FIELD_CANDIDATES = ["Close", "C"]
-VOLUME_FIELD_CANDIDATES = ["Volume", "V"]
+VOLUME_FIELD_CANDIDATES = ["Volume", "V", "Vo"]
 ADJUSTMENT_CLOSE_FIELD_CANDIDATES = ["AdjustmentClose", "AdjClose", "AC", "AdjC"]
-ADJUSTMENT_VOLUME_FIELD_CANDIDATES = ["AdjustmentVolume", "AdjVolume", "AV", "AdjV"]
+ADJUSTMENT_VOLUME_FIELD_CANDIDATES = ["AdjustmentVolume", "AdjVolume", "AV", "AdjV", "AdjVo"]
 ADJUSTMENT_FACTOR_FIELD_CANDIDATES = ["AdjustmentFactor", "AdjFactor", "AF", "AdjF"]
 
 
@@ -242,19 +242,25 @@ def load_topix(path: Path) -> pd.DataFrame:
     return df
 
 
-# V2 /fins/summary の発行済株式数フィールド名は未確認。複数の候補を順に試し、
-# 見つかった最初のものを使う。全滅なら shares_outstanding は空のまま
-# (compute_market_cap 側で reason="no_shares" として NaN + 理由を返す — 黙って埋めない)。
+# V1 の "期末発行済株式数" 直接フィールドは V2 /fins/summary に存在しないことを
+# 実データで確認済み (2026-07-08)。最も近い代替は AvgSh (期中平均株式数、EPS算出用) —
+# **期末時点ではなく期中平均**なので market_cap は近似値になる。この点は
+# compute_market_cap の detail 文字列に明記し、黙って正確な値であるかのように扱わない。
 SHARES_OUTSTANDING_FIELD_CANDIDATES = [
     "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",  # V1 field name
     "NumberOfIssuedShares",
     "IssuedShares",
     "SharesOutstanding",
 ]
+# 期末値ではなく近似 (期中平均) である候補。使ったら detail に "(approx)" を付与する。
+SHARES_OUTSTANDING_APPROX_CANDIDATES = ["AvgSh"]
+
+# V2 実データで DisclosedDate → DiscDate に短縮されていることを確認済み。
+DISCLOSED_DATE_FIELD_CANDIDATES = ["DisclosedDate", "DiscDate"]
 
 
 def load_fins_shares(path: Path, log: logging.Logger | None = None) -> pd.DataFrame:
-    """returns df with DisclosedDate + shares_outstanding.
+    """returns df with DisclosedDate + shares_outstanding (+ approx flag folded into log).
     フィールド名候補を順に試す。1件も見つからなければ warning を出して空 df を返す
     (raise しない — fins データが本当に空という正常系もあり得るため)。
     """
@@ -267,17 +273,35 @@ def load_fins_shares(path: Path, log: logging.Logger | None = None) -> pd.DataFr
     if not raw_rows:
         return pd.DataFrame(columns=["DisclosedDate", "shares_outstanding"])
 
-    field_key = next(
-        (k for k in SHARES_OUTSTANDING_FIELD_CANDIDATES if any(k in r for r in raw_rows)),
-        None,
-    )
+    date_field = _first_present_field(raw_rows, DISCLOSED_DATE_FIELD_CANDIDATES)
+    if date_field is None:
+        if log:
+            log.warning(
+                "%s: none of %s found — cannot date-index shares_outstanding. Sample keys: %s",
+                path, DISCLOSED_DATE_FIELD_CANDIDATES, sorted(raw_rows[0].keys()),
+            )
+        return pd.DataFrame(columns=["DisclosedDate", "shares_outstanding"])
+
+    field_key = _first_present_field(raw_rows, SHARES_OUTSTANDING_FIELD_CANDIDATES)
+    is_approx = False
+    if field_key is None:
+        field_key = _first_present_field(raw_rows, SHARES_OUTSTANDING_APPROX_CANDIDATES)
+        is_approx = field_key is not None
     if field_key is None:
         if log:
             log.warning(
-                "%s: none of shares_outstanding candidates %s found. Sample keys: %s",
-                path, SHARES_OUTSTANDING_FIELD_CANDIDATES, sorted(raw_rows[0].keys()),
+                "%s: none of shares_outstanding candidates %s (exact) or %s (approx) found. "
+                "Sample keys: %s",
+                path, SHARES_OUTSTANDING_FIELD_CANDIDATES, SHARES_OUTSTANDING_APPROX_CANDIDATES,
+                sorted(raw_rows[0].keys()),
             )
         return pd.DataFrame(columns=["DisclosedDate", "shares_outstanding"])
+    if is_approx and log:
+        log.warning(
+            "%s: using approx field '%s' (period-average shares, not period-end) for "
+            "shares_outstanding — market_cap_JPY will be an approximation.",
+            path, field_key,
+        )
 
     rows = []
     for e in raw_rows:
@@ -285,11 +309,12 @@ def load_fins_shares(path: Path, log: logging.Logger | None = None) -> pd.DataFr
         if v in (None, ""):
             continue
         rows.append({
-            "DisclosedDate": e.get("DisclosedDate"),
+            "DisclosedDate": e.get(date_field),
             "shares_outstanding": pd.to_numeric(v, errors="coerce"),
         })
     df = pd.DataFrame(rows, columns=["DisclosedDate", "shares_outstanding"])
     df = df.sort_values("DisclosedDate").reset_index(drop=True)
+    df.attrs["shares_outstanding_is_approx"] = is_approx
     return df
 
 
@@ -582,7 +607,9 @@ def compute_market_cap(price: pd.DataFrame, shares: pd.DataFrame, day0: str,
     if eligible.empty:
         return math.nan, "no_disclosed_share_before_day0"
     n_shares = float(eligible.iloc[-1]["shares_outstanding"])
-    return close * n_shares, f"close={close:.2f} shares={n_shares:.0f}"
+    approx_tag = " (approx: period-average shares, not period-end)" \
+        if shares.attrs.get("shares_outstanding_is_approx") else ""
+    return close * n_shares, f"close={close:.2f} shares={n_shares:.0f}{approx_tag}"
 
 
 def compute_abnormal_volume(price: pd.DataFrame, day0: str, window: tuple[int, int],

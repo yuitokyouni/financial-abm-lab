@@ -341,11 +341,14 @@ def fetch_trading_calendar(client: JQuantsClient, root: Path,
 def fetch_fins_summary(client: JQuantsClient, root: Path, code: str,
                        log: logging.Logger) -> dict:
     dest = root / "data" / "raw" / "prices" / "fins_summary" / f"{code}.jsonl"
-    # fins は disclosure 単位。code だけで全期間取れる (from/to は無視される endpoint 仕様)
-    existing = _load_existing_dates(dest, date_field="DisclosedDate")
+    # 実データで確認済み: V2 /fins/summary の開示日フィールドは 'DiscDate'
+    # (V1 の 'DisclosedDate' ではない)。旧フィールド名も後方互換で残す。
+    existing = _load_existing_dates(dest, date_field="DiscDate") | \
+               _load_existing_dates(dest, date_field="DisclosedDate")
     path, key = client.endpoint("fins")
     items = client.get_all_pages(path, {"code": code}, key=key)
-    new = [it for it in items if str(it.get("DisclosedDate")) not in existing]
+    new = [it for it in items
+           if str(it.get("DiscDate", it.get("DisclosedDate"))) not in existing]
     added = _append_jsonl(dest, new)
     log.info("[%s] fins_summary fetched=%d appended=%d", code, len(items), added)
     return {"code": code, "fetched": len(items), "appended": added,
