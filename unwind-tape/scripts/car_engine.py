@@ -7,7 +7,7 @@
     data/raw/prices/daily_quotes/{code}.jsonl    (jquants_fetch.py の出力)
     data/raw/prices/topix.jsonl
     data/raw/prices/trading_calendar.jsonl
-    data/raw/prices/fins_statements/{code}.jsonl
+    data/raw/prices/fins_summary/{code}.jsonl
     configs/car.yaml
 
 出力:
@@ -110,6 +110,23 @@ class Config:
 # data loaders
 # ---------------------------------------------------------------------------
 
+class FieldMismatchError(ValueError):
+    """想定フィールド名が raw jsonl に一つも見つからない場合に投げる。
+    J-Quants V1→V2 移行でフィールド名が変わっている可能性が高いエラーなので、
+    黙って NaN で埋めるのではなく実際のキー名を出して気付けるようにする。
+    """
+
+
+def _sample_keys(path: Path, n: int = 1) -> list[str]:
+    keys: list[str] = []
+    with path.open("r", encoding="utf-8") as f:
+        for i, line in enumerate(f):
+            if i >= n:
+                break
+            keys.extend(sorted(json.loads(line).keys()))
+    return keys
+
+
 def load_trading_calendar(path: Path) -> pd.DataFrame:
     """returns df indexed by Date (str YYYY-MM-DD) with column IsBusinessDay (bool)."""
     rows = []
@@ -117,10 +134,22 @@ def load_trading_calendar(path: Path) -> pd.DataFrame:
         for line in f:
             e = json.loads(line)
             rows.append({
-                "Date": e["Date"],
+                "Date": e.get("Date"),
                 "HolidayDivision": e.get("HolidayDivision"),
             })
-    df = pd.DataFrame(rows).drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
+    df = pd.DataFrame(rows)
+    if df.empty:
+        raise FieldMismatchError(f"{path}: no rows")
+    if df["Date"].isna().all():
+        raise FieldMismatchError(
+            f"{path}: 'Date' field entirely missing. Sample raw keys: {_sample_keys(path)}"
+        )
+    if df["HolidayDivision"].isna().all():
+        raise FieldMismatchError(
+            f"{path}: 'HolidayDivision' field entirely missing (V2 may use a different name). "
+            f"Sample raw keys: {_sample_keys(path)}"
+        )
+    df = df.drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
     # HolidayDivision: "0" holiday / "1" business / "2" half day (still trading) / "3" half day non-trading
     # Treat "1" and "2" as business days (立会あり).
     df["IsBusinessDay"] = df["HolidayDivision"].astype(str).isin(("1", "2"))
@@ -134,14 +163,22 @@ def load_daily_quotes(path: Path) -> pd.DataFrame:
         for line in f:
             e = json.loads(line)
             rows.append({
-                "Date": e["Date"],
+                "Date": e.get("Date"),
                 "Close": e.get("Close"),
                 "Volume": e.get("Volume"),
                 "AdjustmentClose": e.get("AdjustmentClose"),
                 "AdjustmentVolume": e.get("AdjustmentVolume"),
                 "AdjustmentFactor": e.get("AdjustmentFactor"),
             })
-    df = pd.DataFrame(rows).drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
+    df = pd.DataFrame(rows)
+    if df.empty:
+        raise FieldMismatchError(f"{path}: no rows")
+    if df["Close"].isna().all():
+        raise FieldMismatchError(
+            f"{path}: 'Close'/'AdjustmentClose' fields entirely missing (V2 may rename them). "
+            f"Sample raw keys: {_sample_keys(path)}"
+        )
+    df = df.drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
     for c in ("Close", "Volume", "AdjustmentClose", "AdjustmentVolume", "AdjustmentFactor"):
         df[c] = pd.to_numeric(df[c], errors="coerce")
     return df
@@ -152,29 +189,68 @@ def load_topix(path: Path) -> pd.DataFrame:
     with path.open("r", encoding="utf-8") as f:
         for line in f:
             e = json.loads(line)
-            rows.append({"Date": e["Date"], "Close": e.get("Close")})
-    df = pd.DataFrame(rows).drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
+            rows.append({"Date": e.get("Date"), "Close": e.get("Close")})
+    df = pd.DataFrame(rows)
+    if df.empty:
+        raise FieldMismatchError(f"{path}: no rows")
+    if df["Close"].isna().all():
+        raise FieldMismatchError(
+            f"{path}: 'Close' field entirely missing (V2 may rename it). "
+            f"Sample raw keys: {_sample_keys(path)}"
+        )
+    df = df.drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
     df["Close"] = pd.to_numeric(df["Close"], errors="coerce")
     return df
 
 
-def load_fins_shares(path: Path) -> pd.DataFrame:
-    """returns df with DisclosedDate + shares_outstanding (FY-end field only)."""
-    rows = []
+# V2 /fins/summary の発行済株式数フィールド名は未確認。複数の候補を順に試し、
+# 見つかった最初のものを使う。全滅なら shares_outstanding は空のまま
+# (compute_market_cap 側で reason="no_shares" として NaN + 理由を返す — 黙って埋めない)。
+SHARES_OUTSTANDING_FIELD_CANDIDATES = [
+    "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock",  # V1 field name
+    "NumberOfIssuedShares",
+    "IssuedShares",
+    "SharesOutstanding",
+]
+
+
+def load_fins_shares(path: Path, log: logging.Logger | None = None) -> pd.DataFrame:
+    """returns df with DisclosedDate + shares_outstanding.
+    フィールド名候補を順に試す。1件も見つからなければ warning を出して空 df を返す
+    (raise しない — fins データが本当に空という正常系もあり得るため)。
+    """
     if not path.exists():
         return pd.DataFrame(columns=["DisclosedDate", "shares_outstanding"])
-    field_key = "NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock"
+    raw_rows: list[dict] = []
     with path.open("r", encoding="utf-8") as f:
         for line in f:
-            e = json.loads(line)
-            v = e.get(field_key)
-            if v in (None, ""):
-                continue
-            rows.append({
-                "DisclosedDate": e["DisclosedDate"],
-                "shares_outstanding": pd.to_numeric(v, errors="coerce"),
-            })
-    df = pd.DataFrame(rows).sort_values("DisclosedDate").reset_index(drop=True)
+            raw_rows.append(json.loads(line))
+    if not raw_rows:
+        return pd.DataFrame(columns=["DisclosedDate", "shares_outstanding"])
+
+    field_key = next(
+        (k for k in SHARES_OUTSTANDING_FIELD_CANDIDATES if any(k in r for r in raw_rows)),
+        None,
+    )
+    if field_key is None:
+        if log:
+            log.warning(
+                "%s: none of shares_outstanding candidates %s found. Sample keys: %s",
+                path, SHARES_OUTSTANDING_FIELD_CANDIDATES, sorted(raw_rows[0].keys()),
+            )
+        return pd.DataFrame(columns=["DisclosedDate", "shares_outstanding"])
+
+    rows = []
+    for e in raw_rows:
+        v = e.get(field_key)
+        if v in (None, ""):
+            continue
+        rows.append({
+            "DisclosedDate": e.get("DisclosedDate"),
+            "shares_outstanding": pd.to_numeric(v, errors="coerce"),
+        })
+    df = pd.DataFrame(rows, columns=["DisclosedDate", "shares_outstanding"])
+    df = df.sort_values("DisclosedDate").reset_index(drop=True)
     return df
 
 
@@ -449,7 +525,7 @@ def compute_adv(price: pd.DataFrame, day0: str, window_days: int,
 def compute_market_cap(price: pd.DataFrame, shares: pd.DataFrame, day0: str,
                        cal: BusinessCalendar) -> tuple[float, str]:
     """time-of-day 0 の直前終値 × forward-fill された shares_outstanding。
-    shares_outstanding は fins_statements の FY-end 値を DisclosedDate 以降 forward-fill。
+    shares_outstanding は fins_summary の値を DisclosedDate 以降 forward-fill。
     """
     prev = cal.shift_business_days(day0, -1)
     if prev is None:
@@ -680,7 +756,7 @@ def main(argv: list[str] | None = None) -> int:
 
     tape_dir = args.root / "data" / "parsed" / "tape"
     prices_dir = args.root / "data" / "raw" / "prices"
-    fins_dir = prices_dir / "fins_statements"
+    fins_dir = prices_dir / "fins_summary"
 
     # load
     cal_path = prices_dir / "trading_calendar.jsonl"
@@ -689,9 +765,13 @@ def main(argv: list[str] | None = None) -> int:
         log.error("prices/ not populated. Run jquants_fetch.py first. missing: %s or %s",
                   cal_path, topix_path)
         return 5
-    cal_df = load_trading_calendar(cal_path)
-    cal = BusinessCalendar(cal_df)
-    topix = load_topix(topix_path)
+    try:
+        cal_df = load_trading_calendar(cal_path)
+        cal = BusinessCalendar(cal_df)
+        topix = load_topix(topix_path)
+    except FieldMismatchError as e:
+        log.error("field mismatch while loading calendar/topix (V1→V2 rename?): %s", e)
+        return 6
 
     with (tape_dir / "legs.csv").open("r", encoding="utf-8") as f:
         legs = list(csv.DictReader(f))
@@ -706,9 +786,12 @@ def main(argv: list[str] | None = None) -> int:
             continue
         p_path = prices_dir / "daily_quotes" / f"{code}.jsonl"
         if p_path.exists():
-            prices[code] = load_daily_quotes(p_path)
+            try:
+                prices[code] = load_daily_quotes(p_path)
+            except FieldMismatchError as e:
+                log.error("[%s] field mismatch loading daily_quotes (V1→V2 rename?): %s", code, e)
         s_path = fins_dir / f"{code}.jsonl"
-        shares_map[code] = load_fins_shares(s_path) if s_path.exists() else pd.DataFrame(
+        shares_map[code] = load_fins_shares(s_path, log) if s_path.exists() else pd.DataFrame(
             columns=["DisclosedDate", "shares_outstanding"])
     log.info("loaded prices for %d codes", len(prices))
 

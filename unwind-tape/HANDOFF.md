@@ -187,9 +187,12 @@ python3 scripts/migrate_xlsx_to_csv.py \
 - `docs/j_quants_plan_report.md` — J-Quants プラン調査 (12 agent workflow + 3 lens verify)、**Light ¥1,650/月推奨**
 - `PREREG.md` — 空テンプレート (10 セクション、中身はユーザが書く)
 - `configs/car.yaml` — CAR engine 設定 (model 切替、estimation window、event windows、recovery、abnormal volume)
-- `scripts/jquants_fetch.py` — Light API 経由の raw data fetcher (daily_quotes / topix / trading_calendar / fins_statements / listed_info)
-- `scripts/car_engine.py` — AR/CAR エンジン。day 0 規則・ルックアヘッド禁止・8 出力列 spec 準拠
-- `tests/test_car_engine.py` — 23 件全通過 (day 0 / OLS 回復 / no-lookahead invariant / ADV / CAR sum / recovery / abnormal volume)
+- `scripts/jquants_fetch.py` — J-Quants API fetcher。**V2 既定** (`x-api-key` 認証、
+  daily_quotes/topix/trading_calendar/fins_summary/listed_info)。V1 レガシー資格情報
+  にも `--base-url` で対応 (V1 は 2026-07 時点で実質廃止、410 Gone を実機確認済み)
+- `scripts/car_engine.py` — AR/CAR エンジン。day 0 規則・ルックアヘッド禁止・8 出力列 spec 準拠。
+  V1→V2 フィールド名不一致を検知する `FieldMismatchError` guard 付き
+- `tests/test_car_engine.py` — 30 件全通過 (day 0 / OLS 回復 / no-lookahead invariant / ADV / CAR sum / recovery / abnormal volume / field-mismatch guard)
 - `docs/macos_runbook_task_c.md` — Mac 上での実行手順
 
 ### Mac 側でやること
@@ -199,8 +202,8 @@ python3 scripts/migrate_xlsx_to_csv.py \
 ```bash
 cd path/to/financial-abm-lab
 pip3 install --user numpy pandas pytest
-python3 -m pytest unwind-tape/tests/test_car_engine.py -v         # 23 件通ることを確認
-export JQUANTS_REFRESH_TOKEN="eyJ..."                              # 認証
+python3 -m pytest unwind-tape/tests/test_car_engine.py -v         # 30 件通ることを確認
+export JQUANTS_API_KEY="ダッシュボードのAPIキー"                    # V2 認証
 python3 unwind-tape/scripts/jquants_fetch.py                       # 15-20 分
 python3 unwind-tape/scripts/car_engine.py                          # 秒単位
 # → unwind-tape/data/parsed/tape/car_report.md を開いて G004/G008 の値を手計算と突合

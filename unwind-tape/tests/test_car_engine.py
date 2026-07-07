@@ -25,8 +25,11 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+import json  # noqa: E402
+import logging  # noqa: E402
 from car_engine import (  # noqa: E402
-    BusinessCalendar, Config, MMFit,
+    BusinessCalendar, Config, MMFit, FieldMismatchError,
+    load_daily_quotes, load_topix, load_trading_calendar, load_fins_shares,
     compute_day0, compute_ar_series, sum_ar_over_window, sum_ar_between,
     compute_adv, compute_market_cap, compute_abnormal_volume, compute_recovery,
     fit_market_model, build_return_series, build_topix_returns,
@@ -410,3 +413,70 @@ def test_no_lookahead_market_model_ignores_day0_spike(cal, cfg):
     # AR on day 0 should recover the ~0.20 abnormality (approx)
     ar_day0 = ar.loc[ar["Date"] == day0, "ar"].iloc[0]
     assert 0.15 < ar_day0 < 0.25, f"day 0 AR should be ≈0.20; got {ar_day0}"
+
+
+# ---------------------------------------------------------------------------
+# loader field-mismatch guards (V1→V2 field rename protection)
+# ---------------------------------------------------------------------------
+
+def _write_jsonl(path, rows):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+
+def test_load_daily_quotes_raises_on_missing_close_field(tmp_path):
+    p = tmp_path / "quotes.jsonl"
+    # V2 renamed 'Close' to something else, e.g. 'close_price' — simulate the mismatch
+    _write_jsonl(p, [{"Date": "2024-01-01", "close_price": 100.0, "Volume": 1000}])
+    with pytest.raises(FieldMismatchError, match="Close"):
+        load_daily_quotes(p)
+
+
+def test_load_daily_quotes_ok_when_close_present(tmp_path):
+    p = tmp_path / "quotes.jsonl"
+    _write_jsonl(p, [{"Date": "2024-01-01", "Close": 100.0, "Volume": 1000,
+                      "AdjustmentClose": 100.0, "AdjustmentVolume": 1000, "AdjustmentFactor": 1.0}])
+    df = load_daily_quotes(p)
+    assert len(df) == 1
+    assert df["Close"].iloc[0] == 100.0
+
+
+def test_load_topix_raises_on_missing_close_field(tmp_path):
+    p = tmp_path / "topix.jsonl"
+    _write_jsonl(p, [{"Date": "2024-01-01", "index_close": 2000.0}])
+    with pytest.raises(FieldMismatchError, match="Close"):
+        load_topix(p)
+
+
+def test_load_trading_calendar_raises_on_missing_holiday_division(tmp_path):
+    p = tmp_path / "cal.jsonl"
+    _write_jsonl(p, [{"Date": "2024-01-01", "hol_div": "1"}])  # V2-style renamed field
+    with pytest.raises(FieldMismatchError, match="HolidayDivision"):
+        load_trading_calendar(p)
+
+
+def test_load_trading_calendar_ok_when_holiday_division_present(tmp_path):
+    p = tmp_path / "cal.jsonl"
+    _write_jsonl(p, [{"Date": "2024-01-01", "HolidayDivision": "1"}])
+    df = load_trading_calendar(p)
+    assert len(df) == 1
+    assert bool(df["IsBusinessDay"].iloc[0]) is True
+
+
+def test_load_fins_shares_finds_alternate_field_name(tmp_path):
+    p = tmp_path / "fins.jsonl"
+    # simulate V2 renaming the shares-outstanding field to a candidate we support
+    _write_jsonl(p, [{"DisclosedDate": "2024-06-30", "NumberOfIssuedShares": "1000000"}])
+    df = load_fins_shares(p, logging.getLogger("test"))
+    assert len(df) == 1
+    assert df["shares_outstanding"].iloc[0] == 1000000.0
+
+
+def test_load_fins_shares_returns_empty_when_no_candidate_matches(tmp_path):
+    p = tmp_path / "fins.jsonl"
+    _write_jsonl(p, [{"DisclosedDate": "2024-06-30", "SomeUnknownField": "1000000"}])
+    df = load_fins_shares(p, logging.getLogger("test"))
+    assert df.empty
+    assert list(df.columns) == ["DisclosedDate", "shares_outstanding"]

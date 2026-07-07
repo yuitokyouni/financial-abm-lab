@@ -40,11 +40,9 @@ export JQUANTS_API_KEY="ここに値"
 # export JQUANTS_ID_TOKEN="eyJ..."
 ```
 
-**V2 API キー使用時の注意**: base_url は既定で V1 パス (`https://api.jquants.com/v1`) のままです。V2 キーで 404 が出た場合は `--base-url https://api.jquants.com/v2` を試してください:
-
-```bash
-python3 unwind-tape/scripts/jquants_fetch.py --base-url https://api.jquants.com/v2
-```
+**base_url は既定で V2 (`https://api.jquants.com/v2`)** です。V1 API は 2026-07 時点で
+実質廃止 (旧 `/markets/trading_calendar` が 410 Gone を返すことを実機確認済み)。
+V1 のレガシー資格情報を使う場合のみ `--base-url https://api.jquants.com/v1` を明示してください。
 
 シェルを閉じても残したいなら `~/.zshrc` などに `export` を書いておく。
 
@@ -60,7 +58,8 @@ python3 -m pytest unwind-tape/tests/test_car_engine.py -v
 
 ## 3. J-Quants から price data を取る
 
-11 銘柄 × 4 年分 + TOPIX + trading_calendar + fins_statements + listed_info を fetch:
+既定は V2 API (`https://api.jquants.com/v2`)。11 銘柄 × 4 年分 + TOPIX +
+trading_calendar + fins_summary + listed_info を fetch:
 
 ```bash
 python3 unwind-tape/scripts/jquants_fetch.py
@@ -77,8 +76,13 @@ python3 unwind-tape/scripts/jquants_fetch.py
 一部だけ再取得したいとき:
 ```bash
 python3 unwind-tape/scripts/jquants_fetch.py --codes 7267        # Honda だけ
-python3 unwind-tape/scripts/jquants_fetch.py --skip fins_statements listed_info
+python3 unwind-tape/scripts/jquants_fetch.py --skip fins_summary listed_info
 ```
+
+**フィールド名の不一致が出たら**: `car_engine.py` は V2 のフィールド名が
+V1 と違う場合に備えて `Close`/`HolidayDivision` 等が全滅していたら
+`FieldMismatchError` を投げて「実際に来たキー名」を表示するようにしています。
+出たエラーメッセージをそのまま貼ってもらえれば、フィールド名マッピングを直します。
 
 ## 4. CAR engine を回す
 
