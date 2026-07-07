@@ -1,0 +1,1 @@
+{"captured_at": "2026-07-07T16:41:22+09:00", "version": "v0.4", "local_path": "inputs/tape_versions/v0.4/policy_holding_sale_event_tape_v0_4.xlsx", "sha256": "6f4317abc895d4a619672895be4a9e39717f1eb5b2e296cb5230e71beb3025d8", "bytes": 202410, "note": "v0.4 fixes: URL truncation (C026 restored 27 cells from v0.1 original) + S012-S017 added to Source_Log (C027 6 new sources)."}

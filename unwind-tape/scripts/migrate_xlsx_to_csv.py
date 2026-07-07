@@ -487,10 +487,10 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--xlsx", type=Path,
                     default=Path(__file__).resolve().parent.parent / "inputs" / "tape_versions"
-                    / "v0.3" / "policy_holding_sale_event_tape_v0_3.xlsx")
+                    / "v0.4" / "policy_holding_sale_event_tape_v0_4.xlsx")
     ap.add_argument("--out", type=Path,
                     default=Path(__file__).resolve().parent.parent / "data" / "parsed" / "tape")
-    ap.add_argument("--version-tag", default="v0.3")
+    ap.add_argument("--version-tag", default="v0.4")
     args = ap.parse_args(argv)
 
     if not args.xlsx.exists():

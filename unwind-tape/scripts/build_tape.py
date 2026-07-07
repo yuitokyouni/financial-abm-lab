@@ -298,7 +298,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out", type=Path,
                     default=Path(__file__).resolve().parent.parent / "data" / "parsed" / "tape"
                     / "policy_holding_sale_event_tape_regenerated.xlsx")
-    ap.add_argument("--version-tag", default="v0.3")
+    ap.add_argument("--version-tag", default="v0.4")
     ap.add_argument("--skip-validate", action="store_true",
                     help="do NOT run validator first (default runs it)")
     args = ap.parse_args(argv)

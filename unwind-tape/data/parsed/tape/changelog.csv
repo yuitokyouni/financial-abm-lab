@@ -24,3 +24,6 @@ C022,Source_Log,S011,add,任天堂2026年3月期有報を追加(L002実績の裏
 C023,Event_Tape,enum列,validation,Lists参照のデータ検証を主要enum列とbool列に設定(2:400行),v0.3監査
 C024,Event_Tape,D2,freeze,先頭3列を固定表示,v0.3監査
 C025,README/Dashboard,A1,update,タイトルをv0.3に更新、v0.3改修行を追記,v0.3監査
+C026,Event_Tape,27セル,restore,v0.2生成時に80字+『...』へ切り詰められた長文セル(URL6・seller_name3・route_notes/mechanism/notes18)をv0.1原本から復元。v0.3で追記した注記は保持,v0.4修復
+C027,Source_Log,S012-S017,add,未登録URL6件を登録(validator warnings解消用)。Reuters2件とYahoo CDN1件は保存注意を注記,v0.4修復
+C028,README/Dashboard,A1,update,タイトルをv0.4に更新,v0.4修復

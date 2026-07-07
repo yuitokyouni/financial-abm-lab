@@ -1,13 +1,13 @@
 # unwind-tape — HANDOFF
 
-**最終更新**: 2026-07-07 JST (Task A cron待ち / Task B v0.3 pipeline 完了)
+**最終更新**: 2026-07-07 JST (Task A cron待ち / Task B **v0.4 pipeline 完了 (validator errors=0 warnings=0)**)
 
 ## Task 状況
 
 | Task | Status | Blocker | 一次成果物 |
 |------|--------|---------|------------|
 | **A** JPX 立会外取引 日次キャプチャ | ✅ 実装完了、初回バックフィル成功、**cron 未デプロイ** | Lane B cron へ登録 | `scripts/fetch_jpx_offauction.py` |
-| **B** xlsx → CSV 正規化 + PDF アーカイバ + build round-trip | ✅ v0.3 pipeline 完了 (validator warnings=2 = Source_Log gap, errors=0) | — | `scripts/{migrate_xlsx_to_csv,validate_tape,archive_pdfs,build_tape}.py` |
+| **B** xlsx → CSV 正規化 + PDF アーカイバ + build round-trip | ✅ v0.4 pipeline 完了 (**validator errors=0 warnings=0**) | — | `scripts/{migrate_xlsx_to_csv,validate_tape,archive_pdfs,build_tape}.py` |
 | **C** J-Quants + AR/CAR エンジン | ⏸ 未着手 | ユーザ着手指示 | 予定: `docs/j_quants_plan_report.md` → `scripts/car_engine.py` |
 
 ---
@@ -90,30 +90,32 @@ data/parsed/tape/policy_holding_sale_event_tape_regenerated.xlsx
 - **sources.csv**: Source_Log 全列 + `local_path, sha256, bytes, fetched_at` (archiver が埋める)
 - **lists.yaml**: 12 enum family (`status`, `event_tier`, ..., `bool`)
 
-### v0.3 migration の観測結果
+### v0.4 で v0.3 から解消された指摘
 
-- **URL truncation バグ検出** (xlsx 側): `Event_Tape` の一部 URL がちょうど 80 文字で末尾 `...` に切れている (autofit-save アーティファクトと推定)。
-  影響: G004/L001 primary, G005/L001 primary, G008/L002 primary
-  対処: `source_id` は Source_Log への一意 prefix match で auto-resolve (S003 / S006 / S009)。URL 文字列は truncated のまま legs.csv に残す (**データ創作禁止**)。v0.4+ で xlsx 側の URL を修復すべし。詳細は `data/parsed/tape/migration_report.md`。
-- **Unresolved URLs** (Source_Log に存在しない URL、6件): G001 primary (toyota-industries), G003 secondary (Reuters), G004 secondary (Reuters), G006 primary (thepack), G007 primary (nishikawa-rbr), G008/L002 secondary (yahoo CDN).
-- **group column promotion**: `mechanism_hypothesis` は G008 で L001/L002 で異なる文言があるため **leg 固有**として legs.csv に残す。同様に `activist_pressure` も leg 単位で空欄/TRUE が混在する意味を保持するため legs.csv に残す。
-  昇格したのは identity 3列 + `event_tier` + `confidence_policy_holding` + `ABM_candidate_flag` の 6列(+PK)。
+v0.4 Changelog **C026** と **C027** で以下2点が修復された:
 
-### validator 結果 (errors=0, warnings=2)
+1. **C026 URL truncation バグ**: v0.2 生成時に 80 字＋`...` に切り詰められていた 27 セル (URL 6・seller_name 3・route_notes/mechanism/notes 18) が v0.1 原本から復元された → prefix match による auto-resolve は不要になり、URL は完全な文字列で legs.csv に載る。
+2. **C027 Source_Log ギャップ**: 未登録 URL 6 件が **S012-S017** として登録された。validator の warnings=2 (v0.3) は **warnings=0** (v0.4) になった。
 
-- WARN G006/L001: 数値埋まり (sold_shares, buyback_size_shares, buyback_value_JPY) だが Source_Log に該当 URL なし (`https://www.thepack.co.jp/dcms_media/other/2025.08.29b.pdf`)
-- WARN G007/L001: 数値埋まり (sold_shares, sold_value_JPY, offer_price_JPY) だが Source_Log に該当 URL なし (`https://www.nishikawa-rbr.co.jp/upfile/20260119_3_news.pdf`)
+### 現在の migration 観測結果 (v0.4)
 
-**両方とも Source_Log に S012 / S013 を追加すべし** (URL は上記のまま、`what_it_supports` を書けば validator は通る)。
+- **CSV rows**: groups=11, legs=12, sources=**17** (v0.3=11 から +6)
+- **truncated-URL auto-resolves**: 0 (v0.3=3 から解消)
+- **unresolved URLs**: 0 (v0.3=6 から解消)
+- **group column promotion 方針は v0.3 と同じ**: identity 3 列 + `event_tier` + `confidence_policy_holding` + `ABM_candidate_flag` の 6 列(+PK)。`mechanism_hypothesis` と `activist_pressure` は leg 単位で異なり得るので legs.csv に残す。
 
-### PDF アーカイブ結果 (10/11 成功)
+### validator 結果 (errors=0, warnings=0)
 
-`inputs/pdfs_supplied/` に 10 件を pin (7 件ユーザ供給 + 3 件初回 DL を保存):
+**clean.** ハードコード数値セルはすべて Source_Log の source_id に解決済み。
+
+### PDF アーカイブ結果 (14/17 成功)
+
+`inputs/pdfs_supplied/` に 14 件を pin (7 件ユーザ供給 + 7 件初回 DL を保存):
 
 | source_id | 対応 leg | 状態 |
 |-----------|----------|------|
 | S001 | (legal memo) | seeded from supplied |
-| S002 | JPX index (df1f5177-ja.pdf=自己株式取得に関する想定質問) | seeded from supplied |
+| S002 | JPX 自己株式取得想定質問 (df1f5177) | seeded from supplied |
 | S003 | G004 Honda | seeded (初回DL pin) |
 | S004 | G003 Aisin | seeded from supplied |
 | S005 | G002 DENSO/Toyota Industries | seeded from supplied |
@@ -121,15 +123,33 @@ data/parsed/tape/policy_holding_sale_event_tape_regenerated.xlsx
 | S007 | G008 Nintendo secondary | seeded (初回DL pin) |
 | S008 | G008 Nintendo buyback | seeded from supplied |
 | S009 | G008/L002 DeNA (Yahoo CDN) | seeded from supplied |
-| S010 | G008 Nintendo Reuters | **HTTP 401** (paywall)。gaps_report に記録 |
+| S010 | Nintendo Reuters | **HTTP 401** (paywall) |
 | S011 | Nintendo 有報 | seeded (初回DL pin) |
+| S012 | G006 The Pack | seeded (v0.4初回DL pin) |
+| S013 | G007 Daikyo Nishikawa | seeded (v0.4初回DL pin) |
+| S014 | G001 Toyota Industries index.html | seeded (v0.4初回DL pin) |
+| S015 | Reuters Aisin | **HTTP 401** (paywall) |
+| S016 | Reuters Honda | **HTTP 401** (paywall) |
+| S017 | G008/L002 Yahoo CDN secondary | seeded (v0.4初回DL pin) |
+
+**14/17 archived、3 件 (S010/S015/S016 = すべて Reuters) は paywall で 401**。Reuters は gaps_report.md に列挙。
 
 manifest: `data/raw/pdfs/manifest.jsonl` (sha256 + bytes + captured_at)
+
+### 過去バージョン参照 (v0.3)
+
+v0.3 pipeline も同じスクリプトで走る:
+```
+python3 scripts/migrate_xlsx_to_csv.py \
+    --xlsx inputs/tape_versions/v0.3/policy_holding_sale_event_tape_v0_3.xlsx \
+    --version-tag v0.3
+```
+既定は v0.4。
 
 ### 完了条件チェック
 
 1. ⏸ Task A cron 未登録 (Lane B)
-2. ✅ `build_tape.py` が CSV→xlsx を再現的に生成、validator errors=0 で通過。value-level diff vs original v0.3: 11 行の差分すべて説明可 (`archived` 列を archiver が TRUE に更新した10箇所 + 時刻フォーマット 15:40→15:40:00 の 1箇所)。
+2. ✅ `build_tape.py` が CSV→xlsx を再現的に生成、**validator errors=0 warnings=0** で通過。value-level diff vs original v0.4: 17 行の差分すべて説明可 (`archived` 列を archiver が TRUE に更新した14箇所 + 時刻フォーマット/bool 大小文字 3箇所)。
 3. ⏸ G004 (Honda) と G008 (Nintendo) の CAR — 価格データ未取得のため Task C 完了までペンディング
 4. ✅ HANDOFF.md 更新 (このファイル)
 
