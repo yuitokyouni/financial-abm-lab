@@ -37,14 +37,39 @@ buyback_ownshares      : ok_files=1   new_rows=11
 
 冪等再実行で全 dup、exit=0。
 
-### cron デプロイ手順 (Lane B オペレータ向け)
+### cron デプロイ手順 (macOS ユーザ向け)
 
-このリポは remote container で走らせている都合、cron 常駐ができない。ホスト側 Lane B に登録する。
+このリポは remote container で走らせている都合、cron 常駐ができない。手元の macOS に登録する。
 
-1. Lane B ホスト上で working copy を用意 (branch: `claude/unwind-tape-data-foundation-0txm6z`)
-2. python3.11+ / `requests` / `openpyxl` / `PyYAML` を確保
-3. `unwind-tape/cron/jpx_offauction.crontab` を参考に登録 (推奨: 毎日 21:00 JST)
-4. exit != 0 のとき通知が届くことを確認
+**推奨: 一発セットアップスクリプトを使う**
+
+```bash
+cd path/to/financial-abm-lab
+
+# 1. まず手動で 1 回走らせて成功することを確認
+python3 unwind-tape/scripts/fetch_jpx_offauction.py
+
+# 2. crontab に登録 (dry-run で内容を見て、OKなら --install)
+bash unwind-tape/cron/setup_macos_cron.sh                # 何が入るか見るだけ
+bash unwind-tape/cron/setup_macos_cron.sh --install      # 実際に crontab -e 相当を実行
+
+# 3. 確認
+crontab -l
+```
+
+**macOS 特有の必須設定**:
+1. **Full Disk Access**: System Settings > Privacy & Security > Full Disk Access に `/usr/sbin/cron` を追加。付けないと raw ファイル書き込みで "Operation not permitted"。
+2. **スリープ対策** (以下いずれか):
+   - Prevent auto-sleep をON、または
+   - `sudo pmset repeat wakeorpoweron MTWRFSU 20:55:00` で発火 5 分前に wake、または
+   - launchd 版に切り替え (`bash unwind-tape/cron/setup_macos_launchd.sh --install`) — スリープでロスした発火を起床時にキャッチアップする
+
+**launchd 派の人向け** (スリープ耐性◎):
+```bash
+bash unwind-tape/cron/setup_macos_launchd.sh --install
+launchctl list | grep com.unwind-tape.jpx    # 登録確認
+```
+plist は `~/Library/LaunchAgents/com.unwind-tape.jpx.plist` に置かれる。
 
 ### 障害復旧
 
