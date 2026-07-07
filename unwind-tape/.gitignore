@@ -1,0 +1,8 @@
+# unwind-tape — runtime data はコミットしない (raw + parsed CSV は本番運用で大きくなり得る)
+# ディレクトリはスクリプトが起動時に mkdir(parents=True, exist_ok=True) するため、
+# .gitkeep で空ディレクトリを保持する必要はない。
+data/raw/
+data/parsed/
+data/logs/
+# gaps_report.md は履歴として残したいのでコミット対象 (下の否定で明示救出)。
+!data/gaps_report.md

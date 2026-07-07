@@ -1,0 +1,37 @@
+# unwind-tape / task A — JPX 立会外取引情報 daily fetch
+#
+# JPX は翌営業日の朝(概ね9:00 JST 前後)に前日分を公表する。
+# 掲載は「過去2週間」までなので、遅くとも週1回、確実には毎日走らせる。
+# 週末も走らせて構わない — 変更なしなら idempotent スキップで exit=0。
+#
+# 例1) 毎日 21:00 JST (= 12:00 UTC) にキャプチャ (推奨)
+#   時刻はサーバのタイムゾーン設定に依存する。crond のホストが UTC なら 12:00 UTC。
+#   JST 固定なら 21:00 local time で問題ない。cron.d 形式の CRON_TZ も可。
+# 例2) 二重走行を防ぐため flock を挟む。exit != 0 なら stderr に出るので mail 通知される。
+#
+# HOME/PATH は環境依存で調整。REPO は絶対パス。
+REPO=/home/user/financial-abm-lab
+PY=/usr/local/bin/python3
+CRON_TZ=Asia/Tokyo
+
+# minute hour dom mon dow  command
+0 21 * * * root cd $REPO && /usr/bin/flock -n /tmp/unwind_tape_jpx.lock $PY $REPO/unwind-tape/scripts/fetch_jpx_offauction.py >> $REPO/unwind-tape/data/logs/cron.stdout.log 2>> $REPO/unwind-tape/data/logs/cron.stderr.log
+
+# ---
+# systemd-timer 派の場合の例 (Lane B が systemd なら):
+#   /etc/systemd/system/unwind-tape-jpx.service:
+#     [Unit]
+#     Description=unwind-tape JPX 立会外取引情報 daily fetch
+#     [Service]
+#     Type=oneshot
+#     WorkingDirectory=/home/user/financial-abm-lab
+#     Environment=TZ=Asia/Tokyo
+#     ExecStart=/usr/local/bin/python3 /home/user/financial-abm-lab/unwind-tape/scripts/fetch_jpx_offauction.py
+#   /etc/systemd/system/unwind-tape-jpx.timer:
+#     [Unit]
+#     Description=daily 21:00 JST
+#     [Timer]
+#     OnCalendar=*-*-* 21:00:00 Asia/Tokyo
+#     Persistent=true
+#     [Install]
+#     WantedBy=timers.target

@@ -1,0 +1,78 @@
+# unwind-tape / task A — JPX 立会外取引情報 daily capture config
+# 掲載は2週間で消えるため、初回は現掲載分を全件バックフィルする。以後は毎日追記。
+# 想定カラムと不一致ならrawのみ保存し、schema_mismatch として manifest.jsonl に記録して非0終了。
+
+pages:
+  # 1) ToSTNeT 超大口約定情報 (ToSTNeT-1 単一銘柄・売買代金50億円以上・委託取引を除く)
+  #    翌営業日に xlsx が index にリンクされる形で公開される。過去2週間分のみ。
+  tostnet_large_lots:
+    kind: xlsx_index
+    index_url: https://www.jpx.co.jp/markets/equities/tostnet/index.html
+    # index ページから拾う xlsx へのリンクパターン。日付は filename から抽出。
+    file_href_regex: 'href="(/markets/equities/tostnet/[^"]+/(\d{8})_ToSTNeT_Trading_Information\.xlsx)"'
+    date_from: filename           # ファイル名 YYYYMMDD が publication_date
+    sheet_name: null              # 単一シートなら先頭を使う
+    header_row: 1                 # 1-indexed
+    expected_columns:
+      - "公表日/Publication_Date"
+      - "取引日/Trading_Date"
+      - "約定時刻/Trade_Time"
+      - "銘柄コード/Code"
+      - "銘柄名_日本語/Issue_Name_Japanese"
+      - "銘柄名_英語/Issue_Name_English"
+      - "価格_円/Price_yen"
+      - "売買高_株/Trading_Volume_shares"
+      - "売買代金_円/Trading_Value_yen"
+    # 冪等単位 = 1ファイル(=1公表日). sha256 が既存と一致ならスキップ。
+    dedupe_by: publication_date
+
+  # 2) 立会外分売情報 — HTML テーブル (rowspan=2, 2trで1レコード)
+  offauction_distribution:
+    kind: html_table_rowspan2
+    url: https://www.jpx.co.jp/markets/equities/off-auction-distro/index.html
+    # <th> 順序 (ヘッダ行2つ分の union、rowspan/colspan は無視して text だけ束ねる)
+    expected_headers:
+      - "実施日"
+      - "銘柄名（コード）"
+      - "終値"
+      - "分売数量"
+      - "買付申込数量の限度"
+      - "分売目的"
+      - "同時に分売が行われる他の取引所"
+      - "分売値段"
+      - "約定数量"
+    # 1レコード目 tr (7セル), 2レコード目 tr (2セル)
+    # tr_a セル順: [実施日, 銘柄名（コード）, 終値, 分売数量, 買付申込数量の限度, 分売目的, 同時に分売が行われる他の取引所]
+    # tr_b セル順: [分売値段, 約定数量]
+    tr_a_cell_count: 7
+    tr_b_cell_count: 2
+    natural_key: [implementation_date, issue_code, offered_shares]
+
+  # 3) 自己株式立会外買付取引情報 (ToSTNeT-3 買付一覧) — HTML テーブル (1trで1レコード)
+  buyback_ownshares:
+    kind: html_table_simple
+    url: https://www.jpx.co.jp/markets/equities/off-auction-ownshares/index.html
+    expected_headers:
+      - "実施日"
+      - "銘柄名（コード）"
+      - "値段"
+      - "買付数量"
+      - "約定数量"
+    natural_key: [implementation_date, issue_code, buy_shares]
+
+storage:
+  raw_root: data/raw/jpx_offauction         # {page}/{YYYY-MM-DD}/ 直下に raw を置く
+  parsed_root: data/parsed/jpx_offauction   # {page}.csv (append)
+  log_dir: data/logs
+  gaps_report: data/gaps_report.md
+  manifest_filename: manifest.jsonl
+
+http:
+  user_agent: "unwind-tape-fetch/0.1 (financial-abm-lab; +https://github.com/yuitokyouni/financial-abm-lab)"
+  timeout_sec: 30
+  retries: 4
+  backoff_base_sec: 2.0
+  backoff_factor: 2.0
+
+runtime:
+  timezone: Asia/Tokyo
