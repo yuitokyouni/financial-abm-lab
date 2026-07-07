@@ -191,6 +191,18 @@ def load_daily_quotes(path: Path, log: logging.Logger | None = None) -> pd.DataF
             "Sample raw keys: %s. CAR spanning a stock split may be wrong.",
             path, ADJUSTMENT_CLOSE_FIELD_CANDIDATES, sorted(raw_rows[0].keys()),
         )
+    if log and volume_field is None:
+        log.warning(
+            "%s: none of %s found — ADV20/ADV60/abnormal_volume will be NaN. "
+            "Sample raw keys: %s.",
+            path, VOLUME_FIELD_CANDIDATES, sorted(raw_rows[0].keys()),
+        )
+    if log and volume_field is not None and adj_volume_field is None:
+        log.warning(
+            "%s: none of %s found — ADV/abnormal_volume will use unadjusted Volume "
+            "(wrong across a stock split). Sample raw keys: %s.",
+            path, ADJUSTMENT_VOLUME_FIELD_CANDIDATES, sorted(raw_rows[0].keys()),
+        )
 
     rows = []
     for e in raw_rows:
