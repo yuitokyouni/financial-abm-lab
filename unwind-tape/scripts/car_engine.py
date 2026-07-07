@@ -127,27 +127,36 @@ def _sample_keys(path: Path, n: int = 1) -> list[str]:
     return keys
 
 
+# V2 で HolidayDivision → HolDiv に短縮されていることを実データで確認済み。
+# 今後また変わっても壊れないよう候補リスト方式にしておく。
+HOLIDAY_DIVISION_FIELD_CANDIDATES = ["HolDiv", "HolidayDivision", "hol_div"]
+
+
+def _first_present_field(raw_rows: list[dict], candidates: list[str]) -> str | None:
+    return next((k for k in candidates if any(k in r for r in raw_rows)), None)
+
+
 def load_trading_calendar(path: Path) -> pd.DataFrame:
     """returns df indexed by Date (str YYYY-MM-DD) with column IsBusinessDay (bool)."""
-    rows = []
+    raw_rows: list[dict] = []
     with path.open("r", encoding="utf-8") as f:
         for line in f:
-            e = json.loads(line)
-            rows.append({
-                "Date": e.get("Date"),
-                "HolidayDivision": e.get("HolidayDivision"),
-            })
-    df = pd.DataFrame(rows)
-    if df.empty:
+            raw_rows.append(json.loads(line))
+    if not raw_rows:
         raise FieldMismatchError(f"{path}: no rows")
+
+    hol_field = _first_present_field(raw_rows, HOLIDAY_DIVISION_FIELD_CANDIDATES)
+    if hol_field is None:
+        raise FieldMismatchError(
+            f"{path}: none of {HOLIDAY_DIVISION_FIELD_CANDIDATES} found. "
+            f"Sample raw keys: {sorted(raw_rows[0].keys())}"
+        )
+
+    rows = [{"Date": e.get("Date"), "HolidayDivision": e.get(hol_field)} for e in raw_rows]
+    df = pd.DataFrame(rows)
     if df["Date"].isna().all():
         raise FieldMismatchError(
-            f"{path}: 'Date' field entirely missing. Sample raw keys: {_sample_keys(path)}"
-        )
-    if df["HolidayDivision"].isna().all():
-        raise FieldMismatchError(
-            f"{path}: 'HolidayDivision' field entirely missing (V2 may use a different name). "
-            f"Sample raw keys: {_sample_keys(path)}"
+            f"{path}: 'Date' field entirely missing. Sample raw keys: {sorted(raw_rows[0].keys())}"
         )
     df = df.drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
     # HolidayDivision: "0" holiday / "1" business / "2" half day (still trading) / "3" half day non-trading
@@ -156,27 +165,48 @@ def load_trading_calendar(path: Path) -> pd.DataFrame:
     return df
 
 
-def load_daily_quotes(path: Path) -> pd.DataFrame:
+# V2 は HolidayDivision→HolDiv のように長いフィールド名を短縮する傾向が
+# 実データで確認されている。Adjustment* も同様に短縮されている可能性があるため
+# 候補を複数試す (Close/Volume 自体は元々短いので単一名のまま)。
+ADJUSTMENT_CLOSE_FIELD_CANDIDATES = ["AdjustmentClose", "AdjClose"]
+ADJUSTMENT_VOLUME_FIELD_CANDIDATES = ["AdjustmentVolume", "AdjVolume"]
+ADJUSTMENT_FACTOR_FIELD_CANDIDATES = ["AdjustmentFactor", "AdjFactor"]
+
+
+def load_daily_quotes(path: Path, log: logging.Logger | None = None) -> pd.DataFrame:
     """returns df indexed by Date str with Close, Volume, AdjustmentClose, AdjustmentVolume, AdjustmentFactor."""
-    rows = []
+    raw_rows: list[dict] = []
     with path.open("r", encoding="utf-8") as f:
         for line in f:
-            e = json.loads(line)
-            rows.append({
-                "Date": e.get("Date"),
-                "Close": e.get("Close"),
-                "Volume": e.get("Volume"),
-                "AdjustmentClose": e.get("AdjustmentClose"),
-                "AdjustmentVolume": e.get("AdjustmentVolume"),
-                "AdjustmentFactor": e.get("AdjustmentFactor"),
-            })
-    df = pd.DataFrame(rows)
-    if df.empty:
+            raw_rows.append(json.loads(line))
+    if not raw_rows:
         raise FieldMismatchError(f"{path}: no rows")
+
+    adj_close_field = _first_present_field(raw_rows, ADJUSTMENT_CLOSE_FIELD_CANDIDATES)
+    adj_volume_field = _first_present_field(raw_rows, ADJUSTMENT_VOLUME_FIELD_CANDIDATES)
+    adj_factor_field = _first_present_field(raw_rows, ADJUSTMENT_FACTOR_FIELD_CANDIDATES)
+    if log and adj_close_field is None:
+        log.warning(
+            "%s: none of %s found — falling back to unadjusted Close. "
+            "Sample raw keys: %s. CAR spanning a stock split may be wrong.",
+            path, ADJUSTMENT_CLOSE_FIELD_CANDIDATES, sorted(raw_rows[0].keys()),
+        )
+
+    rows = []
+    for e in raw_rows:
+        rows.append({
+            "Date": e.get("Date"),
+            "Close": e.get("Close"),
+            "Volume": e.get("Volume"),
+            "AdjustmentClose": e.get(adj_close_field) if adj_close_field else None,
+            "AdjustmentVolume": e.get(adj_volume_field) if adj_volume_field else None,
+            "AdjustmentFactor": e.get(adj_factor_field) if adj_factor_field else None,
+        })
+    df = pd.DataFrame(rows)
     if df["Close"].isna().all():
         raise FieldMismatchError(
-            f"{path}: 'Close'/'AdjustmentClose' fields entirely missing (V2 may rename them). "
-            f"Sample raw keys: {_sample_keys(path)}"
+            f"{path}: 'Close' field entirely missing (V2 may rename it). "
+            f"Sample raw keys: {sorted(raw_rows[0].keys())}"
         )
     df = df.drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
     for c in ("Close", "Volume", "AdjustmentClose", "AdjustmentVolume", "AdjustmentFactor"):
@@ -787,7 +817,7 @@ def main(argv: list[str] | None = None) -> int:
         p_path = prices_dir / "daily_quotes" / f"{code}.jsonl"
         if p_path.exists():
             try:
-                prices[code] = load_daily_quotes(p_path)
+                prices[code] = load_daily_quotes(p_path, log)
             except FieldMismatchError as e:
                 log.error("[%s] field mismatch loading daily_quotes (V1→V2 rename?): %s", code, e)
         s_path = fins_dir / f"{code}.jsonl"

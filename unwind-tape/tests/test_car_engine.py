@@ -434,6 +434,14 @@ def test_load_daily_quotes_raises_on_missing_close_field(tmp_path):
         load_daily_quotes(p)
 
 
+def test_load_daily_quotes_falls_back_to_adj_close_candidate(tmp_path, caplog):
+    p = tmp_path / "quotes.jsonl"
+    # simulate V2 renaming AdjustmentClose -> AdjClose (matches the confirmed HolDiv pattern)
+    _write_jsonl(p, [{"Date": "2024-01-01", "Close": 100.0, "Volume": 1000, "AdjClose": 99.5}])
+    df = load_daily_quotes(p)
+    assert df["AdjustmentClose"].iloc[0] == 99.5
+
+
 def test_load_daily_quotes_ok_when_close_present(tmp_path):
     p = tmp_path / "quotes.jsonl"
     _write_jsonl(p, [{"Date": "2024-01-01", "Close": 100.0, "Volume": 1000,
@@ -450,16 +458,25 @@ def test_load_topix_raises_on_missing_close_field(tmp_path):
         load_topix(p)
 
 
-def test_load_trading_calendar_raises_on_missing_holiday_division(tmp_path):
+def test_load_trading_calendar_raises_when_no_candidate_matches(tmp_path):
     p = tmp_path / "cal.jsonl"
-    _write_jsonl(p, [{"Date": "2024-01-01", "hol_div": "1"}])  # V2-style renamed field
-    with pytest.raises(FieldMismatchError, match="HolidayDivision"):
+    _write_jsonl(p, [{"Date": "2024-01-01", "SomeUnknownField": "1"}])
+    with pytest.raises(FieldMismatchError):
         load_trading_calendar(p)
 
 
 def test_load_trading_calendar_ok_when_holiday_division_present(tmp_path):
     p = tmp_path / "cal.jsonl"
     _write_jsonl(p, [{"Date": "2024-01-01", "HolidayDivision": "1"}])
+    df = load_trading_calendar(p)
+    assert len(df) == 1
+    assert bool(df["IsBusinessDay"].iloc[0]) is True
+
+
+def test_load_trading_calendar_ok_with_v2_hol_div_field(tmp_path):
+    """V2 の実データで HolidayDivision → HolDiv に短縮されていることを確認済み (2026-07-08)。"""
+    p = tmp_path / "cal.jsonl"
+    _write_jsonl(p, [{"Date": "2024-01-01", "HolDiv": "1"}])
     df = load_trading_calendar(p)
     assert len(df) == 1
     assert bool(df["IsBusinessDay"].iloc[0]) is True
