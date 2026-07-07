@@ -1,0 +1,93 @@
+# unwind-tape / task C — CAR engine 設定
+# 本採用の仕様は PREREG.md に確定させること。ここは切替可能な既定値。
+# 変更したら validate_car.py で PREREG.md との整合を確認する運用。
+
+# ---------- 市場モデル選択 -----------------------------------------------
+# primary = 本採用、robustness = 副次採用(頑健性チェック)
+# 選択肢:
+#   topix_adjusted : AR_i,t = r_i,t - r_topix,t         (差分モデル)
+#   market_model   : AR_i,t = r_i,t - (α + β * r_topix,t)  (回帰モデル)
+model:
+  primary: topix_adjusted        # PREREG 確定まで既定は差分モデル(検証しやすい)
+  robustness: [market_model]
+  return_type: log_return        # log_return or simple_return
+
+# ---------- 推定窓 (market_model のみ使用) -------------------------------
+estimation_window:
+  start: -140                    # 営業日 (day 0 相対、負=過去)
+  end: -21
+  min_days: 100                  # これ未満なら NA を返し、gaps_report へ
+  alpha_free: true               # false のとき α=0 で β だけ推定
+
+# ---------- day 0 規則 ----------------------------------------------------
+day0:
+  after_close_field: after_close
+  after_close_true_value: "TRUE"
+  after_close_shifts_to_next_business_day: true
+  # announce_datetime が営業日でない場合は次営業日を day 0 とする
+  non_business_day_shifts_to_next: true
+
+# ---------- event windows (day 0 相対、両端含む) --------------------------
+event_windows:
+  announcement:
+    m1_p1: [-1, +1]              # → announcement_CAR_m1_p1
+    zero_p1: [0, +1]             # → announcement_CAR_0_p1
+  pricing:
+    m1_p1: [-1, +1]              # → pricing_CAR_m1_p1
+  settlement:
+    m1_p1: [-1, +1]              # → settlement_CAR_m1_p1
+
+# ---------- drift (announcement day 0 → pricing day 0) --------------------
+drift:
+  # 累積 AR を announcement day 0 (exclusive) から pricing day 0 (inclusive) まで足す
+  # pricing_date が空欄の leg は NA
+  from: announcement_day0
+  to: pricing_day0
+  include_start: false
+  include_end: true
+
+# ---------- recovery (announcement day 0 基準の cum AR) -------------------
+recovery:
+  horizons_business_days: [5, 20, 60]
+  # recovery_H = CAR(announce_day0, announce_day0 + H) の符号反転版とするか、
+  # 単純に cum AR を返すかは PREREG 待ち。既定は cum AR (符号そのまま)。
+  transform: cum_ar
+
+# ---------- abnormal volume ----------------------------------------------
+abnormal_volume:
+  window: [0, +3]                # day 0 から +3 日 (両端含む)
+  denom: ADV60                   # or ADV20
+  transform: log_ratio           # log(V_avg / ADV60)
+
+# ---------- ADV / market cap 計算 -----------------------------------------
+adv:
+  windows_business_days: [20, 60]
+  reference: announce_day0       # ADV は day 0 直前 [-window, -1] 平均
+  min_days_ratio: 0.8            # window の 80% 未満なら NA
+
+market_cap:
+  # 時価総額 = shares_outstanding * previous_close_JPY (day 0 前日)
+  price_reference: prev_business_day_of_announce_day0
+  shares_source: fins_statements  # /fins/statements の
+                                  # NumberOfIssuedAndOutstandingSharesAtTheEndOfFiscalYearIncludingTreasuryStock
+  shares_forward_fill: true       # FY 末値を forward-fill (PREREG に注記)
+
+# ---------- 出力列名 (仕様 verbatim) -------------------------------------
+output_columns:
+  - announcement_CAR_m1_p1
+  - announcement_CAR_0_p1
+  - drift_ann_to_pricing
+  - pricing_CAR_m1_p1
+  - settlement_CAR_m1_p1
+  - recovery_5d
+  - recovery_20d
+  - recovery_60d
+  - abnormal_volume_0_p3
+
+# ---------- 品質ゲート ---------------------------------------------------
+# ルックアヘッド禁止: 推定窓・event window の計算に day 0 以降の情報を混ぜないこと。
+# implementation で以下の invariants を assert する:
+#   1. estimation window 内の任意 t について、その AR 計算に t 以降のデータを参照しない
+#   2. drift の start は announcement_day0 (exclusive) 以降のみ参照
+#   3. recovery は announcement_day0 以降のみ参照
+#   4. ADV は day 0 前 [-window, -1] のみ参照

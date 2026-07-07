@@ -8,7 +8,7 @@
 |------|--------|---------|------------|
 | **A** JPX 立会外取引 日次キャプチャ | ✅ 実装完了、初回バックフィル成功、**cron 未デプロイ** | Lane B cron へ登録 | `scripts/fetch_jpx_offauction.py` |
 | **B** xlsx → CSV 正規化 + PDF アーカイバ + build round-trip | ✅ v0.4 pipeline 完了 (**validator errors=0 warnings=0**) | — | `scripts/{migrate_xlsx_to_csv,validate_tape,archive_pdfs,build_tape}.py` |
-| **C** J-Quants + AR/CAR エンジン | ⏸ 未着手 | ユーザ着手指示 | 予定: `docs/j_quants_plan_report.md` → `scripts/car_engine.py` |
+| **C** J-Quants + AR/CAR エンジン | 🟡 **コード完備、Mac で run 待ち** (G004/G008 手計算突合が完了条件残) | ユーザ Mac 側の J-Quants fetch 実行 | `scripts/{jquants_fetch,car_engine}.py`, `configs/car.yaml`, `docs/j_quants_plan_report.md`, `docs/macos_runbook_task_c.md`, `PREREG.md` |
 
 ---
 
@@ -180,25 +180,41 @@ python3 scripts/migrate_xlsx_to_csv.py \
 
 ---
 
-## Task C — 待機事項
+## Task C — コード完備 (Mac 実行待ち)
 
-Task B が Ready 状態になった時点で C 着手可能。**着手指示待ち**。
+### 完了したもの
 
-**最初にやること (実装前)**:
-- `docs/j_quants_plan_report.md` を作成
-- J-Quants プラン別提供範囲 (遅延・期間・料金) を公式ページから確認
-- 本件 (2023 年以降の日次四本値・出来高、対象銘柄 = 12 legs の issuer × TOPIX) に必要な最小プランを結論として書く
-- 実装はその後
+- `docs/j_quants_plan_report.md` — J-Quants プラン調査 (12 agent workflow + 3 lens verify)、**Light ¥1,650/月推奨**
+- `PREREG.md` — 空テンプレート (10 セクション、中身はユーザが書く)
+- `configs/car.yaml` — CAR engine 設定 (model 切替、estimation window、event windows、recovery、abnormal volume)
+- `scripts/jquants_fetch.py` — Light API 経由の raw data fetcher (daily_quotes / topix / trading_calendar / fins_statements / listed_info)
+- `scripts/car_engine.py` — AR/CAR エンジン。day 0 規則・ルックアヘッド禁止・8 出力列 spec 準拠
+- `tests/test_car_engine.py` — 23 件全通過 (day 0 / OLS 回復 / no-lookahead invariant / ADV / CAR sum / recovery / abnormal volume)
+- `docs/macos_runbook_task_c.md` — Mac 上での実行手順
 
-**実装内容 (spec)**:
-- `ADV20` / `ADV60` / 時価総額 → `legs_computed.csv`
-- **AR/CAR エンジン**: TOPIX 調整と market-model (推定窓 `[-140, -21]` 営業日) の両方実装、config 切替。本採用は `PREREG.md` に記載 (**Claude は空テンプレートのみ作成**)
-- **day 0 規則**: `after_close=TRUE` の行は翌営業日を day 0 とする。推定窓・計算にルックアヘッド禁止
-- **出力列**: `announcement_CAR_m1_p1`, `announcement_CAR_0_p1`, `drift_ann_to_pricing`, `pricing_CAR_m1_p1`, `settlement_CAR_m1_p1`, `recovery_5d/20d/60d`, `abnormal_volume_0_p3`
+### Mac 側でやること
 
-**Ready 直前アクション (推奨)**:
-- Source_Log に S012 (The Pack) と S013 (Daikyo Nishikawa) を追加 → validator warnings=0 化
-- v0.4+ xlsx を作るなら URL truncation バグを修復してから
+`docs/macos_runbook_task_c.md` の通り。要点だけ:
+
+```bash
+cd path/to/financial-abm-lab
+pip3 install --user numpy pandas pytest
+python3 -m pytest unwind-tape/tests/test_car_engine.py -v         # 23 件通ることを確認
+export JQUANTS_REFRESH_TOKEN="eyJ..."                              # 認証
+python3 unwind-tape/scripts/jquants_fetch.py                       # 15-20 分
+python3 unwind-tape/scripts/car_engine.py                          # 秒単位
+# → unwind-tape/data/parsed/tape/car_report.md を開いて G004/G008 の値を手計算と突合
+```
+
+### 完了条件の残 (C5)
+
+- G004 (Honda) と G008 (Nintendo) の CAR が手計算と一致 — engine 実行後にユーザが検証
+- 一致しない場合は `configs/car.yaml` の day 0 規則・estimation window を調整、または `PREREG.md` を先に確定させて config を合わせる
+
+### モデル切替
+
+- `configs/car.yaml` の `model.primary` を `topix_adjusted` ↔ `market_model` で切替
+- 既定は `topix_adjusted` (PREREG 確定まで検証しやすい方)
 
 ---
 
