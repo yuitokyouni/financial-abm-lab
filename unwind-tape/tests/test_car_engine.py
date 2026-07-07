@@ -25,6 +25,7 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+import csv  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
 from car_engine import (  # noqa: E402
@@ -514,3 +515,71 @@ def test_load_fins_shares_returns_empty_when_no_candidate_matches(tmp_path):
     df = load_fins_shares(p, logging.getLogger("test"))
     assert df.empty
     assert list(df.columns) == ["DisclosedDate", "shares_outstanding"]
+
+
+# ---------------------------------------------------------------------------
+# end-to-end main() smoke test — catches wiring bugs unit tests miss
+# (e.g. issuer_code living in groups.csv but legs.csv being read alone)
+# ---------------------------------------------------------------------------
+
+def test_main_resolves_issuer_code_via_groups_join(tmp_path, monkeypatch):
+    """Task B's schema puts issuer_code/issuer_name in groups.csv, NOT legs.csv.
+    Regression test for a real bug: car_engine originally read issuer_code directly
+    off the leg row and silently got '' for every leg, so 0 codes ever loaded
+    despite legs.csv/groups.csv both being present and correct.
+    """
+    import car_engine
+
+    root = tmp_path
+    tape_dir = root / "data" / "parsed" / "tape"
+    prices_dir = root / "data" / "raw" / "prices"
+    tape_dir.mkdir(parents=True)
+    (prices_dir / "daily_quotes").mkdir(parents=True)
+    (prices_dir / "fins_summary").mkdir(parents=True)
+
+    # groups.csv — issuer_code lives here (Task B's actual schema)
+    with (tape_dir / "groups.csv").open("w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["event_group_id", "issuer_code", "issuer_name", "issuer_market",
+                   "event_tier", "confidence_policy_holding", "ABM_candidate_flag"])
+        w.writerow(["G001", "1234", "Test Corp", "TSE Prime",
+                   "Tier1_confirmed", "A_explicit_policy_holding", "Yes"])
+
+    # legs.csv — deliberately has NO issuer_code column, matching real schema
+    leg_cols = ["event_group_id", "event_leg_id", "status", "announce_datetime",
+               "after_close", "pricing_date", "settlement_date"]
+    with (tape_dir / "legs.csv").open("w", encoding="utf-8", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(leg_cols)
+        w.writerow(["G001", "L001", "seeded", "2024-06-03", "FALSE", "", ""])
+
+    # calendar: full business-day run so day0/estimation window resolve
+    cal_df = make_calendar(date(2024, 1, 1), date(2024, 12, 31))
+    bdays = cal_df.loc[cal_df["IsBusinessDay"], "Date"].tolist()
+    _write_jsonl(prices_dir / "trading_calendar.jsonl",
+                [{"Date": d, "HolDiv": "1"} for d in bdays])
+
+    rng = np.random.default_rng(11)
+    mkt_ret = rng.normal(0.0, 0.01, len(bdays))
+    stock_ret = 1.0 * mkt_ret + rng.normal(0.0, 0.002, len(bdays))
+    mkt_close = 1000.0 * np.exp(np.cumsum(mkt_ret))
+    stock_close = 1000.0 * np.exp(np.cumsum(stock_ret))
+    _write_jsonl(prices_dir / "topix.jsonl",
+                [{"Date": d, "C": float(c)} for d, c in zip(bdays, mkt_close)])
+    _write_jsonl(prices_dir / "daily_quotes" / "1234.jsonl",
+                [{"Date": d, "C": float(c), "V": 1000} for d, c in zip(bdays, stock_close)])
+
+    config_src = Path(__file__).resolve().parent.parent / "configs" / "car.yaml"
+    config_dst = root / "car.yaml"
+    config_dst.write_text(config_src.read_text(encoding="utf-8"), encoding="utf-8")
+
+    rc = car_engine.main(["--root", str(root), "--config", str(config_dst)])
+    assert rc == 0
+
+    with (tape_dir / "legs_computed.csv").open("r", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    assert len(rows) == 1
+    # this is the exact assertion that would have caught the real bug:
+    # issuer_code must resolve via the groups.csv join, not be blank.
+    assert rows[0]["issuer_code"] == "1234", f"issuer_code not resolved: {rows[0]}"
+    assert rows[0]["announce_day0"] != "", "day0 should compute when price data is present"

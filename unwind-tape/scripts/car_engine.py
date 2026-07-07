@@ -643,13 +643,13 @@ class LegResult:
     notes: list[str] = field(default_factory=list)
 
 
-def process_leg(leg: dict, prices: dict[str, pd.DataFrame],
+def process_leg(leg: dict, issuer_code: str, prices: dict[str, pd.DataFrame],
                 shares_map: dict[str, pd.DataFrame],
                 topix: pd.DataFrame, cal: BusinessCalendar, cfg: Config,
                 log: logging.Logger) -> LegResult:
     gid = leg["event_group_id"]
     lid = leg["event_leg_id"]
-    code = leg.get("issuer_code", "").strip()
+    code = issuer_code.strip()
     r = LegResult(event_group_id=gid, event_leg_id=lid, issuer_code=code)
 
     if not code or code not in prices:
@@ -800,17 +800,21 @@ def main(argv: list[str] | None = None) -> int:
         log.error("field mismatch while loading calendar/topix (V1→V2 rename?): %s", e)
         return 6
 
+    # issuer_code / issuer_name は Task B の設計で groups.csv 側に昇格されている
+    # (legs.csv には無い)。event_group_id で join して解決する。
+    with (tape_dir / "groups.csv").open("r", encoding="utf-8") as f:
+        groups = list(csv.DictReader(f))
+    issuer_code_by_gid = {g["event_group_id"]: g.get("issuer_code", "").strip() for g in groups}
+
     with (tape_dir / "legs.csv").open("r", encoding="utf-8") as f:
         legs = list(csv.DictReader(f))
-    log.info("legs=%d unique codes=%d", len(legs),
-             len({l.get("issuer_code", "") for l in legs}))
+    leg_codes = [issuer_code_by_gid.get(l["event_group_id"], "") for l in legs]
+    log.info("legs=%d groups=%d unique codes=%d", len(legs), len(groups),
+             len({c for c in leg_codes if c}))
 
     prices: dict[str, pd.DataFrame] = {}
     shares_map: dict[str, pd.DataFrame] = {}
-    for l in legs:
-        code = l.get("issuer_code", "").strip()
-        if not code or code in prices:
-            continue
+    for code in sorted({c for c in leg_codes if c}):
         p_path = prices_dir / "daily_quotes" / f"{code}.jsonl"
         if p_path.exists():
             try:
@@ -824,8 +828,8 @@ def main(argv: list[str] | None = None) -> int:
 
     # process
     results: list[LegResult] = []
-    for leg in legs:
-        r = process_leg(leg, prices, shares_map, topix, cal, cfg, log)
+    for leg, code in zip(legs, leg_codes):
+        r = process_leg(leg, code, prices, shares_map, topix, cal, cfg, log)
         results.append(r)
         log.info("leg %s/%s day0=%s CAR[-1,+1]=%s ADV20=%s",
                  r.event_group_id, r.event_leg_id, r.announce_day0,
