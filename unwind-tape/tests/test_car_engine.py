@@ -458,6 +458,23 @@ def test_load_topix_raises_on_missing_close_field(tmp_path):
         load_topix(p)
 
 
+def test_load_topix_ok_with_v2_single_letter_c_field(tmp_path):
+    """V2 の実データで topix が {C,Date,H,L,O} の単一文字フィールドだったことを確認済み (2026-07-08)。"""
+    p = tmp_path / "topix.jsonl"
+    _write_jsonl(p, [{"Date": "2024-01-01", "O": 1990.0, "H": 2010.0, "L": 1985.0, "C": 2000.0}])
+    df = load_topix(p)
+    assert len(df) == 1
+    assert df["Close"].iloc[0] == 2000.0
+
+
+def test_load_daily_quotes_ok_with_single_letter_fields(tmp_path):
+    p = tmp_path / "quotes.jsonl"
+    _write_jsonl(p, [{"Date": "2024-01-01", "O": 99.0, "H": 101.0, "L": 98.0, "C": 100.0, "V": 5000}])
+    df = load_daily_quotes(p)
+    assert df["Close"].iloc[0] == 100.0
+    assert df["Volume"].iloc[0] == 5000
+
+
 def test_load_trading_calendar_raises_when_no_candidate_matches(tmp_path):
     p = tmp_path / "cal.jsonl"
     _write_jsonl(p, [{"Date": "2024-01-01", "SomeUnknownField": "1"}])

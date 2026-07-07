@@ -117,16 +117,6 @@ class FieldMismatchError(ValueError):
     """
 
 
-def _sample_keys(path: Path, n: int = 1) -> list[str]:
-    keys: list[str] = []
-    with path.open("r", encoding="utf-8") as f:
-        for i, line in enumerate(f):
-            if i >= n:
-                break
-            keys.extend(sorted(json.loads(line).keys()))
-    return keys
-
-
 # V2 で HolidayDivision → HolDiv に短縮されていることを実データで確認済み。
 # 今後また変わっても壊れないよう候補リスト方式にしておく。
 HOLIDAY_DIVISION_FIELD_CANDIDATES = ["HolDiv", "HolidayDivision", "hol_div"]
@@ -165,12 +155,15 @@ def load_trading_calendar(path: Path) -> pd.DataFrame:
     return df
 
 
-# V2 は HolidayDivision→HolDiv のように長いフィールド名を短縮する傾向が
-# 実データで確認されている。Adjustment* も同様に短縮されている可能性があるため
-# 候補を複数試す (Close/Volume 自体は元々短いので単一名のまま)。
-ADJUSTMENT_CLOSE_FIELD_CANDIDATES = ["AdjustmentClose", "AdjClose"]
-ADJUSTMENT_VOLUME_FIELD_CANDIDATES = ["AdjustmentVolume", "AdjVolume"]
-ADJUSTMENT_FACTOR_FIELD_CANDIDATES = ["AdjustmentFactor", "AdjFactor"]
+# V2 はフィールド名を大胆に短縮する傾向が実データで確認されている
+# (HolidayDivision→HolDiv、さらに topix では Close→C, Open→O, High→H, Low→L まで
+# 単一文字に短縮されていた)。daily_quotes も同じ命名規則を採る可能性が高いため
+# Close/Volume 含め候補リスト方式にする。
+CLOSE_FIELD_CANDIDATES = ["Close", "C"]
+VOLUME_FIELD_CANDIDATES = ["Volume", "V"]
+ADJUSTMENT_CLOSE_FIELD_CANDIDATES = ["AdjustmentClose", "AdjClose", "AC", "AdjC"]
+ADJUSTMENT_VOLUME_FIELD_CANDIDATES = ["AdjustmentVolume", "AdjVolume", "AV", "AdjV"]
+ADJUSTMENT_FACTOR_FIELD_CANDIDATES = ["AdjustmentFactor", "AdjFactor", "AF", "AdjF"]
 
 
 def load_daily_quotes(path: Path, log: logging.Logger | None = None) -> pd.DataFrame:
@@ -182,6 +175,13 @@ def load_daily_quotes(path: Path, log: logging.Logger | None = None) -> pd.DataF
     if not raw_rows:
         raise FieldMismatchError(f"{path}: no rows")
 
+    close_field = _first_present_field(raw_rows, CLOSE_FIELD_CANDIDATES)
+    volume_field = _first_present_field(raw_rows, VOLUME_FIELD_CANDIDATES)
+    if close_field is None:
+        raise FieldMismatchError(
+            f"{path}: none of {CLOSE_FIELD_CANDIDATES} found. "
+            f"Sample raw keys: {sorted(raw_rows[0].keys())}"
+        )
     adj_close_field = _first_present_field(raw_rows, ADJUSTMENT_CLOSE_FIELD_CANDIDATES)
     adj_volume_field = _first_present_field(raw_rows, ADJUSTMENT_VOLUME_FIELD_CANDIDATES)
     adj_factor_field = _first_present_field(raw_rows, ADJUSTMENT_FACTOR_FIELD_CANDIDATES)
@@ -196,18 +196,13 @@ def load_daily_quotes(path: Path, log: logging.Logger | None = None) -> pd.DataF
     for e in raw_rows:
         rows.append({
             "Date": e.get("Date"),
-            "Close": e.get("Close"),
-            "Volume": e.get("Volume"),
+            "Close": e.get(close_field),
+            "Volume": e.get(volume_field) if volume_field else None,
             "AdjustmentClose": e.get(adj_close_field) if adj_close_field else None,
             "AdjustmentVolume": e.get(adj_volume_field) if adj_volume_field else None,
             "AdjustmentFactor": e.get(adj_factor_field) if adj_factor_field else None,
         })
     df = pd.DataFrame(rows)
-    if df["Close"].isna().all():
-        raise FieldMismatchError(
-            f"{path}: 'Close' field entirely missing (V2 may rename it). "
-            f"Sample raw keys: {sorted(raw_rows[0].keys())}"
-        )
     df = df.drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
     for c in ("Close", "Volume", "AdjustmentClose", "AdjustmentVolume", "AdjustmentFactor"):
         df[c] = pd.to_numeric(df[c], errors="coerce")
@@ -215,19 +210,21 @@ def load_daily_quotes(path: Path, log: logging.Logger | None = None) -> pd.DataF
 
 
 def load_topix(path: Path) -> pd.DataFrame:
-    rows = []
+    raw_rows: list[dict] = []
     with path.open("r", encoding="utf-8") as f:
         for line in f:
-            e = json.loads(line)
-            rows.append({"Date": e.get("Date"), "Close": e.get("Close")})
-    df = pd.DataFrame(rows)
-    if df.empty:
+            raw_rows.append(json.loads(line))
+    if not raw_rows:
         raise FieldMismatchError(f"{path}: no rows")
-    if df["Close"].isna().all():
+
+    close_field = _first_present_field(raw_rows, CLOSE_FIELD_CANDIDATES)
+    if close_field is None:
         raise FieldMismatchError(
-            f"{path}: 'Close' field entirely missing (V2 may rename it). "
-            f"Sample raw keys: {_sample_keys(path)}"
+            f"{path}: none of {CLOSE_FIELD_CANDIDATES} found. "
+            f"Sample raw keys: {sorted(raw_rows[0].keys())}"
         )
+    rows = [{"Date": e.get("Date"), "Close": e.get(close_field)} for e in raw_rows]
+    df = pd.DataFrame(rows)
     df = df.drop_duplicates("Date").sort_values("Date").reset_index(drop=True)
     df["Close"] = pd.to_numeric(df["Close"], errors="coerce")
     return df
