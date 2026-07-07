@@ -209,6 +209,17 @@ python3 unwind-tape/scripts/car_engine.py                          # 秒単位
 # → unwind-tape/data/parsed/tape/car_report.md を開いて G004/G008 の値を手計算と突合
 ```
 
+### ✅ 実データでの fetch 検証完了 (2026-07-08)
+
+Mac + Light プラン + V2 API キーで `jquants_fetch.py` を実行、25/25 endpoint fetch 成功 (exit=0):
+- trading_calendar: 1469 件 (2022-07-01〜2026-07-08)
+- topix: 982 件
+- daily_quotes: 11 銘柄 × 955〜982 件
+- fins_summary: 11 銘柄 × 20〜23 件
+- listed_info: **10/11 件** (1 銘柄が未取得 — CAR 計算には不使用の補助データなので non-blocking。原因は未調査)
+
+これで V2 の認証・endpoint・response envelope の実装が実データで裏付けられた。次は `car_engine.py` を回して `car_report.md` の G004/G008 を手計算と突合するフェーズ (C5)。
+
 ### 完了条件の残 (C5)
 
 - G004 (Honda) と G008 (Nintendo) の CAR が手計算と一致 — engine 実行後にユーザが検証
