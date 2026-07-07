@@ -21,11 +21,16 @@ pip3 install --user numpy pandas pytest
 
 ## 1. 認証情報を環境変数に
 
-J-Quants Light は 3 通りの認証パスに対応 (fetcher が自動判定):
+J-Quants は 4 通りの認証パスに対応 (fetcher が自動判定、優先順位は上から):
 
 ```bash
+# V2 (2025-12-22 以降の新規登録者はこれのみ発行される。ダッシュボードに
+# 単一の「API キー」という文字列が1個だけ表示されているタイプ):
+export JQUANTS_API_KEY="ここに値"
+
+# 以下は V1 のみ (旧登録者向け):
 # 推奨: refresh_token (ダッシュボードから発行、有効期間は約 1 週間)
-export JQUANTS_REFRESH_TOKEN="eyJ..."
+# export JQUANTS_REFRESH_TOKEN="eyJ..."
 
 # もしくは mail + password でログインさせる方式:
 # export JQUANTS_MAIL="you@example.com"
@@ -33,6 +38,12 @@ export JQUANTS_REFRESH_TOKEN="eyJ..."
 
 # もしくは id_token を直接 (最短 6 時間有効):
 # export JQUANTS_ID_TOKEN="eyJ..."
+```
+
+**V2 API キー使用時の注意**: base_url は既定で V1 パス (`https://api.jquants.com/v1`) のままです。V2 キーで 404 が出た場合は `--base-url https://api.jquants.com/v2` を試してください:
+
+```bash
+python3 unwind-tape/scripts/jquants_fetch.py --base-url https://api.jquants.com/v2
 ```
 
 シェルを閉じても残したいなら `~/.zshrc` などに `export` を書いておく。

@@ -21,10 +21,19 @@
 Rate limit: Light = 60 件/分 → 呼び出し間に 1.1 秒 sleep で余裕を持たせる。
 
 認証 (優先度順):
-  1. env JQUANTS_ID_TOKEN         — そのまま Bearer で使う
-  2. env JQUANTS_REFRESH_TOKEN    — /token/auth_refresh で id_token を取得
-  3. env JQUANTS_MAIL + JQUANTS_PASSWORD — /token/auth_user でログイン
+  1. env JQUANTS_API_KEY          — V2 ダッシュボード発行の単一キー。交換不要、
+                                     そのまま Bearer で使う (2025-12-22 以降の
+                                     新規登録者はこれのみ発行される)
+  2. env JQUANTS_ID_TOKEN         — V1。そのまま Bearer で使う
+  3. env JQUANTS_REFRESH_TOKEN    — V1。/token/auth_refresh で id_token を取得
+  4. env JQUANTS_MAIL + JQUANTS_PASSWORD — V1。/token/auth_user でログイン
 どれもなければエラー終了。
+
+V1/V2 の endpoint path 差異 (要注意):
+  V2 API キーでも base_url が V1 のままだと 404 する可能性がある。
+  その場合は --base-url https://api.jquants.com/v2 を試すか、
+  実際に返ってきたエラー本文を見て path を調整すること
+  (本スクリプトは事前に V2 の全 path 一覧を検証していない未確認箇所)。
 """
 from __future__ import annotations
 
@@ -100,6 +109,13 @@ class JQuantsClient:
     def authenticate(self) -> None:
         if self.id_token:
             return
+        api_key = os.getenv("JQUANTS_API_KEY")
+        if api_key:
+            # V2: ダッシュボード発行の単一キーをそのまま Bearer として使う。
+            # 交換ステップ (auth_user / auth_refresh) は不要。
+            self.log.info("auth: using JQUANTS_API_KEY (V2 direct Bearer)")
+            self.id_token = api_key
+            return
         id_token = os.getenv("JQUANTS_ID_TOKEN")
         if id_token:
             self.log.info("auth: using JQUANTS_ID_TOKEN from env")
@@ -129,7 +145,8 @@ class JQuantsClient:
             self.id_token = r2["idToken"]
         else:
             raise EnvironmentError(
-                "Set one of: JQUANTS_ID_TOKEN | JQUANTS_REFRESH_TOKEN | (JQUANTS_MAIL + JQUANTS_PASSWORD)"
+                "Set one of: JQUANTS_API_KEY | JQUANTS_ID_TOKEN | JQUANTS_REFRESH_TOKEN | "
+                "(JQUANTS_MAIL + JQUANTS_PASSWORD)"
             )
 
     def _headers(self) -> dict[str, str]:
