@@ -1,14 +1,14 @@
 # unwind-tape — HANDOFF
 
-**最終更新**: 2026-07-07 JST (Task A cron待ち / Task B **v0.4 pipeline 完了 (validator errors=0 warnings=0)**)
+**最終更新**: 2026-07-08 JST (Task A cron登録済み・自動発火は次回21:00待ち / Task B **v0.4 完了** / Task C **G004/G008 手計算突合 MATCH — 完了条件(3)達成**)
 
 ## Task 状況
 
 | Task | Status | Blocker | 一次成果物 |
 |------|--------|---------|------------|
-| **A** JPX 立会外取引 日次キャプチャ | ✅ 実装完了、初回バックフィル成功、**cron 未デプロイ** | Lane B cron へ登録 | `scripts/fetch_jpx_offauction.py` |
+| **A** JPX 立会外取引 日次キャプチャ | ✅ 実装完了、初回バックフィル成功、**cron 登録済み**(ユーザ Mac, 毎日21:00)。手動実行では成功確認済み、自動発火は次回21:00で確認予定 | — | `scripts/fetch_jpx_offauction.py` |
 | **B** xlsx → CSV 正規化 + PDF アーカイバ + build round-trip | ✅ v0.4 pipeline 完了 (**validator errors=0 warnings=0**) | — | `scripts/{migrate_xlsx_to_csv,validate_tape,archive_pdfs,build_tape}.py` |
-| **C** J-Quants + AR/CAR エンジン | 🟡 **コード完備、Mac で run 待ち** (G004/G008 手計算突合が完了条件残) | ユーザ Mac 側の J-Quants fetch 実行 | `scripts/{jquants_fetch,car_engine}.py`, `configs/car.yaml`, `docs/j_quants_plan_report.md`, `docs/macos_runbook_task_c.md`, `PREREG.md` |
+| **C** J-Quants + AR/CAR エンジン | ✅ **完了** — G004/G008 の CAR が独立実装の手計算と **3/3 MATCH (diff=0.000000)** | — | `scripts/{jquants_fetch,car_engine,hand_check_car}.py`, `configs/car.yaml`, `docs/j_quants_plan_report.md`, `PREREG.md`(空テンプレ) |
 
 ---
 
@@ -238,11 +238,23 @@ Mac + Light プラン + V2 API キーで `jquants_fetch.py` を実行、25/25 en
 
 9/12 leg で CAR 計算成功 (G001-G008)。残り3件 (G009-G011) は Tier2_candidate で `announce_datetime` 空欄のため意図通り未計算。
 
-### 完了条件の残 (C5)
+### ✅ C5 完了 (2026-07-08) — G004/G008 手計算突合 3/3 MATCH
 
-- G004 (Honda) と G008 (Nintendo) の CAR が手計算と一致 — **`car_report.md` に数値は出た。次はユーザが手計算と突合する番。**
-- market_cap は AvgSh 近似のため、手計算でも同じ近似を使うか、正確な株式数で別途計算するか要判断
-- 一致しない場合は `configs/car.yaml` の day 0 規則・estimation window を調整、または `PREREG.md` を先に確定させて config を合わせる
+`scripts/hand_check_car.py` (car_engine.py とは独立実装、日付ナビゲーションのみ
+`BusinessCalendar` を共用、AR/CAR の算術は素朴な log-return 差分の for-loop) で
+実データを再計算し、`car_report.md` の値と突合:
+
+| leg | car_engine.py | hand_check_car.py | diff |
+|---|---:|---:|---:|
+| G004/L001 (Honda) | -0.010755 | -0.010755 | 0.000000 |
+| G008/L001 (Nintendo) | +0.011071 | +0.011071 | 0.000000 |
+| G008/L002 (Nintendo) | +0.047487 | +0.047487 | 0.000000 |
+
+**完了条件(3)達成。** 2つの独立した実装経路が寸分違わず一致した。
+
+market_cap は `AvgSh`(期中平均株式数)近似のまま — 正確な期末株式数が必要になったら
+EDINET 等の外部ソース併用を検討 (plan_report.md R2)。日次リターン(CARの本体)には
+影響しない。
 
 ### モデル切替
 
