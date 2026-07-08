@@ -64,18 +64,32 @@ crontab -l
    - `sudo pmset repeat wakeorpoweron MTWRFSU 20:55:00` で発火 5 分前に wake、または
    - launchd 版に切り替え (`bash unwind-tape/cron/setup_macos_launchd.sh --install`) — スリープでロスした発火を起床時にキャッチアップする
 
-**launchd 派の人向け** (スリープ耐性◎):
+### ⚠️ cron → launchd への切替を推奨 (2026-07-08 review 指摘)
+
+**現状 `setup_macos_cron.sh --install` で cron 登録済み。** cron はスリープ中に発火時刻を跨ぐとその回を**永久に失う**(次回発火まで何もしない)。launchd の `StartCalendarInterval` はスリープでロスした発火を**起床時に自動キャッチアップ**する。ノートPCで夜間スリープする運用なら launchd 一択。
+
+切替手順:
 ```bash
+crontab -e   # unwind-tape の2行(# unwind-tape ... と 00 21 * * * ...)を削除して保存
 bash unwind-tape/cron/setup_macos_launchd.sh --install
 launchctl list | grep com.unwind-tape.jpx    # 登録確認
 ```
 plist は `~/Library/LaunchAgents/com.unwind-tape.jpx.plist` に置かれる。
 
+### ✅ 鮮度アラーム実装済み (2026-07-08)
+
+発火漏れ・構造変化を「誰も見ていない」状態を無くすため、`fetch_jpx_offauction.py` の
+実行末尾で各ページの `manifest.jsonl` の最新 `status=ok` の `date_key` を確認し、
+**営業日換算で5日以上古ければ ERROR ログを出し exit≠0** にする機能を追加した
+(`--max-stale-business-days` で閾値変更可、`--skip-freshness-check` で無効化可)。
+JPX の掲載保持は過去2週間のみなので、この仕組みが唯一の早期警戒網になる。
+単体テスト: `tests/test_fetch_jpx_offauction.py` (8件)。
+
 ### 障害復旧
 
-- **一時的 5xx**: 翌日の cron 実行で自動リカバリ。log に警告のみ。
+- **一時的 5xx**: 翌日の cron/launchd 実行で自動リカバリ。log に警告のみ。
 - **schema 不整合**: raw は保存済み。`configs/jpx_offauction.yaml` を更新 → 手動再実行。
-- **2週間 gap** (掲載消滅後の復旧): raw は保存済みだが、Task A 単体ではリカバリ不可。**Lane B が動いていることが唯一の防波堤。**
+- **2週間 gap** (掲載消滅後の復旧): raw は保存済みだが、Task A 単体ではリカバリ不可。**鮮度アラームで早期検知するのが唯一の防波堤。**
 
 ---
 
@@ -125,8 +139,12 @@ v0.4 Changelog **C026** と **C027** で以下2点が修復された:
 ### 現在の migration 観測結果 (v0.4)
 
 - **CSV rows**: groups=11, legs=12, sources=**17** (v0.3=11 から +6)
-- **truncated-URL auto-resolves**: 0 (v0.3=3 から解消)
-- **unresolved URLs**: 0 (v0.3=6 から解消)
+- **truncated-URL の prefix-match 自動解決件数**: 0 (v0.3 では 6 セルの truncated URL のうち 3 件を
+  prefix match で自動解決していたが、v0.4 で C026 により URL セル自体が全復元されたため不要に)。
+  ⚠️ この「3」は **prefix-match で自動解決できた件数**であり、truncated URL の総数ではない。
+  truncated セルの総数は **27 セル(URL 6・seller_name 3・route_notes/mechanism/notes 18)**。
+  過去のレポート・引き継ぎ資料で「URL truncation: 3件」と書いたものは不正確 (2026-07-08 review 指摘、訂正済み)。
+- **unresolved URLs (Source_Log に無い URL)**: 0 (v0.3=6 から解消。C027 で S012-S017 追加)
 - **group column promotion 方針は v0.3 と同じ**: identity 3 列 + `event_tier` + `confidence_policy_holding` + `ABM_candidate_flag` の 6 列(+PK)。`mechanism_hypothesis` と `activist_pressure` は leg 単位で異なり得るので legs.csv に残す。
 
 ### validator 結果 (errors=0, warnings=0)

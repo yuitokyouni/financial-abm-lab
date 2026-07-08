@@ -29,7 +29,7 @@ import sys
 import time
 import traceback
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Iterable
@@ -146,6 +146,81 @@ def _append_manifest(manifest_path: Path, entry: ManifestEntry) -> None:
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     with manifest_path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry.__dict__, ensure_ascii=False) + "\n")
+
+
+# ---------------------------------------------------------------------------
+# freshness alarm (2026-07-08 review 指摘)
+# ---------------------------------------------------------------------------
+# 掲載保持は「過去2週間」しかない。cron/launchd の発火漏れ・構造変化を
+# 誰も見ていないと、猶予が尽きて欠測期間が生まれてから気付くことになる。
+# manifest.jsonl の最新 status=ok の date_key が営業日換算で N 日以上
+# 古ければ ERROR ログを出し、非0終了させる。祝日は考慮しない
+# (月〜金の単純カウント。アラーム閾値としては十分な精度)。
+
+def _weekdays_between(d: date, today: date) -> int:
+    """d(exclusive) から today(inclusive) までの月〜金日数。祝日非考慮。"""
+    count = 0
+    cur = d
+    while cur < today:
+        cur += timedelta(days=1)
+        if cur.weekday() < 5:
+            count += 1
+    return count
+
+
+def _latest_ok_date_key(manifest_path: Path) -> str | None:
+    latest: str | None = None
+    if not manifest_path.exists():
+        return None
+    with manifest_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            try:
+                e = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if e.get("status") != "ok":
+                continue
+            dk = e.get("date_key")
+            if dk and (latest is None or dk > latest):
+                latest = dk
+    return latest
+
+
+def _check_freshness(root: Path, storage: dict, pages: list[str], now: datetime,
+                     max_stale_business_days: int, log: logging.Logger) -> bool:
+    """各ページの manifest.jsonl から最新 status=ok の date_key を見て、
+    今日との営業日差が閾値を超えていたら ERROR ログを出す。
+    Returns True if any page is stale (呼び出し元で exit_code に反映すること)。
+    """
+    today = now.date()
+    any_stale = False
+    for page in pages:
+        manifest_path = root / storage["raw_root"] / page / storage["manifest_filename"]
+        latest = _latest_ok_date_key(manifest_path)
+        if latest is None:
+            log.error("freshness alarm: page=%s has no status=ok manifest entry at all "
+                      "(never successfully captured?)", page)
+            any_stale = True
+            continue
+        try:
+            y, m, d = (int(x) for x in latest.split("-"))
+            latest_date = date(y, m, d)
+        except ValueError:
+            log.error("freshness alarm: page=%s latest date_key %r unparseable", page, latest)
+            any_stale = True
+            continue
+        gap = _weekdays_between(latest_date, today)
+        if gap > max_stale_business_days:
+            log.error(
+                "freshness alarm: page=%s latest captured date_key=%s is %d business days "
+                "old (threshold=%d). JPX 掲載保持は過去2週間のみ — 発火漏れ・構造変化を確認すること。",
+                page, latest, gap, max_stale_business_days,
+            )
+            any_stale = True
+        else:
+            log.info("freshness ok: page=%s latest date_key=%s (%d business days old)",
+                     page, latest, gap)
+    return any_stale
 
 
 def _manifest_has_sha256(manifest_path: Path, sha256: str, status_ok_only: bool = True) -> bool:
@@ -765,6 +840,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="unwind-tape root (data/, configs/ live here)")
     ap.add_argument("--pages", nargs="*", default=None,
                     help="subset of page keys to fetch (default: all in config)")
+    ap.add_argument("--max-stale-business-days", type=int, default=5,
+                    help="freshness alarm threshold (営業日換算、祝日非考慮)")
+    ap.add_argument("--skip-freshness-check", action="store_true",
+                    help="鮮度アラームを無効化する(デバッグ用)")
     args = ap.parse_args(argv)
 
     cfg = _load_config(args.config)
@@ -817,6 +896,12 @@ def main(argv: list[str] | None = None) -> int:
             exit_code = max(exit_code, 4)
 
     _append_gaps_report(args.root / storage["gaps_report"], now, results)
+
+    if not args.skip_freshness_check:
+        stale = _check_freshness(args.root, storage, selected, now,
+                                 args.max_stale_business_days, log)
+        if stale:
+            exit_code = max(exit_code, 5)
 
     log.info("unwind-tape jpx fetch done (exit=%d)", exit_code)
     return exit_code
