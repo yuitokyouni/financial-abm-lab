@@ -208,3 +208,51 @@
 - **S1-secondary を先に完了させる**: plan A/B 判定が確定しないと YH006_2 の scope が固まらない。
 - **Interaction CI の解釈**: 現状 5 指標中 CI が 0 を跨ぐものが多い。YH006_2 の hypothesis framing はこの結果を踏まえた上で確定する。
 - **コード引き継ぎ**: `YH006_1/code/adapter.py` (Phase 1 → Phase 2 schema)、`lob_ensemble.py`、`aggregate_ensemble.py` はそのまま流用可能。ensemble infrastructure は確立済み。
+
+---
+
+## YH009 — Policy-Holding Sale Event Tape (unwind-tape) — インフラ完了 / findings 保留 (2026-07)
+
+**位置づけ (系譜が別)**: YH001-008 は ABM シミュレーション(投機ゲーム / MG / LLM エージェント)。
+YH009 は**実データの経験的イベントスタディ** — 日本株の政策保有株(持ち合い)解消・売却
+イベントに対する AR/CAR を計測するデータ基盤。コードは `imported/` ではなく**リポルート直下の
+`unwind-tape/`** に置く(新しい一次研究ライン、archive 対象の取り込み元ではない)。
+Baseline_Spec の思想は「size/ADV・route/support FE で説明できない残差だけを ABM 候補にする」で、
+将来的に YH001-008 系の ABM 研究に**経験的な錨**を与える接続を意図している。
+
+**構成 (データ基盤 3 タスク、いずれも実装完了)**:
+- **A. JPX 立会外取引情報 日次キャプチャ**: ToSTNeT 超大口約定 / 立会外分売 / 自己株式立会外買付の
+  3ページを冪等・sha256・構造変化検知付きで毎日取得。鮮度アラーム付き。
+  `unwind-tape/scripts/fetch_jpx_offauction.py`
+- **B. xlsx → CSV 正規化 + PDF アーカイバ + build round-trip**: v0.4 で validator errors=0 warnings=0。
+  `unwind-tape/scripts/{migrate_xlsx_to_csv,validate_tape,archive_pdfs,build_tape}.py`
+- **C. J-Quants (V2 API) 連携 + AR/CAR エンジン**: day 0 規則・ルックアヘッド禁止・8 出力列。
+  G004(Honda)/G008(Nintendo) の CAR は独立実装の手計算と 3/3 一致(diff=0.000000)を確認。
+  `unwind-tape/scripts/{jquants_fetch,car_engine,hand_check_car}.py`
+
+**確認済み (エンジニアリング事実)**:
+- J-Quants は 2025-12 に V1→V2 移行。認証は `x-api-key` 単一鍵、旧 endpoint は 410 Gone。
+  フィールド名が広範に短縮(`HolidayDivision`→`HolDiv`、`Close/Open/High/Low`→`C/O/H/L`、
+  `Volume`→`Vo`、`AdjustmentClose`→`AdjC`、`AdjustmentVolume`→`AdjVo`、`DisclosedDate`→`DiscDate`)。
+  V2 `/fins/summary` には期末発行済株式数の直接フィールドが無く、`AvgSh`(期中平均)で近似。
+- Light プラン(¥1,650/月)で本件(11 銘柄・2022-07 以降・日次四本値+TOPIX)は充足。詳細:
+  `unwind-tape/docs/j_quants_plan_report.md`。
+
+**保留 / 次フェーズで検証すべき事項 (findings は未確定)**:
+- **day 0 規則の穴が発覚済み・修正済み**: `after_close` が空欄の leg を暗黙に「引け前(同日)」扱い
+  していた。日本の売出し開示は大半が引け後のため day 0 が系統的に1営業日早くなるリスク。
+  空欄は計算拒否(fail-loud)に修正。**G008/L001 以外の CAR は暫定値**であり、一次資料から
+  `disclosure_time`/`after_close` を転記するまで本分析に使わない。
+- **サンプルサイズ不足**: N=12 legs(実質さらに少ない)。Baseline_Spec Step 1 すら安定して
+  回せない。**Sampling_Frame.csv の TDnet クエリを実装する母集団拡張(次タスク "D")が
+  本分析着手の前提。**
+- **業種偏り**: シード 11 groups のうち 5 件(約45%)が自動車サプライチェーン系。industry FE 導入と
+  subgroup robustness が必須(PREREG.md §1/§7 に明記)。
+- **PREREG.md は draft・未確定**: 推定窓・モデル選択・day0 規則・20%/100% ADV 境界仮説を
+  記入した草案あり。確定日/確定者は空欄。
+
+**着手時の注意点 (これを見て重複回避)**:
+- unwind-tape の運用フロー・受け入れ条件は `unwind-tape/HANDOFF.md` が一次情報。
+- 価格系データ(`unwind-tape/data/raw/`)は `.gitignore` 対象でローカルのみ(J-Quants の
+  再配布制限ライセンス data のため、git には乗せない)。API キーは環境変数のみ。
+- テストは `unwind-tape/tests/` に 47 件(car_engine 39 + fetch_jpx 8)。

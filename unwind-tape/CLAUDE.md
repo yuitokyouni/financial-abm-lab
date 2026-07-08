@@ -2,6 +2,10 @@
 <!-- 「動かない事実」だけ。手順・スニペットは書かない。 -->
 
 ## What this is
+**研究 ID = YH009**(YH シリーズの新規ライン。YH001-008 は ABM シミュレーションだが、
+YH009 は実データの経験的イベントスタディで別系譜。マスター台帳:
+`imported/speculation-game-info/docs/findings.md`)。
+
 日本株の「一定期間内解消(unwind)」イベントを組成する tape 研究プロジェクト。groups.csv(イベント群) と legs.csv(各 leg = 個別公表) を突合し、AR/CAR を出す。データ基盤 3 タスクの構成:
 
 - **A. JPX 立会外取引情報の日次キャプチャ** (実装済・cron 化予定)

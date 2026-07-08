@@ -40,6 +40,10 @@ findings が**統計的等価**(相対誤差 ≤ 5%)で再現するか。go な�
 - **MultiAgent-Trader** … 日本株×LLM 応用。core を import する satellite に留める。
 - **atelier/mycelium** … マザー知識ベース。`research/` に同期し、コードと混ぜない。
 
+## 新規研究ライン
+
+- **`unwind-tape/` (YH009)** … 日本株の政策保有株解消イベントの経験的イベントスタディ(AR/CAR)。YH001-008 の ABM シミュレーションとは別系譜(実証)。インフラ(JPX 日次捕捉 / xlsx→CSV 正規化 / J-Quants CAR エンジン)完了、findings 保留。台帳: `imported/speculation-game-info/docs/findings.md` の YH009 節。
+
 ## 旧リポの扱い
 
 Stage A 完了後、取り込み済みの旧 GitHub リポは **archive 化(read-only)** する。
