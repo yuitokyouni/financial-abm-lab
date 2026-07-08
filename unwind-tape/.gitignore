@@ -27,6 +27,10 @@ data/raw/prices/
 !data/parsed/benchmark/benchmark_summary.csv
 !data/parsed/benchmark/*.md
 
+# --- 転記シート: 出所台帳(provenance)。*.csv 無視を回復して git-track ---
+!transcription/*.csv
+!transcription/*.md
+
 # --- 汎用 ---
 data/logs/
 data/**/__pycache__/

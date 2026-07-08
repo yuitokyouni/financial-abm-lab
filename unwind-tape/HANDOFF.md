@@ -362,6 +362,30 @@ cat unwind-tape/data/parsed/benchmark/benchmark_report.md
 
 ---
 
+## 開示転記 — 帰属側(系統A/B)を動かす律速作業 (2026-07-08)
+
+`after_close` 空欄の leg は day0=None(R1 fail-loud)。CAR/shortfall とも NA。現状 day0 解決は
+G008 のみ。**disclosure_time 転記が全計算の最上流**、次に offering の pricing_date/offer_price。
+
+- **シート**: `transcription/disclosure_transcription.csv`(埋めるだけ。G001-G008 の行+所在ヒント)
+- **ガイド**: `transcription/README.md`(時刻の取り方・time_source enum・取得PDF・サニティ)
+- **反映**: `scripts/apply_transcription.py --check`(検証のみ)→ `--apply`(ERROR以外を legs.csv へ)
+- **反映列**: disclosure_time / after_close / pricing_date / offer_price_JPY / OA_exercised_shares
+  のみ。time_source は legs.csv に載せずシートを出所台帳として保持。
+
+**タイムスタンプ所在**: 発表PDFに時刻が無いことが多く、TDnet 公開検索は過去31日のみ(本シートは
+全 leg が範囲外)→ **株探/Yahoo適時開示アーカイブ**で取得(2023分も残存)。`time_source` は
+{pdf_header,tdnet,yahoo_archive,kabutan,media} のみ、**inferred(推定)は apply が ERROR で拒否**、
+取れなければ空欄=fail-loud 維持。
+
+**サニティ(拒否でなく確認フラグ)**: discount が 2〜5% 帯の外 / pricing_date が announce day0 の
+5〜15営業日後の外 → WARN。**inferred・時刻矛盾・time_source 未記録は ERROR**(そのセルは書かない)。
+
+**既知**: シート同梱の G008 は disclosure_time=15:40 済だが time_source 未記録 → 初回 `--check` は
+「time_source を記録せよ」の ERROR を1件出す(既存 15:40 の出所を一次で確定する促し。仕様どおり)。
+
+---
+
 ## 運用メモ
 
 ### CSV が canonical になった以降のワークフロー

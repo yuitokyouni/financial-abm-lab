@@ -24,6 +24,7 @@ YH009 は実データの経験的イベントスタディで別系譜。マス�
 - Task B canonical CSVs: `unwind-tape/data/parsed/tape/{groups,legs,sources}.csv, lists.yaml`
 - Task C: `jquants_fetch.py` → `car_engine.py`(系統A CAR) / `shortfall_engine.py`(系統B shortfall, spec `MEASUREMENT_SPEC.md`, config `configs/car.yaml` の `shortfall:` 節)
 - BENCHMARK: `benchmark_engine.py`(無条件 exec_gap 参照分布, spec `BENCHMARK_SPEC.md`, config `configs/benchmark.yaml`)。**tape 非混入**の対照分布。生バーは `data/raw/prices/`(git外)。
+- 転記: `transcription/disclosure_transcription.csv`(埋めるだけ)+ `scripts/apply_transcription.py`(検証→legs.csv 反映)。disclosure_time/pricing/offer/OA を一次資料から。**推定禁止・空欄は fail-loud 維持**。ガイド `transcription/README.md`。
 
 ## Conventions
 - **データ創作は厳禁**。欠損は空欄のまま、`data/gaps_report.md` に列挙。

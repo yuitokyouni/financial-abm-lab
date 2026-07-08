@@ -1,0 +1,12 @@
+event_group_id,event_leg_id,issuer_code,issuer_name,sale_route,announce_datetime,needs,disclosure_time,after_close,time_source,pricing_date,offer_price_JPY,OA_exercised_shares,timestamp_hint,source_docs_to_obtain,note
+G001,L001,6902,DENSO,secondary_offering,2023-11-29,day0+offering,,,,,,,2023-11発表→TDnet不可(31日超)。株探/Yahoo適時開示アーカイブで6902の開示時刻,DENSO売出し条件決定PDF + シンジケートカバー取引終了(S018+登録),既存S014はToyota Industries側。DENSO一次PDFが要る
+G002,L001,6201,Toyota Industries,share_forward,2024-03-29,day0のみ(非measurable),,FALSE,,,,,2024-03発表。after_close=FALSE既記入。disclosure_timeは株探/NSE開示で補完可,(offering項目N/A。share_forwardは系統B対象外),day0はafter_close=FALSEで解決済。時刻はCAR精度向上のため任意
+G003,L001,7259,Aisin,secondary_offering,2024-06-27,day0+offering,,,,,,,2024-06発表→株探/Yahooアーカイブで7259の開示時刻,Aisin条件決定PDF + シンジケートカバー取引終了(S018+)。一次PDF保存必須(既存URLパス異常2027),"OA上限5,079,300株既知→行使結果を転記"
+G004,L001,7267,Honda Motor,secondary_offering,2024-07-04,day0+offering,,,,,,,2024-07発表→株探/Yahooアーカイブで7267の開示時刻,Honda条件決定PDF(S003は発表)+ シンジケートカバー取引終了(S018+),手計算突合対象。sold_valueはReuters推定→条件決定で確定offer_priceに更新
+G005,L001,8154,Kaga Electronics,toSTNeT_3,2025-08-07,day0のみ(offer既知),,,,,,,2025-08発表→株探/Yahooアーカイブで8154の開示時刻,(offer=前日終値2938既知。toSTNeT-3は分売でなく買付),buyback_decision。day0解決に時刻要。実績はbuyback_result legで別途
+G006,L001,3950,The Pack,secondary_offering,2025-08-29,day0+offering,,,,,,,2025-08発表→株探/Yahooアーカイブで3950の開示時刻,The Pack条件決定PDF + シンジケートカバー取引終了(S018+),B_strong_inference。売り手の政策保有性を一次で確認
+G007,L001,4246,Daikyo Nishikawa,secondary_offering,2026-01-19,day0+offering,,,,,,,2026-01発表→TDnet不可(31日超)。株探/Yahooアーカイブで4246の開示時刻,Daikyo Nishikawa条件決定PDF(settlement 2026-01-26既知)+ シンジケートカバー取引終了(S018+),789.28は想定価格?条件決定offerで要確定
+G008,L001,7974,Nintendo,secondary_offering,2026-02-27,offering+time_source,15:40,TRUE,,,,,disclosure_time=15:40/after_close=TRUE既記入。time_sourceを一次で記録(S007発表PDF header),Nintendo条件決定PDF(条件決定期間2026-03-09〜12)+ シンジケートカバー取引終了(S018+),"day0=2026-03-02解決済。offer_price/pricing_dateとOA(上限4,904,600)を転記"
+G009,L001,4063,信越化学,secondary_offering,,一次資料未取得(全項目),,,,,,,報道のみ(2026-02金融8社売出し)。一次PDF取得が先,announcement/条件決定PDF一式,Tier2候補。まず一次資料
+G010,L001,4062,イビデン,secondary_offering,,一次資料未取得(全項目),,,,,,,報道のみ。一次PDF取得が先,announcement/条件決定PDF一式,Tier2候補
+G011,L001,2871,ニチレイ,secondary_offering,,一次資料未取得(全項目),,,,,,,報道のみ。一次PDF取得が先,announcement/条件決定PDF一式,Tier2候補
