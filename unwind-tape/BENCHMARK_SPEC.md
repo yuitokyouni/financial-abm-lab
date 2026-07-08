@@ -79,3 +79,31 @@
 - **正直な限界**: 符号で割るのは自己選択なので**各 side の median は機械的に片側へ寄る**。使うのは
   (a) discount 側の p90/p95/p99(売り手ディスカウント裾の深さ)、(b) discount/premium の**件数比**
   (venue が売り超か買い超か、size 依存)であって median ではない。report にも明記。
+
+---
+
+# BENCHMARK PATCH v0.2 — プリント3分類(これで再凍結)
+
+(ユーザ確定。初回集計で「68% が終値クロス」と判明し、median≈0 のコスト誤読を構造的に排すため。)
+
+- at_close (|gap_close|<10bp): 終値参照クロス。コスト統計から除外。
+  この層のgap_prevは「日次リターン分布」として別掲(コストと誤読させない)
+- at_prev (|gap_prev|<10bp かつ |gap_close|≥10bp): 前日終値クロス。
+  gap_close=約定後の値動きであり譲歩ではない。コスト統計から除外
+- off_both: 譲歩を含み得る唯一の層。「上限記述」として報告
+  (譲歩成分は直近値±7%で拘束される旨を注記)
+- 診断: (1)旧discount/premium×新3分類のクロス表
+        (2)非at_closeプリントのgap_close vs day_return相関(高相関=値動き支配)
+        (3)|gap_prev|>7%の行に movement_lower_bound=|gap_prev|−7% を出力
+- ニュース日join(決算・適時開示)はTask D完成後に後付け。今は保留
+- 旧「売り手側の対照」表はREADMEで「分類再定義前の暫定値」と注記し差し替え
+
+## 実装ノート(Claude, 2026-07-08 — v0.2)
+- 3分類は `print_class(gap_prev, gap_close)` で確定(at_close 優先 → at_prev → off_both、
+  両gap欠は undet)。summary は `layer` 次元(off_both / at_close_dayret / at_prev_move /
+  administered)。**コスト統計は off_both のみ**、side(discount/premium)で分割。
+- 配当落ち疑い `ex_div_suspect`(転記シート追記の要請):期末月 [3,6,9,12] の最終
+  `window_business_days`(既定3)営業日近傍を発見的にフラグ。**実 ex-date は取れないので
+  「疑い」止まり**(prev p99 の汚染確認用)。これを入れて**ベンチマークは凍結、以後は N の自然増のみ**。
+- 診断3種は report 末尾に出力。相関は N≥3 でのみ算出(不足時は「要 N」)。
+- movement_lower_bound は明細 CSV に列で持ち、report は該当数と最大のみ。

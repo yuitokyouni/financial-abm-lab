@@ -82,6 +82,8 @@ class BenchmarkConfig:
     price_band_pct: float
     band_ref: str
     size_edges: list[float]
+    ex_div_months: list[int]
+    ex_div_window_bd: int
     max_pub_lag_bd: int
     detail_csv: str
     summary_csv: str
@@ -93,6 +95,7 @@ class BenchmarkConfig:
             c = yaml.safe_load(f)
         ins, pr = c["inputs"], c["prices"]
         cl, bk, hl, out = c["classification"], c["buckets"], c["health"], c["output"]
+        exd = c.get("ex_div_suspect", {})
         return cls(
             tostnet_csv=ins["tostnet_csv"], distro_csv=ins["distro_csv"],
             bars_dir=pr["bars_dir"], calendar=pr["calendar"],
@@ -102,6 +105,8 @@ class BenchmarkConfig:
             side_at_ref_bp=float(cl.get("side_at_ref_bp", cl["prev_close_cross_bp"])),
             price_band_pct=float(cl["price_band_pct"]), band_ref=cl["band_ref"],
             size_edges=[float(x) for x in bk["size_over_adv20_edges"]],
+            ex_div_months=[int(m) for m in exd.get("period_end_months", [3, 6, 9, 12])],
+            ex_div_window_bd=int(exd.get("window_business_days", 3)),
             max_pub_lag_bd=int(hl["max_publication_lag_business_days"]),
             detail_csv=out["detail_csv"], summary_csv=out["summary_csv"], report_md=out["report_md"],
         )
@@ -218,6 +223,39 @@ def side_proxy(gap_close: float | None, at_ref_bp: float) -> str:
     return "at_ref"
 
 
+def print_class(gap_prev: float | None, gap_close: float | None,
+                prev_bp: float, close_bp: float) -> str:
+    """PATCH v0.2 プリント3分類(コスト誤読を排す)。両gap が要る(片方欠 → undet)。
+      at_close = |gap_close| < close_bp bp             同日終値ちょうどのクロス。コスト統計から除外。
+      at_prev  = |gap_prev| < prev_bp bp かつ 非at_close  前日終値クロス。gap_close は約定後の
+                 値動きであって譲歩ではない。コスト統計から除外。
+      off_both = どちらのクロスでもない               譲歩を含み得る唯一の層(上限記述)。
+    """
+    if gap_prev is None or gap_close is None:
+        return "undet"
+    if abs(gap_close) < close_bp / 1e4:
+        return "at_close"
+    if abs(gap_prev) < prev_bp / 1e4:
+        return "at_prev"
+    return "off_both"
+
+
+def near_period_end(d: str, cal: BusinessCalendar, months: list[int], window_bd: int) -> bool:
+    """配当落ち疑い(発見的): 取引日が期末月の最終 window_bd 営業日に入るか。
+    権利落ちは月末2営業日前あたりなので、その近傍のプリントは gap_prev に配当落ちが
+    混入し得る(実際の ex-date は取れないので疑いフラグ止まり)。"""
+    if not d or len(d) < 7:
+        return False
+    m = int(d[5:7])
+    if m not in months:
+        return False
+    y, mm = d[:4], d[5:7]
+    month_bdays = cal.range_business_days(f"{y}-{mm}-01", f"{y}-{mm}-31")
+    if not month_bdays:
+        return False
+    return d in set(month_bdays[-window_bd:])
+
+
 def size_bucket(ratio: float | None, edges: list[float]) -> str:
     if ratio is None or not math.isfinite(ratio):
         return "adv_unknown"
@@ -256,7 +294,8 @@ DETAIL_COLUMNS = [
     "px", "px_source", "prev_close", "close",
     "exec_gap_prev", "exec_gap_close", "day_return",
     "size_shares", "ADV20_shares", "size_over_ADV20", "size_bucket",
-    "ex_div_flag", "prev_close_cross", "at_band", "classification", "side_proxy", "status",
+    "ex_div_flag", "ex_div_suspect", "prev_close_cross", "at_band",
+    "classification", "side_proxy", "print_class", "movement_lower_bound", "status",
 ]
 
 
@@ -277,11 +316,14 @@ class DetailRow:
     ADV20_shares: float | None = None
     size_over_ADV20: float | None = None
     size_bucket: str = ""
-    ex_div_flag: str = ""          # TRUE | FALSE | ""(不明)
+    ex_div_flag: str = ""          # TRUE | FALSE | ""(不明) — AdjustmentFactor≠1(分割/割当のみ)
+    ex_div_suspect: str = ""       # TRUE | FALSE — 期末近傍(配当落ち疑い、発見的)
     prev_close_cross: str = ""
     at_band: str = ""
     classification: str = ""
     side_proxy: str = ""           # discount | premium | at_ref | unknown | administered
+    print_class: str = ""          # at_close | at_prev | off_both | undet | administered (PATCH v0.2)
+    movement_lower_bound: float | None = None   # |gap_prev|>band_pct のとき |gap_prev|-band_pct
     status: str = ""               # ok | skip:<reason>
 
     def as_csv(self) -> dict[str, str]:
@@ -301,10 +343,11 @@ class DetailRow:
 def build_tostnet_row(code: str, trade_date: str, px: float | None, px_source: str,
                       size_shares: float | None, prev_close: float | None, close: float | None,
                       adj_factor: float | None, adv20: float | None,
-                      cfg: BenchmarkConfig) -> DetailRow:
+                      cfg: BenchmarkConfig, ex_div_suspect: bool = False) -> DetailRow:
     r = DetailRow(route="tostnet_large_lots", issuer_code=code, trade_date=trade_date,
                   price_type="negotiated", px=px, px_source=px_source,
                   prev_close=prev_close, close=close, size_shares=size_shares)
+    r.ex_div_suspect = "TRUE" if ex_div_suspect else "FALSE"
     if not _pos(px):
         r.status = "skip:bad_px"
         return r
@@ -333,6 +376,10 @@ def build_tostnet_row(code: str, trade_date: str, px: float | None, px_source: s
     r.at_band = "TRUE" if at_band else "FALSE"
     r.classification = label
     r.side_proxy = side_proxy(r.exec_gap_close, cfg.side_at_ref_bp)
+    # PATCH v0.2: 3分類 + 譲歩の movement 下限
+    r.print_class = print_class(gp, gc, cfg.prev_close_cross_bp, cfg.side_at_ref_bp)
+    if gp is not None and abs(gp) > cfg.price_band_pct:
+        r.movement_lower_bound = abs(gp) - cfg.price_band_pct
     r.status = "ok"
     return r
 
@@ -340,13 +387,14 @@ def build_tostnet_row(code: str, trade_date: str, px: float | None, px_source: s
 def build_distro_row(code: str, impl_date: str, distro_price: float | None,
                      prev_close_disc: float | None, size_shares: float | None,
                      adj_factor: float | None, adv20: float | None,
-                     cfg: BenchmarkConfig) -> DetailRow:
+                     cfg: BenchmarkConfig, ex_div_suspect: bool = False) -> DetailRow:
     """立会外分売: exec_gap_prev = ln(prev_close) - ln(分売価格) = 開示ディスカウント。
     prev_close は開示の「終値」(administered reference)。close 系は分売の定義に無いので空欄。
     """
     r = DetailRow(route="offauction_distribution", issuer_code=code, trade_date=impl_date,
                   price_type="administered", px=distro_price, px_source="disclosed",
                   prev_close=prev_close_disc, size_shares=size_shares)
+    r.ex_div_suspect = "TRUE" if ex_div_suspect else "FALSE"
     if not _pos(distro_price):
         r.status = "skip:bad_distribution_price"
         return r
@@ -366,6 +414,7 @@ def build_distro_row(code: str, impl_date: str, distro_price: float | None,
     # classification は付けない(price_type=administered で区別)。売り手ディスカウントで符号は確定。
     r.classification = "administered"
     r.side_proxy = "administered"
+    r.print_class = "administered"
     r.status = "ok"
     return r
 
@@ -556,8 +605,9 @@ def compute_rows(cfg: BenchmarkConfig, root: Path, cal: BusinessCalendar,
         close = prices.close_on(code, trade_date)
         adjf = prices.adj_factor_on(code, trade_date)
         adv20 = prices.adv20(code, trade_date)
+        exd = near_period_end(trade_date, cal, cfg.ex_div_months, cfg.ex_div_window_bd)
         rows.append(build_tostnet_row(code, trade_date, px, px_source, vol,
-                                      prev_close, close, adjf, adv20, cfg))
+                                      prev_close, close, adjf, adv20, cfg, ex_div_suspect=exd))
 
     for rec in _read_csv(root / cfg.distro_csv):
         code = _clean_code(rec.get("issue_code"))
@@ -573,46 +623,63 @@ def compute_rows(cfg: BenchmarkConfig, root: Path, cal: BusinessCalendar,
             continue
         adjf = prices.adj_factor_on(code, impl_date)
         adv20 = prices.adv20(code, impl_date)
+        exd = near_period_end(impl_date, cal, cfg.ex_div_months, cfg.ex_div_window_bd)
         rows.append(build_distro_row(code, impl_date, distro_price, prev_close_disc,
-                                     size, adjf, adv20, cfg))
+                                     size, adjf, adv20, cfg, ex_div_suspect=exd))
     return rows
 
 
-def build_summary(rows: list[DetailRow], cfg: BenchmarkConfig) -> list[dict]:
-    """route × ref(prev/close) × size_bucket → N/median/IQR/p90/p95/p99/band集積率/cross率。
-    ALL バケット行も facet ごとに1行足す。"""
-    facets = [
-        ("tostnet_large_lots", "prev", lambda r: r.exec_gap_prev),
-        ("tostnet_large_lots", "close", lambda r: r.exec_gap_close),
-        ("offauction_distribution", "prev", lambda r: r.exec_gap_prev),
-    ]
-    out: list[dict] = []
-    for route, ref, getter in facets:
-        pool = [r for r in rows if r.route == route and r.status == "ok"]
-        if not pool:
+def _emit_stats(out: list[dict], route: str, ref: str, layer: str, side: str,
+                subset: list[DetailRow], getter) -> None:
+    """subset を size バケット別(+ALL)に集計して out に append。"""
+    buckets = sorted({r.size_bucket for r in subset}) + ["ALL"]
+    for b in buckets:
+        sub = subset if b == "ALL" else [r for r in subset if r.size_bucket == b]
+        vals = [getter(r) for r in sub if getter(r) is not None]
+        st = summarize(vals)
+        if st is None:
             continue
-        # side 分割は超大口(交渉・売買側不明)のみ。分売は administered(売り確定)なので all だけ。
-        sides = ["all"] if route == "offauction_distribution" \
-            else ["all", "discount", "at_ref", "premium"]
-        buckets = sorted({r.size_bucket for r in pool}) + ["ALL"]
-        for side in sides:
-            spool = pool if side == "all" else [r for r in pool if r.side_proxy == side]
-            if not spool:
-                continue
-            for b in buckets:
-                sub = spool if b == "ALL" else [r for r in spool if r.size_bucket == b]
-                vals = [getter(r) for r in sub if getter(r) is not None]
-                st = summarize(vals)
-                if st is None:
-                    continue
-                band_rate = _rate([r.at_band == "TRUE" for r in sub])
-                cross_rate = _rate([r.prev_close_cross == "TRUE" for r in sub])
-                out.append({
-                    "route": route, "ref": ref, "side": side, "size_bucket": b,
-                    "N": st["N"], "median": st["median"], "iqr": st["iqr"],
-                    "p90": st["p90"], "p95": st["p95"], "p99": st["p99"],
-                    "band_edge_rate": band_rate, "prev_close_cross_rate": cross_rate,
-                })
+        out.append({
+            "route": route, "ref": ref, "layer": layer, "side": side, "size_bucket": b,
+            "N": st["N"], "median": st["median"], "iqr": st["iqr"],
+            "p90": st["p90"], "p95": st["p95"], "p99": st["p99"],
+            "band_edge_rate": _rate([r.at_band == "TRUE" for r in sub]),
+            "prev_close_cross_rate": _rate([r.prev_close_cross == "TRUE" for r in sub]),
+        })
+
+
+def build_summary(rows: list[DetailRow], cfg: BenchmarkConfig) -> list[dict]:
+    """PATCH v0.2: プリント3分類に基づく集計。
+      layer=off_both      → 譲歩を含み得る唯一の層。**コスト包絡(上限記述)**。side で discount/premium/all。
+      layer=at_close_dayret → 終値クロス層。gap_prev を**日次リターン分布**として別掲(コスト誤読を排す)。
+      layer=at_prev_move  → 前日終値クロス層。gap_close=約定後の値動き(譲歩ではない)。
+      layer=administered  → 立会外分売(売り確定ディスカウント)。
+    """
+    out: list[dict] = []
+    tos = [r for r in rows if r.route == "tostnet_large_lots" and r.status == "ok"]
+    dis = [r for r in rows if r.route == "offauction_distribution" and r.status == "ok"]
+
+    off = [r for r in tos if r.print_class == "off_both"]
+    atc = [r for r in tos if r.print_class == "at_close"]
+    atp = [r for r in tos if r.print_class == "at_prev"]
+
+    # off_both: 唯一のコスト層。参照 prev/close × side(all/discount/premium)。
+    for ref, getter in (("prev", lambda r: r.exec_gap_prev), ("close", lambda r: r.exec_gap_close)):
+        _emit_stats(out, "tostnet_large_lots", ref, "off_both", "all", off, getter)
+        _emit_stats(out, "tostnet_large_lots", ref, "off_both", "discount",
+                    [r for r in off if r.side_proxy == "discount"], getter)
+        _emit_stats(out, "tostnet_large_lots", ref, "off_both", "premium",
+                    [r for r in off if r.side_proxy == "premium"], getter)
+
+    # at_close: gap_prev = 日次リターン分布(コストではない)
+    _emit_stats(out, "tostnet_large_lots", "prev", "at_close_dayret", "-",
+                atc, lambda r: r.exec_gap_prev)
+    # at_prev: gap_close = 約定後の値動き(譲歩ではない)
+    _emit_stats(out, "tostnet_large_lots", "close", "at_prev_move", "-",
+                atp, lambda r: r.exec_gap_close)
+    # 分売(administered)
+    _emit_stats(out, "offauction_distribution", "prev", "administered", "all",
+                dis, lambda r: r.exec_gap_prev)
     return out
 
 
@@ -620,7 +687,7 @@ def _rate(flags: list[bool]) -> float:
     return float(np.mean([1.0 if x else 0.0 for x in flags])) if flags else 0.0
 
 
-SUMMARY_COLUMNS = ["route", "ref", "side", "size_bucket", "N", "median", "iqr",
+SUMMARY_COLUMNS = ["route", "ref", "layer", "side", "size_bucket", "N", "median", "iqr",
                    "p90", "p95", "p99", "band_edge_rate", "prev_close_cross_rate"]
 
 
@@ -636,12 +703,59 @@ def write_summary_csv(path: Path, summary: list[dict]) -> None:
             w.writerow(row)
 
 
+def _write_diagnostics(lines: list[str], rows: list[DetailRow], cfg: BenchmarkConfig) -> None:
+    """PATCH v0.2 診断: (1)旧side×新3分類クロス表 (2)非at_close の gap_close vs day_return 相関
+    (3)|gap_prev|>band_pct 行の movement_lower_bound。"""
+    tos = [r for r in rows if r.route == "tostnet_large_lots" and r.status == "ok"]
+
+    # (1) クロス表: 旧 side_proxy × 新 print_class
+    lines.append("## 診断(1) 旧 side × 新3分類 クロス表(件数)\n\n")
+    sides = ["discount", "premium", "at_ref", "unknown"]
+    classes = ["at_close", "at_prev", "off_both", "undet"]
+    lines.append("| 旧side \\ 新class | " + " | ".join(classes) + " | 計 |\n")
+    lines.append("|---|" + "---:|" * (len(classes) + 1) + "\n")
+    for sd in sides:
+        cells = [sum(1 for r in tos if r.side_proxy == sd and r.print_class == cl) for cl in classes]
+        if sum(cells) == 0:
+            continue
+        lines.append(f"| {sd} | " + " | ".join(str(x) for x in cells) + f" | {sum(cells)} |\n")
+    lines.append("\n")
+
+    # (2) 非 at_close の gap_close vs day_return 相関(高相関=値動き支配)
+    non_atc = [r for r in tos if r.print_class in ("at_prev", "off_both")
+               and r.exec_gap_close is not None and r.day_return is not None]
+    lines.append("## 診断(2) 非at_close: gap_close vs day_return 相関\n\n")
+    if len(non_atc) >= 3:
+        gc = np.array([r.exec_gap_close for r in non_atc], dtype=float)
+        drr = np.array([r.day_return for r in non_atc], dtype=float)
+        if np.std(gc) > 0 and np.std(drr) > 0:
+            rho = float(np.corrcoef(gc, drr)[0, 1])
+            lines.append(f"- Pearson r = **{rho:+.3f}** (N={len(non_atc)})。"
+                         "高相関(→+1)ほど gap_close は譲歩ではなく**約定後の値動き**に支配される。\n\n")
+        else:
+            lines.append(f"- 分散ゼロで相関算出不可 (N={len(non_atc)})。\n\n")
+    else:
+        lines.append(f"- N={len(non_atc)} で相関算出には不足(要 N)。\n\n")
+
+    # (3) movement_lower_bound(|gap_prev|>band_pct の行)
+    mv = [r for r in tos if r.movement_lower_bound is not None]
+    lines.append(f"## 診断(3) movement_lower_bound(|gap_prev|>{cfg.price_band_pct*100:.0f}% の行)\n\n")
+    lines.append("> |gap_prev| が band を超える分は譲歩では説明できない(band で拘束)ので、"
+                 "その超過分 `|gap_prev|−band` は**値動き成分の下限**。\n\n")
+    if mv:
+        mv_sorted = sorted(mv, key=lambda r: r.movement_lower_bound, reverse=True)
+        lines.append(f"- 該当 {len(mv)} 行。movement_lower_bound 最大 = {mv_sorted[0].movement_lower_bound:.4f} "
+                     f"(code={mv_sorted[0].issuer_code}, {mv_sorted[0].trade_date})。明細は benchmark_detail.csv。\n\n")
+    else:
+        lines.append("- 該当なし(band 超のプリント無し)。\n\n")
+
+
 def write_report(path: Path, summary: list[dict], rows: list[DetailRow],
                  lag_bd: int | None, cfg: BenchmarkConfig) -> None:
     ok = [r for r in rows if r.status == "ok"]
     skipped = [r for r in rows if r.status.startswith("skip")]
     lines: list[str] = []
-    lines.append("# 無条件 exec_gap 参照分布 (BENCHMARK_SPEC v0.1)\n\n")
+    lines.append("# 無条件 exec_gap 参照分布 (BENCHMARK_SPEC v0.2 — プリント3分類で凍結)\n\n")
     lines.append(f"generated: {datetime.now(ZoneInfo('Asia/Tokyo')).isoformat(timespec='seconds')}\n\n")
     lines.append("> **位置づけ**: これは統計的 null ではなく参照分布(reference distribution)。母集団は "
                  "ToSTNeT-1・50億円以上・非委託 + 立会外分売。帰属 leg との主要な系統差は"
@@ -665,49 +779,48 @@ def write_report(path: Path, summary: list[dict], rows: list[DetailRow],
                  f"{cfg.prev_close_cross_bp:.0f}bp を「前日終値ちょうどで約定した可能性」として分類。\n")
     lines.append("- **administered vs negotiated**: 立会外分売は前日終値からの規定ディスカウント "
                  "(administered price) なので、交渉価格系(超大口)と別 route として集計する。\n")
-    lines.append("- **side 代理**: 超大口は売買側が公開データに無いため、同日終値の上下(exec_gap_close の"
-                 "符号)で discount(px<終値, 売り手コスト様)/premium(px>終値)/at_ref(±"
-                 f"{cfg.side_at_ref_bp:.0f}bp, 終値クロス)に分類。**符号で割るため各 side の median は"
-                 "自己選択で片側に寄る(機械的)。政策保有の売り s3 の対照は discount 側の p90/95/99 と"
-                 "件数バランスで読む。median は使わない。**\n\n")
+    lines.append("- **PATCH v0.2 プリント3分類(コスト誤読の排除)**: 超大口を "
+                 f"`at_close`(|gap_close|<{cfg.side_at_ref_bp:.0f}bp=終値クロス)/ "
+                 f"`at_prev`(|gap_prev|<{cfg.prev_close_cross_bp:.0f}bp かつ非at_close=前日終値クロス)/ "
+                 "`off_both`(どちらでもない)に分類。**コスト(譲歩)統計は off_both のみ**で取る。"
+                 "at_close の gap_prev は日次リターン、at_prev の gap_close は約定後の値動きであって"
+                 "**譲歩ではない**ので別掲する。off_both も譲歩と値動きが混ざり得るため、報告は"
+                 f"**上限記述**(譲歩成分は直近値±{cfg.price_band_pct*100:.0f}%で拘束)。\n")
+    lines.append("- **配当落ち疑い**: `ex_div_suspect` は期末月(3/6/9/12)の最終"
+                 f"{cfg.ex_div_window_bd}営業日近傍のプリント。実際の ex-date は取れないので発見的な"
+                 "疑いフラグ止まり(prev p99 の汚染確認用)。\n")
+    lines.append("- **旧「売り手側の対照」表(v0.1)は分類再定義前の暫定値**。本 v0.2 の "
+                 "off_both×discount に差し替え済み。\n\n")
 
     def render_table(title: str, subset: list[dict], note: str = "") -> None:
         lines.append(f"## {title}\n\n")
         if note:
             lines.append(note + "\n\n")
-        lines.append("| route | 参照 | side | size/ADV20 | N | median | IQR | p90 | p95 | p99 | band率 | cross率 |\n")
-        lines.append("|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|\n")
+        lines.append("| route | 参照 | layer | side | size/ADV20 | N | median | IQR | p90 | p95 | p99 | band率 |\n")
+        lines.append("|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|\n")
         if not subset:
-            lines.append("| (該当データなし — Task A 蓄積と `--fetch` の後で埋まる) |\n")
+            lines.append("| (該当データなし — Task A 蓄積と `--fetch` の後で埋まる) | | | | | | | | | | | |\n")
         for s in subset:
             lines.append(
-                f"| {s['route']} | {s['ref']} | {s['side']} | {s['size_bucket']} | {s['N']} | "
-                f"{s['median']:.4f} | {s['iqr']:.4f} | {s['p90']:.4f} | {s['p95']:.4f} | "
-                f"{s['p99']:.4f} | {s['band_edge_rate']:.2f} | {s['prev_close_cross_rate']:.2f} |\n"
+                f"| {s['route']} | {s['ref']} | {s['layer']} | {s['side']} | {s['size_bucket']} | "
+                f"{s['N']} | {s['median']:.4f} | {s['iqr']:.4f} | {s['p90']:.4f} | {s['p95']:.4f} | "
+                f"{s['p99']:.4f} | {s['band_edge_rate']:.2f} |\n"
             )
         lines.append("\n")
 
-    render_table("route × 参照 × size/ADV20 バケット(全 side)",
-                 [s for s in summary if s["side"] == "all"])
-    render_table("売り手側の対照 — discount のみ(px < 同日終値, gap_close>0)",
-                 [s for s in summary if s["side"] == "discount"],
-                 note="> **median は自己選択で正に寄るので使わない**。政策保有の売り s3 の対照は、"
-                      "**同じ size バケットの p90/p95/p99(ディスカウント裾の深さ)**で見る。")
+    render_table("① コスト包絡 — off_both のみ(譲歩を含み得る唯一の層。**上限記述**)",
+                 [s for s in summary if s["layer"] == "off_both"],
+                 note="> 政策保有の売り s3 の対照は **side=discount の p90/p95/p99**(ディスカウント裾の深さ)で見る。"
+                      "median は符号選択で片寄るので使わない。値は譲歩+値動きの**上限**。")
+    render_table("② at_close 層 = 終値クロス(コストではない。gap_prev を日次リターンとして別掲)",
+                 [s for s in summary if s["layer"] == "at_close_dayret"],
+                 note="> ここの median/percentile は**執行コストではなく当日リターンの分布**。誤読しないこと。")
+    render_table("③ at_prev 層 = 前日終値クロス(gap_close は約定後の値動きで譲歩ではない)",
+                 [s for s in summary if s["layer"] == "at_prev_move"])
+    render_table("④ 立会外分売(administered — 売り確定ディスカウント)",
+                 [s for s in summary if s["layer"] == "administered"])
 
-    # side 件数バランス(超大口, size ALL)
-    lines.append("## side 件数バランス(超大口, size ALL)\n\n")
-    lines.append("> discount/premium がほぼ均等なら買い売り対称の終値クロス群。size を上げて "
-                 "discount 側に偏るなら大口=売り駆動の兆候(要 N)。side は同日終値基準。\n\n")
-    lines.append("| 参照 | all | discount | at_ref | premium |\n|---|---:|---:|---:|---:|\n")
-
-    def _n(ref: str, side: str) -> int:
-        m = [s for s in summary if s["route"] == "tostnet_large_lots" and s["ref"] == ref
-             and s["side"] == side and s["size_bucket"] == "ALL"]
-        return m[0]["N"] if m else 0
-    for ref in ("prev", "close"):
-        lines.append(f"| {ref} | {_n(ref,'all')} | {_n(ref,'discount')} | "
-                     f"{_n(ref,'at_ref')} | {_n(ref,'premium')} |\n")
-    lines.append("\n")
+    _write_diagnostics(lines, rows, cfg)
 
     # skip 理由の内訳(データ欠損の可視化。創作しない)
     if skipped:

@@ -32,6 +32,11 @@ buckets:
   # size/ADV20 (participation ratio) のバケット境界。ToSTNeT 超大口は 1 ADV 超も普通。
   size_over_adv20_edges: [0.25, 0.5, 1.0, 2.0]
 
+# PATCH v0.2: プリント3分類 + 配当落ち疑いフラグ(prev p99 汚染対策)。これで凍結。
+ex_div_suspect:
+  period_end_months: [3, 6, 9, 12]   # 3/9=本決算・中間。配当銘柄は 6/12 も。近傍=配当落ち疑い
+  window_business_days: 3            # 月末の最終N営業日(権利落ちは月末2営業日前あたり)。カレンダー発見的
+
 health:
   max_publication_lag_business_days: 5   # max(公表日/実施日) がこれ超なら WARN(launchd 監視兼用)
 

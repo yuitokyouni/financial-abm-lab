@@ -50,7 +50,8 @@ def cfg() -> be.BenchmarkConfig:
         calendar="data/raw/prices/trading_calendar.jsonl",
         adv_window_days=20, adv_min_ratio=0.8, fetch_lookback_calendar_days=60,
         prev_close_cross_bp=10.0, side_at_ref_bp=10.0, price_band_pct=0.07, band_ref="prev_close",
-        size_edges=[0.25, 0.5, 1.0, 2.0], max_pub_lag_bd=5,
+        size_edges=[0.25, 0.5, 1.0, 2.0], ex_div_months=[3, 6, 9, 12], ex_div_window_bd=3,
+        max_pub_lag_bd=5,
         detail_csv="data/parsed/benchmark/benchmark_detail.csv",
         summary_csv="data/parsed/benchmark/benchmark_summary.csv",
         report_md="data/parsed/benchmark/benchmark_report.md",
@@ -272,25 +273,86 @@ def test_build_summary_facets():
         be.build_distro_row("4661", "2024-06-26", 950.0, 1000.0, 200_000.0, 1.0, 400_000.0, c),
     ]
     summary = be.build_summary(rows, c)
-    facets = {(s["route"], s["ref"]) for s in summary}
-    assert ("tostnet_large_lots", "prev") in facets
-    assert ("tostnet_large_lots", "close") in facets
-    assert ("offauction_distribution", "prev") in facets
-    # side=all の ALL バケットが facet ごとに1行
-    tos_prev_all = [s for s in summary if s["route"] == "tostnet_large_lots"
-                    and s["ref"] == "prev" and s["side"] == "all" and s["size_bucket"] == "ALL"]
-    assert len(tos_prev_all) == 1 and tos_prev_all[0]["N"] == 2
-    # 両プリントとも px<同日終値 → discount side に2件
-    disc_all = [s for s in summary if s["route"] == "tostnet_large_lots"
-                and s["ref"] == "prev" and s["side"] == "discount" and s["size_bucket"] == "ALL"]
-    assert len(disc_all) == 1 and disc_all[0]["N"] == 2
-    # 分売は side 分割しない(all のみ)
-    distro_sides = {s["side"] for s in summary if s["route"] == "offauction_distribution"}
-    assert distro_sides == {"all"}
+    # 両プリントとも off_both & discount(px<同日終値, gap>10bp)
+    off_prev_all = [s for s in summary if s["layer"] == "off_both" and s["ref"] == "prev"
+                    and s["side"] == "all" and s["size_bucket"] == "ALL"]
+    assert len(off_prev_all) == 1 and off_prev_all[0]["N"] == 2
+    off_prev_disc = [s for s in summary if s["layer"] == "off_both" and s["ref"] == "prev"
+                     and s["side"] == "discount" and s["size_bucket"] == "ALL"]
+    assert len(off_prev_disc) == 1 and off_prev_disc[0]["N"] == 2
+    # 分売は administered layer
+    adm = [s for s in summary if s["layer"] == "administered" and s["size_bucket"] == "ALL"]
+    assert len(adm) == 1 and adm[0]["N"] == 1
+
+
+def test_build_summary_layers():
+    """at_close / at_prev / off_both が正しい layer に振り分けられる。"""
+    c = cfg()
+    rows = [
+        # off_both (px<close かつ prev から離れる) → discount
+        be.build_tostnet_row("1", "2024-03-04", 900.0, "printed", 100.0, 1000.0, 990.0, 1.0, 100.0, c),
+        # at_close (|gap_close|<10bp): px==close
+        be.build_tostnet_row("1", "2024-03-05", 1000.0, "printed", 100.0, 990.0, 1000.0, 1.0, 100.0, c),
+        # at_prev (|gap_prev|<10bp, |gap_close|>=10bp): px==prev, close 離れる
+        be.build_tostnet_row("1", "2024-03-06", 1000.0, "printed", 100.0, 1000.0, 1020.0, 1.0, 100.0, c),
+    ]
+    assert [r.print_class for r in rows] == ["off_both", "at_close", "at_prev"]
+    summary = be.build_summary(rows, c)
+    layers = {s["layer"] for s in summary}
+    assert "off_both" in layers and "at_close_dayret" in layers and "at_prev_move" in layers
+    # off_both は1件だけコスト層に入る
+    off_all = [s for s in summary if s["layer"] == "off_both" and s["ref"] == "close"
+               and s["side"] == "all" and s["size_bucket"] == "ALL"]
+    assert off_all[0]["N"] == 1
 
 
 def test_build_summary_empty():
     assert be.build_summary([], cfg()) == []
+
+
+# ---------------------------------------------------------------------------
+# PATCH v0.2: print_class / 配当落ち疑い / movement_lower_bound
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("gp,gc,expected", [
+    (0.02, 0.0005, "at_close"),    # |gc|<10bp
+    (0.0005, 0.02, "at_prev"),     # |gp|<10bp, |gc|>=10bp
+    (0.02, 0.02, "off_both"),
+    (0.0005, 0.0005, "at_close"),  # 両方<10bp → at_close 優先
+    (None, 0.02, "undet"),
+    (0.02, None, "undet"),
+])
+def test_print_class(gp, gc, expected):
+    assert be.print_class(gp, gc, prev_bp=10, close_bp=10) == expected
+
+
+def test_near_period_end():
+    cal = make_cal()
+    # 2024-03 の最終営業日は 03-29(金)。window=3 → 27,28,29
+    assert be.near_period_end("2024-03-29", cal, [3, 6, 9, 12], 3) is True
+    assert be.near_period_end("2024-03-27", cal, [3, 6, 9, 12], 3) is True
+    assert be.near_period_end("2024-03-15", cal, [3, 6, 9, 12], 3) is False
+    # 2月は対象月でない
+    assert be.near_period_end("2024-02-29", cal, [3, 6, 9, 12], 3) is False
+    # 6月末(06-28 金が最終営業日)
+    assert be.near_period_end("2024-06-28", cal, [3, 6, 9, 12], 3) is True
+
+
+def test_movement_lower_bound():
+    # |gap_prev| = ln(1000/900) = 0.10536 > 7% → lower_bound = 0.10536 - 0.07
+    r = be.build_tostnet_row("1", "2024-03-04", 900.0, "printed", None,
+                             1000.0, 1000.0, 1.0, None, cfg())
+    assert r.movement_lower_bound == pytest.approx(math.log(1000 / 900) - 0.07, abs=1e-6)
+    # band 内なら None
+    r2 = be.build_tostnet_row("1", "2024-03-04", 980.0, "printed", None,
+                              1000.0, 990.0, 1.0, None, cfg())
+    assert r2.movement_lower_bound is None
+
+
+def test_ex_div_suspect_flag_on_row():
+    r = be.build_tostnet_row("1", "2024-03-04", 980.0, "printed", None,
+                             1000.0, 990.0, 1.0, None, cfg(), ex_div_suspect=True)
+    assert r.ex_div_suspect == "TRUE"
 
 
 # ---------------------------------------------------------------------------
