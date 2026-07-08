@@ -20,8 +20,10 @@ offering の `pricing_date` / `offer_price_JPY` が s3(ディスカウント)を
 | `offer_price_JPY` | 数値 | 売出価格(条件決定PDF) |
 | `OA_exercised_shares` | 数値 | OA(グリーンシュー)の**行使結果**株数。0 なら 0 |
 
-### time_source enum(この5つだけ)
-`pdf_header` / `tdnet` / `yahoo_archive` / `kabutan` / `media`
+### time_source enum(この6つだけ)
+`pdf_header` / `tdnet` / `yahoo_archive` / `kabutan` / `media` / `nikkei_nkd`
+- `nikkei_nkd` = 日経の開示ミラー(`nikkei.com/nkd/disclosure/tdnr/...`)。発表時刻を載せることが多い
+  (実例: デンソー16:55・アイシン16:40・ザ・パック17:00)。TDnet 31日制限を跨げる二次だが時刻の質は高い。
 - **`inferred`(推定)は不可**。apply が ERROR で弾く。
 - 空欄のまま = day0 未確定を維持(fail-loud)。埋めない自由はあるが、埋めるなら出所必須。
 

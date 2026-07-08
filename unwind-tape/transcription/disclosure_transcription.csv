@@ -1,12 +1,12 @@
 event_group_id,event_leg_id,issuer_code,issuer_name,sale_route,announce_datetime,needs,disclosure_time,after_close,time_source,pricing_date,offer_price_JPY,OA_exercised_shares,timestamp_hint,source_docs_to_obtain,note
-G001,L001,6902,DENSO,secondary_offering,2023-11-29,day0+offering,,,,,,,2023-11発表→TDnet不可(31日超)。株探/Yahoo適時開示アーカイブで6902の開示時刻,DENSO売出し条件決定PDF + シンジケートカバー取引終了(S018+登録),既存S014はToyota Industries側。DENSO一次PDFが要る
-G002,L001,6201,Toyota Industries,share_forward,2024-03-29,day0のみ(非measurable),,FALSE,,,,,2024-03発表。after_close=FALSE既記入。disclosure_timeは株探/NSE開示で補完可,(offering項目N/A。share_forwardは系統B対象外),day0はafter_close=FALSEで解決済。時刻はCAR精度向上のため任意
-G003,L001,7259,Aisin,secondary_offering,2024-06-27,day0+offering,,,,,,,2024-06発表→株探/Yahooアーカイブで7259の開示時刻,Aisin条件決定PDF + シンジケートカバー取引終了(S018+)。一次PDF保存必須(既存URLパス異常2027),"OA上限5,079,300株既知→行使結果を転記"
-G004,L001,7267,Honda Motor,secondary_offering,2024-07-04,day0+offering,,,,,,,2024-07発表→株探/Yahooアーカイブで7267の開示時刻,Honda条件決定PDF(S003は発表)+ シンジケートカバー取引終了(S018+),手計算突合対象。sold_valueはReuters推定→条件決定で確定offer_priceに更新
-G005,L001,8154,Kaga Electronics,toSTNeT_3,2025-08-07,day0のみ(offer既知),,,,,,,2025-08発表→株探/Yahooアーカイブで8154の開示時刻,(offer=前日終値2938既知。toSTNeT-3は分売でなく買付),buyback_decision。day0解決に時刻要。実績はbuyback_result legで別途
-G006,L001,3950,The Pack,secondary_offering,2025-08-29,day0+offering,,,,,,,2025-08発表→株探/Yahooアーカイブで3950の開示時刻,The Pack条件決定PDF + シンジケートカバー取引終了(S018+),B_strong_inference。売り手の政策保有性を一次で確認
-G007,L001,4246,Daikyo Nishikawa,secondary_offering,2026-01-19,day0+offering,,,,,,,2026-01発表→TDnet不可(31日超)。株探/Yahooアーカイブで4246の開示時刻,Daikyo Nishikawa条件決定PDF(settlement 2026-01-26既知)+ シンジケートカバー取引終了(S018+),789.28は想定価格?条件決定offerで要確定
-G008,L001,7974,Nintendo,secondary_offering,2026-02-27,offering+time_source,15:40,TRUE,,,,,disclosure_time=15:40/after_close=TRUE既記入。time_sourceを一次で記録(S007発表PDF header),Nintendo条件決定PDF(条件決定期間2026-03-09〜12)+ シンジケートカバー取引終了(S018+),"day0=2026-03-02解決済。offer_price/pricing_dateとOA(上限4,904,600)を転記"
-G009,L001,4063,信越化学,secondary_offering,,一次資料未取得(全項目),,,,,,,報道のみ(2026-02金融8社売出し)。一次PDF取得が先,announcement/条件決定PDF一式,Tier2候補。まず一次資料
-G010,L001,4062,イビデン,secondary_offering,,一次資料未取得(全項目),,,,,,,報道のみ。一次PDF取得が先,announcement/条件決定PDF一式,Tier2候補
-G011,L001,2871,ニチレイ,secondary_offering,,一次資料未取得(全項目),,,,,,,報道のみ。一次PDF取得が先,announcement/条件決定PDF一式,Tier2候補
+G001,L001,6902,DENSO,secondary_offering,2023-11-29,offering(pricing/offer済)+announce時刻,,,,2023-12-13,2069.5,,announce(11/29)の開示時刻は株探/Yahooアーカイブ/nikkei_nkdで未取得,デンソー条件決定PDF(取得済URLあり)+ シンジケートカバー終了,"pricing一次=denso.com PDF(12/13 16:55、引受1984.14、OA38,455,900)。announce時刻→after_close未確定でCARはまだNA"
+G002,L001,6201,Toyota Industries,share_forward,2024-03-29,day0のみ(非measurable),,FALSE,,,,,after_close=FALSE既記入,(offering項目N/A),day0解決済。時刻は任意
+G003,L001,7259,Aisin,secondary_offering,2024-06-27,pricing日+announce時刻(offer穴),,,,2024-07-08,,,announce(6/27)時刻未取得。pricing 7/8 16:40はnikkei_nkdで確認済(disclosure_timeはannounce用なので未記入),アイシン条件決定PDF(aisin.com/jp/news/2024、既存URL異常もここで解決)+ シンジケートカバー終了,offer_price未取得(一次PDF要)。announce after_close未確定でCAR/s3ともNA
+G004,L001,7267,Honda Motor,secondary_offering,2024-07-04,day0(after_close)+pricing日(offer穴),,TRUE,,2024-07-17,,,4日引け後発表+7/2リーク報道→after_close=TRUE(一次global.honda)。announce時刻の分単位は未取得,Honda条件決定PDF(c240717)+ シンジケートカバー終了のお知らせ(8月中旬),"手計算突合対象。after_close=TRUEでday0=2024-07-08解決。offer_price未取得→s3はまだNA。OA上限38,981,900、実績は一次で"
+G005,L001,8154,Kaga Electronics,toSTNeT_3,2025-08-07,day0のみ(offer既知),,,,,,,announce(8/7)時刻を株探/Yahooで,(offer=前日終値2938既知),取得結果はbuyback_result legで別途(taxan.co.jp IR一覧)
+G006,L001,3950,The Pack,secondary_offering,2025-08-29,pricing/offer済+announce時刻,,,,2025-09-08,1099,,announce(8/29)開示ミラーあり(nikkei_nkd)→時刻取得可。pricing 9/8 17:00確認済,ザ・パック条件決定PDF + シンジケートカバー終了,discount 3.09%(仮条件3.0-5.0)、受渡9/16、BR三菱UFJMS。買付停止パターン。announce after_close確定でCAR着手可
+G007,L001,4246,Daikyo Nishikawa,secondary_offering,2026-01-07,【訂正】announce=1/07。pricing/offer投入,,,,2026-01-19,824,,announce=2026-01-07(訂正済)。時刻は株探/Yahooで。pricing=1/19,発行体1/7発表PDF(daikyonishikawa.co.jp/ir/)★穴 + 条件決定PDF + シンジケートカバー終了,offer=824(旧789.28は引受価額)。discount 5.1%=帯外(需要弱)。発行体一次PDFが最優先の穴
+G008,L001,7974,Nintendo,secondary_offering,2026-02-27,pricing/offer投入→s1/s2/s3 立つ,15:40,TRUE,,2026-03-09,8347,,disclosure_time=15:40/after_close=TRUE既(day0=2026-03-02)。15:40の出所を一次で記録要(→check ERROR),任天堂条件決定PDF(3/9)+ シンジケートカバー終了,"pricing 3/9、offer=8347、close8606比 discount 3.01%(引受8002.76)。final_offer_shares=23,665,300(初期32,697,900)、OA上限4,904,600は一次で"
+G009,L001,4063,信越化学,secondary_offering,,一次資料未取得(全項目),,,,,,,報道のみ→一次PDF先,announcement/条件決定PDF一式,Tier2候補
+G010,L001,4062,イビデン,secondary_offering,,一次資料未取得(全項目),,,,,,,報道のみ→一次PDF先,announcement/条件決定PDF一式,Tier2候補
+G011,L001,2871,ニチレイ,secondary_offering,,一次資料未取得(全項目),,,,,,,報道のみ→一次PDF先,announcement/条件決定PDF一式,Tier2候補

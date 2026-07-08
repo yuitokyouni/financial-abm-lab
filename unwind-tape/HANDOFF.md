@@ -384,6 +384,19 @@ G008 のみ。**disclosure_time 転記が全計算の最上流**、次に offeri
 **既知**: シート同梱の G008 は disclosure_time=15:40 済だが time_source 未記録 → 初回 `--check` は
 「time_source を記録せよ」の ERROR を1件出す(既存 15:40 の出所を一次で確定する促し。仕様どおり)。
 
+### 転記の現状 (2026-07-08 適用済)
+一次調査に基づき pricing_date / offer_price を転記・適用済み(validate errors=0):
+- **G007 日付訂正**: announce 2026-01-19→**2026-01-07**(旧 announce は条件決定日。day0 が12営業日ズレていた)。
+  offer 789.28→**824**(旧は引受価額)。pricing=2026-01-19。discount 5.1%=サニティ帯外(需要弱の実例)。
+  **一次の穴=発行体1/7発表PDF**(daikyonishikawa.co.jp/ir/)。
+- **G008(任天堂): pricing=2026-03-09 / offer=8347 投入 → offering の s1/s2/s3 が立つ**(唯一の完全 offering)。
+  close 8606 比 discount≈3.0%(ベンチマークの discount 裾 p90≈3.4% / 分売 3.0% と同水準)。
+- G001(2069.5)/G006(1099)/G003(pricing のみ)/G004(after_close=TRUE, pricing 7/17): pricing/offer 投入済。
+  ただし G001/G003/G006 は **announce の after_close 未確定** → parent day0 が None のまま CAR/s3 は NA
+  (announce の開示時刻を株探/Yahoo/nikkei_nkd で埋めれば解ける)。G004 は day0 解決も offer 未取得で s3 NA。
+- **残る穴**: 各社の announce 開示時刻(day0)、Aisin/Honda の offer_price、
+  Aisin/Denso/任天堂の OA行使・シンジケートカバー終了 PDF、加賀電子の取得結果 PDF、G007 発行体1/7 PDF。
+
 ---
 
 ## 運用メモ

@@ -36,7 +36,7 @@ from car_engine import (  # noqa: E402
     BusinessCalendar, load_trading_calendar, compute_day0, Config, load_daily_quotes,
 )
 
-TIME_SOURCE_ENUM = {"pdf_header", "tdnet", "yahoo_archive", "kabutan", "media"}
+TIME_SOURCE_ENUM = {"pdf_header", "tdnet", "yahoo_archive", "kabutan", "media", "nikkei_nkd"}
 MERGE_FIELDS = ["disclosure_time", "after_close", "pricing_date", "offer_price_JPY",
                 "OA_exercised_shares"]
 DISCOUNT_LO, DISCOUNT_HI = 0.02, 0.05
@@ -139,8 +139,8 @@ def plan_and_validate(ws_rows, legs_by_id, code_by_gid, cal, cfg,
                                    f"discount={disc*100:.2f}% が {DISCOUNT_LO*100:.0f}〜"
                                    f"{DISCOUNT_HI*100:.0f}% 帯の外(pricing終値={close:.0f}, offer={offer:.0f})"))
 
-        # --- WARN: pricing lag 5〜15営業日 ---
-        if pricing:
+        # --- WARN: pricing lag 5〜15営業日(要 trading_calendar。無ければ skip) ---
+        if pricing and cal is not None:
             leg = legs_by_id[key]
             announce = leg.get("announce_datetime", "")
             ac_for_day0 = cell.get("after_close", leg.get("after_close", ""))
@@ -224,13 +224,7 @@ def main(argv: list[str] | None = None) -> int:
             df = load_daily_quotes(p)
             prices[code] = dict(zip(df["Date"].tolist(), df["Close"].tolist()))
 
-    if cal is None:
-        # ダミーカレンダー無しでも disclosure/discount 検証は動く。lag だけ skip。
-        class _NoCal:
-            def range_business_days(self, *a):
-                return []
-        cal = _NoCal()
-
+    # cal is None のときは pricing lag の WARN だけ skip(disclosure/discount 検証は動く)。
     plan, issues = plan_and_validate(ws_rows, legs_by_id, code_by_gid, cal, cfg, prices)
 
     errors = [i for i in issues if i[0] == "ERROR"]
