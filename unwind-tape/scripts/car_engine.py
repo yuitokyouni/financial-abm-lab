@@ -394,22 +394,31 @@ def _to_iso(d: Any) -> str:
 def compute_day0(announce_date: str, after_close: str, cal: BusinessCalendar,
                  cfg: Config) -> str | None:
     """day 0 = 反応可能な最初の立会。仕様:
-       - after_close == 'TRUE' → 翌営業日
-       - announce_date が営業日でない → 翌営業日
-       - どちらも成立しなければ announce_date そのもの
+       - after_close == 'TRUE' (明示) → 翌営業日
+       - after_close == 'FALSE' (明示) → announce_date (非営業日なら翌営業日にシフト)
+       - after_close が上記いずれでもない (空欄・unknown 等) → **計算しない (None)**。
+
+    重要: 「引け後開示かどうか不明」を「引け前開示」と暗黙に仮定して同日を返すのは
+    データ創作に等しい。日本の売出し開示は大半が引け後(15:00以降)のため、この
+    既定を誤ると day 0 が系統的に1営業日早くなるリスクが高い(2026-07-08 review 指摘)。
+    after_close が未確定の leg は、一次資料から disclosure_time/after_close を
+    転記しない限り CAR を計算しない。process_leg 側で明確な note を残す。
     """
     if not announce_date:
         return None
     d = _to_iso(announce_date)
-    # after_close shift
-    if cfg.after_close_shifts and str(after_close).upper() == cfg.after_close_true_value.upper():
+    ac = str(after_close).strip().upper()
+
+    if cfg.after_close_shifts and ac == cfg.after_close_true_value.upper():
         return cal.next_business_day(d)
-    # non-business-day shift
-    if cfg.non_business_shifts and not cal.is_business_day(d):
-        return cal.next_business_day(d)
-    if not cal.is_business_day(d):
-        return None
-    return d
+    if ac == "FALSE":
+        if cfg.non_business_shifts and not cal.is_business_day(d):
+            return cal.next_business_day(d)
+        if not cal.is_business_day(d):
+            return None
+        return d
+    # ac が TRUE/FALSE のどちらでもない = 未確定。黙って同日扱いにしない。
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -661,6 +670,11 @@ class LegResult:
     announce_day0: str = ""
     pricing_day0: str = ""
     settlement_day0: str = ""
+    # announcement window [-1,+1] の実日付。car_engine.py と別実装の手計算を
+    # 突合するとき、算術ではなく「そもそもこの3日で合ってるか」を人間が
+    # 一次資料と目視照合できるようにする (2026-07-08 review 指摘への対応:
+    # BusinessCalendar 共用が生む偽の独立性を、日付そのものの可視化で補う)。
+    announce_window_dates: list[str] = field(default_factory=list)
     model_used: str = ""
     beta: float = math.nan
     alpha: float = math.nan
@@ -702,7 +716,22 @@ def process_leg(leg: dict, issuer_code: str, prices: dict[str, pd.DataFrame],
     after_close = leg.get("after_close", "")
     ann_day0 = compute_day0(announce_iso, after_close, cal, cfg)
     if ann_day0 is None:
-        r.notes.append(f"could not compute announce_day0 from {announce_iso!r} after_close={after_close!r}")
+        if not announce_iso:
+            r.notes.append("no announce_datetime (candidate row? check event_tier)")
+        else:
+            ac_norm = str(after_close).strip().upper()
+            if ac_norm not in ("TRUE", "FALSE"):
+                r.notes.append(
+                    f"after_close ambiguous (value={after_close!r}) for "
+                    f"announce_datetime={announce_iso!r} — day 0 NOT computed. "
+                    f"日本の売出し開示は大半が引け後のため、空欄を引け前と仮定しない。"
+                    f"一次資料から disclosure_time/after_close を転記してから再実行すること。"
+                )
+            else:
+                r.notes.append(
+                    f"could not compute announce_day0 from {announce_iso!r} "
+                    f"after_close={after_close!r} (non-business-day or calendar edge)"
+                )
         return r
     r.announce_day0 = ann_day0
 
@@ -745,8 +774,13 @@ def process_leg(leg: dict, issuer_code: str, prices: dict[str, pd.DataFrame],
     r.market_cap_detail = detail
 
     # event windows
+    m1_p1 = tuple(cfg.event_windows["announcement"]["m1_p1"])
+    r.announce_window_dates = [
+        d for d in (cal.shift_business_days(ann_day0, k) for k in range(m1_p1[0], m1_p1[1] + 1))
+        if d is not None
+    ]
     r.announcement_CAR_m1_p1 = sum_ar_over_window(
-        ar, ann_day0, tuple(cfg.event_windows["announcement"]["m1_p1"]), cal
+        ar, ann_day0, m1_p1, cal
     )
     r.announcement_CAR_0_p1 = sum_ar_over_window(
         ar, ann_day0, tuple(cfg.event_windows["announcement"]["zero_p1"]), cal
@@ -924,7 +958,28 @@ def main(argv: list[str] | None = None) -> int:
             f"{_fmt(r.beta, 3)} | {_fmt(r.ADV20_shares, 0)} | {_fmt(r.ADV60_shares, 0)} | "
             f"{_fmt(r.announcement_CAR_m1_p1, 4)} | {'; '.join(r.notes)[:120]} |\n"
         )
-    rpt.append("\n## hand-check targets (G004 Honda, G008 Nintendo)\n\n")
+    rpt.append("\n## announcement window の実日付 (day 0 解決の目視検証用)\n\n")
+    rpt.append(
+        "car_engine.py と hand_check_car.py は BusinessCalendar (営業日の前後移動) を共用しており、"
+        "day0解決ロジック自体にバグがあれば両者が同じ誤答を出し得る (2026-07-08 review 指摘)。"
+        "ここに出す実日付を一次資料(適時開示・PDF)の開示日と目視で突き合わせることが、"
+        "コードに依存しない真の独立検証になる。\n\n"
+    )
+    rpt.append("| leg | announce_datetime | after_close | day0 | window [-1,0,+1] の実日付 |\n")
+    rpt.append("|---|---|---|---|---|\n")
+    for leg, code in zip(legs, leg_codes):
+        r = next((x for x in results if x.event_group_id == leg["event_group_id"]
+                 and x.event_leg_id == leg["event_leg_id"]), None)
+        if r is None:
+            continue
+        window_str = ", ".join(r.announce_window_dates) if r.announce_window_dates else "(未確定)"
+        rpt.append(
+            f"| {r.event_group_id}/{r.event_leg_id} | {leg.get('announce_datetime','')} | "
+            f"{leg.get('after_close','') or '(空欄)'} | {r.announce_day0 or '—'} | {window_str} |\n"
+        )
+    rpt.append("\n")
+
+    rpt.append("## hand-check targets (G004 Honda, G008 Nintendo)\n\n")
     rpt.append("これらは spec (完了条件 3) の突合対象。手計算と一致していることを PREREG.md に確定した窓/モデルで検証すること。\n\n")
     for target in ("G004", "G008"):
         matching = [r for r in results if r.event_group_id == target]
@@ -933,6 +988,7 @@ def main(argv: list[str] | None = None) -> int:
         for r in matching:
             rpt.append(f"### {r.event_group_id}/{r.event_leg_id} ({r.issuer_code})\n")
             rpt.append(f"- announce_day0: {r.announce_day0}\n")
+            rpt.append(f"- announce_window_dates: {', '.join(r.announce_window_dates) if r.announce_window_dates else '(未確定)'}\n")
             rpt.append(f"- model: {r.model_used}, β={_fmt(r.beta,4)}, α={_fmt(r.alpha,6)}, est_n={r.est_n}\n")
             rpt.append(f"- announcement_CAR_m1_p1: {_fmt(r.announcement_CAR_m1_p1)}\n")
             rpt.append(f"- announcement_CAR_0_p1:  {_fmt(r.announcement_CAR_0_p1)}\n")

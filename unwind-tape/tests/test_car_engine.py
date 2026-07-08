@@ -134,6 +134,20 @@ def test_day0_saturday_shifts_to_monday(cal, cfg):
     assert compute_day0("2023-03-04", "FALSE", cal, cfg) == "2023-03-06"
 
 
+def test_day0_blank_after_close_returns_none_not_same_day(cal, cfg):
+    """2026-07-08 review 指摘の回帰テスト。after_close が空欄のとき、
+    黙って同日 (=引け前開示) 扱いにしてはいけない。日本の売出し開示は
+    大半が引け後のため、この既定を誤ると day 0 が系統的に1営業日早くなる。
+    """
+    assert compute_day0("2023-03-01", "", cal, cfg) is None
+
+
+def test_day0_unknown_after_close_value_returns_none(cal, cfg):
+    # "unknown" 等 TRUE/FALSE 以外の値も同様に未確定として扱う
+    assert compute_day0("2023-03-01", "unknown", cal, cfg) is None
+    assert compute_day0("2023-03-01", None, cal, cfg) is None
+
+
 def test_day0_empty_input(cal, cfg):
     assert compute_day0("", "FALSE", cal, cfg) is None
 
