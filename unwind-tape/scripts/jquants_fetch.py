@@ -237,7 +237,12 @@ class JQuantsClient:
                 r.raise_for_status()
                 return r.json()
             except Exception as e:
-                if attempt >= DEFAULT_RETRIES:
+                # 4xx (429 を除く) は永続的なクライアントエラー。リトライしても同じなので
+                # 即 raise する (例: 存在しない銘柄コードで 400 → 4回バックオフの無駄を避ける)。
+                # 429 は .response を持たない RuntimeError なので None → リトライ対象のまま。
+                status = getattr(getattr(e, "response", None), "status_code", None)
+                non_retryable = status is not None and 400 <= status < 500 and status != 429
+                if non_retryable or attempt >= DEFAULT_RETRIES:
                     raise
                 wait = BACKOFF_BASE * (BACKOFF_FACTOR ** attempt)
                 self.log.warning("GET %s params=%s failed (%s); retry %d/%d in %.1fs",

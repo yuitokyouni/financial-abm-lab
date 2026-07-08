@@ -310,9 +310,26 @@ def test_collect_code_ranges():
         {"銘柄コード/Code": "7203", "取引日/Trading_Date": "20240304"},
         {"銘柄コード/Code": "7203", "取引日/Trading_Date": "20240311"},
         {"銘柄コード/Code": "6758", "取引日/Trading_Date": "2024/03/05"},
+        # 末尾 0 の ETF コード。rstrip('.0') バグだと '132' に化ける → J-Quants 400。
+        {"銘柄コード/Code": "1320", "取引日/Trading_Date": "20240304"},
     ]
     distro = [{"issue_code": "4661", "implementation_date": "2024-06-26"}]
     ranges = be._collect_code_ranges(tostnet, distro)
     assert ranges["7203"] == ("2024-03-04", "2024-03-11")
     assert ranges["6758"] == ("2024-03-05", "2024-03-05")
     assert ranges["4661"] == ("2024-06-26", "2024-06-26")
+    assert "1320" in ranges and "132" not in ranges   # 末尾 0 が保たれる
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("1320", "1320"),      # 末尾 0 を削らない(rstrip バグの回帰)
+    ("9020", "9020"),
+    ("1320.0", "1320"),    # float 由来の .0 のみ除去
+    ("7203", "7203"),
+    (1320, "1320"),
+    ("  4661 ", "4661"),
+    (None, ""),
+    ("", ""),
+])
+def test_clean_code(raw, expected):
+    assert be._clean_code(raw) == expected

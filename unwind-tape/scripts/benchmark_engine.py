@@ -150,6 +150,16 @@ def _first(d: dict, cands: list[str]) -> Any:
     return None
 
 
+def _clean_code(v: Any) -> str:
+    """銘柄コードを正規化。float 由来の末尾 '.0' のみ除去する。
+    ⚠ str.rstrip('.0') は末尾の '0'/'.' を無差別に削るため**使わない**
+    (例: '1320'→'132' に化けて J-Quants が 400)。endswith で厳密に判定する。"""
+    s = str(v if v is not None else "").strip()
+    if s.endswith(".0"):
+        s = s[:-2]
+    return s
+
+
 def compute_gaps(px: float | None, prev_close: float | None,
                  close: float | None) -> tuple[float | None, float | None, float | None]:
     """returns (exec_gap_prev, exec_gap_close, day_return). None if a price is unusable.
@@ -409,12 +419,11 @@ def _collect_code_ranges(tostnet: list[dict], distro: list[dict]) -> dict[str, t
     """code -> (min_trade_date, max_trade_date) across both print sources."""
     rng: dict[str, list[str]] = {}
     for rec in tostnet:
-        code = str(_first(rec, TOSTNET_CODE_CANDS) or "").strip().rstrip(".0") or \
-            str(_first(rec, TOSTNET_CODE_CANDS) or "").strip()
+        code = _clean_code(_first(rec, TOSTNET_CODE_CANDS))
         d = parse_jpx_date(_first(rec, TOSTNET_TRADE_DATE_CANDS))
         _accum_range(rng, code, d)
     for rec in distro:
-        code = str(rec.get("issue_code", "")).strip()
+        code = _clean_code(rec.get("issue_code"))
         d = parse_jpx_date(rec.get("implementation_date"))
         _accum_range(rng, code, d)
     return {c: (min(ds), max(ds)) for c, ds in rng.items() if c and ds}
@@ -500,9 +509,7 @@ def compute_rows(cfg: BenchmarkConfig, root: Path, cal: BusinessCalendar,
     rows: list[DetailRow] = []
 
     for rec in _read_csv(root / cfg.tostnet_csv):
-        code = str(_first(rec, TOSTNET_CODE_CANDS) or "").strip()
-        if code.endswith(".0"):
-            code = code[:-2]
+        code = _clean_code(_first(rec, TOSTNET_CODE_CANDS))
         trade_date = parse_jpx_date(_first(rec, TOSTNET_TRADE_DATE_CANDS))
         px = _num(_first(rec, TOSTNET_PRICE_CANDS))
         vol = _num(_first(rec, TOSTNET_VOLUME_CANDS))
@@ -529,7 +536,7 @@ def compute_rows(cfg: BenchmarkConfig, root: Path, cal: BusinessCalendar,
                                       prev_close, close, adjf, adv20, cfg))
 
     for rec in _read_csv(root / cfg.distro_csv):
-        code = str(rec.get("issue_code", "")).strip()
+        code = _clean_code(rec.get("issue_code"))
         impl_date = parse_jpx_date(rec.get("implementation_date"))
         distro_price = _num(rec.get("distribution_price_yen"))
         prev_close_disc = _num(rec.get("prev_close_yen"))
