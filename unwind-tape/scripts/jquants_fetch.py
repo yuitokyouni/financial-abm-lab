@@ -357,18 +357,51 @@ def fetch_fins_summary(client: JQuantsClient, root: Path, code: str,
 
 def fetch_listed_info(client: JQuantsClient, root: Path, codes: list[str],
                       log: logging.Logger) -> dict:
+    """各 code につき最低1件の listed_info が返ることを検証する。
+    HTTP自体は成功したが該当0件、というケースは例外を投げないため、
+    以前は黙ってスキップされていた (2026-07-08 review 指摘: 11銘柄中1銘柄が
+    理由不明で欠落)。
+
+    既知の J-Quants の癖: 4桁コードで0件のとき、末尾に '0' を足した5桁コード
+    (例: 7203 → 72030、複数銘柄を持つ発行体の普通株を指す形式)で再試行すると
+    解決することがある。それでも0件なら未解決として ERROR ログに残す
+    (黙って欠損を埋めない)。
+    """
     dest = root / "data" / "raw" / "prices" / "listed_info.jsonl"
     # snapshot なので毎回全上書き
     now = datetime.now(ZoneInfo("Asia/Tokyo")).isoformat(timespec="seconds")
     path, key = client.endpoint("listed_info")
     out: list[dict] = []
+    unresolved: list[str] = []
     for c in codes:
         try:
             data = client._get(path, {"code": c})
         except Exception as e:
             log.warning("listed_info %s failed: %s", c, e)
+            unresolved.append(c)
             continue
-        for it in data.get(key, []):
+        items = data.get(key, [])
+        if not items:
+            padded = f"{c}0"
+            try:
+                data2 = client._get(path, {"code": padded})
+                items2 = data2.get(key, [])
+            except Exception as e:
+                log.warning("listed_info %s: empty with 4-digit code; "
+                           "5-digit retry (%s) also failed: %s", c, padded, e)
+                unresolved.append(c)
+                continue
+            if items2:
+                log.info("listed_info %s: 4-digit code returned 0 rows, "
+                         "recovered %d row(s) with 5-digit code %s",
+                         c, len(items2), padded)
+                items = items2
+            else:
+                log.error("listed_info %s: 0 rows for both %s and 5-digit %s — "
+                          "code unresolved, not in output", c, c, padded)
+                unresolved.append(c)
+                continue
+        for it in items:
             it["_captured_at"] = now
             out.append(it)
     if out:
@@ -377,8 +410,12 @@ def fetch_listed_info(client: JQuantsClient, root: Path, codes: list[str],
         with dest.open("w", encoding="utf-8") as f:
             for it in out:
                 f.write(json.dumps(it, ensure_ascii=False) + "\n")
-    log.info("listed_info fetched=%d", len(out))
-    return {"endpoint": "listed_info", "fetched": len(out), "path": str(dest.relative_to(root))}
+    if unresolved:
+        log.error("listed_info: %d/%d codes unresolved (0 rows even after 5-digit "
+                  "retry, or fetch error): %s", len(unresolved), len(codes), unresolved)
+    log.info("listed_info fetched=%d codes_ok=%d/%d", len(out), len(codes) - len(unresolved), len(codes))
+    return {"endpoint": "listed_info", "fetched": len(out),
+            "codes_unresolved": unresolved, "path": str(dest.relative_to(root))}
 
 
 # ---------------------------------------------------------------------------
