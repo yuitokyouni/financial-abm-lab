@@ -343,6 +343,12 @@ Task A が日次で貯める立会外プリント(ToSTNeT-1 超大口約定・�
 は `AdjustmentFactor≠1` 判定なので**分割/割当は拾うが現金配当の落ちは検出できない**(既知の盲点、
 要 /fins/dividends)。
 
+**side 代理分割(v0.1 への追記)**: 超大口は売買側が公開データに無く median exec_gap≈0 は買い/売り
+の対称混合。同日終値の上下(`exec_gap_close` の符号)で `discount`(売り手コスト様)/`premium`/
+`at_ref`/`unknown` に代理分割し、summary に `side` 次元を追加。政策保有=売りの対照は **discount 側の
+p90/95/99** と **discount/premium の件数比**で読む(符号で割るので median は機械的に片寄る=使わない)。
+分売は `administered`(売り確定)で分割しない。詳細は BENCHMARK_SPEC.md 追記。
+
 ### Mac での実行
 ```bash
 # 1) プリント出現銘柄の日次バーだけ取得・キャッシュ(要 JQUANTS_API_KEY, レート制御)

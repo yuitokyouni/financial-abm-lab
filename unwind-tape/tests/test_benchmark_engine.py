@@ -49,7 +49,7 @@ def cfg() -> be.BenchmarkConfig:
         bars_dir="data/raw/prices/benchmark_bars",
         calendar="data/raw/prices/trading_calendar.jsonl",
         adv_window_days=20, adv_min_ratio=0.8, fetch_lookback_calendar_days=60,
-        prev_close_cross_bp=10.0, price_band_pct=0.07, band_ref="prev_close",
+        prev_close_cross_bp=10.0, side_at_ref_bp=10.0, price_band_pct=0.07, band_ref="prev_close",
         size_edges=[0.25, 0.5, 1.0, 2.0], max_pub_lag_bd=5,
         detail_csv="data/parsed/benchmark/benchmark_detail.csv",
         summary_csv="data/parsed/benchmark/benchmark_summary.csv",
@@ -276,16 +276,58 @@ def test_build_summary_facets():
     assert ("tostnet_large_lots", "prev") in facets
     assert ("tostnet_large_lots", "close") in facets
     assert ("offauction_distribution", "prev") in facets
-    # ALL バケットが facet ごとに存在
-    all_rows = [s for s in summary if s["size_bucket"] == "ALL"]
-    tos_prev_all = [s for s in all_rows
-                    if s["route"] == "tostnet_large_lots" and s["ref"] == "prev"]
-    assert len(tos_prev_all) == 1
-    assert tos_prev_all[0]["N"] == 2
+    # side=all の ALL バケットが facet ごとに1行
+    tos_prev_all = [s for s in summary if s["route"] == "tostnet_large_lots"
+                    and s["ref"] == "prev" and s["side"] == "all" and s["size_bucket"] == "ALL"]
+    assert len(tos_prev_all) == 1 and tos_prev_all[0]["N"] == 2
+    # 両プリントとも px<同日終値 → discount side に2件
+    disc_all = [s for s in summary if s["route"] == "tostnet_large_lots"
+                and s["ref"] == "prev" and s["side"] == "discount" and s["size_bucket"] == "ALL"]
+    assert len(disc_all) == 1 and disc_all[0]["N"] == 2
+    # 分売は side 分割しない(all のみ)
+    distro_sides = {s["side"] for s in summary if s["route"] == "offauction_distribution"}
+    assert distro_sides == {"all"}
 
 
 def test_build_summary_empty():
     assert be.build_summary([], cfg()) == []
+
+
+# ---------------------------------------------------------------------------
+# side proxy (売買側の代理: 同日終値の上下)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("gap_close,expected", [
+    (0.02, "discount"),      # px < 同日終値 → 売り手コスト様
+    (-0.02, "premium"),      # px > 同日終値 → 買い手様
+    (0.0, "at_ref"),         # 終値ちょうど
+    (0.0005, "at_ref"),      # <10bp
+    (0.0015, "discount"),    # >10bp
+    (None, "unknown"),
+])
+def test_side_proxy(gap_close, expected):
+    assert be.side_proxy(gap_close, at_ref_bp=10) == expected
+
+
+def test_build_tostnet_row_side_proxy():
+    c = cfg()
+    disc = be.build_tostnet_row("1", "2024-03-04", 980.0, "printed", None,
+                                1000.0, 990.0, 1.0, None, c)   # px<close
+    prem = be.build_tostnet_row("1", "2024-03-04", 1005.0, "printed", None,
+                                1000.0, 990.0, 1.0, None, c)   # px>close
+    atref = be.build_tostnet_row("1", "2024-03-04", 990.0, "printed", None,
+                                 1000.0, 990.0, 1.0, None, c)  # px==close
+    unk = be.build_tostnet_row("1", "2024-03-04", 980.0, "printed", None,
+                               1000.0, None, 1.0, None, c)     # close 欠 → unknown
+    assert disc.side_proxy == "discount"
+    assert prem.side_proxy == "premium"
+    assert atref.side_proxy == "at_ref"
+    assert unk.side_proxy == "unknown"
+
+
+def test_build_distro_row_side_is_administered():
+    r = be.build_distro_row("4661", "2024-06-26", 950.0, 1000.0, None, 1.0, None, cfg())
+    assert r.side_proxy == "administered"
 
 
 # ---------------------------------------------------------------------------

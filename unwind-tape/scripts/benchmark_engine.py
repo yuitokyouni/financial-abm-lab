@@ -78,6 +78,7 @@ class BenchmarkConfig:
     adv_min_ratio: float
     fetch_lookback_calendar_days: int
     prev_close_cross_bp: float
+    side_at_ref_bp: float
     price_band_pct: float
     band_ref: str
     size_edges: list[float]
@@ -98,6 +99,7 @@ class BenchmarkConfig:
             adv_window_days=int(pr["adv_window_days"]), adv_min_ratio=float(pr["adv_min_ratio"]),
             fetch_lookback_calendar_days=int(pr["fetch_lookback_calendar_days"]),
             prev_close_cross_bp=float(cl["prev_close_cross_bp"]),
+            side_at_ref_bp=float(cl.get("side_at_ref_bp", cl["prev_close_cross_bp"])),
             price_band_pct=float(cl["price_band_pct"]), band_ref=cl["band_ref"],
             size_edges=[float(x) for x in bk["size_over_adv20_edges"]],
             max_pub_lag_bd=int(hl["max_publication_lag_business_days"]),
@@ -197,6 +199,25 @@ def classify(gap_prev: float | None, px: float | None, band_ref_price: float | N
     return prev_cross, at_band, label
 
 
+def side_proxy(gap_close: float | None, at_ref_bp: float) -> str:
+    """売買側の代理: 同日終値に対して上か下か(=exec_gap_close の符号)。
+      discount = px < 同日終値(gap_close>0)  → 売り手コスト様(政策保有の売りの対照はここ)
+      premium  = px > 同日終値(gap_close<0)  → 買い手プレミアム様
+      at_ref   = |gap_close| < at_ref_bp bp   → 終値ちょうどのクロス(中立)
+      unknown  = 同日終値が無い(close 欠)
+    ※side は同日終値基準(exec_gap_close)で1プリント1つに固定する。当日ドリフトを含む
+      prev 基準では割らない(prev の符号はドリフトで反転し得るため)。
+    """
+    if gap_close is None or not math.isfinite(gap_close):
+        return "unknown"
+    thr = at_ref_bp / 1e4
+    if gap_close > thr:
+        return "discount"
+    if gap_close < -thr:
+        return "premium"
+    return "at_ref"
+
+
 def size_bucket(ratio: float | None, edges: list[float]) -> str:
     if ratio is None or not math.isfinite(ratio):
         return "adv_unknown"
@@ -235,7 +256,7 @@ DETAIL_COLUMNS = [
     "px", "px_source", "prev_close", "close",
     "exec_gap_prev", "exec_gap_close", "day_return",
     "size_shares", "ADV20_shares", "size_over_ADV20", "size_bucket",
-    "ex_div_flag", "prev_close_cross", "at_band", "classification", "status",
+    "ex_div_flag", "prev_close_cross", "at_band", "classification", "side_proxy", "status",
 ]
 
 
@@ -260,6 +281,7 @@ class DetailRow:
     prev_close_cross: str = ""
     at_band: str = ""
     classification: str = ""
+    side_proxy: str = ""           # discount | premium | at_ref | unknown | administered
     status: str = ""               # ok | skip:<reason>
 
     def as_csv(self) -> dict[str, str]:
@@ -310,6 +332,7 @@ def build_tostnet_row(code: str, trade_date: str, px: float | None, px_source: s
     r.prev_close_cross = "TRUE" if prev_cross else "FALSE"
     r.at_band = "TRUE" if at_band else "FALSE"
     r.classification = label
+    r.side_proxy = side_proxy(r.exec_gap_close, cfg.side_at_ref_bp)
     r.status = "ok"
     return r
 
@@ -340,8 +363,9 @@ def build_distro_row(code: str, impl_date: str, distro_price: float | None,
         r.size_over_ADV20 = size_shares / adv20
     r.size_bucket = size_bucket(r.size_over_ADV20, cfg.size_edges)
     # administered price は前日終値からの規定ディスカウント。band/cross の概念は交渉系と別なので
-    # classification は付けない(price_type=administered で区別)。
+    # classification は付けない(price_type=administered で区別)。売り手ディスカウントで符号は確定。
     r.classification = "administered"
+    r.side_proxy = "administered"
     r.status = "ok"
     return r
 
@@ -567,21 +591,28 @@ def build_summary(rows: list[DetailRow], cfg: BenchmarkConfig) -> list[dict]:
         pool = [r for r in rows if r.route == route and r.status == "ok"]
         if not pool:
             continue
+        # side 分割は超大口(交渉・売買側不明)のみ。分売は administered(売り確定)なので all だけ。
+        sides = ["all"] if route == "offauction_distribution" \
+            else ["all", "discount", "at_ref", "premium"]
         buckets = sorted({r.size_bucket for r in pool}) + ["ALL"]
-        for b in buckets:
-            sub = pool if b == "ALL" else [r for r in pool if r.size_bucket == b]
-            vals = [getter(r) for r in sub if getter(r) is not None]
-            st = summarize(vals)
-            if st is None:
+        for side in sides:
+            spool = pool if side == "all" else [r for r in pool if r.side_proxy == side]
+            if not spool:
                 continue
-            band_rate = _rate([r.at_band == "TRUE" for r in sub])
-            cross_rate = _rate([r.prev_close_cross == "TRUE" for r in sub])
-            out.append({
-                "route": route, "ref": ref, "size_bucket": b,
-                "N": st["N"], "median": st["median"], "iqr": st["iqr"],
-                "p90": st["p90"], "p95": st["p95"], "p99": st["p99"],
-                "band_edge_rate": band_rate, "prev_close_cross_rate": cross_rate,
-            })
+            for b in buckets:
+                sub = spool if b == "ALL" else [r for r in spool if r.size_bucket == b]
+                vals = [getter(r) for r in sub if getter(r) is not None]
+                st = summarize(vals)
+                if st is None:
+                    continue
+                band_rate = _rate([r.at_band == "TRUE" for r in sub])
+                cross_rate = _rate([r.prev_close_cross == "TRUE" for r in sub])
+                out.append({
+                    "route": route, "ref": ref, "side": side, "size_bucket": b,
+                    "N": st["N"], "median": st["median"], "iqr": st["iqr"],
+                    "p90": st["p90"], "p95": st["p95"], "p99": st["p99"],
+                    "band_edge_rate": band_rate, "prev_close_cross_rate": cross_rate,
+                })
     return out
 
 
@@ -589,7 +620,7 @@ def _rate(flags: list[bool]) -> float:
     return float(np.mean([1.0 if x else 0.0 for x in flags])) if flags else 0.0
 
 
-SUMMARY_COLUMNS = ["route", "ref", "size_bucket", "N", "median", "iqr",
+SUMMARY_COLUMNS = ["route", "ref", "side", "size_bucket", "N", "median", "iqr",
                    "p90", "p95", "p99", "band_edge_rate", "prev_close_cross_rate"]
 
 
@@ -633,19 +664,50 @@ def write_report(path: Path, summary: list[dict], rows: list[DetailRow],
     lines.append("- **前日終値クロス**: 時刻情報が無いため、|exec_gap_prev|<"
                  f"{cfg.prev_close_cross_bp:.0f}bp を「前日終値ちょうどで約定した可能性」として分類。\n")
     lines.append("- **administered vs negotiated**: 立会外分売は前日終値からの規定ディスカウント "
-                 "(administered price) なので、交渉価格系(超大口)と別 route として集計する。\n\n")
+                 "(administered price) なので、交渉価格系(超大口)と別 route として集計する。\n")
+    lines.append("- **side 代理**: 超大口は売買側が公開データに無いため、同日終値の上下(exec_gap_close の"
+                 "符号)で discount(px<終値, 売り手コスト様)/premium(px>終値)/at_ref(±"
+                 f"{cfg.side_at_ref_bp:.0f}bp, 終値クロス)に分類。**符号で割るため各 side の median は"
+                 "自己選択で片側に寄る(機械的)。政策保有の売り s3 の対照は discount 側の p90/95/99 と"
+                 "件数バランスで読む。median は使わない。**\n\n")
 
-    lines.append("## route × 参照 × size/ADV20 バケット\n\n")
-    lines.append("| route | 参照 | size/ADV20 | N | median | IQR | p90 | p95 | p99 | band率 | cross率 |\n")
-    lines.append("|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|\n")
-    for s in summary:
-        lines.append(
-            f"| {s['route']} | {s['ref']} | {s['size_bucket']} | {s['N']} | "
-            f"{s['median']:.4f} | {s['iqr']:.4f} | {s['p90']:.4f} | {s['p95']:.4f} | "
-            f"{s['p99']:.4f} | {s['band_edge_rate']:.2f} | {s['prev_close_cross_rate']:.2f} |\n"
-        )
-    if not summary:
-        lines.append("| (プリント/バーがまだ無い — Task A 蓄積と `--fetch` の後で埋まる) |\n")
+    def render_table(title: str, subset: list[dict], note: str = "") -> None:
+        lines.append(f"## {title}\n\n")
+        if note:
+            lines.append(note + "\n\n")
+        lines.append("| route | 参照 | side | size/ADV20 | N | median | IQR | p90 | p95 | p99 | band率 | cross率 |\n")
+        lines.append("|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|\n")
+        if not subset:
+            lines.append("| (該当データなし — Task A 蓄積と `--fetch` の後で埋まる) |\n")
+        for s in subset:
+            lines.append(
+                f"| {s['route']} | {s['ref']} | {s['side']} | {s['size_bucket']} | {s['N']} | "
+                f"{s['median']:.4f} | {s['iqr']:.4f} | {s['p90']:.4f} | {s['p95']:.4f} | "
+                f"{s['p99']:.4f} | {s['band_edge_rate']:.2f} | {s['prev_close_cross_rate']:.2f} |\n"
+            )
+        lines.append("\n")
+
+    render_table("route × 参照 × size/ADV20 バケット(全 side)",
+                 [s for s in summary if s["side"] == "all"])
+    render_table("売り手側の対照 — discount のみ(px < 同日終値, gap_close>0)",
+                 [s for s in summary if s["side"] == "discount"],
+                 note="> **median は自己選択で正に寄るので使わない**。政策保有の売り s3 の対照は、"
+                      "**同じ size バケットの p90/p95/p99(ディスカウント裾の深さ)**で見る。")
+
+    # side 件数バランス(超大口, size ALL)
+    lines.append("## side 件数バランス(超大口, size ALL)\n\n")
+    lines.append("> discount/premium がほぼ均等なら買い売り対称の終値クロス群。size を上げて "
+                 "discount 側に偏るなら大口=売り駆動の兆候(要 N)。side は同日終値基準。\n\n")
+    lines.append("| 参照 | all | discount | at_ref | premium |\n|---|---:|---:|---:|---:|\n")
+
+    def _n(ref: str, side: str) -> int:
+        m = [s for s in summary if s["route"] == "tostnet_large_lots" and s["ref"] == ref
+             and s["side"] == side and s["size_bucket"] == "ALL"]
+        return m[0]["N"] if m else 0
+    for ref in ("prev", "close"):
+        lines.append(f"| {ref} | {_n(ref,'all')} | {_n(ref,'discount')} | "
+                     f"{_n(ref,'at_ref')} | {_n(ref,'premium')} |\n")
+    lines.append("\n")
 
     # skip 理由の内訳(データ欠損の可視化。創作しない)
     if skipped:

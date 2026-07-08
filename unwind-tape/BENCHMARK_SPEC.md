@@ -63,3 +63,19 @@
 
 5. **無帰属の徹底。** 出力は tape(groups/legs)と一切結合しない。誰が売ったかは公開日次データでは
    線で結べないため、参照分布としてのみ使う(BENCHMARK_SPEC 位置づけ)。
+
+## 追記(Claude, 2026-07-08 — v0.1 への side 代理分割の追加。要ユーザ批准で v0.2 へ)
+
+初回集計で超大口の median exec_gap_close ≈ 0 と判明。**ToSTNeT-1 は買いブロックも売りブロックも
+載り、JPX の公開データに売買側が無い**ため、median は「コスト0」ではなく**買い/売りの対称混合**。
+政策保有=売りの対照にするには売り側を切り出す必要がある。売買側は取れないので**代理**を追加した:
+
+- `side_proxy` = 同日終値に対する上下(`exec_gap_close` の符号): `discount`(px<終値, 売り手コスト様)
+  / `premium`(px>終値) / `at_ref`(±`side_at_ref_bp`, 終値クロス) / `unknown`(close 欠)。
+  分売は `administered`(売り確定)で分割しない。side は当日ドリフトを含む prev ではなく
+  **同日終値基準(close)で1プリント1つ**に固定。
+- summary に `side` 次元を追加(route×ref×**side**×size/ADV20)。report に「discount のみの対照表」と
+  「side 件数バランス」を出力。
+- **正直な限界**: 符号で割るのは自己選択なので**各 side の median は機械的に片側へ寄る**。使うのは
+  (a) discount 側の p90/p95/p99(売り手ディスカウント裾の深さ)、(b) discount/premium の**件数比**
+  (venue が売り超か買い超か、size 依存)であって median ではない。report にも明記。

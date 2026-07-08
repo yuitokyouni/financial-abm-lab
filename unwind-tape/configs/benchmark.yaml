@@ -19,6 +19,10 @@ prices:
 # 価格基準は生終値(C)。調整後を混ぜると分割銘柄で gap が壊れる(MEASUREMENT_SPEC 実装ノートと同じ理由)。
 classification:
   prev_close_cross_bp: 10       # |exec_gap_prev| < 10bp を「前日終値クロス」に分類
+  side_at_ref_bp: 10            # side 代理: |exec_gap_close| < 10bp を「終値ちょうど(at_ref)」に。
+                                # それより上=discount(px<終値, 売り手コスト様)、下=premium(px>終値, 買い手様)。
+                                # ※符号で割るのは自己選択なので各サイドの median は片側に寄る(機械的)。
+                                # 使うのは discount 側の裾(p90/95/99)と件数バランスであって median ではない。
   price_band_pct: 0.07          # 直近値±7%「目安」。バンド境界集積率をレポート(規則打ち切り注記用)。
                                 # 注: 実際の制限値幅は絶対円ラダーで通常もっと広い。7% は spec の目安近似。
                                 # 集積率は診断用であって規則の証明ではない(データを見て校正する前提)。
