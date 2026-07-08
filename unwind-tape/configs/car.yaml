@@ -84,6 +84,22 @@ output_columns:
   - recovery_60d
   - abnormal_volume_0_p3
 
+# ---------- 系統B: shortfall 分解 (MEASUREMENT_SPEC v0.2) ----------------
+# scripts/shortfall_engine.py が読む。系統A(CAR)とは独立。
+shortfall:
+  stage1_forward_days: 1          # a: s1 の前方窓 close[day0+a] (spec 既定 a=1)
+  price_basis: raw                # 生終値 (C)。調整後を混ぜると分割銘柄で s3 が壊れる (実装ノート参照)
+  measurable_routes:
+    - secondary_offering
+    - offauction_distribution
+    - toSTNeT_3
+  non_measurable_routes:          # measurable_flag=FALSE。親側(系統A)のみ載る
+    - open_market_sale
+    - share_forward
+    - market_sale_undetermined
+    - mixed
+    - unknown
+
 # ---------- 品質ゲート ---------------------------------------------------
 # ルックアヘッド禁止: 推定窓・event window の計算に day 0 以降の情報を混ぜないこと。
 # implementation で以下の invariants を assert する:

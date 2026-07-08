@@ -281,6 +281,42 @@ EDINET 等の外部ソース併用を検討 (plan_report.md R2)。日次リタ�
 
 ---
 
+## 系統B — shortfall 分解エンジン (MEASUREMENT_SPEC v0.2, 2026-07-08)
+
+`MEASUREMENT_SPEC.md`(ユーザ確定 v0.2)に基づく実装。系統A(CAR)とは独立。
+
+- **spec**: `unwind-tape/MEASUREMENT_SPEC.md`
+- **engine**: `unwind-tape/scripts/shortfall_engine.py` → `data/parsed/tape/legs_shortfall.csv`
+- **config**: `configs/car.yaml` の `shortfall:` 節 (a=1, price_basis=raw, route分類)
+- **tests**: `tests/test_shortfall_engine.py` 9件。恒等分解 `IS_raw=s1+s2+s3` の厳密成立、
+  toSTNeT s3≡0/degenerate、TOPIX total調整、生終値回帰(分割銘柄で s3 が壊れないこと)を固定。
+
+**実装上の必須逸脱1点(要ユーザ確認)**: 系統Bは**生終値(C)**で実装した。spec は「調整後」と
+書いてあるが、契約上の生価格(売出価格・約定値)と調整後終値を混ぜると**分割銘柄で s3 が
+約 ln(分割比) ずれて壊れる**(Honda 2023-10 の 1:3 分割 → s3 が −ln(3)≈−1.10 ずれる)。
+単一イベント区間内に分割は入らないので生終値で恒等分解は閉じる。詳細は MEASUREMENT_SPEC.md
+末尾の実装ノート。
+
+### Mac での実行
+```bash
+python3 unwind-tape/scripts/jquants_fetch.py   # 済ならスキップ (Open=O も取得済み)
+python3 unwind-tape/scripts/shortfall_engine.py
+cat unwind-tape/data/parsed/tape/legs_shortfall.csv
+```
+
+### 現データで計算できる leg(正直な現状)
+`after_close` が明示済みなのは G008/L001 のみ → **親 day0 が解決するのは G008 だけ**。従って
+系統Bで実値が出るのは **G008/L002(DeNA の ToSTNeT-3 応募, degenerate 型)の1件のみ**。
+残りは spec の宣言どおりブロック中:
+- G001-G007: 親 day0 未解決(`after_close`/`disclosure_time` 未転記)→ skip
+- secondary_offering 各行: `pricing_date`/`offer_price_JPY` 未転記 → skip(創作しない)
+- G002 share_forward: `measurable_flag=FALSE`(系統B対象外、系統Aのみ)
+
+**→ 系統Bを動かすための最優先作業は spec §依存の通り: G001-G007 の `disclosure_time` 転記、
+次に pricing_date / offer_price の一次PDF転記。** これが済めば offering 系の s1/s2/s3 が一気に埋まる。
+
+---
+
 ## 運用メモ
 
 ### CSV が canonical になった以降のワークフロー
