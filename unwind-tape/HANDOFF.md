@@ -317,6 +317,45 @@ cat unwind-tape/data/parsed/tape/legs_shortfall.csv
 
 ---
 
+## BENCHMARK — 無条件 exec_gap 参照分布 (BENCHMARK_SPEC v0.1, 2026-07-08)
+
+Task A が日次で貯める立会外プリント(ToSTNeT-1 超大口約定・立会外分売)× その日の J-Quants
+生終値から、**平時の執行ギャップの正常水準**(参照分布)を作る。**tape 本体(系統A/B)には
+混入させない**。帰属 leg の s3 が異常かどうかを後で判定するための対照であって、統計的 null では
+ない。帰属 leg の転記待ちに**ブロックされず今すぐ回せる**唯一の経験的アウトプット。
+
+- **spec**: `unwind-tape/BENCHMARK_SPEC.md`(ユーザ確定 v0.1 + 実装ノート)
+- **engine**: `unwind-tape/scripts/benchmark_engine.py`
+- **config**: `configs/benchmark.yaml`
+- **tests**: `tests/test_benchmark_engine.py`(exec_gap 恒等 `close=prev+day_return`、生終値、
+  ±7%バンド/前日終値クロス分類、size/ADV20 バケット、超大口/分売の row、summary facet、健康診断)
+- **出力**:
+  - `data/parsed/benchmark/benchmark_detail.csv`(px/prev/close/両gap/day_return/size/ADV20/ex-div/分類) — **価格含む→git外**
+  - `data/parsed/benchmark/benchmark_summary.csv`(route×参照×size/ADV20 別 N/median/IQR/p90/p95/p99/バンド集積率) — git-track
+  - `data/parsed/benchmark/benchmark_report.md`(同上+注記) — git-track
+
+**定義**: 超大口は `exec_gap_prev=ln(prev_close)−ln(px)`、`exec_gap_close=ln(close)−ln(px)`
+(参照は両方保存、恒等 `close=prev+day_return`)。分売は `exec_gap=ln(prev_close)−ln(分売価格)`
+= 開示ディスカウント(administered price、交渉価格系と別 route)。**生終値基準**(系統Bと同じ)。
+
+**注記(裾の解釈に必須、report にも出力)**: (a) `band_edge_rate` の ±7% は**目安**で、実際の
+制限値幅は絶対円ラダー。裾は規則打ち切りされ得るので売出しの裾と直接比較しない。(b) `ex_div_flag`
+は `AdjustmentFactor≠1` 判定なので**分割/割当は拾うが現金配当の落ちは検出できない**(既知の盲点、
+要 /fins/dividends)。
+
+### Mac での実行
+```bash
+# 1) プリント出現銘柄の日次バーだけ取得・キャッシュ(要 JQUANTS_API_KEY, レート制御)
+python3 unwind-tape/scripts/benchmark_engine.py --fetch
+# 2) 参照分布を計算
+python3 unwind-tape/scripts/benchmark_engine.py
+cat unwind-tape/data/parsed/benchmark/benchmark_report.md
+```
+現状 N はまだ薄い(Task A の backfill 2週間+日次ぶん)。日々のキャプチャ蓄積で自動的に増える。
+`benchmark_engine.py` は Task A の停止も検知する(最新プリントが 5営業日超遅延なら WARN)。
+
+---
+
 ## 運用メモ
 
 ### CSV が canonical になった以降のワークフロー

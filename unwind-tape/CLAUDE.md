@@ -22,6 +22,8 @@ YH009 は実データの経験的イベントスタディで別系譜。マス�
 - Task A cron 例: `unwind-tape/cron/jpx_offauction.crontab`
 - Task B pipeline: `migrate_xlsx_to_csv.py` → `archive_pdfs.py` → `validate_tape.py` → `build_tape.py`
 - Task B canonical CSVs: `unwind-tape/data/parsed/tape/{groups,legs,sources}.csv, lists.yaml`
+- Task C: `jquants_fetch.py` → `car_engine.py`(系統A CAR) / `shortfall_engine.py`(系統B shortfall, spec `MEASUREMENT_SPEC.md`, config `configs/car.yaml` の `shortfall:` 節)
+- BENCHMARK: `benchmark_engine.py`(無条件 exec_gap 参照分布, spec `BENCHMARK_SPEC.md`, config `configs/benchmark.yaml`)。**tape 非混入**の対照分布。生バーは `data/raw/prices/`(git外)。
 
 ## Conventions
 - **データ創作は厳禁**。欠損は空欄のまま、`data/gaps_report.md` に列挙。

@@ -19,6 +19,14 @@ data/raw/pdfs/*.pdf
 data/raw/pdfs/*.html
 !data/raw/pdfs/manifest.jsonl
 
+# --- BENCHMARK (BENCHMARK_SPEC v0.1): 無条件 exec_gap 参照分布 ---
+# J-Quants 生バーは license 上再配布不可 → data/raw/prices/ ごと gitignore。
+data/raw/prices/
+# 明細 benchmark_detail.csv は価格(prev/close/px)を含むため親の *.csv 無視のまま(=git外)。
+# 集計 summary は N/median/percentile のみで安全なので明示的に回復。report.md も残す。
+!data/parsed/benchmark/benchmark_summary.csv
+!data/parsed/benchmark/*.md
+
 # --- 汎用 ---
 data/logs/
 data/**/__pycache__/
