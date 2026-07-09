@@ -11,6 +11,7 @@ YH009 は実データの経験的イベントスタディで別系譜。マス�
 - **A. JPX 立会外取引情報の日次キャプチャ** (実装済・cron 化予定)
 - **B. xlsx → CSV 正規化 + PDF アーカイバ + build round-trip** (v0.3 で完了)
 - **C. J-Quants で日次四本値 + AR/CAR エンジン** (B 完了、着手指示待ち)
+- **D. EDINET 母集団拡張** (売出し系書類を網羅発見 → Nゲート ≥30 へ。step1=候補抽出 実装済、step2=本文分類 未)
 
 進捗と受け入れ条件の一次情報は `HANDOFF.md`。新規性と設計不変条件は `docs/CONTRIBUTION.md`。
 
@@ -30,6 +31,8 @@ YH009 は実データの経験的イベントスタディで別系譜。マス�
 - Task B pipeline: `migrate_xlsx_to_csv.py` → `archive_pdfs.py` → `validate_tape.py` → `build_tape.py`
 - Task B canonical CSVs: `unwind-tape/data/parsed/tape/{groups,legs,sources}.csv, lists.yaml`
 - Task C: `jquants_fetch.py` → `car_engine.py`(系統A CAR) / `shortfall_engine.py`(系統B shortfall, spec `MEASUREMENT_SPEC.md`, config `configs/car.yaml` の `shortfall:` 節)
+- TCA残差: `residual_engine.py`(実測 vs √則, spec `docs/TCA_BASELINE_SPEC.md`, config `configs/tca.yaml`)。√則の非線形テストは **`implied_Y_s2 = s2/(σ√(Q/V))`** を主に見る(s3=発行ディスカウント層は別掲)。N<30 は記述のみ。
+- Task D: `edinet_fetch.py`(EDINET売出し系書類の網羅発見=候補抽出, config `configs/edinet.yaml`, 設計 `docs/TASK_D_DESIGN.md`)。key=env `EDINET_API_KEY`。step2(本文分類/政策保有判定)は未実装。`data/raw/edinet` は git外。
 - BENCHMARK: `benchmark_engine.py`(無条件 exec_gap 参照分布, spec `BENCHMARK_SPEC.md`, config `configs/benchmark.yaml`)。**tape 非混入**の対照分布。生バーは `data/raw/prices/`(git外)。
 - 転記: `transcription/disclosure_transcription.csv`(埋めるだけ)+ `scripts/apply_transcription.py`(検証→legs.csv 反映)。disclosure_time/pricing/offer/OA を一次資料から。**推定禁止・空欄は fail-loud 維持**。ガイド `transcription/README.md`。
 

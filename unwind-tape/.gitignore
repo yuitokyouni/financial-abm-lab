@@ -31,6 +31,12 @@ data/raw/prices/
 !transcription/*.csv
 !transcription/*.md
 
+# --- Task D: EDINET 母集団拡張 (生JSON + candidate CSV は git外。report.md は残す) ---
+# 生レスポンスと候補明細は成長し得る + 転記前の未確認 lead なので git外。
+# 確定候補は Tier2_candidate として legs.csv / worksheet に流し込む(そちらは git-track)。
+data/raw/edinet/
+!data/parsed/edinet/*.md
+
 # --- 汎用 ---
 data/logs/
 data/**/__pycache__/

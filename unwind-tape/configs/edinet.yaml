@@ -1,0 +1,25 @@
+# unwind-tape / Task D — EDINET 母集団拡張の設定(docs/TASK_D_DESIGN.md)。
+# EDINET API v2。売出し系書類(有価証券届出書ほか)を期間網羅で発見し、候補を出す。
+# 数値の転記は一次(本文)からのみ。ここが出すのは lead(候補)だけ。創作禁止。
+
+base_url: https://api.edinet-fsa.go.jp/api/v2
+api_key_env: EDINET_API_KEY          # サブスクリプションキーは env のみ(コミット禁止)
+
+date_from: "2023-01-01"              # 東証要請(2023-03)を触媒とする処置窓(TASK_D_DESIGN 確定)
+date_to:   "2026-06-30"
+
+request_sleep_sec: 0.3               # API への礼儀。429 はバックオフでリトライ
+retries: 4                          # 指数バックオフ base=2s factor=2(Task A/C と統一)
+backoff_base_sec: 2.0
+backoff_factor: 2.0
+
+# 候補として拾う doc type(有価証券届出書系 = 募集・売出し)。売出人による secondary は 030/040 が主。
+target_doc_type_codes: ["030", "040", "130", "140"]
+#   030 有価証券届出書 / 040 訂正有価証券届出書 / 130 発行登録追補書類 / 140 訂正発行登録追補書類
+uridashi_keywords: ["売出"]         # docDescription で secondary(売出)をタグ付け(募集のみは False)
+
+output:
+  raw_dir:        data/raw/edinet/documents     # {date}.json(生レスポンス、gitignore)
+  manifest:       data/raw/edinet/manifest.jsonl
+  candidates_csv: data/parsed/edinet/candidates.csv
+  report_md:      data/parsed/edinet/edinet_report.md
