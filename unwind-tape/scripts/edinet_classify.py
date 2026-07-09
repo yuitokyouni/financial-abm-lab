@@ -49,7 +49,7 @@ JST = ZoneInfo("Asia/Tokyo")
 
 CLASSIFY_COLUMNS = [
     "docID", "submit_date", "docTypeCode", "issuer_code", "issuer_name",
-    "is_uridashi", "is_equity", "is_bond_only", "sellers", "seller_types",
+    "is_equity_uridashi", "is_bond", "sellers", "seller_types",
     "policy_explicit", "confidence_policy_holding",
     "uridashi_shares", "offer_price_JPY", "note",
 ]
@@ -125,9 +125,6 @@ def classify_seller_type(name: str, rules: dict[str, list[str]]) -> str:
     return "other"                 # 個人等
 
 
-_POLICY_SELLER_TYPES = {"bank", "insurance", "trust", "business"}
-
-
 def _norm_num(s: str) -> str:
     """全角/カンマ/単位を除いた数値文字列。数値化できなければ ''。"""
     if not s:
@@ -137,76 +134,92 @@ def _norm_num(s: str) -> str:
     return m.group(0).replace(",", "") if m else ""
 
 
-def classify_doc(rows: list[dict], cfg: dict) -> dict:
-    """本文行から分類結果 dict を返す。純関数。値の転記(売出株数/価格)も試みる。"""
-    text = " ".join((r.get("item", "") + " " + r.get("value", "")) for r in rows)
-    uridashi_kw = cfg.get("uridashi_keywords", ["売出"])
-    policy_kw = cfg.get("policy_keywords", [])
-    equity_kw = cfg.get("equity_keywords", ["株券", "株式"])
-    bond_kw = cfg.get("bond_only_keywords", ["社債券"])
-    rules = cfg.get("seller_type_rules", {})
+def _extract_after(text: str, labels: list[str], pattern: str, window: int = 60) -> str:
+    """text 中の label 出現直後 window 文字から pattern を拾って数値化。EDINET は値が
+    テキストブロックの自由文に埋まる(例『(2)売出数 7,788,400株』)ため、項目名でなく本文を見る。"""
+    for lb in labels:
+        idx = text.find(lb)
+        while idx >= 0:
+            m = re.search(pattern, text[idx + len(lb): idx + len(lb) + window])
+            if m:
+                return _norm_num(m.group(1))
+            idx = text.find(lb, idx + 1)
+    return ""
 
-    # (i) 売出しか: 「売出人」項目、または本文に売出キーワード
-    has_uridashi_item = any("売出" in r.get("item", "") for r in rows)
-    is_uridashi = has_uridashi_item or any(k in text for k in uridashi_kw)
 
-    # (ii) 株式か / 社債のみか
-    is_equity = any(k in text for k in equity_kw)
-    is_bond = any(k in text for k in bond_kw)
-    is_bond_only = is_bond and not is_equity
-
-    # (iii) 売出人 抽出(「売出人」を含む項目名の値、または 氏名又は名称)
+def _extract_sellers(rows: list[dict], rules: dict) -> list[str]:
+    """売出人(売り手)を抽出。EDINET本文には無いことが多い(seller は TDnet 側)→ best effort。"""
     sellers: list[str] = []
     for r in rows:
-        it = r.get("item", "")
+        it = r.get("item", "") or ""
         v = (r.get("value", "") or "").strip()
-        if not v or v in ("―", "-", "－", "該当事項なし"):
+        if not v or v in ("―", "-", "－", "該当事項はありません。"):
             continue
-        if ("売出人" in it) or ("売出し" in it and ("氏名" in it or "名称" in it)):
+        if "売出人" in it and ("氏名" in it or "名称" in it):
             if v not in sellers:
                 sellers.append(v)
-    seller_types = sorted({classify_seller_type(s, rules) for s in sellers})
+    return sellers
 
-    # (iv) 政策保有の明示
-    policy_explicit = any(k in text for k in policy_kw)
 
-    # tier 判定
-    if policy_explicit:
-        tier = "A_explicit"
-    elif set(seller_types) & _POLICY_SELLER_TYPES:
-        tier = "B_inference"
-    else:
+def classify_doc(rows: list[dict], cfg: dict) -> dict:
+    """本文行から分類結果 dict を返す。純関数。
+    EDINET本文で確実に判るのは『株式の売出しか(社債・募集でない)＋発行体＋おおよその株数』まで。
+    政策保有か否かは本文にほぼ無い(TDnet側)→ 株式売出は tier2 に載せ、政策保有は人が一次確認。"""
+    policy_kw = cfg.get("policy_keywords", [])
+    eq_phrases = cfg.get("uridashi_equity_phrases", ["株式の売出", "普通株式の売出", "株券の売出"])
+    na_markers = cfg.get("uridashi_na_markers", ["該当事項はありません", "該当なし"])
+    bond_markers = cfg.get("bond_markers", ["社債券", "無担保社債"])
+    rules = cfg.get("seller_type_rules", {})
+
+    fulltext = " ".join((r.get("value", "") or "") for r in rows)
+
+    def item_val(substr: str) -> str:
+        for r in rows:
+            if substr in (r.get("item", "") or ""):
+                return r.get("value", "") or ""
+        return ""
+
+    sec_type = item_val("有価証券の種類")
+    youkou = item_val("売出要項")
+    youkou_na = any(m in youkou for m in na_markers) if youkou else False
+
+    # 株式の売出し判定: 「株式の売出」表現があり、売出要項が『該当なし』でない
+    has_eq_uridashi_phrase = any(p in fulltext for p in eq_phrases)
+    is_equity_uridashi = has_eq_uridashi_phrase and not youkou_na
+    # 社債判定(有価証券の種類=社債、または社債固有語)。株式売出が立っていれば社債扱いしない
+    is_bond = (("社債" in sec_type) or any(b in fulltext for b in bond_markers)) and not is_equity_uridashi
+
+    sellers = _extract_sellers(rows, rules)
+    seller_types = sorted({classify_seller_type(s, rules) for s in sellers}) if sellers else []
+    policy_explicit = any(k in fulltext for k in policy_kw)
+
+    # 数値の暫定抽出(自由文から。確定は転記シートで一次確認)
+    shares = _extract_after(fulltext, ["売出数", "売出しをする株式の数", "売出株式数"], r"([\d,]+)\s*株")
+    price = _extract_after(fulltext, ["売出価格"], r"([\d,]+(?:\.\d+)?)")
+
+    if not is_equity_uridashi:
         tier = "none"
-    if not is_uridashi or is_bond_only:
-        tier = "none"              # 売出でない/社債のみは政策保有 tier を付けない
-
-    # 値の転記(あれば)
-    uridashi_shares = offer_price = ""
-    for r in rows:
-        it = r.get("item", "")
-        if not uridashi_shares and "売出" in it and ("株式の数" in it or "株式数" in it or "株数" in it):
-            uridashi_shares = _norm_num(r.get("value", ""))
-        if not offer_price and (("売出価格" in it) or ("発行価格" in it)):
-            offer_price = _norm_num(r.get("value", ""))
+    elif policy_explicit:
+        tier = "A_explicit"
+    else:
+        tier = "B_inference"        # 株式売出だが政策保有明示なし → 人が TDnet で確認
 
     return {
-        "is_uridashi": "TRUE" if is_uridashi else "FALSE",
-        "is_equity": "TRUE" if is_equity else "FALSE",
-        "is_bond_only": "TRUE" if is_bond_only else "FALSE",
+        "is_equity_uridashi": "TRUE" if is_equity_uridashi else "FALSE",
+        "is_bond": "TRUE" if is_bond else "FALSE",
         "sellers": " / ".join(sellers),
         "seller_types": ",".join(seller_types),
         "policy_explicit": "TRUE" if policy_explicit else "FALSE",
         "confidence_policy_holding": tier,
-        "uridashi_shares": uridashi_shares,
-        "offer_price_JPY": offer_price,
+        "uridashi_shares": shares,
+        "offer_price_JPY": price,
         "note": "",
     }
 
 
 def is_tier2(result: dict) -> bool:
-    """転記シートに流す確定 lead か: 株式の売出し かつ 政策保有(A or B)。"""
-    return (result.get("is_uridashi") == "TRUE"
-            and result.get("is_bond_only") != "TRUE"
+    """転記シートに流す lead か: 株式の売出し(政策保有は人が確認するので A/B 両方載せる)。"""
+    return (result.get("is_equity_uridashi") == "TRUE"
             and result.get("confidence_policy_holding") in ("A_explicit", "B_inference"))
 
 
@@ -304,7 +317,8 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         rows = parse_edinet_csv_zip(raw)
         print(f"# docID={args.dump}  bytes={len(raw)}  rows={len(rows)}  csvs={sorted({r['source_csv'] for r in rows})}")
-        kw = ccfg.get("policy_keywords", []) + ccfg.get("uridashi_keywords", []) + ["売出人", "株式の数", "売出価格", "発行価格"]
+        kw = (ccfg.get("policy_keywords", []) + ccfg.get("uridashi_equity_phrases", [])
+              + ["有価証券の種類", "売出要項", "提出理由", "報告内容", "売出数", "売出価格", "売出人"])
         print("## 値が非空の行(項目 | 値):")
         for r in rows:
             v = r.get("value", "")
@@ -392,16 +406,16 @@ def _write_tier2(path: Path, tier2: list[dict]) -> None:
 def _write_report(path: Path, results: list[dict], tier2: list[dict]) -> None:
     from collections import Counter
     n = len(results)
-    uri = sum(1 for r in results if r["is_uridashi"] == "TRUE")
-    eq = sum(1 for r in results if r["is_equity"] == "TRUE" and r["is_bond_only"] != "TRUE")
+    eq = sum(1 for r in results if r["is_equity_uridashi"] == "TRUE")
+    bond = sum(1 for r in results if r["is_bond"] == "TRUE")
     by_tier = Counter(r["confidence_policy_holding"] for r in results)
     unparsed = sum(1 for r in results if r.get("note", "").startswith("本文パース不可"))
-    L = ["# Task D step2 — 本文分類(株式の売出し × 政策保有)\n\n",
+    L = ["# Task D step2 — 本文分類(株式の売出し抽出 → 政策保有は人が確認)\n\n",
          f"generated: {datetime.now(JST).isoformat(timespec='seconds')}\n\n",
-         f"- 分類 {n} 件: 売出 {uri} / 株式売出 {eq} / 本文パース不可 {unparsed}\n",
-         f"- tier: A_explicit {by_tier.get('A_explicit',0)} / B_inference {by_tier.get('B_inference',0)} / none {by_tier.get('none',0)}\n",
-         f"- **tier2(政策保有×株式売出、転記シートへ流す確定 lead)= {len(tier2)} 件**\n\n",
-         "## tier2 一覧(発表/条件決定の別は docTypeCode: 190/040/100=値決め、030=届出)\n\n",
+         f"- 分類 {n} 件: **株式売出 {eq}** / 社債 {bond} / 本文パース不可 {unparsed}\n",
+         f"- tier: A_explicit(政策保有明示) {by_tier.get('A_explicit',0)} / B_inference(株式売出だが要確認) {by_tier.get('B_inference',0)} / none {by_tier.get('none',0)}\n",
+         f"- **tier2(株式の売出し=転記シートへ流す lead)= {len(tier2)} 件** ← 政策保有かは TDnet で人が確認\n\n",
+         "## tier2 一覧(docTypeCode: 190=臨時報告値決め / 040=届出値決め / 100=発行登録追補 / 030=届出)\n\n",
          "| date | code | issuer | tier | 売出人(type) | 売出株数 | 価格 |\n|---|---|---|---|---|---:|---:|\n"]
     for r in sorted(tier2, key=lambda x: (x.get("submit_date",""), x.get("issuer_code",""))):
         L.append(f"| {r.get('submit_date','')} | {r.get('issuer_code','')} | {r.get('issuer_name','')[:16]} | "

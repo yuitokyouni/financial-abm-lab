@@ -14,10 +14,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import edinet_classify as ec  # noqa: E402
 
 CFG = {
-    "uridashi_keywords": ["売出"],
-    "policy_keywords": ["政策保有", "縮減", "純投資目的以外"],
-    "equity_keywords": ["株券", "株式"],
-    "bond_only_keywords": ["社債券"],
+    "policy_keywords": ["政策保有", "縮減", "純投資目的以外", "主要株主の異動"],
+    "uridashi_equity_phrases": ["株式の売出", "普通株式の売出", "株券の売出"],
+    "uridashi_na_markers": ["該当事項はありません", "該当なし"],
+    "bond_markers": ["社債券", "無担保社債"],
     "seller_type_rules": {
         "bank": ["銀行"], "insurance": ["生命保険", "損害保険", "保険"],
         "trust": ["信託"], "securities": ["証券"],
@@ -50,58 +50,57 @@ def test_norm_num():
     assert ec._norm_num("該当なし") == ""
 
 
-# --- classify_doc ---------------------------------------------------------
+# --- classify_doc(実データ=テキストブロック構造に合わせる) ------------------
+
+def test_classify_equity_uridashi_aisin_like():
+    # 訂正臨時報告書(190)。値は自由文(テキストブロック)に埋まる
+    rows = _rows(
+        ("会社名、表紙", "株式会社アイシン"),
+        ("提出理由 [テキストブロック]",
+         "2024年６月27日開催の取締役会において決議された当社普通株式の売出し（引受人の買取引受による売出し）"),
+        ("報告内容 [テキストブロック]",
+         "(1)株式の種類 当社普通株式 (2)売出数 7,788,400株 (3)売出価格 5,092円"),
+    )
+    r = ec.classify_doc(rows, CFG)
+    assert r["is_equity_uridashi"] == "TRUE"
+    assert r["is_bond"] == "FALSE"
+    assert r["uridashi_shares"] == "7788400"
+    assert r["offer_price_JPY"] == "5092"
+    assert r["confidence_policy_holding"] == "B_inference"   # 政策保有語なし → 人が確認
+    assert ec.is_tier2(r)
+
 
 def test_classify_policy_explicit_A():
-    rows = _rows(("有価証券の種類", "株券"),
-                 ("売出しに関する事項 売出人の氏名又は名称", "株式会社デンソー"),
-                 ("売出しの目的", "政策保有株式の縮減の一環として売却"),
-                 ("売出株式の数", "256,373,400"),
-                 ("売出価格", "2,069.5"))
+    rows = _rows(
+        ("提出理由 [テキストブロック]", "政策保有株式の縮減の一環として当社普通株式の売出しを行う"),
+        ("報告内容 [テキストブロック]", "(2)売出数 1,000,000株"),
+    )
     r = ec.classify_doc(rows, CFG)
-    assert r["is_uridashi"] == "TRUE"
-    assert r["is_equity"] == "TRUE"
-    assert r["is_bond_only"] == "FALSE"
+    assert r["is_equity_uridashi"] == "TRUE"
     assert r["policy_explicit"] == "TRUE"
     assert r["confidence_policy_holding"] == "A_explicit"
-    assert r["uridashi_shares"] == "256373400"
-    assert r["offer_price_JPY"] == "2069.5"
     assert ec.is_tier2(r)
 
 
-def test_classify_business_seller_B():
-    # 政策保有の明示は無いが、売出人が事業会社 → B_inference
-    rows = _rows(("有価証券の種類", "株式"),
-                 ("売出人の氏名又は名称", "トヨタ自動車株式会社"),
-                 ("売出株式数", "1,000,000"))
+def test_classify_bond_skylark_like():
+    # 発行登録追補(100)だが中身は社債。売出要項=該当なし → 株式売出でない
+    rows = _rows(
+        ("発行登録の対象とした募集（売出）有価証券の種類、表紙", "社債"),
+        ("新規発行社債 [テキストブロック]", "第１回無担保社債（社債間限定同順位特約付）"),
+        ("売出要項 [テキストブロック]", "第２【売出要項】　該当事項はありません。"),
+    )
     r = ec.classify_doc(rows, CFG)
-    assert r["confidence_policy_holding"] == "B_inference"
-    assert "business" in r["seller_types"]
-    assert ec.is_tier2(r)
-
-
-def test_classify_fund_seller_not_policy():
-    rows = _rows(("有価証券の種類", "株券"),
-                 ("売出人の氏名又は名称", "野村アセットマネジメント株式会社"))
-    r = ec.classify_doc(rows, CFG)
-    assert r["confidence_policy_holding"] == "none"   # ファンド売却=非政策保有
-    assert not ec.is_tier2(r)
-
-
-def test_classify_bond_only_excluded():
-    rows = _rows(("有価証券の種類", "社債券"),
-                 ("募集の条件", "利率年1.0%"))
-    r = ec.classify_doc(rows, CFG)
-    assert r["is_bond_only"] == "TRUE"
+    assert r["is_equity_uridashi"] == "FALSE"
+    assert r["is_bond"] == "TRUE"
     assert r["confidence_policy_holding"] == "none"
     assert not ec.is_tier2(r)
 
 
 def test_classify_boshu_only_not_uridashi():
-    # 募集のみ(売出無し)。政策保有語も無い → tier none, is_uridashi FALSE
-    rows = _rows(("有価証券の種類", "株券"), ("募集に関する事項", "新株式発行"))
+    # 募集のみ(新株発行)。「株式の売出」表現なし → none
+    rows = _rows(("有価証券の種類", "株券"), ("募集の条件 [テキストブロック]", "新株式発行 公募増資"))
     r = ec.classify_doc(rows, CFG)
-    assert r["is_uridashi"] == "FALSE"
+    assert r["is_equity_uridashi"] == "FALSE"
     assert not ec.is_tier2(r)
 
 
