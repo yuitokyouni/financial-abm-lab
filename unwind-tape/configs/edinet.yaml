@@ -59,5 +59,12 @@ classify:
     raw_docs_dir: data/raw/edinet/docs          # 取得した本文(zip/csv)。gitignore
     manifest:     data/raw/edinet/docs_manifest.jsonl
     detail_csv:   data/parsed/edinet/classify_detail.csv
-    tier2_csv:    data/parsed/edinet/tier2_candidates.csv   # 確定した政策保有×株式売出(転記シートへ流す)
+    tier2_csv:    data/parsed/edinet/tier2_candidates.csv   # 確定した株式売出(転記シートへ流す)
     report_md:    data/parsed/edinet/classify_report.md
+
+# --- step 3: tier2(株式売出) を offering 単位にまとめ、EDINET値決め書類から日付/株数/価格を下書き ---
+step3:
+  cluster_gap_days: 45                # 同一発行体で 45日 以内の書類は1 offering とみなす(発表→条件決定+訂正)
+  min_offer_price_yen: 50             # 発行価格の誤拾い(手数料/割引=小額)を除くため下限
+  output:
+    draft_csv: data/parsed/edinet/tier2_offering_draft.csv   # offering 1行。include 列を人が Y にして採用

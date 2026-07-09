@@ -32,7 +32,7 @@ YH009 は実データの経験的イベントスタディで別系譜。マス�
 - Task B canonical CSVs: `unwind-tape/data/parsed/tape/{groups,legs,sources}.csv, lists.yaml`
 - Task C: `jquants_fetch.py` → `car_engine.py`(系統A CAR) / `shortfall_engine.py`(系統B shortfall, spec `MEASUREMENT_SPEC.md`, config `configs/car.yaml` の `shortfall:` 節)
 - TCA残差: `residual_engine.py`(実測 vs √則, spec `docs/TCA_BASELINE_SPEC.md`, config `configs/tca.yaml`)。√則の非線形テストは **`implied_Y_s2 = s2/(σ√(Q/V))`** を主に見る(s3=発行ディスカウント層は別掲)。N<30 は記述のみ。
-- Task D: `edinet_fetch.py`(step1=候補抽出。ord=010×docType{030,040,100,190}=値決め書類。180は8万件で除外→parentで後引き)→ `edinet_classify.py`(step2=本文DL+分類: 株式売出×政策保有→tier2)。config `configs/edinet.yaml`, 設計 `docs/TASK_D_DESIGN.md`。key=env `EDINET_API_KEY`。`data/raw/edinet` は git外。売出し=臨時報告(180→190)/発行登録追補(100)/届出(030→040)。
+- Task D: `edinet_fetch.py`(step1=候補抽出。ord=010×docType{030,040,100,190}=値決め書類。180は8万件で除外→parentで後引き)→ `edinet_classify.py`(step2=本文DL+分類: 株式売出を抽出=tier2、政策保有は人が確認)→ `edinet_to_worksheet.py`(step3=offering単位に集約+発表日/条件決定日/株数/価格を本文抽出→ include 列つき下書き)。config `configs/edinet.yaml`, 設計 `docs/TASK_D_DESIGN.md`。key=env `EDINET_API_KEY`。`data/raw/edinet` は git外。売出し=臨時報告(180→190)/発行登録追補(100)/届出(030→040)。EDINET本文は募集/売出/株数がテキストブロックの自由文。売出人/政策保有語は本文に無い(TDnet側)。
 - BENCHMARK: `benchmark_engine.py`(無条件 exec_gap 参照分布, spec `BENCHMARK_SPEC.md`, config `configs/benchmark.yaml`)。**tape 非混入**の対照分布。生バーは `data/raw/prices/`(git外)。
 - 転記: `transcription/disclosure_transcription.csv`(埋めるだけ)+ `scripts/apply_transcription.py`(検証→legs.csv 反映)。disclosure_time/pricing/offer/OA を一次資料から。**推定禁止・空欄は fail-loud 維持**。ガイド `transcription/README.md`。
 
