@@ -57,6 +57,12 @@ CANDIDATE_COLUMNS = [
 # metadata レベルで存在を要求するキー(構造変化検知)。欠けたら schema_mismatch。
 _REQUIRED_RESULT_KEYS = ("docID", "docTypeCode", "docDescription")
 
+# docTypeCode の人間可読ラベル(report 用)。売出しの主ルート = 180/190(臨時報告書)。
+DOCTYPE_LABELS = {
+    "030": "有価証券届出書", "040": "訂正有価証券届出書", "100": "発行登録追補書類",
+    "180": "臨時報告書", "190": "訂正臨時報告書",
+}
+
 
 def _sha256(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
@@ -357,15 +363,16 @@ def _write_report(path: Path, cands: list[dict], d_from: date, d_to: date,
     L.append("# Task D — EDINET 事業会社の届出系 discovery（step 1: 候補抽出）\n\n")
     L.append(f"generated: {datetime.now(JST).isoformat(timespec='seconds')}\n\n")
     L.append(f"- 対象期間: {d_from} .. {d_to}（取得済 {n_days} 営業日 / 総書類 {n_docs}）\n")
-    L.append(f"- フィルタ: **ordinanceCode=010(事業会社=株式、投資信託 030 は除外)** × "
-             f"docTypeCode∈{{{', '.join(target_codes)}}}(030 届出書 / 040 訂正 / 100 発行登録追補)\n")
+    codes_lbl = ", ".join(f"{c}={DOCTYPE_LABELS.get(c, c)}" for c in target_codes)
+    L.append(f"- フィルタ: **ordinanceCode=010(事業会社=株式、投資信託 030 は除外)** × docTypeCode∈{{{codes_lbl}}}\n")
     L.append(f"- **候補 {len(cands)} 件** = IPO {len(ipo)} + 非IPO {len(non_ipo)}"
              f"(うち secCode 有 = 上場企業 {len(with_code)} 件)\n")
-    L.append("> 有価証券届出書は本文に募集/売出があり docDescription では判別不可 → **売出/policy-holding の確定は step2**。\n"
-             "> 母集団=事業会社の届出(公募増資・売出し・shelf takedown)。ここから政策保有の**売出し**を step2 で絞る。\n\n")
-    L.append("## docTypeCode 内訳\n\n| code | 件数 |\n|---|---:|\n")
+    L.append("> **上場株式の売出しは有価証券届出書でなく臨時報告書(180)＋訂正臨時報告書(190)で開示**"
+             "(既開示有価証券の届出免除ルート。発表日 180 → 条件決定日 190)。shelf 保有会社は発行登録追補(100)。\n"
+             "> 180 は主要株主異動/代表異動等でも出るため件数が多い → **売出/policy-holding の確定は step2 本文**で行う。\n\n")
+    L.append("## docTypeCode 内訳\n\n| code | 種類 | 件数 |\n|---|---|---:|\n")
     for tc in sorted(by_type):
-        L.append(f"| {tc} | {by_type[tc]} |\n")
+        L.append(f"| {tc} | {DOCTYPE_LABELS.get(tc, tc)} | {by_type[tc]} |\n")
     L.append("\n## (docType, formCode) 内訳（offering の様式を見る: 021参照/022組込 が既存企業の増資・売出、024=IPO 系）\n\n")
     L.append("| docType | formCode | 件数 |\n|---|---|---:|\n")
     for (tc, fc), n in sorted(by_form.items(), key=lambda x: (-x[1], x[0])):

@@ -16,7 +16,7 @@ import edinet_fetch as ed  # noqa: E402
 
 KW = ["売出"]
 IPO_KW = ["新規公開", "新規上場"]
-TARGET = ["030", "040", "100"]
+TARGET = ["030", "040", "100", "180", "190"]
 ORDS = ["010"]
 
 
@@ -75,12 +75,14 @@ def test_extract_filters_doctype_ordinance_withdrawal():
         _r(docID="B", docTypeCode="120", ordinanceCode="010"),  # 有価証券報告書 → 除外(docType)
         _r(docID="C", docTypeCode="040", ordinanceCode="010"),  # 訂正届出書 → 拾う
         _r(docID="F", docTypeCode="100", ordinanceCode="010"),  # 発行登録追補 → 拾う
+        _r(docID="J", docTypeCode="180", ordinanceCode="010"),  # 臨時報告書(売出の主ルート) → 拾う
+        _r(docID="K", docTypeCode="190", ordinanceCode="010"),  # 訂正臨時報告書(条件決定) → 拾う
         _r(docID="E", docTypeCode="030", ordinanceCode="030"),  # 投資信託 → 除外(ordinance)
         _r(docID="D", docTypeCode="030", ordinanceCode="010", withdrawalStatus="1"),  # 撤回 → 除外
     ]
     cands = ed.extract_candidates(results, TARGET, ORDS, KW, IPO_KW)
     ids = {c["docID"] for c in cands}
-    assert ids == {"A", "C", "F"}
+    assert ids == {"A", "C", "F", "J", "K"}
 
 
 # --- validate_envelope ----------------------------------------------------
