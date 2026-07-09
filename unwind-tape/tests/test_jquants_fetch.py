@@ -69,3 +69,21 @@ def test_get_retries_500(monkeypatch):
         c._get("/equities/bars/daily", {"code": "7203"})
     # 5xx はリトライ対象: 初回 + DEFAULT_RETRIES 回
     assert c.session.calls == jf.DEFAULT_RETRIES + 1
+
+
+def test_tape_codes_reads_groups(tmp_path):
+    """tape_codes は groups.csv の 4桁 issuer_code を全部拾い、空欄/非数値は除く。"""
+    import csv
+    tape = tmp_path / "data" / "parsed" / "tape"
+    tape.mkdir(parents=True)
+    with (tape / "groups.csv").open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=["event_group_id", "issuer_code"])
+        w.writeheader()
+        for gid, code in [("G001", "6902"), ("G021", "6981"), ("G099", ""),
+                          ("G100", "ABCD"), ("G101", "6902")]:   # 空欄/非数値/重複
+            w.writerow({"event_group_id": gid, "issuer_code": code})
+    assert jf.tape_codes(tmp_path) == ["6902", "6981"]
+
+
+def test_tape_codes_missing_groups_returns_empty(tmp_path):
+    assert jf.tape_codes(tmp_path) == []

@@ -19,7 +19,7 @@ G017,9503,関西電力株式会社,,Tier2_candidate,C_possible_only,Maybe
 G018,2269,明治ホールディングス株式会社,,Tier2_candidate,C_possible_only,Maybe
 G019,3003,ヒューリック株式会社,,Tier2_candidate,C_possible_only,Maybe
 G020,8136,株式会社サンリオ,,Tier2_candidate,C_possible_only,Maybe
-G021,6981,株式会社村田製作所,,Tier2_candidate,C_possible_only,Maybe
+G021,6981,株式会社村田製作所,,Tier2_candidate,A_explicit_policy_holding,Maybe
 G022,7182,株式会社ゆうちょ銀行,,Tier2_candidate,C_possible_only,Maybe
 G023,7269,スズキ株式会社,,Tier2_candidate,C_possible_only,Maybe
 G024,7202,いすゞ自動車株式会社,,Tier2_candidate,C_possible_only,Maybe

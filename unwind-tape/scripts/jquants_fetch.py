@@ -427,6 +427,26 @@ def fetch_listed_info(client: JQuantsClient, root: Path, codes: list[str],
 # main
 # ---------------------------------------------------------------------------
 
+_FALLBACK_CODES = ["6902", "6201", "7259", "7267", "8154", "3950",
+                   "4246", "7974", "4063", "4062", "2871"]
+
+
+def tape_codes(root: Path) -> list[str]:
+    """groups.csv の issuer_code(4桁・非空)を全部拾う。tape が育てば fetch も自動追従する
+    (Task D で G012+ が増えても --codes 指定なしで取得対象に入る)。"""
+    import csv as _csv
+    p = root / "data" / "parsed" / "tape" / "groups.csv"
+    if not p.exists():
+        return []
+    out: list[str] = []
+    with p.open(encoding="utf-8") as f:
+        for r in _csv.DictReader(f):
+            c = (r.get("issuer_code") or "").strip()
+            if c.isdigit() and len(c) == 4 and c not in out:
+                out.append(c)
+    return sorted(out)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
@@ -434,10 +454,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="estimation window [-140,-21] confirmed by 2023-01-01 events")
     ap.add_argument("--to-date", default=None,
                     help="default: today (JST)")
-    ap.add_argument("--codes", nargs="*",
-                    default=["6902", "6201", "7259", "7267", "8154", "3950",
-                             "4246", "7974", "4063", "4062", "2871"],
-                    help="issuer codes (Task B の 11 銘柄)")
+    ap.add_argument("--codes", nargs="*", default=None,
+                    help="issuer codes。省略時は groups.csv の全 issuer_code(tape 自動追従)")
     ap.add_argument("--skip", nargs="*", default=[],
                     choices=["daily_quotes", "topix", "trading_calendar",
                              "fins_summary", "listed_info"])
@@ -445,6 +463,8 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     log = _configure_logging(args.root / "data" / "logs")
+    if args.codes is None:
+        args.codes = tape_codes(args.root) or _FALLBACK_CODES
     if args.to_date is None:
         args.to_date = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d")
 
