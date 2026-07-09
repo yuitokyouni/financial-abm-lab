@@ -119,5 +119,18 @@ def test_parse_edinet_csv_zip_utf16_tsv():
     assert rows[0]["value"] == "256,373,400"
 
 
+def test_parse_strips_surrounding_quotes():
+    # EDINET CSV は各フィールドがダブルクォート囲み → csv.reader で剥がす(発表日抽出の前提)
+    header = '"要素ID"\t"項目名"\t"値"'
+    body = '"jpcrp_cor:FilingDateCoverPage"\t"提出日、表紙"\t"2024-06-27"'
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("XBRL_TO_CSV/x.csv", (header + "\n" + body + "\n").encode("utf-16"))
+    rows = ec.parse_edinet_csv_zip(buf.getvalue())
+    assert rows[0]["element"] == "jpcrp_cor:FilingDateCoverPage"   # クォート無し
+    assert rows[0]["value"] == "2024-06-27"
+    assert rows[0]["element"].endswith("FilingDateCoverPage")       # step3 の発表日抽出が効く
+
+
 def test_parse_bad_zip_returns_empty():
     assert ec.parse_edinet_csv_zip(b"not a zip") == []

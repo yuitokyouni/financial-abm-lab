@@ -85,23 +85,21 @@ def parse_edinet_csv_zip(zip_bytes: bytes) -> list[dict]:
                 continue
         if text is None:
             continue
-        lines = text.splitlines()
-        if not lines:
-            continue
-        header = lines[0].split("\t")
-        # 値カラムの index(通常末尾「値」)。無ければ最終列。
+        # EDINET CSV は各フィールドがダブルクォート囲みの TSV(値にカンマ/改行あり)。
+        # csv.reader で正しくクォートを剥がす(手split だと element/値 の先頭末尾一致が壊れる)。
+        reader = csv.reader(io.StringIO(text), delimiter="\t")
         try:
-            vi = header.index("値")
-        except ValueError:
-            vi = len(header) - 1
-        for ln in lines[1:]:
-            cols = ln.split("\t")
+            header = next(reader)
+        except StopIteration:
+            continue
+        vi = header.index("値") if "値" in header else len(header) - 1
+        for cols in reader:
             if len(cols) <= vi:
                 continue
             rows.append({
-                "element": cols[0].strip() if cols else "",
-                "item": cols[1].strip() if len(cols) > 1 else "",
-                "value": cols[vi].strip(),
+                "element": (cols[0] or "").strip(),
+                "item": (cols[1] or "").strip() if len(cols) > 1 else "",
+                "value": (cols[vi] or "").strip(),
                 "source_csv": name.split("/")[-1],
             })
     return rows
