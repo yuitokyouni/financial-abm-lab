@@ -28,6 +28,12 @@ sale_route:
 - self_tender_offer
 - mixed
 - unknown
+offering_type:
+- domestic_bookbuild
+- overseas_ABB
+- global_offering
+- block_trade
+- unknown
 absorption_route:
 - public_offering
 - toSTNeT_3_buyback

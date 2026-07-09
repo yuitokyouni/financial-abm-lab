@@ -126,6 +126,7 @@ class ShortfallResult:
     exec_ref_date: str = ""
     degenerate: str = ""               # TRUE / "" — 即日型 (exec_ref < day0+a)
     split_in_window: str = ""          # TRUE / FALSE — [P_ref, exec_ref] に分割 → s1/s2/IS が段差
+    leak_adjusted: str = ""            # TRUE — リーク報道で P_ref をリーク前日に前倒し(s1 がリーク下げを拾う)
     stage1_cost: float | None = None
     stage2_cost: float | None = None
     stage3_cost: float | None = None
@@ -147,6 +148,7 @@ class ShortfallResult:
             "exec_ref_date": self.exec_ref_date,
             "degenerate": self.degenerate,
             "split_in_window": self.split_in_window,
+            "leak_adjusted": self.leak_adjusted,
             "stage1_cost": _blank(self.stage1_cost),
             "stage2_cost": _blank(self.stage2_cost),
             "stage3_cost": _blank(self.stage3_cost),
@@ -160,8 +162,8 @@ class ShortfallResult:
 
 COLUMNS = ["event_group_id", "event_leg_id", "issuer_code", "sale_route",
            "measurable_flag", "parent_day0", "P_ref_date", "exec_ref_date", "degenerate",
-           "split_in_window", "stage1_cost", "stage2_cost", "stage3_cost", "IS_raw", "IS_adj",
-           "aux_protection", "fill_ratio", "status"]
+           "split_in_window", "leak_adjusted", "stage1_cost", "stage2_cost", "stage3_cost",
+           "IS_raw", "IS_adj", "aux_protection", "fill_ratio", "status"]
 
 
 # ---------------------------------------------------------------------------
@@ -248,8 +250,15 @@ def compute_leg_shortfall(leg: dict, code: str, parent_day0: str | None,
     def open_(d: str | None) -> float | None:
         return ohlc.get(d, {}).get("open") if d else None
 
-    # P_ref = 親 day0 の前営業日 生終値
+    # P_ref = 親 day0 の前営業日 生終値。ただしリーク報道(leak_date)があればリーク前日まで前倒し
+    # — s1 = ln(P_ref) - ln(close[day0+a]) がリーク下げを取りこぼさないため(大型売出しはよく前日リーク)。
     p_ref_date = cal.prev_business_day(parent_day0)
+    leak = _iso(leg.get("leak_date", ""))
+    if leak:
+        leak_ref = cal.prev_business_day(leak)
+        if leak_ref and p_ref_date and leak_ref < p_ref_date:
+            p_ref_date = leak_ref
+            r.leak_adjusted = "TRUE"
     P_ref = close(p_ref_date)
     if P_ref is None:
         r.status = f"skip:no_P_ref_close({p_ref_date})"

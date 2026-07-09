@@ -183,6 +183,31 @@ def test_apply_to_legs_writes_only_nonblank(tmp_path):
     assert out[("G003", "L001")]["after_close"] == ""   # 触っていない
 
 
+def test_new_meta_fields_pass_through():
+    legs = [leg("G012", "L001")]
+    ws = [{"event_group_id": "G012", "event_leg_id": "L001", "disclosure_time": "", "after_close": "",
+           "time_source": "", "pricing_date": "", "offer_price_JPY": "", "OA_exercised_shares": "",
+           "seller_type": "financial_institutions", "absorption_route": "public_offering",
+           "offering_type": "overseas_ABB", "leak_date": "2025-02-26"}]
+    plan, issues = _plan(ws, legs)
+    cell = plan[("G012", "L001")]
+    assert cell["seller_type"] == "financial_institutions"
+    assert cell["absorption_route"] == "public_offering"
+    assert cell["offering_type"] == "overseas_ABB"
+    assert cell["leak_date"] == "2025-02-26"
+    assert not [i for i in issues if i[0] == "ERROR"]
+
+
+def test_leak_date_bad_format_is_error():
+    legs = [leg("G012", "L001")]
+    ws = [{"event_group_id": "G012", "event_leg_id": "L001", "disclosure_time": "", "after_close": "",
+           "time_source": "", "pricing_date": "", "offer_price_JPY": "", "OA_exercised_shares": "",
+           "leak_date": "2025/02/26"}]   # スラッシュ区切り = 不正
+    plan, issues = _plan(ws, legs)
+    assert any(i[0] == "ERROR" and i[3] == "leak_date" for i in issues)
+    assert "leak_date" not in plan.get(("G012", "L001"), {})   # ERROR セルは書かない
+
+
 def _read(p):
     with p.open("r", encoding="utf-8", newline="") as f:
         return list(csv.DictReader(f))

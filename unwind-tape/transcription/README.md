@@ -19,6 +19,10 @@ offering の `pricing_date` / `offer_price_JPY` が s3(ディスカウント)を
 | `pricing_date` | `YYYY-MM-DD` | 条件決定日(offering) |
 | `offer_price_JPY` | 数値 | 売出価格(条件決定PDF) |
 | `OA_exercised_shares` | 数値 | OA(グリーンシュー)の**行使結果**株数。0 なら 0 |
+| `leak_date` | `YYYY-MM-DD` | 公式発表**前日等の報道リーク日**(ロイター/日経)。あれば shortfall が **P_ref をリーク前日に前倒し**して s1 がリーク下げを拾う。無ければ空欄 |
+| `absorption_route` | enum | この leg の吸収経路。売出しは `public_offering`。**自己株買い併用なら別 leg(L002)** を `toSTNeT_3_buyback`/`issuer_buyback` で追加 |
+| `offering_type` | enum | 売出しの型。`domestic_bookbuild`(国内2週間)/`overseas_ABB`(海外一晩)/`global_offering`/`block_trade`/`unknown`。s1/s2 の割れ方の covariate |
+| `seller_type` | enum | 売り手属性。`bank`/`nonlife_insurer`/`trust_bank`/`business_company`/`parent_or_affiliate`/`financial_institutions`(銀行+保険の混成)等 |
 
 ### time_source enum(この6つだけ)
 `pdf_header` / `tdnet` / `yahoo_archive` / `kabutan` / `media` / `nikkei_nkd`
@@ -66,6 +70,8 @@ python3 unwind-tape/scripts/shortfall_engine.py
 - WARN は正しいこともある(市況急変・特殊スキーム)。潰さず「確認した」で通す。
 
 ## 反映される legs.csv の列(それ以外は一切触らない)
-`disclosure_time, after_close, pricing_date, offer_price_JPY, OA_exercised_shares`。
+`disclosure_time, after_close, pricing_date, offer_price_JPY, OA_exercised_shares,`
+`leak_date, absorption_route, offering_type, seller_type`。
 `time_source` は legs.csv には載せず、本シートを**出所台帳**として保持する(provenance)。
-apply は非空セルのみ上書き(部分転記OK・冪等)。
+apply は非空セルのみ上書き(部分転記OK・冪等)。`leak_date` は日付形式を fail-loud(engine の P_ref を
+動かすため)。enum 3列(absorption_route/offering_type/seller_type)の値検証は `validate_tape.py` が担当。

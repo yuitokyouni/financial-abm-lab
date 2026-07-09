@@ -38,7 +38,8 @@ from car_engine import (  # noqa: E402
 
 TIME_SOURCE_ENUM = {"pdf_header", "tdnet", "yahoo_archive", "kabutan", "media", "nikkei_nkd"}
 MERGE_FIELDS = ["disclosure_time", "after_close", "pricing_date", "offer_price_JPY",
-                "OA_exercised_shares"]
+                "OA_exercised_shares", "leak_date", "absorption_route", "offering_type",
+                "seller_type"]
 DISCOUNT_LO, DISCOUNT_HI = 0.02, 0.05
 LAG_LO, LAG_HI = 5, 15
 
@@ -122,6 +123,19 @@ def plan_and_validate(ws_rows, legs_by_id, code_by_gid, cal, cfg,
         for fld in ("pricing_date", "offer_price_JPY", "OA_exercised_shares"):
             if not _blank(w.get(fld)):
                 cell[fld] = str(w[fld]).strip()
+
+        # --- 追加メタ: enum 3列は legs へ pass-through(enum 検証は validate_tape が担当) ---
+        for fld in ("absorption_route", "offering_type", "seller_type"):
+            if not _blank(w.get(fld)):
+                cell[fld] = str(w[fld]).strip()
+        # --- leak_date は日付形式を fail-loud(engine の P_ref を動かすので厳格に) ---
+        lk = str(w.get("leak_date", "") or "").strip()
+        if lk:
+            if re.match(r"^\d{4}-\d{2}-\d{2}$", lk):
+                cell["leak_date"] = lk
+            else:
+                issues.append(("ERROR", gid, lid, "leak_date",
+                               f"leak_date={lk!r} が YYYY-MM-DD でない"))
 
         if not cell:
             continue

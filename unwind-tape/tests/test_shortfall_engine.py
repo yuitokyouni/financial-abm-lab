@@ -126,6 +126,32 @@ def test_no_split_in_window_flag_false():
     assert r.split_in_window == "FALSE" and r.status == "ok" and r.IS_raw is not None
 
 
+def test_leak_date_shifts_p_ref_back():
+    """リーク報道(leak_date)があると P_ref をリーク前日まで前倒し、s1 がリーク下げを拾う。"""
+    cal = make_cal()
+    closes = {"2024-05-31": 1050.0,   # リーク前 = leak-adjusted P_ref
+              "2024-06-04": 1000.0,   # 通常 P_ref(リーク後)
+              "2024-06-06": 980.0,    # close[day0+a]
+              "2024-06-11": 970.0}    # pricing
+    leg = {"event_group_id": "G", "event_leg_id": "L1", "sale_route": "secondary_offering",
+           "event_role": "announcement", "announce_datetime": "2024-06-05", "after_close": "FALSE",
+           "pricing_date": "2024-06-11", "offer_price_JPY": "950", "leak_date": "2024-06-03"}
+    r = se.compute_leg_shortfall(leg, "1234", "2024-06-05", ohlc(closes), {}, cal, scfg())
+    assert r.status == "ok" and r.leak_adjusted == "TRUE"
+    assert r.P_ref_date == "2024-05-31"
+    assert abs(r.stage1_cost - (math.log(1050.0) - math.log(980.0))) < 1e-12   # リーク下げ込み
+
+
+def test_no_leak_date_normal_p_ref():
+    cal = make_cal()
+    closes = {"2024-06-04": 1000.0, "2024-06-06": 980.0, "2024-06-11": 970.0}
+    leg = {"event_group_id": "G", "event_leg_id": "L1", "sale_route": "secondary_offering",
+           "event_role": "announcement", "announce_datetime": "2024-06-05", "after_close": "FALSE",
+           "pricing_date": "2024-06-11", "offer_price_JPY": "950"}
+    r = se.compute_leg_shortfall(leg, "1234", "2024-06-05", ohlc(closes), {}, cal, scfg())
+    assert r.leak_adjusted == "" and r.P_ref_date == "2024-06-04"
+
+
 def test_secondary_offering_missing_offer_price_skips():
     cal = make_cal()
     leg = {"event_group_id": "G", "event_leg_id": "L1", "sale_route": "secondary_offering",

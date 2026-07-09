@@ -68,3 +68,5 @@ confidence_policy_holding,enum,政策保有株売却とみなせる強度,A_expl
 source_primary_url,text,一次資料URL,TDnet/会社PDF/EDINET等
 source_secondary_url,text,二次資料URL,Reuters等。一次資料優先
 notes,text,注記・不明値理由,明記値以外は空欄とし、理由をここに書く
+offering_type,enum,売出しの型(国内ブックビルド/海外ABB等),domestic_bookbuild/overseas_ABB/global_offering/block_trade/unknown。s1/s2の割れ方に効く covariate
+leak_date,date,公式発表前の報道リーク日(ロイター/日経等),YYYY-MM-DD。あればshortfall engineがP_refをリーク前日に前倒し(s1がリーク下げを拾う)。無ければ空欄
