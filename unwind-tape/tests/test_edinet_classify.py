@@ -65,7 +65,7 @@ def test_classify_equity_uridashi_aisin_like():
     assert r["is_equity_uridashi"] == "TRUE"
     assert r["is_bond"] == "FALSE"
     assert r["uridashi_shares"] == "7788400"
-    assert r["offer_price_JPY"] == "5092"
+    assert r["offer_price_JPY"] == ""       # 価格は自動抽出しない(転記で確定)
     assert r["confidence_policy_holding"] == "B_inference"   # 政策保有語なし → 人が確認
     assert ec.is_tier2(r)
 

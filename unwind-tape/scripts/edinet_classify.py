@@ -195,7 +195,9 @@ def classify_doc(rows: list[dict], cfg: dict) -> dict:
 
     # 数値の暫定抽出(自由文から。確定は転記シートで一次確認)
     shares = _extract_after(fulltext, ["売出数", "売出しをする株式の数", "売出株式数"], r"([\d,]+)\s*株")
-    price = _extract_after(fulltext, ["売出価格"], r"([\d,]+(?:\.\d+)?)\s*円")   # 円 単位必須(未定/(1)等の誤拾い回避)
+    # 価格の自動抽出はやめる: 「売出価格」近傍に手数料/割引額/未定が混じり誤拾いが多い。
+    # size のヒントは株数で足りる。発行価格は転記シートで一次から確定する(創作しない)。
+    price = ""
 
     if not is_equity_uridashi:
         tier = "none"
