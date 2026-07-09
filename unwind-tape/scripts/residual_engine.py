@@ -1,0 +1,212 @@
+#!/usr/bin/env python3
+"""unwind-tape / 残差エンジン(最小プロトタイプ)— 実測(s2+s3) vs 標準TCA(√則)。
+
+docs/TCA_BASELINE_SPEC.md の成果物②の配管。N<30 の間は**記述のみ**:係数 Y は当てはめず、
+各 leg が要求する **implied_Y = (s2+s3) / (σ·√(Q/V))** を並べる。
+  - implied_Y が participation(Q/V=size/ADV20)で**上昇** → √則が外す**非線形の兆候**。
+  - **flat** → √則が効いている。
+相転移点 τ / べき α の推定は N ゲート(≥30、主要方式2系統×各10)通過後(spec §3)。ここでは推定しない。
+
+入力:
+    data/parsed/tape/legs_shortfall.csv   (shortfall_engine の出力: s2/s3, parent_day0, split_in_window)
+    data/parsed/tape/legs.csv             (sold_shares)
+    data/parsed/tape/groups.csv           (issuer_code)
+    data/raw/prices/daily_quotes/{code}.jsonl, trading_calendar.jsonl
+    configs/tca.yaml
+
+出力:
+    data/parsed/benchmark/residual_detail.csv / residual_report.md
+
+除外(measured=s2+s3 が無い/汚染): degenerate、split_in_window=TRUE、status≠ok、s2 or s3 欠。
+依存: numpy, pandas, PyYAML + car_engine の日付/価格ユーティリティ + benchmark_engine.size_bucket。
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import math
+import sys
+from datetime import datetime
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+import numpy as np
+import yaml
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from car_engine import (  # noqa: E402
+    BusinessCalendar, load_trading_calendar, load_daily_quotes, compute_adv,
+)
+from benchmark_engine import size_bucket  # noqa: E402
+
+
+def _num(v):
+    try:
+        return float(str(v).replace(",", "").strip())
+    except (ValueError, AttributeError):
+        return None
+
+
+def compute_sigma(price_df, day0: str, window: int, cal: BusinessCalendar,
+                  min_ratio: float) -> float | None:
+    """直前 [day0-window, day0-1] の日次 log リターン標準偏差。調整終値(分割安全)。"""
+    end = cal.shift_business_days(day0, -1)
+    start = cal.shift_business_days(day0, -window)
+    if end is None or start is None:
+        return None
+    p = price_df[(price_df["Date"] >= start) & (price_df["Date"] <= end)]
+    close = p["AdjustmentClose"].fillna(p["Close"]).to_numpy()
+    close = close[np.isfinite(close) & (close > 0)]
+    if len(close) < window * min_ratio:
+        return None
+    r = np.diff(np.log(close))
+    if len(r) < 2:
+        return None
+    return float(np.std(r, ddof=1))
+
+
+RESIDUAL_COLUMNS = ["event_group_id", "event_leg_id", "issuer_code", "sale_route",
+                    "Q_shares", "ADV20", "participation", "sigma",
+                    "measured_s2s3", "sqrt_shape", "implied_Y", "size_bucket", "status"]
+
+
+def compute_residual_row(gid: str, lid: str, code: str, route: str,
+                         s2: float | None, s3: float | None, Q: float | None,
+                         V: float | None, sigma: float | None, edges: list[float]) -> dict:
+    """純関数: 与えられた s2,s3,Q,V,σ から participation/shape/implied_Y を出す。"""
+    row = {"event_group_id": gid, "event_leg_id": lid, "issuer_code": code, "sale_route": route,
+           "Q_shares": Q, "ADV20": V, "participation": None, "sigma": sigma,
+           "measured_s2s3": None, "sqrt_shape": None, "implied_Y": None,
+           "size_bucket": "", "status": ""}
+    if s2 is None or s3 is None:
+        row["status"] = "skip:no_s2s3"
+        return row
+    measured = s2 + s3
+    row["measured_s2s3"] = measured
+    if not Q or not V or V <= 0:
+        row["status"] = "skip:no_Q_or_ADV"
+        return row
+    part = Q / V
+    row["participation"] = part
+    row["size_bucket"] = size_bucket(part, edges)
+    if sigma is None or sigma <= 0:
+        row["status"] = "skip:no_sigma"
+        return row
+    shape = sigma * math.sqrt(part)
+    row["sqrt_shape"] = shape
+    row["implied_Y"] = measured / shape if shape > 0 else None
+    row["status"] = "ok"
+    return row
+
+
+def _f(v, nd=6):
+    if v is None or (isinstance(v, float) and not math.isfinite(v)):
+        return ""
+    return f"{v:.{nd}f}" if isinstance(v, float) else str(v)
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
+    ap.add_argument("--config", type=Path,
+                    default=Path(__file__).resolve().parent.parent / "configs" / "tca.yaml")
+    args = ap.parse_args(argv)
+
+    cfg = yaml.safe_load(args.config.read_text(encoding="utf-8"))
+    edges = [float(x) for x in cfg["size_over_adv_edges"]]
+    sw = int(cfg["sigma_window_days"]); aw = int(cfg["adv_window_days"])
+    amr = float(cfg["adv_min_ratio"])
+
+    tape = args.root / "data" / "parsed" / "tape"
+    prices = args.root / "data" / "raw" / "prices"
+    sf_path = tape / "legs_shortfall.csv"
+    if not sf_path.exists():
+        print(f"{sf_path} not found — run shortfall_engine.py first.", file=sys.stderr)
+        return 2
+    cal_path = prices / "trading_calendar.jsonl"
+    if not cal_path.exists():
+        print(f"{cal_path} not found — run jquants_fetch.py first.", file=sys.stderr)
+        return 2
+    cal = BusinessCalendar(load_trading_calendar(cal_path))
+
+    sold_by = {}
+    with (tape / "legs.csv").open(encoding="utf-8") as f:
+        for l in csv.DictReader(f):
+            sold_by[(l["event_group_id"], l["event_leg_id"])] = _num(l.get("sold_shares", ""))
+
+    price_cache: dict[str, object] = {}
+
+    def price_df(code: str):
+        if code not in price_cache:
+            p = prices / "daily_quotes" / f"{code}.jsonl"
+            price_cache[code] = load_daily_quotes(p) if p.exists() else None
+        return price_cache[code]
+
+    rows = []
+    with sf_path.open(encoding="utf-8") as f:
+        for sr in csv.DictReader(f):
+            gid, lid = sr["event_group_id"], sr["event_leg_id"]
+            code = sr.get("issuer_code", "").strip()
+            route = sr.get("sale_route", "").strip()
+            # 対象は「s2+s3 が生きている」leg のみ: ok・非degenerate・非split
+            if sr.get("status") != "ok" or sr.get("degenerate") == "TRUE" \
+                    or sr.get("split_in_window") == "TRUE":
+                continue
+            s2 = _num(sr.get("stage2_cost", "")); s3 = _num(sr.get("stage3_cost", ""))
+            day0 = sr.get("parent_day0", "").strip()
+            Q = sold_by.get((gid, lid))
+            V = sigma = None
+            df = price_df(code)
+            if df is not None and day0:
+                V = compute_adv(df, day0, aw, cal, amr)
+                sigma = compute_sigma(df, day0, sw, cal, amr)
+            rows.append(compute_residual_row(gid, lid, code, route, s2, s3, Q, V, sigma, edges))
+
+    out_detail = args.root / cfg["output"]["detail_csv"]
+    out_detail.parent.mkdir(parents=True, exist_ok=True)
+    with out_detail.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=RESIDUAL_COLUMNS)
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: _f(r[k]) for k in RESIDUAL_COLUMNS})
+
+    ok = [r for r in rows if r["status"] == "ok"]
+    _write_report(args.root / cfg["output"]["report_md"], ok, rows, sw, aw)
+    print(f"residual: legs={len(rows)} ok={len(ok)}  wrote {cfg['output']['detail_csv']} / {cfg['output']['report_md']}")
+    for r in ok:
+        print(f"  {r['event_group_id']}/{r['event_leg_id']} {r['sale_route']} "
+              f"Q/ADV20={_f(r['participation'],3)} σ={_f(r['sigma'],4)} "
+              f"s2+s3={_f(r['measured_s2s3'],4)} implied_Y={_f(r['implied_Y'],3)}")
+    return 0
+
+
+def _write_report(path: Path, ok: list[dict], allrows: list[dict], sw: int, aw: int) -> None:
+    L = []
+    L.append("# TCAベースライン残差(プロトタイプ) — 実測(s2+s3) vs √則\n\n")
+    L.append(f"generated: {datetime.now(ZoneInfo('Asia/Tokyo')).isoformat(timespec='seconds')}\n\n")
+    L.append(f"- ok legs: {len(ok)} / {len(allrows)}  (σ窓={sw}bd, ADV{aw}, 調整終値/調整出来高)\n\n")
+    L.append("> **N<30 のため記述のみ(TCA_BASELINE §8)**。係数 Y は当てはめず、各 leg が要求する\n"
+             "> **`implied_Y = (s2+s3) / (σ·√(Q/V))`** を並べる。participation(Q/V)で implied_Y が\n"
+             "> **上昇 → √則が外す非線形の兆候**、**flat → √則が効いている**。相転移点 τ / べき α の推定は\n"
+             "> N ゲート通過後(§3)。ここでは τ を出さない。s1 は残差に含めない(系統Aへ)。\n\n")
+    L.append("| leg | 方式 | Q/ADV20 | σ(日次) | 実測 s2+s3 | σ√(Q/V) | implied_Y | bucket |\n")
+    L.append("|---|---|---:|---:|---:|---:|---:|---|\n")
+    if not ok:
+        L.append("| (まだ計算対象 leg 無し — 転記が進み s2/s3 が揃えば埋まる) | | | | | | | |\n")
+    for r in sorted(ok, key=lambda x: (x["participation"] or 0)):
+        L.append(f"| {r['event_group_id']}/{r['event_leg_id']} | {r['sale_route']} | "
+                 f"{_f(r['participation'],3)} | {_f(r['sigma'],4)} | {_f(r['measured_s2s3'],4)} | "
+                 f"{_f(r['sqrt_shape'],4)} | {_f(r['implied_Y'],3)} | {r['size_bucket']} |\n")
+    L.append("\n## 読み方 / 参照分布との突合\n")
+    L.append("- **売り手の s3 の平時水準**は参照分布 `off_both × discount`(`benchmark_summary.csv`、"
+             "p90≈3.4% / 分売 3.0%)。実測 offering の s3 がこの裾に載るか、size で深化するかを併読。\n")
+    L.append("- **除外**: degenerate(即日型)・`split_in_window=TRUE`(窓内分割で s1/s2 段差)・"
+             "s2 or s3 欠 は residual 対象外(創作しない)。\n")
+    L.append("- **次段(N≥30)**: implied_Y を participation の関数として segmented / べき α で当て、"
+             "相転移点 τ を CI つきで推定(TCA_BASELINE §3)。\n")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(L), encoding="utf-8")
+
+
+if __name__ == "__main__":
+    sys.exit(main())

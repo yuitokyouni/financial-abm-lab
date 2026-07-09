@@ -62,10 +62,13 @@ def scfg() -> se.ShortfallConfig:
     )
 
 
-def ohlc(close_map: dict[str, float], open_map: dict[str, float] | None = None) -> dict[str, dict]:
+def ohlc(close_map: dict[str, float], open_map: dict[str, float] | None = None,
+         adjf_map: dict[str, float] | None = None) -> dict[str, dict]:
     open_map = open_map or {}
-    dates = set(close_map) | set(open_map)
-    return {d: {"close": close_map.get(d), "open": open_map.get(d)} for d in dates}
+    adjf_map = adjf_map or {}
+    dates = set(close_map) | set(open_map) | set(adjf_map)
+    return {d: {"close": close_map.get(d), "open": open_map.get(d),
+                "adj_factor": adjf_map.get(d)} for d in dates}
 
 
 # ---------------------------------------------------------------------------
@@ -95,6 +98,32 @@ def test_secondary_offering_identity_holds_exactly():
     # s3 = discount (生): pricing close 970 vs offer 950 → 正 (コスト)
     assert abs(r.stage3_cost - (math.log(970.0) - math.log(950.0))) < 1e-12
     assert r.stage3_cost > 0
+
+
+def test_split_in_window_nas_stages_keeps_s3():
+    """窓内に分割 ex-date(AdjFactor≠1)があると s1/s2/IS_raw/IS_adj は NA、s3(pricing-local)は保持。"""
+    cal = make_cal()
+    closes = {"2024-06-04": 1000.0, "2024-06-11": 490.0}   # 06-11 は分割後の pricing 終値
+    adjf = {"2024-06-07": 0.5}                              # 1:2 分割の ex-date(窓内)
+    leg = {"event_group_id": "G", "event_leg_id": "L1", "sale_route": "secondary_offering",
+           "event_role": "announcement", "announce_datetime": "2024-06-05", "after_close": "FALSE",
+           "pricing_date": "2024-06-11", "offer_price_JPY": "475"}
+    r = se.compute_leg_shortfall(leg, "1234", "2024-06-05", ohlc(closes, adjf_map=adjf), {}, cal, scfg())
+    assert r.split_in_window == "TRUE"
+    assert r.status.startswith("ok:split_in_window")
+    assert r.IS_raw is None and r.stage1_cost is None and r.stage2_cost is None and r.IS_adj is None
+    assert r.stage3_cost is not None
+    assert abs(r.stage3_cost - (math.log(490.0) - math.log(475.0))) < 1e-12   # pricing-local s3
+
+
+def test_no_split_in_window_flag_false():
+    cal = make_cal()
+    closes = {"2024-06-04": 1000.0, "2024-06-06": 980.0, "2024-06-11": 970.0}
+    leg = {"event_group_id": "G", "event_leg_id": "L1", "sale_route": "secondary_offering",
+           "event_role": "announcement", "announce_datetime": "2024-06-05", "after_close": "FALSE",
+           "pricing_date": "2024-06-11", "offer_price_JPY": "950"}
+    r = se.compute_leg_shortfall(leg, "1234", "2024-06-05", ohlc(closes), {}, cal, scfg())
+    assert r.split_in_window == "FALSE" and r.status == "ok" and r.IS_raw is not None
 
 
 def test_secondary_offering_missing_offer_price_skips():
