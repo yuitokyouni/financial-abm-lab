@@ -37,3 +37,25 @@ output:
   manifest:       data/raw/edinet/manifest.jsonl
   candidates_csv: data/parsed/edinet/candidates.csv
   report_md:      data/parsed/edinet/edinet_report.md
+
+# --- step 2: 本文分類(株式の売出し × 政策保有)。candidates.csv の非IPO行の本文を読む ---
+classify:
+  doc_type: "5"                       # EDINET 書類取得の type: 5=CSV(zip)。無ければ 1=XBRL に fallback
+  # 政策保有の明示(A_explicit)を示す本文キーワード
+  policy_keywords: ["政策保有", "純投資目的以外", "縮減", "持ち合い", "持合い", "政策的", "資本業務提携", "取引関係の維持"]
+  uridashi_keywords: ["売出"]         # 売出し(secondary)。これが無ければ募集のみ or 非対象
+  equity_keywords: ["株券", "株式"]   # 有価証券の種類=株式か(社債のみは除外)
+  bond_only_keywords: ["社債券", "新株予約権付社債"]
+  # 売出人(seller)の属性判定。政策保有の売り手=銀行/保険/信託/事業会社。ファンド/個人は非政策保有
+  seller_type_rules:
+    bank:       ["銀行"]
+    insurance:  ["生命保険", "損害保険", "保険"]
+    trust:      ["信託"]
+    securities: ["証券"]
+    fund:       ["ファンド", "投資事業有限責任組合", "アセットマネジメント", "キャピタル", "インベストメント", "パートナーズ", "投資組合"]
+  output:
+    raw_docs_dir: data/raw/edinet/docs          # 取得した本文(zip/csv)。gitignore
+    manifest:     data/raw/edinet/docs_manifest.jsonl
+    detail_csv:   data/parsed/edinet/classify_detail.csv
+    tier2_csv:    data/parsed/edinet/tier2_candidates.csv   # 確定した政策保有×株式売出(転記シートへ流す)
+    report_md:    data/parsed/edinet/classify_report.md
