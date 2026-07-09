@@ -55,6 +55,8 @@ def test_residual_row_implied_Y():
     assert r["measured_s2s3"] == pytest.approx(0.03)
     assert r["sqrt_shape"] == pytest.approx(0.02 * math.sqrt(2.0))
     assert r["implied_Y"] == pytest.approx(0.03 / (0.02 * math.sqrt(2.0)))
+    # √則テストの主指標: implied_Y_s2 = s2 / shape (s3 は除外)
+    assert r["implied_Y_s2"] == pytest.approx(0.01 / (0.02 * math.sqrt(2.0)))
     assert r["size_bucket"] == ">=2"
 
 

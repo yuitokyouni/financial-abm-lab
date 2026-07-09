@@ -68,19 +68,21 @@ def compute_sigma(price_df, day0: str, window: int, cal: BusinessCalendar,
 RESIDUAL_COLUMNS = ["event_group_id", "event_leg_id", "issuer_code", "sale_route",
                     "Q_shares", "ADV20", "participation", "sigma",
                     "stage2_cost", "stage3_cost",
-                    "measured_s2s3", "sqrt_shape", "implied_Y", "size_bucket", "status"]
+                    "measured_s2s3", "sqrt_shape", "implied_Y", "implied_Y_s2",
+                    "size_bucket", "status"]
 
 
 def compute_residual_row(gid: str, lid: str, code: str, route: str,
                          s2: float | None, s3: float | None, Q: float | None,
                          V: float | None, sigma: float | None, edges: list[float]) -> dict:
     """純関数: 与えられた s2,s3,Q,V,σ から participation/shape/implied_Y を出す。
-    s2/s3 は内訳として残す(offering の s3 は市場インパクトでなく発行ディスカウントの疑いがあり、
-    (s2+s3) では固定 s3 が √ 判定を汚す — 内訳を可視化しておく)。"""
+    √則の**非線形テストは implied_Y_s2 = s2/(σ√(Q/V)) を主に見る**(2026-07 決定)。
+    s3 は発行ディスカウント層(引受の手腕・需要の強弱=市場清算価格ではない、需要弱で拡大)なので
+    √則の判定から外し、内訳として別掲。implied_Y(s2+s3)は総実現コスト側の参考として残す。"""
     row = {"event_group_id": gid, "event_leg_id": lid, "issuer_code": code, "sale_route": route,
            "Q_shares": Q, "ADV20": V, "participation": None, "sigma": sigma,
            "stage2_cost": s2, "stage3_cost": s3,
-           "measured_s2s3": None, "sqrt_shape": None, "implied_Y": None,
+           "measured_s2s3": None, "sqrt_shape": None, "implied_Y": None, "implied_Y_s2": None,
            "size_bucket": "", "status": ""}
     if s2 is None or s3 is None:
         row["status"] = "skip:no_s2s3"
@@ -99,6 +101,7 @@ def compute_residual_row(gid: str, lid: str, code: str, route: str,
     shape = sigma * math.sqrt(part)
     row["sqrt_shape"] = shape
     row["implied_Y"] = measured / shape if shape > 0 else None
+    row["implied_Y_s2"] = s2 / shape if shape > 0 else None   # ← √則 非線形テストの主指標
     row["status"] = "ok"
     return row
 
@@ -180,28 +183,31 @@ def main(argv: list[str] | None = None) -> int:
     for r in ok:
         print(f"  {r['event_group_id']}/{r['event_leg_id']} {r['sale_route']} "
               f"Q/ADV20={_f(r['participation'],3)} σ={_f(r['sigma'],4)} "
-              f"s2+s3={_f(r['measured_s2s3'],4)} implied_Y={_f(r['implied_Y'],3)}")
+              f"s2={_f(r['stage2_cost'],4)} implied_Y_s2={_f(r['implied_Y_s2'],3)} "
+              f"(s2+s3={_f(r['measured_s2s3'],4)} implied_Y={_f(r['implied_Y'],3)})")
     return 0
 
 
 def _write_report(path: Path, ok: list[dict], allrows: list[dict], sw: int, aw: int) -> None:
     L = []
-    L.append("# TCAベースライン残差(プロトタイプ) — 実測(s2+s3) vs √則\n\n")
+    L.append("# TCAベースライン残差(プロトタイプ) — 実測 s2 vs √則\n\n")
     L.append(f"generated: {datetime.now(ZoneInfo('Asia/Tokyo')).isoformat(timespec='seconds')}\n\n")
     L.append(f"- ok legs: {len(ok)} / {len(allrows)}  (σ窓={sw}bd, ADV{aw}, 調整終値/調整出来高)\n\n")
     L.append("> **N<30 のため記述のみ(TCA_BASELINE §8)**。係数 Y は当てはめず、各 leg が要求する\n"
-             "> **`implied_Y = (s2+s3) / (σ·√(Q/V))`** を並べる。participation(Q/V)で implied_Y が\n"
-             "> **上昇 → √則が外す非線形の兆候**、**flat → √則が効いている**。相転移点 τ / べき α の推定は\n"
-             "> N ゲート通過後(§3)。ここでは τ を出さない。s1 は残差に含めない(系統Aへ)。\n\n")
-    L.append("| leg | 方式 | Q/ADV20 | σ(日次) | s2(ドリフト) | s3(執行ギャップ) | 実測 s2+s3 | σ√(Q/V) | implied_Y | bucket |\n")
+             "> **`implied_Y_s2 = s2 / (σ·√(Q/V))`** を並べる(2026-07 決定: √則の非線形テストは **s2 側**で見る。\n"
+             "> s3 は発行ディスカウント層=引受手腕・需要の強弱で、市場清算価格ではない → √則判定から外し別掲)。\n"
+             "> participation(Q/V)で implied_Y_s2 が **上昇 → √則が外す非線形の兆候**、**flat → √則が効いている**。\n"
+             "> `implied_Y`(s2+s3)は総実現コスト側の参考。相転移点 τ / べき α の推定は N ゲート通過後(§3)。\n"
+             "> ここでは τ を出さない。s1 は残差に含めない(系統Aへ)。\n\n")
+    L.append("| leg | 方式 | Q/ADV20 | σ(日次) | s2(ドリフト) | s3(ディスカウント) | σ√(Q/V) | **implied_Y_s2** | implied_Y(s2+s3) | bucket |\n")
     L.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---|\n")
     if not ok:
         L.append("| (まだ計算対象 leg 無し — 転記が進み s2/s3 が揃えば埋まる) | | | | | | | | | |\n")
     for r in sorted(ok, key=lambda x: (x["participation"] or 0)):
         L.append(f"| {r['event_group_id']}/{r['event_leg_id']} | {r['sale_route']} | "
                  f"{_f(r['participation'],3)} | {_f(r['sigma'],4)} | {_f(r['stage2_cost'],4)} | "
-                 f"{_f(r['stage3_cost'],4)} | {_f(r['measured_s2s3'],4)} | "
-                 f"{_f(r['sqrt_shape'],4)} | {_f(r['implied_Y'],3)} | {r['size_bucket']} |\n")
+                 f"{_f(r['stage3_cost'],4)} | {_f(r['sqrt_shape'],4)} | "
+                 f"**{_f(r['implied_Y_s2'],3)}** | {_f(r['implied_Y'],3)} | {r['size_bucket']} |\n")
 
     # s3 のクラスタリング検出(方式ごと): offering の s3 が「制度的にほぼ一定」なら √ 判定を汚す
     L.append("\n## 観察: s3(執行ギャップ)は方式内でほぼ一定か\n")
@@ -210,7 +216,6 @@ def _write_report(path: Path, ok: list[dict], allrows: list[dict], sw: int, aw: 
         v = r.get("stage3_cost")
         if v is not None:
             by_route.setdefault(r["sale_route"], []).append(v)
-    flagged = False
     for route, vals in sorted(by_route.items()):
         if len(vals) < 2:
             L.append(f"- `{route}`: n={len(vals)}(判定は n≥2 から)\n")
@@ -219,20 +224,21 @@ def _write_report(path: Path, ok: list[dict], allrows: list[dict], sw: int, aw: 
         spread = hi - lo
         note = ""
         if spread < 0.01:
-            flagged = True
             note = " → **ほぼ一定 = 発行ディスカウント(制度固定)の疑い**"
+        elif spread >= 0.015:
+            note = " → **バラつく = 需要の強弱で拡縮(固定ではない。帯外=需要弱で深い)**"
         L.append(f"- `{route}`: s3 ∈ [{lo:.4f}, {hi:.4f}]、幅 {spread:.4f}(n={len(vals)}){note}\n")
-    if flagged:
-        L.append("\n> **含意**: s3 が size に依らず固定(≈発行ディスカウント)なら、`(s2+s3)` の implied_Y は\n"
-                 "> 固定 s3 を σ√(Q/V) で割るぶん **size で機械的に低下**する(=√則の非線形とは無関係のアーティファクト)。\n"
-                 "> **市場インパクトの非線形は s2(公表→条件決定ドリフト=オーバーハング吸収)側で見るべき**。\n"
-                 "> 比較対象を s2+s3 のまま行くか、offering は s2 主体で診るかは要ユーザ判断(凍結『s3 の方式間比較禁止』と整合)。\n")
+    L.append("\n> **なぜ s3 を √則テストから外すか(2026-07 決定)**: s3(執行ギャップ)は発行ディスカウント層。\n"
+             "> ほぼ一定なら固定 s3 を σ√(Q/V) で割って implied_Y が size で機械的に低下し、非線形判定を汚す。\n"
+             "> バラついても、その拡縮は**引受の手腕・需要の強弱(帯外は需要弱で深い)= 市場清算価格ではない裏事情**で、\n"
+             "> √則(市場インパクト)とは別レイヤ。→ 非線形は **implied_Y_s2 = s2/(σ√(Q/V))** で見る(s2=オーバーハング吸収)。\n")
     L.append("\n## 読み方 / 参照分布との突合\n")
+    L.append("- **√則テストは implied_Y_s2(s2 側)**: participation で上昇なら非線形、flat なら √則。s3 は別レイヤ。\n")
     L.append("- **売り手の s3 の平時水準**は参照分布 `off_both × discount`(`benchmark_summary.csv`、"
-             "p90≈3.4% / 分売 3.0%)。実測 offering の s3 がこの裾に載るか、size で深化するかを併読。\n")
+             "p90≈3.4% / 分売 3.0%)。実測 offering の s3 がこの裾に載るか、需要弱で深化するかを併読。\n")
     L.append("- **除外**: degenerate(即日型)・`split_in_window=TRUE`(窓内分割で s1/s2 段差)・"
              "s2 or s3 欠 は residual 対象外(創作しない)。Q(sold_shares)欠でも skip:no_Q_or_ADV。\n")
-    L.append("- **次段(N≥30)**: implied_Y を participation の関数として segmented / べき α で当て、"
+    L.append("- **次段(N≥30)**: implied_Y_s2 を participation の関数として segmented / べき α で当て、"
              "相転移点 τ を CI つきで推定(TCA_BASELINE §3)。\n")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("".join(L), encoding="utf-8")
