@@ -13,10 +13,16 @@ retries: 4                          # 指数バックオフ base=2s factor=2(Tas
 backoff_base_sec: 2.0
 backoff_factor: 2.0
 
-# 候補として拾う doc type(有価証券届出書系 = 募集・売出し)。売出人による secondary は 030/040 が主。
-target_doc_type_codes: ["030", "040", "130", "140"]
-#   030 有価証券届出書 / 040 訂正有価証券届出書 / 130 発行登録追補書類 / 140 訂正発行登録追補書類
-uridashi_keywords: ["売出"]         # docDescription で secondary(売出)をタグ付け(募集のみは False)
+# 候補として拾う doc type(実 EDINET コードで確認済み、2023-11-29 の生データより)。
+target_doc_type_codes: ["030", "040", "100"]
+#   030 有価証券届出書 / 040 訂正有価証券届出書 / 100 発行登録追補書類(shelf takedown、大企業の売出はこちらが多い)
+#   ※ 130=訂正有報・140=四半期報告書 は offering ではないので除外(初回 config の誤りを訂正)
+# ordinanceCode で母集団を「事業会社(株式)」に限定する。ここが最重要フィルタ:
+#   010 企業内容等開示府令(=事業会社の株式) / 030 特定有価証券開示府令(=投資信託・REIT。除外)
+target_ordinance_codes: ["010"]
+# docDescription はタグ付けのみ(有価証券届出書本文の募集/売出は step2 で判定。ここでは text 一致に頼らない)
+uridashi_keywords: ["売出"]          # 稀に届出名に売出を含む → 弱いタグ
+ipo_keywords: ["新規公開", "新規上場"]  # IPO は政策保有解消でない → step2 で除外するためタグ付け
 
 output:
   raw_dir:        data/raw/edinet/documents     # {date}.json(生レスポンス、gitignore)

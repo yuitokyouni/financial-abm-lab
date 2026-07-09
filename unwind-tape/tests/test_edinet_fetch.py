@@ -15,12 +15,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 import edinet_fetch as ed  # noqa: E402
 
 KW = ["売出"]
-TARGET = ["030", "040", "130", "140"]
+IPO_KW = ["新規公開", "新規上場"]
+TARGET = ["030", "040", "100"]
+ORDS = ["010"]
 
 
 def _r(**kw):
-    base = {"docID": "S1", "docTypeCode": "030", "docDescription": "有価証券届出書",
-            "withdrawalStatus": "0"}
+    base = {"docID": "S1", "docTypeCode": "030", "ordinanceCode": "010",
+            "docDescription": "有価証券届出書", "withdrawalStatus": "0"}
     base.update(kw)
     return base
 
@@ -50,27 +52,35 @@ def test_result_to_candidate_flattens():
     r = _r(secCode="42460", filerName="ダイキョーニシカワ",
            docDescription="有価証券届出書(有価証券の募集又は売出し)",
            submitDateTime="2026-01-07 16:05", parentDocID="S0")
-    c = ed.result_to_candidate(r, KW)
+    c = ed.result_to_candidate(r, KW, IPO_KW)
     assert c["code4"] == "4246"
     assert c["submit_date"] == "2026-01-07"
     assert c["submit_datetime"] == "2026-01-07 16:05"
     assert c["has_uridashi"] == "TRUE"
+    assert c["is_ipo"] == "FALSE"
     assert c["parentDocID"] == "S0"
     assert set(c.keys()) == set(ed.CANDIDATE_COLUMNS)
 
 
+def test_is_ipo_tag():
+    assert ed.is_ipo("訂正有価証券届出書（新規公開時）", IPO_KW) is True
+    assert ed.is_ipo("有価証券届出書（参照方式）", IPO_KW) is False
+
+
 # --- extract_candidates ---------------------------------------------------
 
-def test_extract_filters_doctype_and_withdrawal():
+def test_extract_filters_doctype_ordinance_withdrawal():
     results = [
-        _r(docID="A", docTypeCode="030"),                       # 有価証券届出書 → 拾う
-        _r(docID="B", docTypeCode="120"),                       # 有価証券報告書 → 除外
-        _r(docID="C", docTypeCode="040"),                       # 訂正届出書 → 拾う
-        _r(docID="D", docTypeCode="030", withdrawalStatus="1"), # 撤回 → 除外
+        _r(docID="A", docTypeCode="030", ordinanceCode="010"),  # 事業会社の届出書 → 拾う
+        _r(docID="B", docTypeCode="120", ordinanceCode="010"),  # 有価証券報告書 → 除外(docType)
+        _r(docID="C", docTypeCode="040", ordinanceCode="010"),  # 訂正届出書 → 拾う
+        _r(docID="F", docTypeCode="100", ordinanceCode="010"),  # 発行登録追補 → 拾う
+        _r(docID="E", docTypeCode="030", ordinanceCode="030"),  # 投資信託 → 除外(ordinance)
+        _r(docID="D", docTypeCode="030", ordinanceCode="010", withdrawalStatus="1"),  # 撤回 → 除外
     ]
-    cands = ed.extract_candidates(results, TARGET, KW)
+    cands = ed.extract_candidates(results, TARGET, ORDS, KW, IPO_KW)
     ids = {c["docID"] for c in cands}
-    assert ids == {"A", "C"}
+    assert ids == {"A", "C", "F"}
 
 
 # --- validate_envelope ----------------------------------------------------

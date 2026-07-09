@@ -50,7 +50,7 @@ JST = ZoneInfo("Asia/Tokyo")
 CANDIDATE_COLUMNS = [
     "submit_date", "submit_datetime", "docID", "docTypeCode", "formCode",
     "ordinanceCode", "secCode", "code4", "edinetCode", "filerName",
-    "docDescription", "has_uridashi", "parentDocID",
+    "docDescription", "has_uridashi", "is_ipo", "parentDocID",
     "xbrlFlag", "csvFlag", "pdfFlag",
 ]
 
@@ -67,7 +67,14 @@ def _sha256(b: bytes) -> str:
 # ---------------------------------------------------------------------------
 
 def has_uridashi(desc: str | None, keywords: list[str]) -> bool:
-    """docDescription に売出(売出し)を含むか。募集のみ(新規発行)は False。"""
+    """docDescription に売出(売出し)を含むか。※有価証券届出書は本文に募集/売出があり
+    docDescription では判別できないことが多い(弱いタグ扱い。確定は step2 本文)。"""
+    d = desc or ""
+    return any(k in d for k in keywords)
+
+
+def is_ipo(desc: str | None, keywords: list[str]) -> bool:
+    """新規公開(IPO)か。IPO は政策保有解消でない → step2 で除外するためタグ付け。"""
     d = desc or ""
     return any(k in d for k in keywords)
 
@@ -82,10 +89,11 @@ def _code4(sec_code: str | None) -> str:
     return ""
 
 
-def result_to_candidate(r: dict, keywords: list[str]) -> dict:
+def result_to_candidate(r: dict, uridashi_kw: list[str], ipo_kw: list[str]) -> dict:
     """EDINET results の1件を candidates.csv 行(flat)に落とす。純関数。"""
     submit_dt = (r.get("submitDateTime") or "").strip()
     submit_date = submit_dt.split(" ")[0] if submit_dt else ""
+    desc = r.get("docDescription")
     return {
         "submit_date": submit_date,
         "submit_datetime": submit_dt,
@@ -97,8 +105,9 @@ def result_to_candidate(r: dict, keywords: list[str]) -> dict:
         "code4": _code4(r.get("secCode")),
         "edinetCode": r.get("edinetCode") or "",
         "filerName": r.get("filerName") or "",
-        "docDescription": r.get("docDescription") or "",
-        "has_uridashi": "TRUE" if has_uridashi(r.get("docDescription"), keywords) else "FALSE",
+        "docDescription": desc or "",
+        "has_uridashi": "TRUE" if has_uridashi(desc, uridashi_kw) else "FALSE",
+        "is_ipo": "TRUE" if is_ipo(desc, ipo_kw) else "FALSE",
         "parentDocID": r.get("parentDocID") or "",
         "xbrlFlag": r.get("xbrlFlag") or "",
         "csvFlag": r.get("csvFlag") or "",
@@ -106,17 +115,20 @@ def result_to_candidate(r: dict, keywords: list[str]) -> dict:
     }
 
 
-def extract_candidates(results: list[dict], target_codes: list[str],
-                       keywords: list[str]) -> list[dict]:
-    """有価証券届出書系(target_codes)だけ候補に。撤回済み(withdrawalStatus≠'0')は除外。"""
-    tc = set(target_codes)
+def extract_candidates(results: list[dict], target_codes: list[str], target_ords: list[str],
+                       uridashi_kw: list[str], ipo_kw: list[str]) -> list[dict]:
+    """事業会社(ordinanceCode∈target_ords、投資信託 030 を除外)の届出系(docTypeCode∈target_codes)
+    だけ候補に。撤回済み(withdrawalStatus≠'0')は除外。募集/売出/policy-holding の確定は step2 本文。"""
+    tc, oc = set(target_codes), set(target_ords)
     out = []
     for r in results:
         if (r.get("docTypeCode") or "") not in tc:
             continue
-        if (r.get("withdrawalStatus") or "0") != "0":   # 撤回書類は lead にしない
+        if (r.get("ordinanceCode") or "") not in oc:      # 事業会社(株式)に限定。投資信託を除外
             continue
-        out.append(result_to_candidate(r, keywords))
+        if (r.get("withdrawalStatus") or "0") != "0":     # 撤回書類は lead にしない
+            continue
+        out.append(result_to_candidate(r, uridashi_kw, ipo_kw))
     return out
 
 
@@ -247,7 +259,9 @@ def main(argv: list[str] | None = None) -> int:
         d_to = datetime.strptime(args.d_to or cfg["date_to"], "%Y-%m-%d").date()
 
     target_codes = [str(c) for c in cfg["target_doc_type_codes"]]
+    target_ords = [str(c) for c in cfg["target_ordinance_codes"]]
     keywords = list(cfg["uridashi_keywords"])
+    ipo_kw = list(cfg.get("ipo_keywords", []))
     out = cfg["output"]
     raw_dir = args.root / out["raw_dir"]
     manifest = args.root / out["manifest"]
@@ -289,7 +303,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
 
         (raw_dir / f"{ds}.json").write_bytes(raw)
-        cands = extract_candidates(results, target_codes, keywords)
+        cands = extract_candidates(results, target_codes, target_ords, keywords, ipo_kw)
         all_candidates.extend(cands)
         n_fetched += 1
         n_docs += len(results)
@@ -298,7 +312,8 @@ def main(argv: list[str] | None = None) -> int:
                                     "sha256": _sha256(raw), "ts": datetime.now(JST).isoformat()})
 
     # candidates.csv は「今回取得分」を上書きではなく、全 raw から再集計して一貫させる
-    all_candidates = _rebuild_candidates_from_raw(raw_dir, target_codes, keywords) or all_candidates
+    all_candidates = _rebuild_candidates_from_raw(
+        raw_dir, target_codes, target_ords, keywords, ipo_kw) or all_candidates
     _write_candidates(cand_csv, all_candidates)
     _write_report(report_md, all_candidates, d_from, d_to, n_fetched, n_docs, target_codes)
     log.info("done: fetched %d days, %d docs, %d candidates → %s",
@@ -306,16 +321,16 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _rebuild_candidates_from_raw(raw_dir: Path, target_codes: list[str],
-                                 keywords: list[str]) -> list[dict]:
-    """保存済み全 {date}.json から候補を再構築(冪等: 途中再開しても candidates.csv が完全になる)。"""
+def _rebuild_candidates_from_raw(raw_dir: Path, target_codes: list[str], target_ords: list[str],
+                                 keywords: list[str], ipo_kw: list[str]) -> list[dict]:
+    """保存済み全 {date}.json から候補を再構築(冪等: 途中再開・フィルタ変更後も candidates.csv が完全になる)。"""
     out: list[dict] = []
     for p in sorted(raw_dir.glob("*.json")):
         try:
             results, _ = validate_envelope(json.loads(p.read_bytes()))
         except (json.JSONDecodeError, ValueError):
             continue
-        out.extend(extract_candidates(results, target_codes, keywords))
+        out.extend(extract_candidates(results, target_codes, target_ords, keywords, ipo_kw))
     return out
 
 
@@ -333,26 +348,37 @@ def _write_report(path: Path, cands: list[dict], d_from: date, d_to: date,
                   n_days: int, n_docs: int, target_codes: list[str]) -> None:
     from collections import Counter
     by_type = Counter(c["docTypeCode"] for c in cands)
-    uridashi = [c for c in cands if c["has_uridashi"] == "TRUE"]
-    by_type_uri = Counter(c["docTypeCode"] for c in uridashi)
-    top_filers = Counter(c["filerName"] for c in uridashi).most_common(15)
+    by_form = Counter((c["docTypeCode"], c["formCode"]) for c in cands)
+    ipo = [c for c in cands if c["is_ipo"] == "TRUE"]
+    non_ipo = [c for c in cands if c["is_ipo"] != "TRUE"]
+    with_code = [c for c in non_ipo if c["code4"]]           # 上場企業(secCode 有)= step2 対象の中核
+    top_filers = Counter(c["filerName"] for c in with_code).most_common(20)
     L = []
-    L.append("# Task D — EDINET 売出し系書類 discovery（step 1: 候補抽出）\n\n")
+    L.append("# Task D — EDINET 事業会社の届出系 discovery（step 1: 候補抽出）\n\n")
     L.append(f"generated: {datetime.now(JST).isoformat(timespec='seconds')}\n\n")
     L.append(f"- 対象期間: {d_from} .. {d_to}（取得済 {n_days} 営業日 / 総書類 {n_docs}）\n")
-    L.append(f"- 対象 docTypeCode: {', '.join(target_codes)}（有価証券届出書系＝募集・売出し）\n")
-    L.append(f"- **候補 {len(cands)} 件**、うち **売出タグ(has_uridashi) {len(uridashi)} 件**\n\n")
-    L.append("## docTypeCode 内訳\n\n| code | 全候補 | うち売出 |\n|---|---:|---:|\n")
+    L.append(f"- フィルタ: **ordinanceCode=010(事業会社=株式、投資信託 030 は除外)** × "
+             f"docTypeCode∈{{{', '.join(target_codes)}}}(030 届出書 / 040 訂正 / 100 発行登録追補)\n")
+    L.append(f"- **候補 {len(cands)} 件** = IPO {len(ipo)} + 非IPO {len(non_ipo)}"
+             f"(うち secCode 有 = 上場企業 {len(with_code)} 件)\n")
+    L.append("> 有価証券届出書は本文に募集/売出があり docDescription では判別不可 → **売出/policy-holding の確定は step2**。\n"
+             "> 母集団=事業会社の届出(公募増資・売出し・shelf takedown)。ここから政策保有の**売出し**を step2 で絞る。\n\n")
+    L.append("## docTypeCode 内訳\n\n| code | 件数 |\n|---|---:|\n")
     for tc in sorted(by_type):
-        L.append(f"| {tc} | {by_type[tc]} | {by_type_uri.get(tc, 0)} |\n")
-    L.append("\n## 売出タグ上位 filer（発行体/届出人。lead であり確定ではない）\n\n")
-    L.append("| filer | 件数 |\n|---|---:|\n")
+        L.append(f"| {tc} | {by_type[tc]} |\n")
+    L.append("\n## (docType, formCode) 内訳（offering の様式を見る: 021参照/022組込 が既存企業の増資・売出、024=IPO 系）\n\n")
+    L.append("| docType | formCode | 件数 |\n|---|---|---:|\n")
+    for (tc, fc), n in sorted(by_form.items(), key=lambda x: (-x[1], x[0])):
+        L.append(f"| {tc} | {fc} | {n} |\n")
+    L.append("\n## 上位 filer（非IPO・上場企業。発行体/届出人。lead であり確定ではない）\n\n")
+    L.append("| code | filer | 件数 |\n|---|---|---:|\n")
     for name, n in top_filers:
-        L.append(f"| {name} | {n} |\n")
+        codes = {c["code4"] for c in with_code if c["filerName"] == name}
+        L.append(f"| {'/'.join(sorted(codes))} | {name} | {n} |\n")
     L.append("\n## 次段 / 注意\n")
-    L.append("- **step 2（本文分類）**: has_uridashi=TRUE の書類本文を DL し、**売出人が銀行/保険/事業提携先**か、"
-             "本文に「政策保有」「純投資目的以外」「縮減」等があるかで policy-holding を判定し "
-             "`confidence_policy_holding`(A_explicit/B_inference) を付与。**数値は一次本文から転記のみ**。\n")
+    L.append("- **step 2（本文分類）**: 非IPO候補の本文(XBRL/CSV)を DL し、(i) 募集でなく**売出し**か、"
+             "(ii) **売出人が銀行/保険/事業提携先**か、(iii) 本文に「政策保有」「純投資目的以外」「縮減」等があるかで "
+             "policy-holding を判定し `confidence_policy_holding`(A_explicit/B_inference) を付与。**数値は一次本文から転記のみ**。\n")
     L.append("- **選択バイアス**: EDINET は届出**閾値超**の売出しを拾う → 母集団は offering/大口に偏る。"
              "小口の市場内売却は届出書に出ず観測されない → **線形域(小 size)が過小**。相転移点推定の限界"
              "(TCA_BASELINE §3、TASK_D_DESIGN §3)。\n")
