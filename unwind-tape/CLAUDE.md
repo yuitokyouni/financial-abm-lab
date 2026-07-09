@@ -12,7 +12,13 @@ YH009 は実データの経験的イベントスタディで別系譜。マス�
 - **B. xlsx → CSV 正規化 + PDF アーカイバ + build round-trip** (v0.3 で完了)
 - **C. J-Quants で日次四本値 + AR/CAR エンジン** (B 完了、着手指示待ち)
 
-進捗と受け入れ条件の一次情報は `HANDOFF.md`。
+進捗と受け入れ条件の一次情報は `HANDOFF.md`。新規性と設計不変条件は `docs/CONTRIBUTION.md`。
+
+## 設計判断の3問(`docs/CONTRIBUTION.md` §5 の短縮形。設計を変えるたびに問う)
+1. この変更は差分表(研究対象/標的データ/識別戦略)のどの行を毀損するか?
+2. 退化経路 D1(単一ベニュー化)/D2(SF回帰)/D3(応答検証後回し)のどれかに近づくか?
+3. 凍結spec(s1/s2/s3・IS_adj・Nゲート・s3のroute間比較禁止)と矛盾しないか?
+→ いずれか YES なら「一時簡略化」と明示するか設計を戻す。恒久化は不可。
 
 ## Stack / entrypoints
 - 言語/環境: Python 3.11+。依存: `requests`, `openpyxl`, `PyYAML`, stdlib。
