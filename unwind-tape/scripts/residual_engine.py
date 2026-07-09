@@ -67,15 +67,19 @@ def compute_sigma(price_df, day0: str, window: int, cal: BusinessCalendar,
 
 RESIDUAL_COLUMNS = ["event_group_id", "event_leg_id", "issuer_code", "sale_route",
                     "Q_shares", "ADV20", "participation", "sigma",
+                    "stage2_cost", "stage3_cost",
                     "measured_s2s3", "sqrt_shape", "implied_Y", "size_bucket", "status"]
 
 
 def compute_residual_row(gid: str, lid: str, code: str, route: str,
                          s2: float | None, s3: float | None, Q: float | None,
                          V: float | None, sigma: float | None, edges: list[float]) -> dict:
-    """純関数: 与えられた s2,s3,Q,V,σ から participation/shape/implied_Y を出す。"""
+    """純関数: 与えられた s2,s3,Q,V,σ から participation/shape/implied_Y を出す。
+    s2/s3 は内訳として残す(offering の s3 は市場インパクトでなく発行ディスカウントの疑いがあり、
+    (s2+s3) では固定 s3 が √ 判定を汚す — 内訳を可視化しておく)。"""
     row = {"event_group_id": gid, "event_leg_id": lid, "issuer_code": code, "sale_route": route,
            "Q_shares": Q, "ADV20": V, "participation": None, "sigma": sigma,
+           "stage2_cost": s2, "stage3_cost": s3,
            "measured_s2s3": None, "sqrt_shape": None, "implied_Y": None,
            "size_bucket": "", "status": ""}
     if s2 is None or s3 is None:
@@ -189,19 +193,45 @@ def _write_report(path: Path, ok: list[dict], allrows: list[dict], sw: int, aw: 
              "> **`implied_Y = (s2+s3) / (σ·√(Q/V))`** を並べる。participation(Q/V)で implied_Y が\n"
              "> **上昇 → √則が外す非線形の兆候**、**flat → √則が効いている**。相転移点 τ / べき α の推定は\n"
              "> N ゲート通過後(§3)。ここでは τ を出さない。s1 は残差に含めない(系統Aへ)。\n\n")
-    L.append("| leg | 方式 | Q/ADV20 | σ(日次) | 実測 s2+s3 | σ√(Q/V) | implied_Y | bucket |\n")
-    L.append("|---|---|---:|---:|---:|---:|---:|---|\n")
+    L.append("| leg | 方式 | Q/ADV20 | σ(日次) | s2(ドリフト) | s3(執行ギャップ) | 実測 s2+s3 | σ√(Q/V) | implied_Y | bucket |\n")
+    L.append("|---|---|---:|---:|---:|---:|---:|---:|---:|---|\n")
     if not ok:
-        L.append("| (まだ計算対象 leg 無し — 転記が進み s2/s3 が揃えば埋まる) | | | | | | | |\n")
+        L.append("| (まだ計算対象 leg 無し — 転記が進み s2/s3 が揃えば埋まる) | | | | | | | | | |\n")
     for r in sorted(ok, key=lambda x: (x["participation"] or 0)):
         L.append(f"| {r['event_group_id']}/{r['event_leg_id']} | {r['sale_route']} | "
-                 f"{_f(r['participation'],3)} | {_f(r['sigma'],4)} | {_f(r['measured_s2s3'],4)} | "
+                 f"{_f(r['participation'],3)} | {_f(r['sigma'],4)} | {_f(r['stage2_cost'],4)} | "
+                 f"{_f(r['stage3_cost'],4)} | {_f(r['measured_s2s3'],4)} | "
                  f"{_f(r['sqrt_shape'],4)} | {_f(r['implied_Y'],3)} | {r['size_bucket']} |\n")
+
+    # s3 のクラスタリング検出(方式ごと): offering の s3 が「制度的にほぼ一定」なら √ 判定を汚す
+    L.append("\n## 観察: s3(執行ギャップ)は方式内でほぼ一定か\n")
+    by_route: dict[str, list[float]] = {}
+    for r in ok:
+        v = r.get("stage3_cost")
+        if v is not None:
+            by_route.setdefault(r["sale_route"], []).append(v)
+    flagged = False
+    for route, vals in sorted(by_route.items()):
+        if len(vals) < 2:
+            L.append(f"- `{route}`: n={len(vals)}(判定は n≥2 から)\n")
+            continue
+        lo, hi = min(vals), max(vals)
+        spread = hi - lo
+        note = ""
+        if spread < 0.01:
+            flagged = True
+            note = " → **ほぼ一定 = 発行ディスカウント(制度固定)の疑い**"
+        L.append(f"- `{route}`: s3 ∈ [{lo:.4f}, {hi:.4f}]、幅 {spread:.4f}(n={len(vals)}){note}\n")
+    if flagged:
+        L.append("\n> **含意**: s3 が size に依らず固定(≈発行ディスカウント)なら、`(s2+s3)` の implied_Y は\n"
+                 "> 固定 s3 を σ√(Q/V) で割るぶん **size で機械的に低下**する(=√則の非線形とは無関係のアーティファクト)。\n"
+                 "> **市場インパクトの非線形は s2(公表→条件決定ドリフト=オーバーハング吸収)側で見るべき**。\n"
+                 "> 比較対象を s2+s3 のまま行くか、offering は s2 主体で診るかは要ユーザ判断(凍結『s3 の方式間比較禁止』と整合)。\n")
     L.append("\n## 読み方 / 参照分布との突合\n")
     L.append("- **売り手の s3 の平時水準**は参照分布 `off_both × discount`(`benchmark_summary.csv`、"
              "p90≈3.4% / 分売 3.0%)。実測 offering の s3 がこの裾に載るか、size で深化するかを併読。\n")
     L.append("- **除外**: degenerate(即日型)・`split_in_window=TRUE`(窓内分割で s1/s2 段差)・"
-             "s2 or s3 欠 は residual 対象外(創作しない)。\n")
+             "s2 or s3 欠 は residual 対象外(創作しない)。Q(sold_shares)欠でも skip:no_Q_or_ADV。\n")
     L.append("- **次段(N≥30)**: implied_Y を participation の関数として segmented / べき α で当て、"
              "相転移点 τ を CI つきで推定(TCA_BASELINE §3)。\n")
     path.parent.mkdir(parents=True, exist_ok=True)

@@ -50,6 +50,8 @@ def test_residual_row_implied_Y():
                                  s2=0.01, s3=0.02, Q=1_000_000.0, V=500_000.0, sigma=0.02, edges=EDGES)
     assert r["status"] == "ok"
     assert r["participation"] == pytest.approx(2.0)
+    assert r["stage2_cost"] == pytest.approx(0.01)
+    assert r["stage3_cost"] == pytest.approx(0.02)
     assert r["measured_s2s3"] == pytest.approx(0.03)
     assert r["sqrt_shape"] == pytest.approx(0.02 * math.sqrt(2.0))
     assert r["implied_Y"] == pytest.approx(0.03 / (0.02 * math.sqrt(2.0)))
