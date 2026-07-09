@@ -195,7 +195,7 @@ def classify_doc(rows: list[dict], cfg: dict) -> dict:
 
     # 数値の暫定抽出(自由文から。確定は転記シートで一次確認)
     shares = _extract_after(fulltext, ["売出数", "売出しをする株式の数", "売出株式数"], r"([\d,]+)\s*株")
-    price = _extract_after(fulltext, ["売出価格"], r"([\d,]+(?:\.\d+)?)")
+    price = _extract_after(fulltext, ["売出価格"], r"([\d,]+(?:\.\d+)?)\s*円")   # 円 単位必須(未定/(1)等の誤拾い回避)
 
     if not is_equity_uridashi:
         tier = "none"
@@ -410,11 +410,13 @@ def _write_report(path: Path, results: list[dict], tier2: list[dict]) -> None:
     bond = sum(1 for r in results if r["is_bond"] == "TRUE")
     by_tier = Counter(r["confidence_policy_holding"] for r in results)
     unparsed = sum(1 for r in results if r.get("note", "").startswith("本文パース不可"))
+    uniq = sorted({(r.get("issuer_code", ""), r.get("issuer_name", "")) for r in tier2})
     L = ["# Task D step2 — 本文分類(株式の売出し抽出 → 政策保有は人が確認)\n\n",
          f"generated: {datetime.now(JST).isoformat(timespec='seconds')}\n\n",
          f"- 分類 {n} 件: **株式売出 {eq}** / 社債 {bond} / 本文パース不可 {unparsed}\n",
          f"- tier: A_explicit(政策保有明示) {by_tier.get('A_explicit',0)} / B_inference(株式売出だが要確認) {by_tier.get('B_inference',0)} / none {by_tier.get('none',0)}\n",
-         f"- **tier2(株式の売出し=転記シートへ流す lead)= {len(tier2)} 件** ← 政策保有かは TDnet で人が確認\n\n",
+         f"- **tier2(株式の売出し)= {len(tier2)} 行 / ユニーク発行体 {len(uniq)} 社** "
+         f"(同一 offering が 030 届出+040/190 値決め で複数行に出る)← 政策保有かは TDnet で人が確認\n\n",
          "## tier2 一覧(docTypeCode: 190=臨時報告値決め / 040=届出値決め / 100=発行登録追補 / 030=届出)\n\n",
          "| date | code | issuer | tier | 売出人(type) | 売出株数 | 価格 |\n|---|---|---|---|---|---:|---:|\n"]
     for r in sorted(tier2, key=lambda x: (x.get("submit_date",""), x.get("issuer_code",""))):

@@ -41,8 +41,9 @@ output:
 # --- step 2: 本文分類(株式の売出し × 政策保有)。candidates.csv の非IPO行の本文を読む ---
 classify:
   doc_type: "5"                       # EDINET 書類取得の type: 5=CSV(zip)。無ければ 1=XBRL に fallback
-  # 政策保有の明示(A_explicit)を示す本文キーワード(EDINET本文には稀。多くはTDnet側 → 人が確認)
-  policy_keywords: ["政策保有", "純投資目的以外", "縮減", "持ち合い", "持合い", "政策的", "取引関係の維持", "主要株主の異動"]
+  # 政策保有の明示(A_explicit)を示す本文キーワード(EDINET本文には稀。多くはTDnet側 → 人が確認)。
+  # ※「主要株主の異動」は届出の boilerplate に頻出し誤検出するので入れない。
+  policy_keywords: ["政策保有", "純投資目的以外", "縮減", "持ち合い", "持合い", "政策保有株式", "取引関係の維持"]
   # 株式の売出し判定は「表現」で行う(社債の boilerplate 募集（売出）に釣られないため)。
   uridashi_equity_phrases: ["株式の売出", "普通株式の売出", "株券の売出", "株式売出"]
   uridashi_na_markers: ["該当事項はありません", "該当ありません", "該当なし"]   # 売出要項=該当なし → 社債等
