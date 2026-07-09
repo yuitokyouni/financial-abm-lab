@@ -367,9 +367,9 @@ def _write_report(path: Path, cands: list[dict], d_from: date, d_to: date,
     L.append(f"- フィルタ: **ordinanceCode=010(事業会社=株式、投資信託 030 は除外)** × docTypeCode∈{{{codes_lbl}}}\n")
     L.append(f"- **候補 {len(cands)} 件** = IPO {len(ipo)} + 非IPO {len(non_ipo)}"
              f"(うち secCode 有 = 上場企業 {len(with_code)} 件)\n")
-    L.append("> **上場株式の売出しは有価証券届出書でなく臨時報告書(180)＋訂正臨時報告書(190)で開示**"
-             "(既開示有価証券の届出免除ルート。発表日 180 → 条件決定日 190)。shelf 保有会社は発行登録追補(100)。\n"
-             "> 180 は主要株主異動/代表異動等でも出るため件数が多い → **売出/policy-holding の確定は step2 本文**で行う。\n\n")
+    L.append("> **上場株式の売出しは臨時報告書ルート**(発表=180 → 値決め=190)、shelf 保有会社は発行登録追補(100)、"
+             "小型は有価証券届出書(030→040)。work-list は**値決めの書類(030/040/100/190)**に限定"
+             "(180=発表側は8万件と多すぎ→除外、必要時 parentDocID で raw から引く)。**売出/policy-holding の確定は step2 本文**。\n\n")
     L.append("## docTypeCode 内訳\n\n| code | 種類 | 件数 |\n|---|---|---:|\n")
     for tc in sorted(by_type):
         L.append(f"| {tc} | {DOCTYPE_LABELS.get(tc, tc)} | {by_type[tc]} |\n")
