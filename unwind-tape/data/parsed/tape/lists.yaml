@@ -30,6 +30,7 @@ sale_route:
 - unknown
 offering_type:
 - domestic_bookbuild
+- overseas_bookbuild
 - overseas_ABB
 - global_offering
 - block_trade
