@@ -1,6 +1,5 @@
 event_group_id,issuer_code,issuer_name,issuer_market,event_tier,confidence_policy_holding,ABM_candidate_flag
 G001,6902,DENSO,TSE Prime,Tier1_confirmed,B_strong_inference,No
-G002,6201,Toyota Industries,TSE Prime / NSE Premier,Tier1_confirmed,A_explicit_policy_holding,Yes
 G003,7259,Aisin,TSE Prime / NSE Premier,Tier1_confirmed,A_explicit_policy_holding,Yes
 G004,7267,Honda Motor,TSE Prime,Tier1_confirmed,A_explicit_policy_holding,Yes
 G005,8154,Kaga Electronics,TSE Prime,Tier1_confirmed,A_explicit_policy_holding,Yes
@@ -15,7 +14,6 @@ G013,8031,三井物産株式会社,,Tier2_candidate,C_possible_only,Maybe
 G014,7936,株式会社アシックス,,Tier2_candidate,A_explicit_policy_holding,Maybe
 G015,4543,テルモ株式会社,,Tier2_candidate,A_explicit_policy_holding,Maybe
 G016,4732,株式会社ユー・エス・エス,,Tier2_candidate,C_possible_only,Maybe
-G017,9503,関西電力株式会社,,Tier2_candidate,C_possible_only,Maybe
 G018,2269,明治ホールディングス株式会社,,Tier2_candidate,C_possible_only,Maybe
 G019,3003,ヒューリック株式会社,,Tier2_candidate,C_possible_only,Maybe
 G020,8136,株式会社サンリオ,,Tier2_candidate,A_explicit_policy_holding,Maybe
@@ -24,9 +22,7 @@ G022,7182,株式会社ゆうちょ銀行,,Tier2_candidate,C_possible_only,Maybe
 G023,7269,スズキ株式会社,,Tier2_candidate,A_explicit_policy_holding,Maybe
 G024,7202,いすゞ自動車株式会社,,Tier2_candidate,B_strong_inference,Maybe
 G025,2282,日本ハム株式会社,,Tier2_candidate,A_explicit_policy_holding,Maybe
-G026,3635,株式会社コーエーテクモホールディングス,,Tier2_candidate,C_possible_only,Maybe
 G027,4816,東映アニメーション株式会社,,Tier2_candidate,C_possible_only,Maybe
 G028,7282,豊田合成株式会社,,Tier2_candidate,C_possible_only,Maybe
 G029,6058,株式会社ベクトル,,Tier2_candidate,C_possible_only,Maybe
 G030,1942,株式会社関電工,,Tier2_candidate,C_possible_only,Maybe
-G031,2432,株式会社ディー・エヌ・エー,,Tier2_candidate,C_possible_only,Maybe
