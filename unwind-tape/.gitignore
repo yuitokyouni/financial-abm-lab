@@ -40,3 +40,7 @@ data/raw/edinet/
 # --- 汎用 ---
 data/logs/
 data/**/__pycache__/
+**/__pycache__/
+
+# --- ABM (agent-based model) 派生出力 ---
+abm/out/
