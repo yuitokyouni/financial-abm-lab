@@ -25,6 +25,7 @@ from .order_book import OrderBook
 
 SEED_AGENT_ID = -1      # phantom market maker that seeds initial liquidity
 BUYBACK_AGENT_ID = -2   # company buyback bid support during execution
+INFORMED_AGENT_ID = -3  # informed announcement flow that reprices to the news (s1)
 
 
 class Market:
@@ -146,8 +147,12 @@ class Market:
         self._event_step = 0
         event_rets: list[float] = []
 
-        def stepper(n, log_v0):
-            for _ in range(n):
+        def stepper(n, log_v0, pre=None):
+            # ``pre(i)`` (optional) runs before each base step; used by the
+            # informed announcement flow to post its descending sell wall.
+            for i in range(n):
+                if pre is not None:
+                    pre(i)
                 self._base_step()
                 self._event_step += 1
                 if mkt_drift != 0.0:
@@ -166,7 +171,30 @@ class Market:
         if announce_info:
             self.log_v -= cfg.announce_fundamental_drop
         log_v0 = self.log_v          # mkt_drift baseline (post-announcement)
-        stepper(cfg.announce_day_steps, log_v0)
+        if (announce_info and getattr(cfg, "announce_impact_flow", False)
+                and cfg.announce_fundamental_drop != 0.0):
+            # Informed repricing (calibration channel): the passive book cannot
+            # reprice the fundamental step within the window, so an informed
+            # trader walks the mid down to the announced level via a descending
+            # marketable sell wall. It cancels + re-posts one wall per step at
+            # the current waypoint wp = P_ref * exp(-drop * frac); the marketable
+            # part eats all bids above wp and the remainder rests at wp as the
+            # new best ask, so the mid tracks the waypoint. By the end of the
+            # window the mid sits at P_ref*exp(-drop) -> s1 ~ drop.
+            n_ann = max(cfg.announce_day_steps, 1)
+            drop = cfg.announce_fundamental_drop
+
+            def _reprice(i):
+                frac = (i + 1) / n_ann
+                wp = P_ref * math.exp(-drop * frac)
+                self.book.cancel(INFORMED_AGENT_ID)
+                totbid = sum(sum(o[2] for o in dq) for dq in self.book.bids.values())
+                if totbid > 0:
+                    self.book.add_limit("sell", wp, totbid + 50, INFORMED_AGENT_ID)
+
+            stepper(cfg.announce_day_steps, log_v0, pre=_reprice)
+        else:
+            stepper(cfg.announce_day_steps, log_v0)
         P_day0end = self.mid
 
         # --- drift window: front-running flow -> s2 ------------------------

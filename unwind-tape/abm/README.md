@@ -186,3 +186,45 @@ Nothing here is fitted yet. The intended targets, from real tape moments
 `Q/V` grid, parameter fits) happen **after the N-gate** (`measurable execution
 legs ≥ 30`, ≥2 sale routes with ≥10 legs each — see `../MEASUREMENT_SPEC.md`),
 once the empirical moments the model must match are actually measured.
+
+## Calibration (first pass)
+
+`abm/calibrate.py` tunes the s1/s2 channels to the empirical **no-buyback**
+moments. **s3 is exogenous** (a ~-3% placement discount, size-flat) and is NOT
+calibrated. Targets (cost basis, `announce_info=True`):
+
+    s1_median ~ +3.8% ,  s2_std ~ 4.0% ,  sigma_daily ~ 1.5%
+
+Method: coordinate descent (one line-search per knob) over the empirical
+Q/ADV distribution x ~80 seeds. Knobs: `announce_fundamental_drop`->s1,
+`frontrun_fraction`->s2 spread, `fcn_noise_sigma`->sigma. Run:
+`python -m abm.calibrate` (history -> `abm/out/calibration.csv`).
+
+**Result (first pass, 1 sweep):**
+
+| moment | ABM | target | |
+|---|---|---|---|
+| s1_median | +3.82% | +3.80% | hit |
+| s2_std    |  1.8%  |  4.0%  | short |
+| sigma     |  0.09% |  1.5%  | far short |
+
+**Findings:**
+1. **s1 calibrates trivially** — it is an *injected* level (the passive, deep
+   warmup book cannot reprice a fundamental drop on its own, so an informed
+   flow walks the mid to the announced level; see `announce_impact_flow` in
+   market.py). Matching it is just setting the knob, not a meaningful test.
+2. **sigma and s2-dispersion cannot be reached by parameter tuning.** The
+   passive-FCN + deep-seed-book market is too calm/liquid: even at max noise,
+   realized event vol is ~0.1% vs the ~1.5% real level. Reaching realistic
+   volatility and s2 dispersion needs a **structural** change (genuinely
+   informed / aggressive agents, thinner book), not a tweak -- the next stage.
+3. **delta is under-identified** (impact exponent, IS ~ (Q/V)^delta):
+       passive FCN  delta = 0.44  (R2 0.97)  -- near the sqrt-law (0.5)
+       active  FCN  delta = 0.01  (R2 0.07)  -- saturates, no size effect
+   The empirical size effect alone does NOT pin delta; it hinges on the
+   (unobservable) liquidity-provision regime. Report delta as this range;
+   finer data (intraday / order-book) would be needed to identify it.
+
+**Bottom line:** the first pass calibrates s1 (trivially) and *reveals* that the
+current microstructure is too stable to reproduce real event volatility -- which
+tells us exactly what to change next (structural, not parametric).

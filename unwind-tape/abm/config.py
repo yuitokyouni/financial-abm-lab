@@ -64,8 +64,24 @@ class Config:
     announce_day_steps: int = 300         # "day 0": public reprice to lower v -> s1
     drift_steps: int = 300                # day0end -> exec ref (front-running) -> s2
     exec_inter_steps: int = 4             # normal reaction steps between seller slices
-    announce_fundamental_drop: float = 0.006  # permanent v drop on news -> s1  TODO(calibration)
-    frontrun_fraction: float = 0.3        # fraction of Q sold ahead by front-runners (drift) -> s2  TODO(calibration)
+    announce_fundamental_drop: float = 0.006  # permanent v drop on news -> s1  (calibrated in abm/calibrate.py)
+    frontrun_fraction: float = 0.3        # fraction of Q sold ahead by front-runners (drift) -> s2  (calibrated in abm/calibrate.py)
+
+    # s1 transmission channel (first-pass calibration; see abm/calibrate.py).
+    # The permanent v-drop above does NOT move price on its own: FCN quote
+    # passively and the warmup book is deep, so a 300-step window cannot reprice
+    # it (measured s1 ~ 1 tick regardless of the drop). When this flag is on, the
+    # announcement is instead transmitted as an *informed sell flow* that walks
+    # the mid down to P_ref * exp(-announce_fundamental_drop) over the window, so
+    # the realised s1_median tracks the knob ~1:1. Default False keeps the
+    # original skeleton behaviour (exp1-4 outputs are byte-identical when off).
+    announce_impact_flow: bool = False    # NEW (calibration): realise s1 as informed flow
+
+    # NOTE on s3: the execution discount s3 is treated as EXOGENOUS (the
+    # underwriter/placement haircut; empirical median ~ -3.1%, size-independent).
+    # It is NOT an ABM calibration target -- abm/calibrate.py fits ONLY s1 and s2
+    # (plus realised sigma). Nothing here scales s3 to a target; s3 stays whatever
+    # the execution book-walk emergently produces.
 
     # ---- default treatment (overridden by experiments) -------------------
     default_Qover_V: float = 15.0
