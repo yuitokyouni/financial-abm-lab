@@ -7,7 +7,7 @@ G006,3950,The Pack,TSE Prime,Tier1_confirmed,B_strong_inference,Maybe
 G007,4246,Daikyo Nishikawa,TSE Prime,Tier1_confirmed,A_explicit_policy_holding,Yes
 G008,7974,Nintendo,TSE Prime,Tier1_confirmed,A_explicit_policy_holding,Yes
 G009,4063,信越化学,TSE Prime,Tier2_candidate,,
-G010,4062,イビデン,TSE Prime,Tier2_candidate,,
+G010,4062,イビデン,TSE Prime,Tier2_candidate,A_explicit_policy_holding,
 G011,2871,ニチレイ,TSE Prime,Tier2_candidate,,
 G012,6269,三井海洋開発株式会社,,Tier2_candidate,C_possible_only,Maybe
 G013,8031,三井物産株式会社,,Tier2_candidate,C_possible_only,Maybe
