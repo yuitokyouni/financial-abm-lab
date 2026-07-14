@@ -1,6 +1,7 @@
 # unwind-tape — HANDOFF
 
-**最終更新**: 2026-07-08 JST (Task A cron登録済み・自動発火は次回21:00待ち / Task B **v0.4 完了** / Task C **G004/G008 手計算突合 MATCH — 完了条件(3)達成**)
+**最終更新**: 2026-07-14 JST — 台帳が **27 groups / 28 legs** に成長(下記「Task状況」以下の 11/12 記載は v0.4 当時の旧値)。**Nゲート到達のカバレッジ現状と実行計画**を新設(このファイル内「## Nゲート到達」節)。ABM は BP2005 予測取引モデルへ改修済(`abm/README.md`)。
+_（過去更新: 2026-07-08 JST — Task A cron登録済 / Task B v0.4 完了 / Task C G004/G008 手計算突合 MATCH）_
 
 > **新規性と設計不変条件は `docs/CONTRIBUTION.md`。** 設計を変えるたびに3問を照合:
 > ① 差分表(研究対象/実測値/検証のしかた)のどの行を毀損するか ② 退化経路 D1(単一方式化)/D2(SF回帰)/D3(違いの検証を後回し)に近づくか ③ 凍結spec(s1/s2/s3・IS_adj・Nゲート・s3の方式間比較禁止)と矛盾しないか。いずれか YES なら一時簡略化と明示するか設計を戻す(恒久化不可)。用語「売却方式」= 売出し/立会外分売/ToSTNeT-3 等(旧「ルート/ベニュー」)。
@@ -12,6 +13,54 @@
 | **A** JPX 立会外取引 日次キャプチャ | ✅ 実装完了、初回バックフィル成功、**cron 登録済み**(ユーザ Mac, 毎日21:00)。手動実行では成功確認済み、自動発火は次回21:00で確認予定 | — | `scripts/fetch_jpx_offauction.py` |
 | **B** xlsx → CSV 正規化 + PDF アーカイバ + build round-trip | ✅ v0.4 pipeline 完了 (**validator errors=0 warnings=0**) | — | `scripts/{migrate_xlsx_to_csv,validate_tape,archive_pdfs,build_tape}.py` |
 | **C** J-Quants + AR/CAR エンジン | ✅ **完了** — G004/G008 の CAR が独立実装の手計算と **3/3 MATCH (diff=0.000000)** | — | `scripts/{jquants_fetch,car_engine,hand_check_car}.py`, `configs/car.yaml`, `docs/j_quants_plan_report.md`, `PREREG.md`(空テンプレ) |
+| **D** EDINET 母集団拡張 → Nゲート | 🔁 **進行中** — パイプライン4段 実装済・テスト緑。台帳 27/28。**計測可能20 leg**(→転記で23)、ゲート30まで **あと7 leg**(EDINET で補充)。下記「Nゲート到達」節参照 | 要 `EDINET_API_KEY`(Mac) | `scripts/edinet_{fetch,classify,to_worksheet,merge}.py`, `configs/edinet.yaml`, `docs/TASK_D_DESIGN.md` |
+
+---
+
+## Nゲート到達 — カバレッジ現状と実行計画 (2026-07-14)
+
+台帳は **27 groups / 28 legs**。Nゲート = 「**計測可能な執行 leg ≥30、≥2方式 ×各≥10**」。以下は `legs.csv` を実測監査した結果(推測なし)。
+
+### 現状
+- **計測可能(s1/s2/s3 を計算できる)= 20 leg** … 必要セル(day0=`after_close`/`disclosure_time`・`pricing_date`・`offer_price_JPY`・`sold_shares`)が揃った secondary_offering。
+  - うち **15** は `offering_type` 付与済、**5**(G001/G003/G004/G006/G008)は **offering_type 未分類**(=計測は可能・方式ゲート用ラベルだけ欠)。
+- **あと少しで計測可能 = 3 leg** … G009 信越化学 / G010 イビデン / G011 ニチレイ = **`sold_shares` のみ欠**(他は揃)。→ 埋めれば **23 leg**。
+- **計測対象外 = 5 leg** … G005・G008/L002(ToSTNeT-3 自己株買い, s3≡0)/ G013・G021(degenerate ABB=発表≈翌日値決め, IS_raw のみ)/ G029(発表=同日値決め)。
+- **方式バランス(計測可能20のうち offering_type)**: global_offering **8** / domestic_bookbuild **4**(+未分類5)/ overseas_bookbuild **3**。
+
+### ゲートまでの差分
+- **計測数**: 20 →(+3 転記)23 → **あと 7 leg 不足** ← EDINET母集団拡張 D で補充(全期間で株式売出 **105 offering** 発見済・台帳化は ~24)。
+- **方式ゲート(≥2×≥10)**: 未分類5を分類 + 新規7を global/domestic に寄せれば、global と domestic を **各 ≥10** にできる射程。
+
+### 実行計画(律速順)
+
+**① 拡張台帳の s1/s2/s3 を実際に計算する（最優先・コード完備・要 Mac + `JQUANTS_API_KEY`）**
+`jquants_fetch.py` は `tape_codes()` で `groups.csv` の `issuer_code` を**自動追従**するので、再実行だけで新規銘柄(G009-G030)の日次バーを取得する。続けて shortfall を回すと現有 20 leg の s1/s2/s3 が一気に出る。**コード変更不要=「実行」であって「実装」ではない。**
+```
+export JQUANTS_API_KEY="..."
+python3 unwind-tape/scripts/jquants_fetch.py      # 新規銘柄を自動追加取得(15-20分)
+python3 unwind-tape/scripts/shortfall_engine.py   # s1/s2/s3 → data/parsed/tape/legs_shortfall.csv
+python3 unwind-tape/scripts/car_engine.py         # 系統A CAR(任意)
+```
+→ これが **ABM 較正・√則検定(`implied_Y_s2`)を実データに接続する最初の点**。まず現有20 legで実測を出す。
+
+**② 転記で +3(sold_shares）+ 方式ラベル5（要一次PDF・データ創作厳禁）**
+`transcription/disclosure_transcription.csv` の `needs` を現状に更新済(下記参照)。一次PDFから**確定値のみ**記入 → `scripts/apply_transcription.py --check` → `--apply`。
+- `sold_shares`: G009 信越 / G010 イビデン / G011 ニチレイ（`final_offer_shares`。collect の 約23.68M/6.87M/16.73M は概算なので一次で確定）
+- `offering_type`: G001 DENSO / G003 Aisin / G004 Honda / G006 The Pack / G008 任天堂（**海外トランシェの有無**を一次で判定 → domestic/global）
+
+**③ EDINET母集団拡張で +7（要 Mac + `EDINET_API_KEY`・パイプライン実装済/テスト緑）**
+```
+export EDINET_API_KEY="..."
+python3 unwind-tape/scripts/edinet_fetch.py        # step1 候補抽出(値決め書類 ord=010×docType{030,040,100,190})
+python3 unwind-tape/scripts/edinet_classify.py     # step2 本文DL+株式売出抽出(tier2)
+python3 unwind-tape/scripts/edinet_to_worksheet.py # step3 offering単位集約+include列つき下書き
+#   ↑の下書き include 列を人がレビュー(下記スクリーニング)
+python3 unwind-tape/scripts/edinet_merge.py --apply # step4 include=Y を Tier2_candidate で追記(発行体×値決め日で重複ガード)
+```
+**下書きレビューのスクリーニング基準**: (a) **政策保有/持合い解消**の売出しか（単なる公募増資・希薄化調達は除外=G017型）/ (b) 既存 leg と重複しないか / (c) 方式が global か domestic か（**≥10 バランスを埋める向きを優先**）/ (d) degenerate ABB(発表≈翌日値決め)は IS_raw のみ=計測対象外。
+
+**到達後**: N≥30 で「記述のみ」制約が外れ、√則の非線形検定と ABM 較正が実データに乗る。
 
 ---
 
