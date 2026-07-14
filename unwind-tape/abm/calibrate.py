@@ -9,31 +9,36 @@ WHAT IS CALIBRATED (and what is NOT)
 Only **s1** and **s2** (plus realised **sigma**) are ABM-calibrated here.
 **s3 (the execution discount) is EXOGENOUS** -- it is the underwriter / placement
 haircut (empirical median ~ -3.1%, size-independent), *not* an emergent ABM
-quantity. NOTHING in this file scales s3 to a target; s3 stays whatever the
-execution book-walk emergently produces. See config.py's NOTE on s3.
+quantity. NOTHING in this file scales s3 to a target; s3 is the fixed
+``exec_discount`` on the announced placement. See config.py's NOTE on s3.
 
-Knobs -> targets (each ~1:1 with its target; coordinate descent):
-    announce_fundamental_drop  -> s1_median   (requires announce_impact_flow=True)
-    frontrun_fraction          -> s2_std
-    fcn_noise_sigma            -> sigma
+Model (BP2005 LOB port): s1 and s2 are EMERGENT -- they come out of anticipatory
+predators taking liquidity from FCN makers, not from an injected fundamental
+drop. The knobs below shape the market's *response* to that pressure:
+
+    fcn_g1_mean          -> s1_median   (weaker fundamentalist pin -> deeper,
+                                          more persistent announce gap)
+    predator_block_frac  -> s2_std      (more aggregate front-running -> more
+                                          drift dispersion across Q/V)
+    fcn_price_band       -> sigma       (how far makers let price roam ->
+                                          realised event volatility)
 
 Runs are done with ``announce_info=True`` (all real events are announced, so s1
 and s2 both fire) over the empirical Q/V (sold-shares / ADV) distribution, with
 buyback_ratio=0 and mkt_drift=0 (the no-buyback, no-backdrop cell).
 
-HONEST FIRST-PASS LIMITS (measured, see the printed table + README):
-  * s1 is *injected*: the passive, deep warmup book cannot reprice a fundamental
-    step in 300 steps (measured s1 ~ 1 tick regardless of the drop), so s1 is
-    transmitted as an informed sell flow that pins the mid to the announced
-    level. Matching s1_median is therefore semi-trivial by construction.
-  * s2_std saturates well below target: the front-run flow is one-sided (so the
-    model's s2_median is > 0 while the empirical s2_median ~ 0), and the book
-    walk is concave, which *compresses* the dispersion across Q/V. This s2
-    absorption dynamic -- not the s1 level -- is the real modelling problem.
-  * sigma has a hard architectural floor (~1e-4): per-order returns are tick-
-    anchored and every knob (agent noise, fundamental noise, book thinning) is
-    absorbed by the passive LOB. Matching a ~1.5% event vol needs genuinely
-    informed / aggressive agents (next stage), not a parameter tweak.
+WHAT THE REWORK FIXED vs the old injected-s1 skeleton:
+  * s1 is no longer injected: predators selling into a thin, weakly-anchored
+    maker book produce a *persistent* gap endogenously (its size responds to
+    g1/band, not to a scripted drop).
+  * sigma no longer has the ~1e-4 architectural floor: with a thin seed book and
+    liquidity-taking flow, realised event vol now moves into the ~0.5-1.2% range
+    (old floor was ~0.09%), within reach of the ~1.5% target.
+HONEST REMAINING GAP (measured, see the printed table + README):
+  * s1_median and sigma still land somewhat BELOW target at the current defaults;
+    coordinate descent narrows but does not fully close it. Pushing harder trades
+    off against s2 (the same g1/band levers move all three), so the residual is
+    an identification coupling, not a wall.
 
 Dependencies: numpy + Python standard library only. Self-contained.
 
@@ -69,15 +74,15 @@ QV_DIST = [1.578, 2.579, 2.974, 3.569, 7.172, 9.228, 13.263, 13.623, 14.127,
 
 # Coordinate-descent line-search grids (each knob against its own target).
 GRIDS = {
-    "announce_fundamental_drop": [0.02, 0.03, 0.038, 0.05, 0.07],
-    "frontrun_fraction": [4.0, 12.0, 20.0, 30.0, 45.0],
-    "fcn_noise_sigma": [0.002, 0.02, 0.05, 0.1],
+    "fcn_g1_mean": [0.15, 0.25, 0.4, 0.7, 1.0],
+    "predator_block_frac": [0.6, 1.5, 3.0, 6.0],
+    "fcn_price_band": [0.01, 0.02, 0.04, 0.07, 0.1],
 }
 # which target each knob is responsible for (used to report the mapping)
 KNOB_TARGET = {
-    "announce_fundamental_drop": "s1_median",
-    "frontrun_fraction": "s2_std",
-    "fcn_noise_sigma": "sigma",
+    "fcn_g1_mean": "s1_median",
+    "predator_block_frac": "s2_std",
+    "fcn_price_band": "sigma",
 }
 
 
@@ -159,8 +164,7 @@ def line_search(cfg, knob, candidates, n_seeds, history, pass_i):
 
 def calibrate(n_seeds=80, passes=2, verbose=True):
     """Coordinate descent over the three knobs; returns (best_cfg, history)."""
-    # start from the baseline with the s1 transmission channel switched on
-    cfg = dataclasses.replace(baseline(), announce_impact_flow=True)
+    cfg = baseline()
     history = []
     if verbose:
         m0 = run_moments(cfg, n_seeds)
@@ -181,18 +185,19 @@ def calibrate(n_seeds=80, passes=2, verbose=True):
 
 # --------------------------------------------------------------------------
 def delta_sensitivity(cfg, seeds, grid=None):
-    """Fit the impact exponent delta for passive vs active FCN quoting.
+    """Fit the impact exponent delta for a thin vs a thick starter book.
 
     Uses the exp1 size sweep (announce_info OFF, so this is the pure execution
-    size effect and is independent of the s1/s2 knobs). Passive and active
-    quoting bracket delta -- the empirical size effect alone does not pin it.
+    size effect and is independent of the s1/s2 knobs). The book depth brackets
+    delta -- the empirical size effect alone does not pin it, it depends on how
+    much replenishing liquidity the block walks through.
     """
     grid = grid or [1, 2, 5, 10, 20, 50, 100]
     out = {}
-    for passive in (True, False):
-        c = dataclasses.replace(cfg, fcn_passive=passive)
+    for label, depth in (("thin", cfg.seed_depth), ("thick", cfg.seed_depth * 5)):
+        c = dataclasses.replace(cfg, seed_depth=depth)
         _rows, summary, meta = X.exp1(seeds, grid=grid, cfg=c, verbose=False)
-        out["passive" if passive else "active"] = {
+        out[label] = {
             "delta": meta["delta"], "r2": meta["r2"],
             "IS_min": summary[0]["IS_mean"], "IS_max": summary[-1]["IS_mean"],
         }
@@ -222,18 +227,16 @@ def print_report(before, after, best_cfg, delta):
     print("\nBest parameters (calibrated Config overrides):")
     for knob in GRIDS:
         print(f"  {knob:<28}= {getattr(best_cfg, knob)}   -> {KNOB_TARGET[knob]}")
-    print(f"  {'announce_impact_flow':<28}= {best_cfg.announce_impact_flow}   "
-          f"(s1 transmission channel)")
 
     print("\ndelta sensitivity (impact exponent IS ~ (Q/V)^delta; 0.5 = sqrt-law):")
-    print(f"  passive FCN (gradual absorption): delta={delta['passive']['delta']:.3f} "
-          f"R2={delta['passive']['r2']:.3f}")
-    print(f"  active  FCN (aggressive re-quote): delta={delta['active']['delta']:.3f} "
-          f"R2={delta['active']['r2']:.3f}")
-    print(f"  => passive delta ~ {delta['passive']['delta']:.2f} / "
-          f"active delta ~ {delta['active']['delta']:.2f}: the data alone does NOT "
-          f"pin delta to a single value\n     (the two quoting regimes bracket it) "
-          f"-- this identification gap is the honest first-pass conclusion.")
+    print(f"  thin  book (shallow seed): delta={delta['thin']['delta']:.3f} "
+          f"R2={delta['thin']['r2']:.3f}")
+    print(f"  thick book (5x seed):      delta={delta['thick']['delta']:.3f} "
+          f"R2={delta['thick']['r2']:.3f}")
+    print(f"  => thin delta ~ {delta['thin']['delta']:.2f} / "
+          f"thick delta ~ {delta['thick']['delta']:.2f}: the data alone does NOT "
+          f"pin delta to a single value\n     (book depth brackets it) "
+          f"-- this identification gap is the honest conclusion.")
     print("=" * 72)
 
 

@@ -72,6 +72,29 @@ class OrderBook:
             return None
         return 0.5 * (self.to_price(b) + self.to_price(a))
 
+    # ---- non-mutating impact estimate ------------------------------------
+    def estimate_sell_impact(self, qty):
+        """Price a hypothetical market SELL of ``qty`` without touching the book.
+
+        Walks the resting bids from best downward and returns the price of the
+        deepest level the order would reach (i.e. where the best bid would sit
+        afterwards). Used by anticipatory (predator) agents to size their
+        front-run from the *observable* book, so their impact estimate is
+        grounded in real depth, not a free parameter. If ``qty`` exceeds all
+        standing bid depth, returns the lowest bid; if the bid side is empty,
+        returns ``None``.
+        """
+        if qty <= 0 or not self.bids:
+            return self.best_bid
+        remaining = qty
+        last_price = self.best_bid
+        for t in sorted(self.bids, reverse=True):
+            last_price = self.to_price(t)
+            remaining -= sum(o[2] for o in self.bids[t])
+            if remaining <= 0:
+                break
+        return last_price
+
     # ---- internal bookkeeping --------------------------------------------
     def _register(self, order_id, side, tick, agent_id):
         self._loc[order_id] = (side, tick)
