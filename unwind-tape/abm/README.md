@@ -161,8 +161,14 @@ so runs are **reproducible**. `abm/out/` is git-ignored (regenerable).
   market was too liquid to move — the direct cause of the σ floor below.
 - **Buyback = standing bid-support wall** posted at announce, absorbing later
   selling (a real buyback provides a bid).
-- **`Q/V` is a participation rate** over an execution-window's volume, not literal
-  daily volume. `TODO(calibration D)`: anchor `V` to real ADV + sensitivity.
+- **`Q/V` is a participation rate** — and it is already **anchored to real ADV**:
+  the empirical `Q/ADV` per leg is fed straight in as `Qover_V`, and because every
+  readout is a log-price *ratio* the absolute `V` cancels. `abm/sensitivity.py`
+  (`python -m abm.sensitivity`) stress-tests the *un-anchored* sim scale (window
+  length, tick, seed depth) and reports what is robust: **σ is robust to every
+  scale knob (2–23% span); s1/s2 *levels* and δ depend on the execution-window
+  length (up to ~83%)**, so those must be pinned to the real execution timeline,
+  not left to an arbitrary step count.
 
 ---
 
