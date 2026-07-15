@@ -1,6 +1,7 @@
 # unwind-tape — HANDOFF
 
-**最終更新**: 2026-07-14 JST — 台帳が **27 groups / 28 legs** に成長(下記「Task状況」以下の 11/12 記載は v0.4 当時の旧値)。**Nゲート到達のカバレッジ現状と実行計画**を新設(このファイル内「## Nゲート到達」節)。ABM は BP2005 予測取引モデルへ改修済(`abm/README.md`)。
+**最終更新**: 2026-07-15 JST — 記述版 `FINDINGS.md` v1 完成(32 群/28 分解 leg で「一旦完成」)。**古河電工(G034)の Q/ADV20=0.04 異常を解決**: 2026-07-01 の 1→10 分割で AdjustmentVolume(=ADV20)が窓を遡及的に ×10 したのに sold_shares は未調整のまま割っていた基準ズレ。`residual_engine.py` に基準合わせ(窓内 mean(AdjVol)/mean(Vol) で Q を調整基準へ持ち上げ、fail-loud、補正 leg をレポート明示)を実装。真の participation≈0.42×。**次の Mac 再計算(shortfall→residual)で古河が 0.42× に是正され、他の発表後分割 leg もフラグされる**。
+_（過去更新: 2026-07-14 JST — 台帳 27 groups / 28 legs、Nゲート到達計画新設、ABM を BP2005 予測取引モデルへ改修）_
 _（過去更新: 2026-07-08 JST — Task A cron登録済 / Task B v0.4 完了 / Task C G004/G008 手計算突合 MATCH）_
 
 > **新規性と設計不変条件は `docs/CONTRIBUTION.md`。** 設計を変えるたびに3問を照合:

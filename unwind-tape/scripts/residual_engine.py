@@ -18,6 +18,12 @@ docs/TCA_BASELINE_SPEC.md の成果物②の配管。N<30 の間は**記述の�
     data/parsed/benchmark/residual_detail.csv / residual_report.md
 
 除外(measured=s2+s3 が無い/汚染): degenerate、split_in_window=TRUE、status≠ok、s2 or s3 欠。
+
+participation の基準合わせ: Q=sold_shares(未調整)と V=ADV20(調整出来高)の基準ズレを補正する。
+発表の**後**に株式分割があると AdjVol が窓を遡及的に膨らませ Q/V が分割比ぶん過小になる
+(古河電工 5801=2026-07-01 の 1→10 分割で Q/ADV20 が 0.42→0.042 に見えた例)。データ自身の
+mean(AdjVol)/mean(Vol) を係数に Q を調整基準へ持ち上げる(σ・s1/s2/s3 は分割中立で不変)。
+
 依存: numpy, pandas, PyYAML + car_engine の日付/価格ユーティリティ + benchmark_engine.size_bucket。
 """
 from __future__ import annotations
@@ -65,8 +71,43 @@ def compute_sigma(price_df, day0: str, window: int, cal: BusinessCalendar,
     return float(np.std(r, ddof=1))
 
 
+def adv_split_ratio(price_df, day0: str, window: int, cal: BusinessCalendar,
+                    min_ratio: float) -> float | None:
+    """窓 [day0-window, day0-1] の mean(AdjustmentVolume) / mean(Volume)。
+
+    **なぜ必要か**: participation = Q/V で V = ADV20 は *調整* 出来高(分割安全)だが、
+    Q = sold_shares は開示時点の *未調整* 実数。発表の **後** に株式分割があると、J-Quants の
+    AdjustmentVolume は過去(=この窓)を遡及的に (分割比の逆数) 倍するため、V だけが膨らみ Q/V が
+    分割比のぶん過小になる(例: 古河電工 5801 は 2026-07-01 に 1→10 分割。窓は 2025-07 なので
+    AdjVol が ×10 され、Q/ADV20 が 0.42 → 0.042 に潰れて見える)。σ は AdjustmentClose で
+    分割安全、s1/s2/s3 は log リターンで分割中立なので **participation だけ**が壊れる。
+
+    この比 = 窓内で調整が出来高に効いている実効倍率。データ自身の AdjVol/Vol から取るので
+    AdjustmentFactor の符号規約に依存せず自己検証的。これで Q を同じ調整基準へ持ち上げる。
+    分割なし → 1.0。出来高欠 → None(fail-loud、補正しない)。窓内分割の leg は上流で除外済み
+    (split_in_window=TRUE)なので、この窓では比は日次一定 = 累積分割係数に一致する。
+    """
+    end = cal.shift_business_days(day0, -1)
+    start = cal.shift_business_days(day0, -window)
+    if end is None or start is None:
+        return None
+    p = price_df[(price_df["Date"] >= start) & (price_df["Date"] <= end)]
+    if p.empty:
+        return None
+    adj = p["AdjustmentVolume"].to_numpy()
+    raw = p["Volume"].to_numpy()
+    m = np.isfinite(adj) & np.isfinite(raw) & (raw > 0)
+    if int(m.sum()) < window * min_ratio:
+        return None
+    mean_raw = float(np.mean(raw[m]))
+    if mean_raw <= 0:
+        return None
+    return float(np.mean(adj[m])) / mean_raw
+
+
 RESIDUAL_COLUMNS = ["event_group_id", "event_leg_id", "issuer_code", "sale_route",
-                    "Q_shares", "ADV20", "participation", "sigma",
+                    "Q_shares", "Q_nominal_shares", "adv_split_ratio", "ADV20",
+                    "participation", "sigma",
                     "stage2_cost", "stage3_cost",
                     "measured_s2s3", "sqrt_shape", "implied_Y", "implied_Y_s2",
                     "size_bucket", "status"]
@@ -80,7 +121,8 @@ def compute_residual_row(gid: str, lid: str, code: str, route: str,
     s3 は発行ディスカウント層(引受の手腕・需要の強弱=市場清算価格ではない、需要弱で拡大)なので
     √則の判定から外し、内訳として別掲。implied_Y(s2+s3)は総実現コスト側の参考として残す。"""
     row = {"event_group_id": gid, "event_leg_id": lid, "issuer_code": code, "sale_route": route,
-           "Q_shares": Q, "ADV20": V, "participation": None, "sigma": sigma,
+           "Q_shares": Q, "Q_nominal_shares": Q, "adv_split_ratio": None,
+           "ADV20": V, "participation": None, "sigma": sigma,
            "stage2_cost": s2, "stage3_cost": s3,
            "measured_s2s3": None, "sqrt_shape": None, "implied_Y": None, "implied_Y_s2": None,
            "size_bucket": "", "status": ""}
@@ -161,13 +203,20 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             s2 = _num(sr.get("stage2_cost", "")); s3 = _num(sr.get("stage3_cost", ""))
             day0 = sr.get("parent_day0", "").strip()
-            Q = sold_by.get((gid, lid))
-            V = sigma = None
+            Q_nominal = sold_by.get((gid, lid))
+            V = sigma = ratio = None
             df = price_df(code)
             if df is not None and day0:
                 V = compute_adv(df, day0, aw, cal, amr)
                 sigma = compute_sigma(df, day0, sw, cal, amr)
-            rows.append(compute_residual_row(gid, lid, code, route, s2, s3, Q, V, sigma, edges))
+                ratio = adv_split_ratio(df, day0, aw, cal, amr)
+            # 発表後分割の基準合わせ: Q(未調整) を調整基準へ持ち上げ、V(調整出来高)と揃える。
+            # 分割なし ratio=1 → 不変。ratio 取得不可(出来高欠)は補正せず nominal のまま(fail-loud)。
+            Q = Q_nominal * ratio if (Q_nominal is not None and ratio is not None) else Q_nominal
+            r = compute_residual_row(gid, lid, code, route, s2, s3, Q, V, sigma, edges)
+            r["Q_nominal_shares"] = Q_nominal
+            r["adv_split_ratio"] = ratio
+            rows.append(r)
 
     out_detail = args.root / cfg["output"]["detail_csv"]
     out_detail.parent.mkdir(parents=True, exist_ok=True)
@@ -185,6 +234,15 @@ def main(argv: list[str] | None = None) -> int:
               f"Q/ADV20={_f(r['participation'],3)} σ={_f(r['sigma'],4)} "
               f"s2={_f(r['stage2_cost'],4)} implied_Y_s2={_f(r['implied_Y_s2'],3)} "
               f"(s2+s3={_f(r['measured_s2s3'],4)} implied_Y={_f(r['implied_Y'],3)})")
+    flagged = [r for r in rows if r.get("adv_split_ratio") is not None
+               and abs(r["adv_split_ratio"] - 1.0) > 0.01]
+    if flagged:
+        print("  ── 発表後分割の基準補正(Q を調整出来高 ADV20 と同じ基準へ) ──")
+        for r in flagged:
+            print(f"    {r['event_group_id']}/{r['event_leg_id']} code={r['issuer_code']} "
+                  f"split×{_f(r['adv_split_ratio'],2)}  "
+                  f"Q_nominal={_f(r['Q_nominal_shares'],0)} → Q_adj={_f(r['Q_shares'],0)}  "
+                  f"Q/ADV20={_f(r['participation'],3)} ({r['status']})")
     return 0
 
 
@@ -232,6 +290,22 @@ def _write_report(path: Path, ok: list[dict], allrows: list[dict], sw: int, aw: 
              "> ほぼ一定なら固定 s3 を σ√(Q/V) で割って implied_Y が size で機械的に低下し、非線形判定を汚す。\n"
              "> バラついても、その拡縮は**引受の手腕・需要の強弱(帯外は需要弱で深い)= 市場清算価格ではない裏事情**で、\n"
              "> √則(市場インパクト)とは別レイヤ。→ 非線形は **implied_Y_s2 = s2/(σ√(Q/V))** で見る(s2=オーバーハング吸収)。\n")
+    # 発表後分割の基準補正(participation のみ)
+    flagged = [r for r in allrows if r.get("adv_split_ratio") is not None
+               and abs(r["adv_split_ratio"] - 1.0) > 0.01]
+    L.append("\n## 発表後分割の基準補正(participation)\n")
+    if not flagged:
+        L.append("- 該当なし(全 leg で mean(AdjVol)/mean(Vol) ≈ 1、窓内出来高に分割の遡及なし)。\n")
+    else:
+        L.append("> Q=sold_shares は開示時点の**未調整**実数、V=ADV20 は**調整**出来高。発表の後に分割が\n"
+                 "> あると AdjVol が窓を遡及的に膨らませ、Q/V が分割比ぶん過小になる。データ自身の\n"
+                 "> mean(AdjVol)/mean(Vol) で Q を同じ調整基準へ持ち上げて是正(σ・s1/s2/s3 は分割中立で不変)。\n\n")
+        L.append("| leg | code | split× | Q_nominal | Q_adj | Q/ADV20 |\n")
+        L.append("|---|---|---:|---:|---:|---:|\n")
+        for r in flagged:
+            L.append(f"| {r['event_group_id']}/{r['event_leg_id']} | {r['issuer_code']} | "
+                     f"{_f(r['adv_split_ratio'],2)} | {_f(r['Q_nominal_shares'],0)} | "
+                     f"{_f(r['Q_shares'],0)} | {_f(r['participation'],3)} |\n")
     L.append("\n## 読み方 / 参照分布との突合\n")
     L.append("- **√則テストは implied_Y_s2(s2 側)**: participation で上昇なら非線形、flat なら √則。s3 は別レイヤ。\n")
     L.append("- **売り手の s3 の平時水準**は参照分布 `off_both × discount`(`benchmark_summary.csv`、"
