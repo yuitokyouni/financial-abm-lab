@@ -1,6 +1,6 @@
 # unwind-tape — HANDOFF
 
-**最終更新**: 2026-07-15 JST — 記述版 `FINDINGS.md` v1 完成(32 群/28 分解 leg で「一旦完成」)。**古河電工(G034)の Q/ADV20=0.04 異常を解決**: 2026-07-01 の 1→10 分割で AdjustmentVolume(=ADV20)が窓を遡及的に ×10 したのに sold_shares は未調整のまま割っていた基準ズレ。`residual_engine.py` に基準合わせ(窓内 mean(AdjVol)/mean(Vol) で Q を調整基準へ持ち上げ、fail-loud、補正 leg をレポート明示)を実装。真の participation≈0.42×。**次の Mac 再計算(shortfall→residual)で古河が 0.42× に是正され、他の発表後分割 leg もフラグされる**。
+**最終更新**: 2026-07-16 JST — 記述版 `FINDINGS.md` v1 完成(32 群/28 分解 leg)。**participation(Q/ADV20)の系統バグを発見・修正**: Q=sold_shares は day0 基準の未調整、V=ADV20 は最新基準の調整出来高で、発表後の分割/権利落ちのぶん基準がズレる。Mac 実測で **28 本中 6 本が該当**(アイシン×3・サンリオ×5・高砂熱学×2・兼松×2・古河×10・アシックスは窓内分割)。`residual_engine.py` に基準合わせを実装:**day0 より後の AdjustmentFactor だけ**の逆積 factor=1/Π(AF:Date>day0) で Q を最新基準へ写す(発表前・窓内分割は開示 Q に反映済なので数えない=過補正回避)。窓内分割は straddle フラグで明示、AdjustmentFactor 欠は af_missing で fail-loud。古河は 0.042→0.417。**§4 の participation 軸/散布図は 6 本ぶん右へ動くので Mac 再計算後に確定**。
 _（過去更新: 2026-07-14 JST — 台帳 27 groups / 28 legs、Nゲート到達計画新設、ABM を BP2005 予測取引モデルへ改修）_
 _（過去更新: 2026-07-08 JST — Task A cron登録済 / Task B v0.4 完了 / Task C G004/G008 手計算突合 MATCH）_
 
