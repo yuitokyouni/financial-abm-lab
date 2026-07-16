@@ -52,34 +52,12 @@ jobs:
           mkdir -p data
           uv run python -m fingerprint_atlas.methods_cli --db "$DB_PATH" seed
           # If a literature_methods snapshot exists, restore it so drafts
-          # benefit from arxiv context.
+          # benefit from arxiv context. Full-fidelity restore (same code
+          # path as ingest_arxiv.yml) so enrichment columns survive.
           if [ -f data/literature_methods.json ]; then
-            uv run python <<'PY'
-          import json, os
-          from fingerprint_atlas.db import (
-              ensure_literature_schema, upsert_literature_metadata,
-              update_literature_extraction,
-          )
-          DB = os.environ["DB_PATH"]
-          ensure_literature_schema(DB)
-          for r in json.load(open("data/literature_methods.json")):
-              upsert_literature_metadata(
-                  DB, arxiv_id=r["arxiv_id"], title=r["title"],
-                  authors=r["authors"], year=r["year"],
-                  published_date=r["published_date"],
-                  primary_category=r["primary_category"], abstract=r["abstract"],
-              )
-              if r.get("extracted_by_model"):
-                  update_literature_extraction(
-                      DB, r["arxiv_id"],
-                      mechanism_summary=r["mechanism_summary"],
-                      mechanism_tags=r["mechanism_tags"],
-                      stylized_facts_targeted=r["stylized_facts_targeted"],
-                      novelty_signal=r["novelty_signal"],
-                      relevance_score=r["relevance_score"],
-                      extracted_by_model=r["extracted_by_model"],
-                  )
-          PY
+            uv run python -m fingerprint_atlas.arxiv_cli \
+              --db "$DB_PATH" snapshot-restore \
+              --snapshot data/literature_methods.json
           fi
 
       - name: Pick next method(s) to draft
