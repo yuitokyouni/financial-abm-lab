@@ -836,6 +836,7 @@ def cmd_snapshot_save(args) -> int:
     the atlas/coverage/gap figures are reproducible and CI has data to
     restore. Without it the corpus lives only in a local .db that git
     ignores (data/*.db) — a single point of failure."""
+    import os
     import json as _json
     from .db import dump_literature_snapshot
     rows = dump_literature_snapshot(args.db)
@@ -859,6 +860,7 @@ def cmd_snapshot_restore(args) -> int:
     idempotent INSERT OR REPLACE keyed on arxiv_id). Used by CI to
     materialise the corpus each run, and locally to rebuild a fresh DB
     from the committed snapshot."""
+    import os
     import json as _json
     from .db import restore_literature_snapshot
     if not os.path.exists(args.snapshot):

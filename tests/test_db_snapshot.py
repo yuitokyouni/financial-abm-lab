@@ -62,3 +62,43 @@ def test_snapshot_restore_is_idempotent(tmp_path):
     restore_literature_snapshot(dst, snap)
     restore_literature_snapshot(dst, snap)  # twice
     assert len(dump_literature_snapshot(dst)) == 1  # no duplicate
+
+
+def test_snapshot_cli_handlers_round_trip(tmp_path):
+    # Drive the actual CLI command handlers (not just the db-layer helpers).
+    # Regression guard: the handlers import os locally, and a missing import
+    # there fails only through this argparse dispatch path, not the db tests.
+    from argparse import Namespace
+    from fingerprint_atlas.db import (
+        ensure_literature_schema, upsert_literature_metadata,
+    )
+    from fingerprint_atlas.arxiv_cli import cmd_snapshot_save, cmd_snapshot_restore
+
+    src = str(tmp_path / "src.db")
+    ensure_literature_schema(src)
+    upsert_literature_metadata(
+        src, arxiv_id="2401.9", title="Row, with comma", authors="A",
+        year=2024, published_date="2024-01-01", primary_category="q-fin.TR",
+        abstract="a", source_kind="arxiv")
+
+    out = str(tmp_path / "nested" / "snap.json")  # parent dir must be created
+    assert cmd_snapshot_save(Namespace(db=src, out=out)) == 0
+
+    dst = str(tmp_path / "dst.db")
+    rc = cmd_snapshot_restore(Namespace(db=dst, snapshot=out, no_replace=False))
+    assert rc == 0
+
+    from fingerprint_atlas.db import dump_literature_snapshot
+    assert dump_literature_snapshot(dst)[0]["title"] == "Row, with comma"
+
+
+def test_snapshot_save_warns_and_fails_on_empty_db(tmp_path):
+    from argparse import Namespace
+    from fingerprint_atlas.db import ensure_literature_schema
+    from fingerprint_atlas.arxiv_cli import cmd_snapshot_save
+    empty = str(tmp_path / "empty.db")
+    ensure_literature_schema(empty)
+    out = str(tmp_path / "snap.json")
+    # 0 rows -> non-zero exit so a mis-pointed --db can't silently overwrite
+    # a good snapshot with an empty one.
+    assert cmd_snapshot_save(Namespace(db=empty, out=out)) == 1
