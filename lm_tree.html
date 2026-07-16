@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>arxiv:cond-mat/9810262  ·  forward citations, depth 2</title>
+<script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.9/standalone/umd/vis-network.min.js"></script>
+<style>
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif; }
+  #info { position: fixed; top: 8px; left: 8px; background: rgba(255,255,255,0.92);
+           padding: 8px 12px; border-radius: 6px; max-width: 420px;
+           font-size: 12px; line-height: 1.5; box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+           pointer-events: none; }
+  #legend { position: fixed; bottom: 8px; left: 8px; background: rgba(255,255,255,0.92);
+             padding: 8px 12px; border-radius: 6px; font-size: 11px;
+             max-height: 40vh; overflow-y: auto; box-shadow: 0 2px 6px rgba(0,0,0,0.12); }
+  #net { width: 100vw; height: 100vh; }
+  .swatch { display: inline-block; width: 12px; height: 12px;
+             border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<div id="info"><b>arxiv:cond-mat/9810262  ·  forward citations, depth 2</b><br>1 papers, 0 citations.<br>
+hover for details · scroll to zoom · drag to pan</div>
+<div id="legend"><b>concept</b><br><div><span class="swatch" style="background:#000000"></span>root (1)</div></div>
+<div id="net"></div>
+<script>
+const data = {"nodes": [{"id": "https://openalex.org/W6948206192", "label": "Dynamic Fracture in Single Crystal Silicon", "arxiv_id": "cond-mat/9810262", "year": 1998, "cited_by_count": 0, "concept": "root", "depth": 0}], "edges": []};
+const palette = {"root": "#000000"};
+const nodes = new vis.DataSet(data.nodes.map(n => ({
+  id: n.id,
+  label: n.year ? (n.year + ' · ' + (n.label.length > 40 ? n.label.slice(0,40)+'…' : n.label)) : n.label,
+  title: (n.label + '\n' + (n.year||'?') + '  ·  ' + n.cited_by_count + ' cites\nconcept: ' + n.concept
+          + (n.arxiv_id ? '\narxiv: ' + n.arxiv_id : '')),
+  value: Math.log(1 + (n.cited_by_count||0)),
+  color: palette[n.concept] || '#888',
+  level: n.depth,
+  font: { size: 11 },
+})));
+const edges = new vis.DataSet(data.edges.map(e => ({
+  from: e.source, to: e.target, arrows: 'to',
+  width: 0.4, color: { color: 'rgba(120,120,120,0.35)', highlight: '#333' },
+})));
+const container = document.getElementById('net');
+const network = new vis.Network(container, {nodes, edges}, {
+  layout: { hierarchical: { enabled: true, direction: 'LR',
+                              sortMethod: 'directed', levelSeparation: 200,
+                              nodeSpacing: 90 } },
+  physics: { hierarchicalRepulsion: { nodeDistance: 100 } },
+  interaction: { hover: true, navigationButtons: true, tooltipDelay: 100 },
+  nodes: { shape: 'dot', scaling: { min: 6, max: 30 } },
+});
+</script>
+</body>
+</html>

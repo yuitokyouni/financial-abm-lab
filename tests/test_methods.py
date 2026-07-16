@@ -194,3 +194,65 @@ def test_method_names_align_with_runs_keys():
     assert expected_synth.issubset(seed_names), (
         f"missing synthetic seed for: {expected_synth - seed_names}"
     )
+
+
+def test_cmd_queue_next_lists_only_unannotated(tmp_path, capsys):
+    """queue-next should print only methods whose commentary is still empty."""
+    from fingerprint_atlas.methods import seed_methods
+    from fingerprint_atlas.methods_cli import cmd_queue_next, cmd_import_md
+    from fingerprint_atlas.methods import update_method
+    db = str(tmp_path / "m.db")
+    seed_methods(db)
+    # Annotate one method so queue-next excludes it.
+    update_method(db, "minority_game",
+                  novelty_notes="some text",
+                  mechanism_strengths="x",
+                  mechanism_weaknesses="y",
+                  research_questions="z",
+                  tags="t1, t2")
+    cmd_queue_next(db, n=20)
+    out = capsys.readouterr().out.strip().split("\n")
+    assert "minority_game" not in out
+    # All others should be present (they're empty by default after seed).
+    assert "speculation_game" in out
+
+
+def test_draft_to_file_then_import_md_roundtrip(tmp_path, monkeypatch):
+    """draft-to-file writes the edit-format markdown; import-md reads it
+    back into the DB. Round-trip should produce identical commentary."""
+    from fingerprint_atlas.methods import seed_methods, get_method
+    from fingerprint_atlas.methods_cli import (
+        cmd_draft_to_file, cmd_import_md, SECTIONS,
+    )
+    db = str(tmp_path / "m.db")
+    seed_methods(db)
+    # Stub the LLM so we don't hit the network.
+    monkeypatch.setattr(
+        "fingerprint_atlas.methods_draft.draft_notes_for_method",
+        lambda db_path, name, **kw: {
+            "draft": {
+                "novelty_notes": "test novelty",
+                "mechanism_strengths": "test strengths",
+                "mechanism_weaknesses": "test weaknesses",
+                "research_questions": "test questions",
+                "tags": "alpha, beta",
+            },
+            "context_used": {
+                "n_relevant_literature": 0,
+                "literature_cited_in_context": [],
+                "n_other_methods_notes": 0,
+            },
+        },
+    )
+    out_path = str(tmp_path / "speculation_game.md")
+    rc = cmd_draft_to_file(db, "speculation_game",
+                            groq_model="dummy", temperature=0.5, out=out_path)
+    assert rc == 0
+    assert os.path.exists(out_path)
+
+    rc = cmd_import_md(db, "speculation_game", out_path)
+    assert rc == 0
+    m = get_method(db, "speculation_game")
+    assert m.novelty_notes == "test novelty"
+    assert m.mechanism_strengths == "test strengths"
+    assert m.tags == "alpha, beta"

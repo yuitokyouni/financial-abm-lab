@@ -1,0 +1,22 @@
+Speculation Game (Katahira-Chen 系列) の自己組織化 (self-organized) 版。
+
+オリジナル SG では、エージェントが過去の量子化されたリターン履歴に基づいて
+±1 の戦略を選ぶが、量子化に使う「認知閾値」C を外生パラメータとして手動
+チューニングしないと stylized facts (fat tails, vol clustering 等) が出ない
+という欠点がある。
+
+本提案は、C を内生化する。具体的には、過去 Tw ステップの |Δp| の median
+(またはパーセンタイル) に基づいて C(t) を毎ステップ自動更新する、あるいは
+exponential moving average で滑らかに追従させる。これにより、C の初期値に
+対するロバスト性が得られ、stylized facts が「自発的に」現れる(著者らの
+spontaneous emergence の主張)。
+
+target stylized facts: fat tails (Hill α ∈ [3,5])、|return| autocorrelation
+(τ=50 で 0.2 程度)、aggregational gaussianity、vol clustering。
+
+新規性主張: SG パラメータの外生チューニング必要性を解消し、内生フィードバック
+ループだけで stylized facts を出すことを示す。Katahira-Chen 2019 の原 SG と
+比較して、C の初期値スイープに対しロバストなことが鍵。
+
+実装の核: 既存の SG simulator に C 更新フックを 1 行追加するだけで構築できる
+最小改変。C 外生固定モードでは原 SG と bit-parity するべき(疎通テスト)。

@@ -1,7 +1,7 @@
 name: ingest-arxiv
 
 # Pull the last week's worth of financial-ABM papers from arxiv, extract
-# structured info via Groq Llama 3.3 70B, and accumulate them in the
+# structured info via the configured LLM, and accumulate them in the
 # literature DB. Run weekly so the corpus stays current automatically.
 
 on:
@@ -11,17 +11,21 @@ on:
   workflow_dispatch:
     inputs:
       preset:
-        description: "arxiv query preset (financial_abm / agent_based_recent)"
+        description: "arxiv query preset (financial_abm_strict / financial_abm / foundational_abm)"
         required: false
-        default: "agent_based_recent"
+        default: "financial_abm_strict"
       max_results:
         description: "max papers per call"
         required: false
-        default: "30"
+        default: "50"
       no_extract:
-        description: "metadata only, skip Groq extraction (free)"
+        description: "metadata only, skip LLM extraction"
         required: false
         default: "false"
+      model:
+        description: "LLM model id (openai/gpt-4o-mini → OpenAI, openai/gpt-oss-120b → Groq)"
+        required: false
+        default: "openai/gpt-4o-mini"
 
 permissions:
   contents: write
@@ -32,8 +36,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DB_PATH: data/abm_knowhow.db
-      PRESET: ${{ github.event.inputs.preset || 'agent_based_recent' }}
-      MAX: ${{ github.event.inputs.max_results || '30' }}
+      PRESET: ${{ github.event.inputs.preset || 'financial_abm_strict' }}
+      MAX: ${{ github.event.inputs.max_results || '50' }}
+      LLM_MODEL: ${{ github.event.inputs.model || 'openai/gpt-4o-mini' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -61,85 +66,75 @@ jobs:
           fi
 
       - name: Materialise DB from snapshot
+        # Full-fidelity restore (all columns incl. enrichment). The old
+        # inline restore only re-wrote metadata + extraction fields, so
+        # code_url / oa_* / s2_* / user_notes were silently wiped every
+        # cycle. snapshot-restore round-trips losslessly with snapshot-save.
         run: |
-          uv run python <<'PY'
-          import json, os
-          from fingerprint_atlas.db import (
-              ensure_literature_schema, upsert_literature_metadata,
-              update_literature_extraction,
-          )
-          DB = os.environ["DB_PATH"]
-          ensure_literature_schema(DB)
-          snap = "data/literature_methods.json"
-          if not os.path.exists(snap):
-              print("no snapshot; literature_methods starts empty")
-              raise SystemExit(0)
-          rows = json.load(open(snap))
-          for r in rows:
-              upsert_literature_metadata(
-                  DB, arxiv_id=r["arxiv_id"], title=r["title"],
-                  authors=r["authors"], year=r["year"],
-                  published_date=r["published_date"],
-                  primary_category=r["primary_category"], abstract=r["abstract"],
-              )
-              if r.get("extracted_by_model"):
-                  update_literature_extraction(
-                      DB, r["arxiv_id"],
-                      mechanism_summary=r["mechanism_summary"],
-                      mechanism_tags=r["mechanism_tags"],
-                      stylized_facts_targeted=r["stylized_facts_targeted"],
-                      novelty_signal=r["novelty_signal"],
-                      relevance_score=r["relevance_score"],
-                      extracted_by_model=r["extracted_by_model"],
-                  )
-          print(f"restored {len(rows)} papers from snapshot")
-          PY
+          if [ -f data/literature_methods.json ]; then
+            uv run python -m fingerprint_atlas.arxiv_cli \
+              --db "$DB_PATH" snapshot-restore \
+              --snapshot data/literature_methods.json
+          else
+            echo "no snapshot; literature_methods starts empty"
+          fi
 
       - name: Ingest new arxiv papers
         env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           NO_EXTRACT="${{ github.event.inputs.no_extract || 'false' }}"
-          ARGS="--preset $PRESET --max $MAX --min-relevance-to-keep 0.3"
+          if [ "$NO_EXTRACT" != "true" ]; then
+            case "$LLM_MODEL" in
+              openai/gpt-4o*|openai/gpt-4-turbo*|openai/gpt-4.1*|openai/gpt-3.5*|openai/o1*|openai/o3*|openai/o4*)
+                if [ -z "$OPENAI_API_KEY" ]; then
+                  echo "::error::OPENAI_API_KEY secret is not set but LLM_MODEL=$LLM_MODEL routes to OpenAI."
+                  exit 1
+                fi
+                ;;
+              *)
+                if [ -z "$GROQ_API_KEY" ]; then
+                  echo "::error::GROQ_API_KEY secret is not set but LLM_MODEL=$LLM_MODEL routes to Groq."
+                  exit 1
+                fi
+                ;;
+            esac
+          fi
+          ARGS="--preset $PRESET --max $MAX --min-relevance-to-keep 0.3 --groq-model $LLM_MODEL"
           if [ "$NO_EXTRACT" = "true" ]; then ARGS="$ARGS --no-extract"; fi
           uv run python -m fingerprint_atlas.arxiv_cli \
             --db "$DB_PATH" ingest $ARGS
 
       - name: Dump literature_methods snapshot to JSON
+        # Full-fidelity dump (same code path as local snapshot-save), so
+        # the committed JSON round-trips losslessly with the restore step.
         run: |
-          uv run python <<'PY'
-          import json, os
-          from fingerprint_atlas.db import load_literature
-          DB = os.environ["DB_PATH"]
-          rows = load_literature(DB)
-          # serialise lists as JSON arrays for round-trip
-          os.makedirs("data", exist_ok=True)
-          with open("data/literature_methods.json", "w") as fh:
-              json.dump(rows, fh, indent=2, ensure_ascii=False, default=str)
-          print(f"wrote {len(rows)} rows to data/literature_methods.json")
-          PY
+          uv run python -m fingerprint_atlas.arxiv_cli \
+            --db "$DB_PATH" snapshot-save --out data/literature_methods.json
 
       - name: Open PR with snapshot diff
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ingest-arxiv/${{ github.run_id }}
-          base: claude/vibrant-ptolemy-fapuxw
+          base: main
           add-paths: |
             data/literature_methods.json
           commit-message: "ingest-arxiv: weekly snapshot (run ${{ github.run_id }})"
           title: "Weekly arxiv literature snapshot — ${{ github.run_id }}"
           body: |
             New papers ingested from arxiv (preset: `${{ env.PRESET }}`,
-            max: `${{ env.MAX }}`). Extraction via Groq Llama 3.3 70B.
+            max: `${{ env.MAX }}`). Extraction via `${{ env.LLM_MODEL }}`.
 
             The JSON snapshot under `data/literature_methods.json` is the
             source of truth for the literature DB — re-run any propose
             workflow and these papers will be available as LLM context.
 
             **Review hints**
-            - Spot-check 2-3 entries: does mechanism_summary describe what
+            - Spot-check 2-3 entries: does `mechanism_summary` describe what
               the abstract actually says?
-            - Drop rows with low signal by editing the JSON directly.
-            - Or just merge — the next ingest will accumulate on top.
+            - Drop rows with low `relevance_score` by editing the JSON.
+            - Or just merge — the next ingest accumulates on top via the
+              snapshot restore step.
           delete-branch: true

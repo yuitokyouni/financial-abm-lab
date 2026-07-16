@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import os
+import re as _re
 import time
 from typing import Any
 
@@ -48,6 +49,136 @@ DEFAULT_QUERIES = {
         'OR abs:"chartist" OR abs:"fundamentalist" '
         'OR abs:"herding" OR abs:"stylized facts")'
     ),
+    "foundational_abm": (
+        # Catches the older / cross-category ABM foundations the q-fin
+        # query misses: physics.soc-ph self-organization, MG / SG /
+        # Lux-Marchesi / Cont-Bouchaud / Challet et al. work, including
+        # pre-2020 papers and econophysics venues. Pair with --sort
+        # relevance so well-cited classics surface even if old.
+        '(cat:physics.soc-ph OR cat:q-fin.GN OR cat:q-fin.TR OR cat:nlin.AO) '
+        'AND ('
+        'abs:"minority game" OR abs:"speculation game" '
+        'OR abs:"self-organized" OR abs:"self-organization" '
+        'OR abs:"Lux-Marchesi" OR abs:"Cont-Bouchaud" '
+        'OR abs:"Challet" OR abs:"Katahira" '
+        'OR abs:"stylized fact" OR abs:"stylized facts" '
+        'OR abs:"financial market model" OR abs:"econophysics")'
+    ),
+    # ----- targeted coverage-gap presets -----
+    # Each preset fills a sparse column or under-represented mechanism
+    # cluster in the literature_methods coverage matrix. Sweep all of them
+    # to lift the per-cell paper count off 0/1.
+    "behavioral_finance": (
+        # Loss aversion / disposition effect / overconfidence — the
+        # behavioral-bias literature that LLM-agent papers (TRIBE,
+        # TraderTalk etc) build on. Currently sparse in our corpus.
+        '(cat:q-fin.TR OR cat:q-fin.GN OR cat:q-fin.ST) AND ('
+        'abs:"loss aversion" OR abs:"disposition effect" '
+        'OR abs:"overconfidence" OR abs:"prospect theory" '
+        'OR abs:"reference point" OR abs:"behavioral bias")'
+    ),
+    "herding_dynamics": (
+        # The herding STYLIZED FACT in *financial* settings. The earlier
+        # 'OR cat:physics.soc-ph' variant pulled a flood of off-topic
+        # sociology-of-opinion papers (voter / majority-rule / flocking).
+        # Restrict to q-fin and require a finance-specific keyword.
+        'cat:q-fin.* AND ('
+        'abs:"herding behavior" OR abs:"information cascade" '
+        'OR abs:"financial contagion" OR abs:"market contagion" '
+        'OR abs:"investor herding" OR abs:"trader herding") '
+    ),
+    "leverage_effect": (
+        # Asymmetric volatility / leverage effect — the empirical
+        # asymmetry between price-down + vol-up vs price-up. Almost
+        # empty in our matrix.
+        '(cat:q-fin.* OR cat:stat.AP) AND ('
+        'abs:"leverage effect" OR abs:"asymmetric volatility" '
+        'OR abs:"volatility asymmetry" OR abs:"negative-return positive-volatility")'
+    ),
+    "regime_switching": (
+        # Markov-switching / hidden-state regime models. Bridges
+        # ABM-flavor and time-series-flavor literature.
+        '(cat:q-fin.* OR cat:stat.AP) AND ('
+        'abs:"regime switching" OR abs:"regime change" '
+        'OR abs:"Markov switching" OR abs:"hidden Markov" '
+        'OR abs:"structural break" OR abs:"market regime")'
+    ),
+    "econophysics_classics": (
+        # Targeted at the 1995-2010 econophysics body of work: scaling
+        # laws, multifractality, Mantegna-Stanley distributional studies.
+        '(cat:physics.soc-ph OR cat:cond-mat.stat-mech OR cat:q-fin.ST) AND ('
+        'abs:"power law" OR abs:"scaling law" OR abs:"multifractal" '
+        'OR abs:"Mantegna" OR abs:"Stanley" '
+        'OR abs:"empirical finance" OR abs:"financial scaling")'
+    ),
+    "low_freq_returns": (
+        # Long-memory & aggregational-gaussianity — the two stylized
+        # facts most under-represented in our coverage matrix.
+        'cat:q-fin.* AND ('
+        'abs:"long memory" OR abs:"long-range dependence" '
+        'OR abs:"Hurst exponent" OR abs:"fractional integration" '
+        'OR abs:"aggregational gaussianity" OR abs:"return distribution scaling")'
+    ),
+    # ----- 2nd-generation gap presets (LLM-agent × Cont fact intersections) -----
+    # After the herding/family taxonomy pass, the coverage matrix showed
+    # every [ABM] row × {gain-loss-asymmetry, volume-volatility-corr,
+    # aggregational-gaussianity} was empty. These are hot topics in the
+    # 2024-2026 LLM-agent literature; papers likely exist, they just
+    # haven't been ingested. Each preset here targets one of those cells.
+    "llm_agent_stylized_facts": (
+        # LLM-agent papers that measure Cont-2001 return properties on
+        # their simulated markets. Fills [ABM] LLM-agent × {gain-loss,
+        # vol-corr, absence-of-autocorr} which is currently blank.
+        'cat:q-fin.* AND ('
+        'abs:"LLM agent" OR abs:"large language model agent" '
+        'OR abs:"generative agent" OR abs:"language model trader") '
+        'AND (abs:"stylized fact" OR abs:"volatility" '
+        'OR abs:"return distribution" OR abs:"heavy tail" '
+        'OR abs:"volume")'
+    ),
+    "prospect_theory_returns": (
+        # Bridges prospect-theory mechanism × Cont facts (esp. gain-loss
+        # asymmetry, which is theoretically the direct signature of loss
+        # aversion but 0 papers in our matrix currently). Constrain to
+        # simulation / agent-based to avoid a flood of empirical
+        # behavioural-finance surveys.
+        '(cat:q-fin.* OR cat:cs.MA) AND ('
+        'abs:"prospect theory" OR abs:"loss aversion" '
+        'OR abs:"reference-dependent") '
+        'AND (abs:"agent-based" OR abs:"simulation" '
+        'OR abs:"market model" OR abs:"ABM")'
+    ),
+    "volume_volatility_corr": (
+        # The Cont 2001 volume-volatility correlation fact. Barely any
+        # papers target it explicitly in our corpus — most vol papers
+        # just fit GARCH to prices.
+        'cat:q-fin.* AND ('
+        'abs:"volume volatility" OR abs:"volume-volatility" '
+        'OR abs:"trading volume" AND abs:"volatility clustering" '
+        'OR abs:"activity-volume" OR abs:"MDH" '
+        'OR abs:"mixture of distributions hypothesis")'
+    ),
+    "gain_loss_asymmetry": (
+        # Explicit target of the Cont-2001 gain/loss-asymmetry fact
+        # (drawdowns faster than rallies). Distinct from leverage
+        # effect — leverage is corr(r,σ²), gain-loss is time-scale
+        # asymmetry of first-passage.
+        'cat:q-fin.* AND ('
+        'abs:"gain-loss asymmetry" OR abs:"gain loss asymmetry" '
+        'OR abs:"asymmetric drawdown" OR abs:"drawup drawdown" '
+        'OR abs:"time-reversal asymmetry" '
+        'OR abs:"asymmetric first-passage")'
+    ),
+    "abm_order_book_2024": (
+        # Modern LOB-ABMs (ABIDES, PAMS, JAX-LOB, RustyPPO, etc). Fills
+        # [ABM] order-book row for the 2024-2026 wave that our current
+        # ingest presets systematically miss (they cap at cat:q-fin.TR
+        # keyword search which doesn't hit these tool-paper titles).
+        '(cat:q-fin.TR OR cat:cs.MA OR cat:cs.LG) AND ('
+        'abs:"limit order book" OR abs:"LOB simulator" '
+        'OR abs:"ABIDES" OR abs:"PAMS" OR abs:"JAX-LOB") '
+        'AND (abs:"agent" OR abs:"market simulator")'
+    ),
 }
 
 # Same default as propose.py — chosen after live A/B (see propose.py for notes).
@@ -63,19 +194,73 @@ Given a paper's title and abstract, return a single JSON object:
   "mechanism_summary": "1-3 sentences describing the concrete mechanism / model /
                         method proposed. If the paper is not about a mechanism
                         but e.g. a survey, say so.",
-  "mechanism_tags": [<3-5 short keywords describing what KIND of mechanism it is>],
-                     // examples: 'herding', 'order-book', 'LLM-agent',
-                     //           'regime-switching', 'percolation',
-                     //           'minority-game', 'reinforcement-learning',
-                     //           'differentiable-ABM', 'calibration-method',
-                     //           'sentiment-analysis', 'microstructure'
-  "stylized_facts_targeted": [<0-5 stylized facts the paper claims to reproduce
-                               or analyse>],
-                              // choose ONLY from this fixed list:
-                              //   'fat-tails', 'vol-clustering', 'leverage',
-                              //   'long-memory', 'regime-switching',
-                              //   'aggregational-gaussianity', 'absence-of-autocorr',
-                              //   'other'
+  "mechanism_tags": [<3-5 short keywords describing HOW the paper models
+                     the market — the mechanism, method, or agent
+                     architecture. NOT stylized-fact terms.>],
+                     // GOOD examples (methods / mechanisms):
+                     //   'order-book', 'LLM-agent', 'minority-game',
+                     //   'reinforcement-learning', 'Kirman-ant',
+                     //   'chartist-fundamentalist', 'percolation',
+                     //   'differentiable-ABM', 'calibration-method',
+                     //   'sentiment-analysis', 'microstructure',
+                     //   'Hawkes-process', 'GARCH', 'HMM',
+                     //   'stochastic-volatility', 'diffusion-model',
+                     //   'fractional-integration'  ← mechanism producing long memory
+                     //   'sign-vol-feedback'        ← mechanism producing leverage effect
+                     // BAD examples (these are stylized FACTS, put them
+                     // in stylized_facts_targeted, never here):
+                     //   'leverage'  'long-memory'  'fat-tails'
+                     //   'vol-clustering'  'absence-of-autocorr'
+                     //   'gain-loss-asymmetry'  'aggregational-gaussianity'
+                     //   'volume-volatility-corr'
+                     // BORDERLINE: 'regime-switching' and 'herding' are
+                     // both mechanisms AND facts. Use them as mechanism_tags
+                     // ONLY when the paper's METHOD is regime-switching
+                     // (e.g., MRS-GARCH, HMM) or herding-based (e.g., Kirman
+                     // ant). If the paper just OBSERVES those facts in data,
+                     // leave them out of mechanism_tags and put them in
+                     // stylized_facts_targeted instead.
+  "stylized_facts_targeted": [<MULTI-LABEL: include EVERY stylized fact the
+                               paper measures, reproduces, or analyses on its
+                               simulated / empirical returns — NOT just the
+                               headline one. Papers routinely check 2-4 facts
+                               as byproducts of their main claim; capture
+                               ALL of them. Typical count is 2-4; upper cap 5.>],
+                              // choose ONLY from this fixed list (Cont 2001
+                              // return-observables + one ABM target):
+                              //   'fat-tails'                    heavy tails in returns
+                              //   'vol-clustering'               ARCH-like clustering
+                              //   'leverage'                     corr(r_t, sigma^2_{t+k}) < 0
+                              //   'long-memory'                  slow ACF decay in |r|
+                              //   'aggregational-gaussianity'    normal at low freq
+                              //   'absence-of-autocorr'          lag-1 ACF ~ 0 for r
+                              //   'gain-loss-asymmetry'          drawdowns faster than rallies
+                              //   'volume-volatility-corr'       high vol ↔ high volume
+                              //   'regime-switching'             HMM-detectable state changes
+                              //   'other'                        last-resort catch-all —
+                              //                                  use ONLY if the paper's
+                              //                                  target really doesn't
+                              //                                  match any label above.
+                              // MULTI-LABEL EXAMPLES (to break the single-label
+                              // habit that biases towards headline facts only):
+                              //   A Lux-Marchesi paper that fits vol clustering
+                              //   AND fat tails AND leverage effect → tag ALL
+                              //   THREE, not just 'vol-clustering'.
+                              //   A GARCH-M paper showing fat tails, vol
+                              //   clustering, AND long memory in |r| → tag
+                              //   all three.
+                              //   A prospect-theory ABM that produces gain-
+                              //   loss asymmetry AND heavy tails → tag both.
+                              // If you're only tagging one fact, ask yourself
+                              // whether the paper actually measured that fact
+                              // in isolation, or whether you're just picking
+                              // the headline. Usually it's the latter.
+                              // NOTE: 'herding' is NOT a fact — it's a mechanism.
+                              // A paper about herding should end up with
+                              // vol-clustering / fat-tails / volume-vol-corr
+                              // etc as its facts (the observable signatures),
+                              // and 'herding' or a related mechanism name in
+                              // mechanism_tags.
   "novelty_signal": "1 sentence describing what the paper claims is genuinely
                      novel relative to prior work, or null if no clear claim.",
   "relevance_score": <float 0..1, your estimate of how relevant this paper is
@@ -85,6 +270,63 @@ Given a paper's title and abstract, return a single JSON object:
 
 Be conservative. Output ONLY the JSON object, no prose.
 """
+
+
+def query_arxiv_by_ids(arxiv_ids: list[str]) -> list[dict[str, Any]]:
+    """Fetch arxiv metadata for an explicit list of arxiv_ids. Useful for
+    targeted ingest of foundational papers (e.g. Katahira-Chen 1909.03185)
+    that the broad-query passes can miss because they're old or in a
+    category we don't sweep."""
+    import arxiv
+    # Defence: strip whitespace, drop trailing '# comment', drop version
+    # suffix (arxiv id_list expects base ids; entry_id carries the version).
+    cleaned: list[str] = []
+    for raw in arxiv_ids:
+        if not raw:
+            continue
+        s = str(raw).split("#", 1)[0].strip()
+        if not s:
+            continue
+        cleaned.append(_re.sub(r"v\d+$", "", s))
+    if not cleaned:
+        return []
+    search = arxiv.Search(id_list=cleaned)
+    client = arxiv.Client(page_size=min(100, len(cleaned)), delay_seconds=3.0)
+    out = []
+    for r in client.results(search):
+        out.append({
+            "arxiv_id": _extract_arxiv_id_from_entry(r.entry_id),
+            "title": r.title.strip().replace("\n", " "),
+            "authors": ", ".join(a.name for a in r.authors),
+            "year": r.published.year,
+            "published_date": r.published.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "primary_category": r.primary_category,
+            "abstract": r.summary.strip().replace("\n", " "),
+            "comment": (r.comment or "").strip() or None,
+        })
+    return out
+
+
+def _extract_arxiv_id_from_entry(entry_id: str) -> str:
+    """Pull the canonical arxiv id (incl. category prefix for old papers)
+    out of arxiv's `entry_id` URL.
+
+    arxiv has two id schemes:
+      new-style (2007+) : `http://arxiv.org/abs/2503.00320v2`
+                          → '2503.00320v2'
+      old-style         : `http://arxiv.org/abs/cond-mat/0101326v1`
+                          → 'cond-mat/0101326v1' (NOT just '0101326v1' —
+                            the category is part of the id)
+
+    A naive `rsplit('/', 1)[-1]` strips the category off old-style ids,
+    breaking DOI lookups (the canonical DOI is
+    `10.48550/arXiv.cond-mat/0101326`, not `…/0101326`)."""
+    marker = "/abs/"
+    if (i := entry_id.find(marker)) >= 0:
+        raw = entry_id[i + len(marker):]
+    else:
+        raw = entry_id.rsplit("/", 1)[-1]
+    return _re.sub(r"v\d+$", "", raw)
 
 
 def query_arxiv(query: str, max_results: int = 50,
@@ -105,16 +347,15 @@ def query_arxiv(query: str, max_results: int = 50,
     client = arxiv.Client(page_size=min(100, max_results), delay_seconds=3.0)
     out = []
     for r in client.results(search):
-        # entry_id like 'http://arxiv.org/abs/2412.01234v2' → strip prefix + version
-        eid = r.entry_id.rsplit("/", 1)[-1]
         out.append({
-            "arxiv_id": eid,
+            "arxiv_id": _extract_arxiv_id_from_entry(r.entry_id),
             "title": r.title.strip().replace("\n", " "),
             "authors": ", ".join(a.name for a in r.authors),
             "year": r.published.year,
             "published_date": r.published.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "primary_category": r.primary_category,
             "abstract": r.summary.strip().replace("\n", " "),
+            "comment": (r.comment or "").strip() or None,
         })
     return out
 
@@ -122,40 +363,54 @@ def query_arxiv(query: str, max_results: int = 50,
 def _call_groq_for_extraction(paper: dict, model: str,
                               temperature: float = 0.3,
                               max_retries: int = 2) -> dict:
-    """One Groq call extracting structured info from a paper. Retries on the
-    'json_validate_failed' 400 — same gpt-oss-120b JSON-mode quirk as
-    `propose._call_groq`."""
-    try:
-        from groq import Groq
-    except ImportError as e:
-        raise ImportError(
-            "groq SDK not installed. Run `uv add groq` or `pip install groq`."
-        ) from e
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        raise RuntimeError("GROQ_API_KEY environment variable not set.")
-    client = Groq(api_key=api_key)
-    user_msg = f"Title: {paper['title']}\n\nAbstract: {paper['abstract']}"
+    """Per-paper structured extraction. Wraps `llm_client.call_llm`, which
+    routes to OpenAI when `model` is an OpenAI chat model id, otherwise
+    Groq. Keeps an explicit `time.sleep(65)` recovery on Groq 429 since
+    the per-key TPM window is 60s — that backoff is more aggressive than
+    the generic transient retry."""
+    from .llm_client import call_llm
+    paper_payload = {"title": paper["title"], "abstract": paper["abstract"]}
     last_exc: Exception | None = None
     for attempt in range(max_retries + 1):
         try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},
-                    {"role": "user", "content": user_msg},
-                ],
-                response_format={"type": "json_object"},
-                temperature=temperature,
-            )
-            return json.loads(resp.choices[0].message.content)
+            # Structured extraction output is English-only (DB keys, tag
+            # matching, coverage matrix all key on the English slug). Do
+            # NOT inject the JA glossary — it leaked JA tokens into
+            # mechanism_tags for at least one paper (limited-rationality
+            # etc), which then split the coverage matrix on tag equality.
+            return call_llm(EXTRACTION_SYSTEM_PROMPT, paper_payload, model,
+                            temperature=temperature, max_retries=0,
+                            generate_japanese=False)
         except Exception as exc:
             last_exc = exc
             msg = str(exc)
-            transient = ("json_validate_failed" in msg
-                         or "Failed to validate JSON" in msg)
-            if attempt < max_retries and transient:
-                temperature = min(1.0, temperature + 0.1)
+            # Recovery classification by explicit error CODE, not
+            # message keywords — Groq's 429 body carries an upsell URL
+            # (`.../settings/billing`) that used to false-positive the
+            # naive `"billing" in msg` check and skip all retries.
+            unrecoverable = ("insufficient_quota" in msg
+                             or "invalid_api_key" in msg)
+            if unrecoverable:
+                raise
+            rate_limited = ("rate_limit_exceeded" in msg
+                            or "Rate limit reached" in msg
+                            or "429" in msg)
+            # Groq exposes two separate 429s: TPM (tokens/min, refills
+            # in seconds) vs TPD (tokens/day, refills in minutes-to-
+            # hours). Only TPM is worth the 65s in-loop sleep — TPD
+            # never recovers inside that window, so we bail immediately
+            # with a clear message so the caller can switch model or
+            # come back tomorrow instead of burning the retry budget.
+            tpd = "tokens per day" in msg or "TPD" in msg
+            if tpd:
+                print(f"  (TPD quota exhausted on {paper['arxiv_id']}; "
+                      f"daily budget used up — retry logic can't help. "
+                      f"Wait until reset or switch --groq-model.)")
+                raise
+            if attempt < max_retries and rate_limited:
+                print(f"  (TPM rate-limit on {paper['arxiv_id']}, "
+                      f"sleeping 65s before retry {attempt + 1}/{max_retries})")
+                time.sleep(65)
                 continue
             raise
     raise last_exc
@@ -201,27 +456,34 @@ def _coerce_relevance(v) -> float | None:
     return max(0.0, min(1.0, f))
 
 
-def ingest(db_path: str, *, query: str, max_results: int = 50,
+def ingest(db_path: str, *, query: str | None = None, max_results: int = 50,
            extract: bool = True, groq_model: str = DEFAULT_GROQ_MODEL,
            min_relevance_to_keep: float = 0.0,
+           papers: list[dict[str, Any]] | None = None,
            verbose: bool = True) -> dict:
     """End-to-end: query → upsert metadata → (optional) LLM extract → store.
 
-    Returns a summary dict. Re-running over the same query is safe; arxiv_id is
-    unique. Papers already extracted are skipped unless their extraction is
-    stale (we don't currently re-extract — see `re-extract` CLI sub-command).
+    Either pass `query` (broad arxiv search) or a pre-fetched `papers` list
+    (e.g. from `query_arxiv_by_ids` for targeted ingest). Re-running over
+    the same papers is safe; arxiv_id is unique. Papers already extracted
+    are skipped.
     """
     from .db import (
         ensure_literature_schema, upsert_literature_metadata,
         update_literature_extraction, load_literature,
+        set_literature_code_url, set_arxiv_comment,
     )
+    from .code_links import resolve_code_url
     ensure_literature_schema(db_path)
 
+    if papers is None:
+        if not query:
+            raise ValueError("either `query` or `papers` must be provided")
+        if verbose:
+            print(f"querying arxiv: {query!r}  (max_results={max_results})")
+        papers = query_arxiv(query, max_results=max_results)
     if verbose:
-        print(f"querying arxiv: {query!r}  (max_results={max_results})")
-    papers = query_arxiv(query, max_results=max_results)
-    if verbose:
-        print(f"  -> {len(papers)} papers returned by arxiv")
+        print(f"  -> {len(papers)} papers to process")
 
     n_new, n_extracted, n_skipped, n_dropped = 0, 0, 0, 0
     errors = []
@@ -238,6 +500,36 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
         )
         if not had_id:
             n_new += 1
+
+        # Cache arxiv's author-comment field — many ABM/finance papers put
+        # 'code at github.com/...' here rather than in the abstract.
+        if p.get("comment") is not None:
+            try:
+                set_arxiv_comment(db_path, p["arxiv_id"], p["comment"])
+            except KeyError:
+                pass
+
+        # Attempt to surface a code-repo URL. Cheap: regex over abstract,
+        # then comment, then PWC. Skip if already persisted.
+        existing_code_url = next(
+            (r.get("code_url") for r in before_rows
+             if r["arxiv_id"] == p["arxiv_id"] and r.get("code_url")),
+            None,
+        )
+        if not existing_code_url:
+            try:
+                url, source = resolve_code_url(
+                    p["arxiv_id"], p["abstract"], p.get("comment"),
+                )
+            except (OSError, ValueError, KeyError, TypeError) as e:
+                if verbose:
+                    print(f"    code_url resolve failed: {type(e).__name__}: {e}")
+                url, source = None, None
+            if url:
+                set_literature_code_url(db_path, p["arxiv_id"],
+                                        code_url=url, source=source)
+                if verbose:
+                    print(f"    code_url ({source}): {url}")
 
         if not extract:
             continue
@@ -284,9 +576,11 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
             print(f"  + {p['arxiv_id']} [{p['year']}] rel={rel}  tags=[{tags}]  "
                   f"{p['title'][:70]}")
 
-        # arxiv-friendly pacing already enforced by arxiv.Client; Groq has
-        # its own per-key rate limit (we just keep the loop sequential).
-        time.sleep(0.1)
+        # Groq's gpt-oss-120b free-tier TPM is 8000. Each extraction call
+        # uses ~600 input + 200 output = 800 tokens, so ~10 papers/minute
+        # is the ceiling. Sleep 6s between successful extractions so we
+        # stay under the limit without paying 60s recovery penalties.
+        time.sleep(6.0)
 
     return {
         "query": query, "n_papers_returned": len(papers),
@@ -297,3 +591,23 @@ def ingest(db_path: str, *, query: str, max_results: int = 50,
         "errors": errors,
         "groq_model": groq_model if extract else None,
     }
+
+
+def ingest_by_ids(db_path: str, arxiv_ids: list[str], *,
+                   extract: bool = True,
+                   groq_model: str = DEFAULT_GROQ_MODEL,
+                   min_relevance_to_keep: float = 0.0,
+                   verbose: bool = True) -> dict:
+    """Targeted ingest of an explicit arxiv_id list. Wraps `ingest` with
+    pre-fetched metadata so foundational papers (e.g. Katahira-Chen 2019
+    = 1909.03185) get into the DB even when they fall outside our broad
+    query coverage."""
+    if verbose:
+        print(f"fetching {len(arxiv_ids)} arxiv id(s)")
+    papers = query_arxiv_by_ids(arxiv_ids)
+    if verbose:
+        print(f"  -> {len(papers)} returned by arxiv "
+              f"(missing: {len(arxiv_ids) - len(papers)})")
+    return ingest(db_path, papers=papers, extract=extract,
+                  groq_model=groq_model,
+                  min_relevance_to_keep=min_relevance_to_keep, verbose=verbose)

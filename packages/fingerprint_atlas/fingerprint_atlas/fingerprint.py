@@ -171,8 +171,16 @@ def fingerprint(returns: np.ndarray, *, compute_hill: bool = True) -> np.ndarray
         acf_decay = float("nan")
     agg_kd = _aggregational_kurt_decay(r, window=20)
 
-    return np.array([vol, kurt, hill, acf_ret, acf_abs_short, lev,
-                     acf_abs_long, acf_decay, agg_kd], dtype=float)
+    fp = np.array([vol, kurt, hill, acf_ret, acf_abs_short, lev,
+                    acf_abs_long, acf_decay, agg_kd], dtype=float)
+    # Guard: the return length MUST match FEATURE_NAMES so downstream
+    # z-scoring, distance calc, and DB storage stay aligned. If they drift
+    # we want a loud error at compute time, not silent misalignment later.
+    assert len(fp) == len(FEATURE_NAMES), (
+        f"fingerprint length {len(fp)} != len(FEATURE_NAMES)={len(FEATURE_NAMES)}; "
+        f"update fingerprint() and FEATURE_NAMES together."
+    )
+    return fp
 
 
 def standardize(fps: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:

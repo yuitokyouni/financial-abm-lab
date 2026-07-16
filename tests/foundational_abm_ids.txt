@@ -1,0 +1,34 @@
+# Foundational ABM / econophysics papers the broad q-fin.TR query misses.
+# Used by:  arxiv_cli ingest-ids --ids-file tests/foundational_abm_ids.txt
+#
+# Lines starting with # are ignored. Versions optional — base id suffices.
+#
+# --- Minority / Speculation Game lineage ---
+1909.03185        # Katahira & Chen 2019 — Speculation Game (Physica A)
+cond-mat/9712151  # Challet & Zhang 1997 — original Minority Game
+cond-mat/0103089  # Challet, Marsili, Zhang 2001 — GCMG / grand canonical MG
+cond-mat/0009466  # Marsili, Challet 2001 — Continuum time MG
+#
+# --- Lux / Marchesi / herding lineage ---
+cond-mat/9909265  # Lux & Marchesi 1999 — Scaling and criticality in a stochastic ABM
+cond-mat/9803227  # Lux & Marchesi 1998 — Volatility clustering precursor
+#
+# --- Cont-Bouchaud cluster lineage ---
+cond-mat/9712318  # Cont & Bouchaud 1998 — Herd behavior and aggregate fluctuations
+#
+# --- Self-organization / SOC + ABM ---
+cond-mat/9809006  # Caldarelli, Marsili, Zhang 1997 — Toy model of market dynamics
+cond-mat/0103140  # Bouchaud & Cont 1998 — Langevin approach
+#
+# --- Franke-Westerhoff structural switching ---
+1012.5734         # Franke & Westerhoff 2010 — Structural stochastic volatility ABM
+#
+# --- Chiarella-Iori order book ---
+cond-mat/0206280  # Chiarella & Iori 2002 — A simulation analysis of microstructure
+#
+# --- ZI baseline (Gode-Sunder line) ---
+# (Gode & Sunder 1993 predates arxiv; reference via methods notes instead.)
+#
+# --- Recent foundational reviews / surveys ---
+1611.04839        # Lux 2016 — Stochastic behavioral asset-pricing models, survey
+2104.10058        # Buchanan / Galla 2021 — Statistical mechanics of financial markets
