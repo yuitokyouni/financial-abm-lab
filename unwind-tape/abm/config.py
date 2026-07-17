@@ -26,6 +26,12 @@ class Config:
     # ---- market / price grid ---------------------------------------------
     initial_price: float = 100.0          # reference price level
     fundamental_v: float = 100.0          # constant fundamental v (log v = ln 100)
+    fundamental_rw_sigma: float = 0.0     # per-step log-fundamental random walk sd.
+    #                                       0 = fixed fundamental (calibrated model,
+    #                                       unchanged). >0 (regime variant): the
+    #                                       anchor drifts, so trends are real and a
+    #                                       block's impact is PERMANENT (no fixed
+    #                                       level to heal back to).
     tick_size: float = 0.05               # minimum price increment
     # THIN starter ladder: only scaffolding for warmup. The replenishing
     # liquidity is the FCN makers; a shallow seed is what lets a block move price
@@ -85,6 +91,19 @@ class Config:
     predator_announce_frac: float = 0.7   # fraction of the short sold in the announce window -> s1 knob
     predator_cover_frac: float = 0.6      # fraction covered in the post window (rebound diag.)
 
+    # ---- momentum takers (cascade / amplification channel) ---------------
+    # The FCN maker only *quotes* on momentum and brakes on inventory -> it is a
+    # stabiliser, never an amplifier, so nothing cascades. Momentum takers are
+    # the missing destabiliser: they CROSS the spread (market orders) in the
+    # direction of recent momentum, size growing with |momentum|, NO inventory
+    # brake, NO fundamental anchor. Symmetric -> a live up-trend keeps rising; a
+    # block only tips a cascade if its dip FLIPS the momentum sign (emergent).
+    # mt_fraction = 0 -> no takers (calibrated model, unchanged).
+    mt_fraction: float = 0.0              # share of the population that are takers
+    mt_window: int = 60                   # steps for the momentum signal
+    mt_threshold: float = 0.005           # min |cumulative window return| to act
+    mt_k: float = 40.0                    # size gain: qty = mt_k*|mom|*V*mt_window
+
     # ---- event windows ----------------------------------------------------
     announce_day_steps: int = 300         # "day 0" reaction window (-> s1)
     drift_steps: int = 300                # day0end -> exec ref (front-running) (-> s2)
@@ -101,5 +120,25 @@ class Config:
 
 
 def baseline() -> Config:
-    """Return a fresh baseline configuration."""
+    """Return a fresh baseline configuration (calibrated announced-event model)."""
     return Config()
+
+
+def regime_variant(**overrides) -> Config:
+    """Cascade-capable variant for the block-into-state experiment (abm/regime.py).
+
+    Differs from baseline in exactly three, principled ways (see abm/regime.py):
+      * drifting fundamental (``fundamental_rw_sigma``) -> real trends, permanent impact
+      * relaxed price band -> block impact is not clamped at +/-4%
+      * momentum takers present (``mt_fraction``) -> the amplifier that can cascade
+    Everything else is baseline. Override any field via kwargs (for the g/knob scan).
+    """
+    from dataclasses import replace
+    cfg = replace(Config(),
+                  fundamental_rw_sigma=0.0015,
+                  fcn_price_band=0.30,
+                  mt_fraction=0.15,
+                  mt_window=60,
+                  mt_threshold=0.005,
+                  mt_k=40.0)
+    return replace(cfg, **overrides) if overrides else cfg

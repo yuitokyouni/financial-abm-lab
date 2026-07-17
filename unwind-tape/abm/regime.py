@@ -42,7 +42,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .config import baseline
+from .config import baseline, regime_variant
 from .market import Market
 
 
@@ -79,7 +79,7 @@ def run_block_into_state(cfg=None, seeds=range(40), *, block_qov=8.0,
     continuation from an identical deepcopy snapshot. The base market keeps
     free-running unperturbed (the probes are isolated side-branches).
     """
-    cfg = cfg or baseline()
+    cfg = cfg or regime_variant()
     rows = []
     for seed in seeds:
         m = Market(cfg)

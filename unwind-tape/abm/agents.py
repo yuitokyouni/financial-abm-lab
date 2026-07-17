@@ -148,13 +148,51 @@ class FCNMarketMaker:
 FCNAgent = FCNMarketMaker
 
 
+class MomentumTaker:
+    """Trend-following liquidity TAKER -- the cascade / amplification channel.
+
+    The FCN maker only re-quotes on momentum and brakes on inventory, so it is a
+    stabiliser and nothing cascades. This agent is the missing amplifier: it
+    CROSSES the spread -- market-BUYS into up-momentum, market-SELLS into
+    down-momentum -- with size growing in |momentum|, **no inventory brake and no
+    fundamental anchor**. That is the positive feedback a herding cascade needs.
+
+    It is deliberately **symmetric**: in a live up-trend it keeps buying, so
+    price *keeps rising* (the "absorbed, trend continues" outcome). A block only
+    tips a cascade if its dip FLIPS the momentum sign; whether it does is set by
+    the block-vs-trend balance = the state. Same rule, both outcomes, state
+    decides -- which is the non-arbitrary bimodality the experiment must show.
+    """
+
+    is_fcn = False
+
+    def __init__(self, agent_id, cfg, rng):
+        self.agent_id = agent_id
+
+    def decide(self, market, rng):
+        cfg = market.config
+        mom = market.return_ma(cfg.mt_window) * cfg.mt_window     # cumulative recent return
+        if abs(mom) < cfg.mt_threshold:
+            return Action("none")
+        base = (market.V or 1.0) * cfg.mt_window                  # a window's worth of volume
+        qty = int(cfg.mt_k * abs(mom) * base)
+        if qty <= 0:
+            return Action("none")
+        return Action("market", side=("buy" if mom > 0.0 else "sell"), qty=qty)
+
+
 def build_population(cfg, rng):
-    """Build the agent list: first ``zi_fraction`` are ZI, the rest FCN makers."""
-    n_zi = int(round(cfg.n_agents * cfg.zi_fraction))
+    """Agent list: ``zi_fraction`` ZI, then ``mt_fraction`` momentum takers, rest
+    FCN makers. mt_fraction=0 -> no takers (calibrated model, unchanged)."""
+    n = cfg.n_agents
+    n_zi = int(round(n * cfg.zi_fraction))
+    n_mt = min(int(round(n * cfg.mt_fraction)), max(n - n_zi, 0))
     agents = []
-    for i in range(cfg.n_agents):
+    for i in range(n):
         if i < n_zi:
             agents.append(ZIAgent(i, cfg, rng))
+        elif i < n_zi + n_mt:
+            agents.append(MomentumTaker(i, cfg, rng))
         else:
             agents.append(FCNMarketMaker(i, cfg, rng))
     return agents

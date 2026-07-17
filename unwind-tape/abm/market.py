@@ -158,8 +158,22 @@ class Market:
         else:
             self._apply(agent_id, acts)
 
+    def _evolve_fundamental(self):
+        """Optional per-step log-fundamental random walk (regime variant only).
+
+        Guarded by ``fundamental_rw_sigma``: at 0 (the calibrated model) it does
+        NOT touch the rng, so the rng stream -- and every calibrated result -- is
+        bit-identical. At >0 the anchor drifts, giving real trends and permanent
+        block impact. run_event's mkt_drift path overwrites log_v explicitly, so
+        this only matters for the free-running regime experiment.
+        """
+        s = self.config.fundamental_rw_sigma
+        if s > 0.0:
+            self.log_v += s * self.rng.standard_normal()
+
     def _base_step(self):
         """Pick one random agent, let it read the market, apply its order(s)."""
+        self._evolve_fundamental()
         i = int(self.rng.integers(0, len(self.agents)))
         agent = self.agents[i]
         acts = agent.decide(self, self.rng)
