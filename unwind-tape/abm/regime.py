@@ -62,8 +62,33 @@ def _measure_state(m: Market, k: int, ma_win: int) -> dict:
 
 def _run_free(m: Market, steps: int) -> float:
     """Advance ``steps`` background steps; return the log price change over them."""
+    return _run_post(m, steps)
+
+
+def _run_post(m: Market, steps: int, block: float = 0.0,
+              n_slices: int = 30, slice_gap: int = 3) -> float:
+    """Advance ``steps`` background steps, optionally executing a sell ``block``
+    as ``n_slices`` slices over the first ``n_slices*slice_gap`` steps.
+
+    A block must WALK replenishing liquidity over time (like a real offering /
+    run_event's unannounced arm), not dump instantly -- an instant market order
+    discards everything past the thin resting book, so size stops mattering.
+    The background steps are identical to the no-block arm (same rng), so the
+    sliced sells are the only difference -> the paired delta is the block's
+    causal effect and now scales with block size.
+    """
     p0 = m.mid
-    for _ in range(steps):
+    q_slice = block / n_slices if (block > 0 and n_slices > 0) else 0.0
+    carry = 0.0
+    fired = 0
+    for t in range(steps):
+        if q_slice > 0.0 and fired < n_slices and t % slice_gap == 0:
+            carry += q_slice
+            q = int(carry)
+            carry -= q
+            if q > 0:
+                m._market_order(-5, "sell", q)      # SELLER_AGENT_ID
+            fired += 1
         m._base_step()
     return math.log(m.mid / p0) if p0 > 0 and m.mid > 0 else 0.0
 
@@ -91,14 +116,13 @@ def run_block_into_state(cfg=None, seeds=range(40), *, block_qov=8.0,
         for _ in range(n_probes):
             _run_free(m, probe_gap)
             st = _measure_state(m, k, ma_win)
-            # paired counterfactual from an identical snapshot (same rng state)
+            # paired counterfactual from an identical snapshot (same rng state):
+            # both arms run identical background steps; arm_blk also walks the
+            # block as slices -> the sliced sells are the only difference.
             arm_no = copy.deepcopy(m)
             arm_blk = copy.deepcopy(m)
-            ret_no = _run_free(arm_no, post_steps)
-            if block > 0:
-                arm_blk._market_order(-5, "sell", block)   # SELLER_AGENT_ID
-                arm_blk._record_mid()
-            ret_blk = _run_free(arm_blk, post_steps)
+            ret_no = _run_post(arm_no, post_steps)
+            ret_blk = _run_post(arm_blk, post_steps, block=block)
             rows.append({
                 "seed": seed, "block": block,
                 **st,
