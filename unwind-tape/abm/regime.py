@@ -2,33 +2,27 @@
 
 Question this answers -- the one an ABM is *uniquely* able to answer:
 
-    Take the SAME market world at the SAME instant. Drop a large sell block into
+    Take the SAME market world at the SAME instant. Walk a large sell block into
     it, or don't. How does the block change the subsequent path, and does that
     change depend on the market's *state* at the moment of injection?
 
 In real data the counterfactual ("what would Furukawa have done without the
-block") is never observable. Here the model is deterministic in its seed, so we
+block") is never observable. The model is deterministic in its seed, so we
 snapshot the market at t*, run TWO continuations from that identical snapshot
 (same rng stream) -- one with the block, one without -- and the difference is the
-block's *pure causal effect* on that path. Averaging paired deltas over many
-endogenous states isolates STATE dependence, not size (the block is held fixed).
+block's *pure causal effect* on that path. Over many endogenous states this
+isolates STATE dependence, not size (the block is held fixed).
 
-This is the emergence arm: the cascade is the FCN chartists (g2) chasing the
-block-induced drop, withdrawing bids, amplifying. Whether it *tips* is
-path/state dependent -- which is exactly why a fixed-size block gives R^2~=0
-against realised cost in the tape. No predators, no announcement, no injected
-drop: just a block hitting a running market in different states.
+The cascade channel is the MomentumTaker population (agents.py): it crosses the
+spread on momentum with no inventory brake, so a block that flips the momentum
+sign can tip a self-feeding cascade -- or, in a strong young up-trend, get
+absorbed while price keeps rising. Both outcomes from one rule; the pre-injection
+state is meant to separate them. Whether it actually does is the open question
+this harness measures (it does NOT assume the answer).
 
-State at t* (measured from pre-injection info only -- no lookahead):
-  * ``r_pre``   : log return over the last ``k`` steps  (trend direction+strength)
-  * ``ma_gap``  : (mid - MA_price)/MA_price over ``ma_win``  (overextension / 伸び切り)
-  * ``vol_pre`` : std of the last ``k`` per-step returns    (local fragility)
-
-Outcome:
-  * ``ret_no``  : post-window return WITHOUT the block (the counterfactual)
-  * ``ret_blk`` : post-window return WITH the block
-  * ``delta``   : ret_blk - ret_no  = causal effect of the block on the path
-                  (delta ~ 0  -> absorbed;  delta << 0 -> cascade)
+Speed: the agent population is immutable after construction, so we snapshot only
+the *mutable* market state (book, inventory, rng, history) and share the agents
+-- ~100x cheaper than deepcopy, which makes thousands of paired probes feasible.
 
 numpy only. Run: ``python3 -m abm.regime`` (from unwind-tape/).
 """
@@ -42,93 +36,114 @@ from pathlib import Path
 
 import numpy as np
 
-from .config import baseline, regime_variant
+from .agents import MomentumTaker
+from .config import regime_variant
 from .market import Market
 
-
-def _measure_state(m: Market, k: int, ma_win: int) -> dict:
-    """State at the current instant, from history only (no lookahead)."""
-    mids = m._mid_hist
-    rets = m._ret_hist
-    mid = m.mid
-    r_pre = math.log(mid / mids[-k]) if len(mids) > k and mids[-k] > 0 else 0.0
-    win = mids[-ma_win:] if len(mids) >= 2 else mids
-    ma = sum(win) / len(win) if win else mid
-    ma_gap = (mid - ma) / ma if ma > 0 else 0.0
-    rk = rets[-k:]
-    vol_pre = float(np.std(rk)) if len(rk) > 1 else 0.0
-    return {"r_pre": r_pre, "ma_gap": ma_gap, "vol_pre": vol_pre}
+FEATURES = ["mom_s", "mom_l", "gap_s", "gap_l", "vol", "taker_inv"]
 
 
-def _run_free(m: Market, steps: int) -> float:
-    """Advance ``steps`` background steps; return the log price change over them."""
-    return _run_post(m, steps)
+def _measure_state(m: Market) -> dict:
+    """Battery of pre-injection state features (history/inventory only, no lookahead).
+
+    mom_s/mom_l : short/long trend return (direction + strength)
+    gap_s/gap_l : short/long deviation from the moving-average price (overextension)
+    vol         : local realised volatility
+    taker_inv   : net momentum-taker inventory / (V*400) -- how loaded the amplifier is
+    """
+    mids, rets, mid = m._mid_hist, m._ret_hist, m.mid
+
+    def ret_over(k):
+        return math.log(mid / mids[-k]) if len(mids) > k and mids[-k] > 0 else 0.0
+
+    def gap(w):
+        win = mids[-w:] if len(mids) >= 2 else mids
+        ma = sum(win) / len(win) if win else mid
+        return (mid - ma) / ma if ma > 0 else 0.0
+
+    def vol(k):
+        rk = rets[-k:]
+        return float(np.std(rk)) if len(rk) > 1 else 0.0
+
+    tinv = sum(m.inventory.get(a.agent_id, 0.0)
+               for a in m.agents if isinstance(a, MomentumTaker))
+    tinv_n = tinv / (m.V * 400.0) if m.V else 0.0
+    return {"mom_s": ret_over(50), "mom_l": ret_over(200),
+            "gap_s": gap(100), "gap_l": gap(400), "vol": vol(100),
+            "taker_inv": tinv_n}
+
+
+def _snapshot(m: Market) -> dict:
+    """Copy only the MUTABLE market state; agents/config are shared (immutable)."""
+    return {"book": copy.deepcopy(m.book), "inv": dict(m.inventory),
+            "rng": copy.deepcopy(m.rng), "mh": list(m._mid_hist),
+            "rh": list(m._ret_hist), "log_v": m.log_v,
+            "last": m.last_price, "phase": m.phase}
+
+
+def _restore(m: Market, s: dict) -> None:
+    m.book = copy.deepcopy(s["book"]); m.inventory = dict(s["inv"])
+    m.rng = copy.deepcopy(s["rng"]); m._mid_hist = list(s["mh"])
+    m._ret_hist = list(s["rh"]); m.log_v = s["log_v"]
+    m.last_price = s["last"]; m.phase = s["phase"]
 
 
 def _run_post(m: Market, steps: int, block: float = 0.0,
-              n_slices: int = 30, slice_gap: int = 3) -> float:
-    """Advance ``steps`` background steps, optionally executing a sell ``block``
-    as ``n_slices`` slices over the first ``n_slices*slice_gap`` steps.
-
-    A block must WALK replenishing liquidity over time (like a real offering /
-    run_event's unannounced arm), not dump instantly -- an instant market order
-    discards everything past the thin resting book, so size stops mattering.
-    The background steps are identical to the no-block arm (same rng), so the
-    sliced sells are the only difference -> the paired delta is the block's
-    causal effect and now scales with block size.
-    """
+              n_slices: int = 30, slice_gap: int = 3):
+    """Advance ``steps`` background steps, optionally walking a sell ``block`` as
+    ``n_slices`` slices over the first ``n_slices*slice_gap`` steps. Returns
+    (log return over the window, trough = min log price vs start)."""
     p0 = m.mid
     q_slice = block / n_slices if (block > 0 and n_slices > 0) else 0.0
-    carry = 0.0
-    fired = 0
+    carry = 0.0; fired = 0; trough = 0.0
     for t in range(steps):
         if q_slice > 0.0 and fired < n_slices and t % slice_gap == 0:
             carry += q_slice
-            q = int(carry)
-            carry -= q
+            q = int(carry); carry -= q
             if q > 0:
                 m._market_order(-5, "sell", q)      # SELLER_AGENT_ID
             fired += 1
         m._base_step()
-    return math.log(m.mid / p0) if p0 > 0 and m.mid > 0 else 0.0
+        if p0 > 0 and m.mid > 0:
+            trough = min(trough, math.log(m.mid / p0))
+    ret = math.log(m.mid / p0) if p0 > 0 and m.mid > 0 else 0.0
+    return ret, trough
 
 
-def run_block_into_state(cfg=None, seeds=range(40), *, block_qov=8.0,
-                         post_steps=400, k=200, ma_win=400,
-                         n_probes=12, probe_gap=180, warmup_extra=600,
-                         verbose=True):
+def _run_free(m: Market, steps: int) -> float:
+    return _run_post(m, steps)[0]
+
+
+def run_block_into_state(cfg=None, seeds=range(120), *, block_qov=15.0,
+                         post_steps=150, n_probes=12, probe_gap=150,
+                         warmup_extra=800, tip_drop=0.03, verbose=True):
     """Paired-counterfactual sweep of a fixed block across endogenous states.
 
-    For each seed: warm up, then free-run; at ``n_probes`` checkpoints spaced
-    ``probe_gap`` apart, measure the state and run the paired (block / no-block)
-    continuation from an identical deepcopy snapshot. The base market keeps
-    free-running unperturbed (the probes are isolated side-branches).
+    Per seed: warm up, free-run; at each of ``n_probes`` checkpoints measure the
+    state battery, then run the paired (block / no-block) continuation from an
+    identical snapshot (same rng). ``tipped`` = the block deepened the trough by
+    more than ``tip_drop`` (block-attributable drawdown). The base market keeps
+    free-running unperturbed between probes.
     """
     cfg = cfg or regime_variant()
     rows = []
     for seed in seeds:
-        m = Market(cfg)
-        m._reset(seed)
-        m.warmup()
-        # a little extra free run so the state isn't always "just off fundamental"
+        m = Market(cfg); m._reset(seed); m.warmup()
         _run_free(m, warmup_extra)
         block = int(round(block_qov * m.V * post_steps))
         for _ in range(n_probes):
             _run_free(m, probe_gap)
-            st = _measure_state(m, k, ma_win)
-            # paired counterfactual from an identical snapshot (same rng state):
-            # both arms run identical background steps; arm_blk also walks the
-            # block as slices -> the sliced sells are the only difference.
-            arm_no = copy.deepcopy(m)
-            arm_blk = copy.deepcopy(m)
-            ret_no = _run_post(arm_no, post_steps)
-            ret_blk = _run_post(arm_blk, post_steps, block=block)
-            rows.append({
-                "seed": seed, "block": block,
-                **st,
-                "ret_no": ret_no, "ret_blk": ret_blk,
-                "delta": ret_blk - ret_no,
-            })
+            st = _measure_state(m)
+            snap = _snapshot(m)
+            ret_no, tr_no = _run_post(m, post_steps)              # no-block arm
+            _restore(m, snap)                                     # same rng state
+            ret_blk, tr_blk = _run_post(m, post_steps, block=block)
+            _restore(m, snap)                                     # base continues clean
+            rows.append({"seed": seed, "block": block, **st,
+                         "ret_no": ret_no, "ret_blk": ret_blk,
+                         "delta": ret_blk - ret_no,
+                         "trough_no": tr_no, "trough_blk": tr_blk,
+                         "tipped": 1 if (tr_blk - tr_no) < -tip_drop else 0})
     if verbose:
         _report(rows, block_qov)
     return rows
@@ -143,36 +158,32 @@ def _corr(a, b):
 
 def _report(rows, block_qov):
     d = np.array([r["delta"] for r in rows])
-    rp = np.array([r["r_pre"] for r in rows])
-    mg = np.array([r["ma_gap"] for r in rows])
-    vp = np.array([r["vol_pre"] for r in rows])
-    print(f"\nblock-into-state: n={len(rows)}  block Q/V(post)={block_qov}")
-    print(f"  delta: mean={d.mean():+.4f}  sd={d.std():.4f}  "
-          f"min={d.min():+.4f}  max={d.max():+.4f}")
-    print(f"  state ranges: r_pre[{rp.min():+.3f},{rp.max():+.3f}] "
-          f"ma_gap[{mg.min():+.3f},{mg.max():+.3f}] vol_pre[{vp.min():.4f},{vp.max():.4f}]")
-    print(f"  corr(delta, r_pre) ={_corr(d, rp):+.3f}   "
-          f"(-> up-momentum absorbs [+] or cascades [-]?)")
-    print(f"  corr(delta, ma_gap)={_corr(d, mg):+.3f}   "
-          f"(-> overextension deepens the block hit?)")
-    print(f"  corr(delta, vol_pre)={_corr(d, vp):+.3f}")
-    # terciles of overextension (伸び切り)
-    print("\n  delta by ma_gap tercile (伸び切り度):")
-    order = np.argsort(mg)
-    for name, idx in (("低(縮)", order[:len(order)//3]),
-                      ("中", order[len(order)//3:2*len(order)//3]),
-                      ("高(伸び切り)", order[2*len(order)//3:])):
-        dd = d[idx]
-        print(f"    {name:<12} ma_gap~{mg[idx].mean():+.3f}  "
-              f"delta mean={dd.mean():+.4f}  cascade率(delta<-0.02)={np.mean(dd < -0.02):.0%}")
+    tip = np.array([r["tipped"] for r in rows], float)
+    X = np.array([[r[f] for f in FEATURES] for r in rows], float)
+    print(f"\nn={len(rows)}  block Q/V={block_qov}  tip-rate={tip.mean():.0%}  "
+          f"delta[min={d.min():+.3f} max={d.max():+.3f} sd={d.std():.3f}]")
+    print("  feature      corr(,delta)  corr(,tipped)   tip% lo-tercile -> hi-tercile")
+    for j, f in enumerate(FEATURES):
+        x = X[:, j]
+        o = np.argsort(x); n = len(o)
+        lo = tip[o[:n // 3]].mean(); hi = tip[o[2 * n // 3:]].mean()
+        print(f"  {f:<11} {_corr(x, d):>+9.3f}    {_corr(x, tip):>+9.3f}      "
+              f"{lo:>5.0%} -> {hi:>4.0%}")
+    # multivariate linear predictability of delta from the whole battery
+    A = np.hstack([X, np.ones((len(X), 1))])
+    coef, *_ = np.linalg.lstsq(A, d, rcond=None)
+    pred = A @ coef
+    r2 = 1 - np.sum((d - pred) ** 2) / np.sum((d - d.mean()) ** 2) if np.std(d) > 0 else float("nan")
+    print(f"  --> multivariate R^2 (delta ~ all 6 features) = {r2:.3f}  "
+          f"(near 0 = state does not predict = path-chaotic)")
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser()
-    ap.add_argument("--seeds", type=int, default=40)
-    ap.add_argument("--block-qov", type=float, default=8.0)
-    ap.add_argument("--post-steps", type=int, default=400)
+    ap.add_argument("--seeds", type=int, default=120)
     ap.add_argument("--probes", type=int, default=12)
+    ap.add_argument("--block-qov", type=float, default=15.0)
+    ap.add_argument("--post-steps", type=int, default=150)
     ap.add_argument("--out", type=Path, default=None)
     a = ap.parse_args(argv)
     rows = run_block_into_state(seeds=range(a.seeds), block_qov=a.block_qov,
@@ -181,8 +192,7 @@ def main(argv=None):
         a.out.parent.mkdir(parents=True, exist_ok=True)
         with a.out.open("w", newline="") as f:
             w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-            w.writeheader()
-            w.writerows(rows)
+            w.writeheader(); w.writerows(rows)
         print(f"\nwrote {a.out}  ({len(rows)} rows)")
     return 0
 
