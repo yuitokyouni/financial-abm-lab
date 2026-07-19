@@ -19,11 +19,96 @@ aggressive rate 制御は §3.1 の auto-tune (P1.5) で margin 分布を動か�
 """
 from __future__ import annotations
 
-from typing import Any, Dict, List
+import random
+from typing import Any, Dict, List, Optional
 
 from pams.market import Market
 
 from .base_agent import AgentEvaluation, LimitAgentBase
+
+
+class SharedAR1Hub:
+    """P3-D 対照 (spec 003 §4 拡張): 全 shared_ar1 ZI が共有する bar 単位 AR(1) 共通因子。
+
+    P3 の matched_ar1 (agent ごと独立 AR1) との構造差を 1 変数ずつ埋めるための hub:
+      - S2 (横断相関): deviation d_t を全 agent で共有 (hub が bar ごとに 1 回だけ更新)。
+        各 agent は rank offset だけ違う値 v_i = center_t + W·(2·rank_i − 1) を読む
+        (Kronos の quantile-rank 読み分けの線形 band 版)。
+      - S3 (係留先): anchor_smooth_bars=0 なら現在 mid に係留 (= matched_ar1 と同じ、
+        D1: S2 のみの差分)。k>0 なら直近 k 完結 bar close (market price) の SMA に係留
+        (= Kronos の lookback 履歴予測の慣性 proxy、D2: S2+S3)。
+
+    更新式 (bar ごと 1 回、hub 専用 RNG):
+        d_t = φ·d_{t-1} + ε_t,  ε_t ~ N(mu, sigma)
+        center_t = anchor_t + d_t
+    """
+
+    def __init__(
+        self,
+        *,
+        phi: float,
+        sigma: float,
+        mu: float = 0.0,
+        band_halfwidth: float = 0.0,
+        bar_size: int = 10,
+        anchor_smooth_bars: int = 0,
+        seed: int = 0,
+    ):
+        self.phi = float(phi)
+        self.sigma = float(sigma)
+        self.mu = float(mu)
+        self.band = float(band_halfwidth)
+        self.bar_size = int(bar_size)
+        self.anchor_smooth_bars = int(anchor_smooth_bars)
+        self.prng = random.Random(seed)
+        self._d: float = 0.0
+        self._current_bar: int = -1
+        self._center: Optional[float] = None
+        self._log: list[tuple[int, float, float, float]] = []  # (bar, anchor, d, center)
+
+    def _sma_anchor(self, market: Market, bar_index: int) -> Optional[float]:
+        """直近 anchor_smooth_bars 完結 bar の close (market price) の平均。"""
+        k = self.anchor_smooth_bars
+        closes: list[float] = []
+        for b in range(max(0, bar_index - k), bar_index):
+            t_close = (b + 1) * self.bar_size - 1
+            p = market.get_market_price(t_close)
+            if p is not None and p > 0:
+                closes.append(float(p))
+        if not closes:
+            return None
+        return sum(closes) / len(closes)
+
+    def ensure_current(self, market: Market, mid: float) -> Optional[float]:
+        """現 bar の共有 center を返す。bar が進んでいたら AR(1) を 1 step 進める。
+
+        mid は呼び出し agent の評価時 mid (anchor_smooth_bars=0 のときの係留先、
+        および SMA が取れない初期 bar の fallback)。bar 内では最初に評価した agent の
+        mid で center が固定される (= Kronos hub と同じ「bar 内固定」cadence)。
+        """
+        bar_index = market.get_time() // self.bar_size
+        if bar_index == self._current_bar:
+            return self._center
+        anchor: Optional[float] = None
+        if self.anchor_smooth_bars > 0:
+            anchor = self._sma_anchor(market, bar_index)
+        if anchor is None:
+            anchor = float(mid)
+        eps = self.prng.gauss(self.mu, self.sigma)
+        self._d = self.phi * self._d + eps
+        self._center = anchor + self._d
+        self._current_bar = bar_index
+        self._log.append((bar_index, anchor, self._d, self._center))
+        return self._center
+
+    def get_eval_for_rank(self, agent_rank: float) -> Optional[float]:
+        if self._center is None:
+            return None
+        return self._center + self.band * (2.0 * float(agent_rank) - 1.0)
+
+    @property
+    def log(self) -> list[tuple[int, float, float, float]]:
+        return list(self._log)
 
 
 class ZIAgent(LimitAgentBase):
@@ -52,6 +137,9 @@ class ZIAgent(LimitAgentBase):
         self._last_v_minus_mid: float | None = None
         self._cached_bar_index: int = -1
         self._cached_v: float | None = None
+        # shared_ar1 用 (P3-D): model.run() が注入する共有 hub と rank。
+        self.shared_hub: SharedAR1Hub | None = None
+        self.agent_rank: float = float(settings.get("agentRank", 0.5))
         # margin
         self.margin_min: float = float(settings.get("marginMin", 0.001))
         self.margin_max: float = float(settings.get("marginMax", 0.01))
@@ -90,6 +178,17 @@ class ZIAgent(LimitAgentBase):
                 v_minus_mid = self.phi_ar1 * self._last_v_minus_mid + eps
                 self._last_v_minus_mid = v_minus_mid
                 v = mid + v_minus_mid
+            elif self.zi_mode == "shared_ar1":
+                # P3-D: 共有 AR(1) 共通因子 hub から rank offset 付きで読む。
+                # matched_ar1 との差は deviation の共有 (S2) と anchor (S3, hub 設定) のみ。
+                if self.shared_hub is None:
+                    return AgentEvaluation(side=0)
+                center = self.shared_hub.ensure_current(market, mid)
+                if center is None or not (center > 0):
+                    return AgentEvaluation(side=0)
+                v = self.shared_hub.get_eval_for_rank(self.agent_rank)
+                if v is None or not (v > 0):
+                    return AgentEvaluation(side=0)
             else:
                 raise ValueError(f"unknown zi_mode: {self.zi_mode!r}")
             self._cached_bar_index = bar_index

@@ -25,7 +25,7 @@ from pams.runners import SequentialRunner
 from ..kronos_lob.bar_aggregator import build_ohlcv_from_market, closes_to_returns
 from .kronos_agent import KronosCIAgent, KronosQuantileHub
 from .kronos_quantile import KronosQuantilePredictor
-from .zi_agent import ZIAgent
+from .zi_agent import SharedAR1Hub, ZIAgent
 
 
 _MARKET = {
@@ -193,6 +193,9 @@ class SelfOrganizedBookMarket:
         zi_strategy_mu_ar1: float = 0.0,
         zi_strategy_margin_min: float = 2.0e-5,
         zi_strategy_margin_max: float = 6.0e-5,
+        # shared_ar1 (P3-D) 用: 共有 AR(1) hub の rank band 半幅 (絶対価格) と anchor 平滑幅
+        zi_strategy_band_halfwidth: float = 0.0,
+        zi_strategy_anchor_smooth_bars: int = 0,
         extra_agent_classes: Optional[List[Type]] = None,
         # Kronos backend
         n_kronos: int = 0,
@@ -227,6 +230,8 @@ class SelfOrganizedBookMarket:
         self.zi_strategy_mu_ar1 = zi_strategy_mu_ar1
         self.zi_strategy_margin_min = zi_strategy_margin_min
         self.zi_strategy_margin_max = zi_strategy_margin_max
+        self.zi_strategy_band_halfwidth = zi_strategy_band_halfwidth
+        self.zi_strategy_anchor_smooth_bars = zi_strategy_anchor_smooth_bars
         self.extra_agent_classes = extra_agent_classes or []
         self.n_kronos = n_kronos
         self.kronos_lookback_bars = kronos_lookback_bars
@@ -276,6 +281,18 @@ class SelfOrganizedBookMarket:
                 bar_size=self.bar_size,
                 lookback_bars=self.kronos_lookback_bars,
             )
+        # shared AR(1) hub (P3-D: zi_strategy_mode="shared_ar1" のとき必須)
+        shared_hub = None
+        if self.n_zi_strategy > 0 and self.zi_strategy_mode == "shared_ar1":
+            shared_hub = SharedAR1Hub(
+                phi=self.zi_strategy_phi_ar1,
+                sigma=self.zi_strategy_sigma_ar1_abs,
+                mu=self.zi_strategy_mu_ar1,
+                band_halfwidth=self.zi_strategy_band_halfwidth,
+                bar_size=self.bar_size,
+                anchor_smooth_bars=self.zi_strategy_anchor_smooth_bars,
+                seed=(seed or 0) + 970301,  # 他 RNG 流と独立させる固定 offset
+            )
         saver = MarketStepSaver()
         runner = SequentialRunner(settings=cfg, prng=random.Random(seed), logger=saver)
         runner.class_register(ZIAgent)
@@ -289,6 +306,18 @@ class SelfOrganizedBookMarket:
             for a in runner.simulator.agents:
                 if isinstance(a, KronosCIAgent):
                     a.kronos_hub = kronos_hub
+        # inject shared AR(1) hub + rank into shared_ar1 ZIAgent instances
+        # (Kronos の (i+0.5)/n rank 割当と同じ等間隔; agent_id 順で安定)
+        if shared_hub is not None:
+            strat = sorted(
+                (a for a in runner.simulator.agents
+                 if isinstance(a, ZIAgent) and getattr(a, "zi_mode", "") == "shared_ar1"),
+                key=lambda a: a.agent_id,
+            )
+            n = len(strat)
+            for i, a in enumerate(strat):
+                a.shared_hub = shared_hub
+                a.agent_rank = (i + 0.5) / n if n > 1 else 0.5
         runner._run()
 
         market = runner.simulator.markets[0]
@@ -329,6 +358,7 @@ class SelfOrganizedBookMarket:
             "zi_agents": zi_agents,
             "kronos_agents": kronos_agents,
             "kronos_hub_calls": (kronos_hub.call_log if kronos_hub is not None else []),
+            "zi_shared_hub_log": (shared_hub.log if shared_hub is not None else []),
             "warmup_bars": warmup_bars,
             "bar_size": self.bar_size,
         }

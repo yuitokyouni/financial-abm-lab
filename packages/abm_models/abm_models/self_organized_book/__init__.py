@@ -14,12 +14,13 @@ from .base_agent import LimitAgentBase, AgentEvaluation
 from .kronos_agent import KronosCIAgent, KronosQuantileHub
 from .kronos_quantile import KronosQuantilePredictor, quantile_to_eval
 from .model import SelfOrganizedBookMarket
-from .zi_agent import ZIAgent
+from .zi_agent import SharedAR1Hub, ZIAgent
 
 __all__ = [
     "LimitAgentBase",
     "AgentEvaluation",
     "ZIAgent",
+    "SharedAR1Hub",
     "KronosCIAgent",
     "KronosQuantileHub",
     "KronosQuantilePredictor",
