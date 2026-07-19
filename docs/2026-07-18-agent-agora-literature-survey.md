@@ -226,13 +226,16 @@
 
 ## 残課題（追加調査リスト）
 
+- [x] ~~Fish et al. (arXiv:2404.00806 v5) 原文PDFの直接確認~~ **完了 (2026-07-19)**: P0/P1/P2プロンプト接頭辞の全文、logit需要（Calvano踏襲: a_i=2, a_0=0, μ=0.25, c_i=1, α∈{1,3.2,10}スケーリング, β=100）、主実験=GPT-4 (0613) 複占・各接頭辞21 run×300期、価格戦争識別手法（計画文の文埋め込み→PCA 20次元→k-means 20クラスタ→GPT-4o要約＋AvoidPriceWar−StartPriceWarセマンティック分類器）を確認。詳細は `docs/2026-07-19-YH010-prereg-plan.md` §7 参照
+- [x] ~~脆弱性論文 (arXiv:2603.20281) の実験条件確認~~ **完了 (2026-07-19)**: Keppo, Li, Tsoukalas & Yuan "On the Fragility of AI Agent Collusion" (2026-03-18投稿, 48頁, 未査読)。モデル=ローカル実行のDeepSeek-R1-Distill-Qwen-32B（＋14B混成腕）、忍耐度操作=プロンプト内の割引目的関数指定（δ=0.95 vs δ=0、「governance decision」として明示）、Q学習混在（α=0.15, β=0.004, δ=0.95、frozen/adaptive両条件、事前訓練収束基準=greedy行動10万期不変）、MNL需要（a=2, μ=0.25, c=1）、最長1000期、収束判定=100期連続で価格差が最低価格の5%以内、n=2〜5（5社で1000期内に協調不成立）。詳細は同上 §7
+- [x] ~~DOJ v. RealPage 状況の2026年7月時点更新~~ **完了 (2026-07-19)**: 2025-11-24にDOJがRealPage本体と和解案提出（責任非承認・金銭的制裁なし・7年間有効/4年で終了可・アクティブリースデータによる予測モデル訓練の制限、裁判所承認待ち）。Cortland・Camden・Greystarも同様の和解。2026-07-06にWillow Bridgeとの同意判決案（Sherman Act §1・競争機微データ共有）。係属継続はCushman・LivCor。**自律的暗黙的協調を対象とする事案は依然ゼロ**（本文ブロック3の結論は不変、ただし「執行は稀」の記述は「主要事案は和解フェーズに移行」へ更新が必要）
 - [ ] ブロック1(c): プラットフォーム提供エージェントのバイアス — サーチエンジンバイアス文献（Introna & Nissenbaum 2000; Edelman; White 2013）とLLM推薦バイアス実証の接続
 - [ ] 横断ブロック全体: Acemoglu-Restrepo / Korinek / 基盤モデルIOの一次確認
 - [ ] Assad et al. (2024) の定量的細部（標本数・28%等）のJPE原論文本文での直接確認
 - [ ] Hadfield-Menell & Hadfield のAIES 2019採択の書誌確認
 - [ ] South et al. のICML 2025採択の書誌確認
 - [ ] Kirilenko et al. (2017, JF) 査読版の本文確認（今回はWP版のみ取得成功）
-- [ ] DOJ v. RealPage・Preventing Algorithmic Collusion Act 等の進行中事案の2026年7月時点での状況更新（執行状況は「2025年央」スナップショット）
+- [ ] Preventing Algorithmic Collusion Act 等の立法動向の状況更新
 
 ## 検証統計
 
