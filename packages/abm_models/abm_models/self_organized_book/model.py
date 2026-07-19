@@ -196,6 +196,9 @@ class SelfOrganizedBookMarket:
         # shared_ar1 (P3-D) 用: 共有 AR(1) hub の rank band 半幅 (絶対価格) と anchor 平滑幅
         zi_strategy_band_halfwidth: float = 0.0,
         zi_strategy_anchor_smooth_bars: int = 0,
+        # "shared" = 1 hub を全員で共有 (S2 あり) / "per_agent" = agent ごと独立 hub
+        # (S2 なし、sticky anchor = S3 のみ残す。P3-E 条件)
+        zi_strategy_hub_scope: str = "shared",
         extra_agent_classes: Optional[List[Type]] = None,
         # Kronos backend
         n_kronos: int = 0,
@@ -232,6 +235,7 @@ class SelfOrganizedBookMarket:
         self.zi_strategy_margin_max = zi_strategy_margin_max
         self.zi_strategy_band_halfwidth = zi_strategy_band_halfwidth
         self.zi_strategy_anchor_smooth_bars = zi_strategy_anchor_smooth_bars
+        self.zi_strategy_hub_scope = zi_strategy_hub_scope
         self.extra_agent_classes = extra_agent_classes or []
         self.n_kronos = n_kronos
         self.kronos_lookback_bars = kronos_lookback_bars
@@ -282,17 +286,22 @@ class SelfOrganizedBookMarket:
                 lookback_bars=self.kronos_lookback_bars,
             )
         # shared AR(1) hub (P3-D: zi_strategy_mode="shared_ar1" のとき必須)
-        shared_hub = None
-        if self.n_zi_strategy > 0 and self.zi_strategy_mode == "shared_ar1":
-            shared_hub = SharedAR1Hub(
+        def _make_hub(seed_offset: int = 0) -> SharedAR1Hub:
+            return SharedAR1Hub(
                 phi=self.zi_strategy_phi_ar1,
                 sigma=self.zi_strategy_sigma_ar1_abs,
                 mu=self.zi_strategy_mu_ar1,
                 band_halfwidth=self.zi_strategy_band_halfwidth,
                 bar_size=self.bar_size,
                 anchor_smooth_bars=self.zi_strategy_anchor_smooth_bars,
-                seed=(seed or 0) + 970301,  # 他 RNG 流と独立させる固定 offset
+                # 970301: 他 RNG 流と独立させる固定 offset
+                seed=(seed or 0) + 970301 + seed_offset,
             )
+
+        shared_hub = None
+        use_shared_ar1 = self.n_zi_strategy > 0 and self.zi_strategy_mode == "shared_ar1"
+        if use_shared_ar1 and self.zi_strategy_hub_scope == "shared":
+            shared_hub = _make_hub()
         saver = MarketStepSaver()
         runner = SequentialRunner(settings=cfg, prng=random.Random(seed), logger=saver)
         runner.class_register(ZIAgent)
@@ -308,7 +317,9 @@ class SelfOrganizedBookMarket:
                     a.kronos_hub = kronos_hub
         # inject shared AR(1) hub + rank into shared_ar1 ZIAgent instances
         # (Kronos の (i+0.5)/n rank 割当と同じ等間隔; agent_id 順で安定)
-        if shared_hub is not None:
+        # hub_scope="per_agent" (P3-E) は agent ごと独立 hub = deviation 共有 (S2) を除去し
+        # sticky anchor (S3) だけ残す。anchor (SMA of market price) は定義上共通のまま。
+        if use_shared_ar1:
             strat = sorted(
                 (a for a in runner.simulator.agents
                  if isinstance(a, ZIAgent) and getattr(a, "zi_mode", "") == "shared_ar1"),
@@ -316,7 +327,7 @@ class SelfOrganizedBookMarket:
             )
             n = len(strat)
             for i, a in enumerate(strat):
-                a.shared_hub = shared_hub
+                a.shared_hub = shared_hub if shared_hub is not None else _make_hub(1000 * (i + 1))
                 a.agent_rank = (i + 0.5) / n if n > 1 else 0.5
         runner._run()
 

@@ -118,7 +118,8 @@ def calibrate_kronos_band(common: dict, seed: int = 0, main_steps: int = 800) ->
 
 # ---------------------------------------------------------------- runs
 
-def run_zi_cond(seed: int, mode: str, band: float, anchor_bars: int, common: dict) -> dict:
+def run_zi_cond(seed: int, mode: str, band: float, anchor_bars: int, common: dict,
+                hub_scope: str = "shared") -> dict:
     m = SelfOrganizedBookMarket(
         warmup_steps=common["warmup_steps"], main_steps=common["main_steps"],
         n_zi=common["n_zi_liq"], zi_mode="naive",
@@ -129,6 +130,7 @@ def run_zi_cond(seed: int, mode: str, band: float, anchor_bars: int, common: dic
         zi_strategy_margin_min=2.5e-5, zi_strategy_margin_max=1.2e-4,
         zi_strategy_band_halfwidth=band,
         zi_strategy_anchor_smooth_bars=anchor_bars,
+        zi_strategy_hub_scope=hub_scope,
         bar_size=10, order_ttl=15,
         sigma_eval=5e-5, margin_min=2.0e-5, margin_max=6.0e-5,
         tick_size=0.001, initial_market_price=300.0,
@@ -193,6 +195,11 @@ def main() -> None:
         ("D1_Wk", dict(mode="shared_ar1", band=w_band, anchor_bars=0)),
         ("D2_W0", dict(mode="shared_ar1", band=0.0, anchor_bars=args.anchor_smooth_bars)),
         ("D2_Wk", dict(mode="shared_ar1", band=w_band, anchor_bars=args.anchor_smooth_bars)),
+        # E: deviation per-agent 独立 (S2 除去)、sticky anchor (S3) のみ残す
+        ("E_W0", dict(mode="shared_ar1", band=0.0, anchor_bars=args.anchor_smooth_bars,
+                      hub_scope="per_agent")),
+        ("E_Wk", dict(mode="shared_ar1", band=w_band, anchor_bars=args.anchor_smooth_bars,
+                      hub_scope="per_agent")),
     ]
     results: dict[str, list[dict]] = {}
     for name, kw in conds:

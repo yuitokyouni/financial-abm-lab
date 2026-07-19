@@ -93,6 +93,31 @@ def test_shared_ar1_does_not_diverge():
         assert drift_abs < 1.0, f"anchor_bars={anchor_bars}: drifted {drift_abs}"
 
 
+def test_per_agent_hub_scope_gives_independent_v():
+    """hub_scope='per_agent' (P3-E): W=0 でも bar 内の v が agent 間で一致しない。"""
+    m = SelfOrganizedBookMarket(
+        warmup_steps=40, main_steps=500,
+        n_zi=8, zi_mode="naive",
+        n_zi_strategy=6,
+        zi_strategy_mode="shared_ar1",
+        zi_strategy_phi_ar1=0.418, zi_strategy_sigma_ar1_abs=6e-3,
+        zi_strategy_margin_min=2.5e-5, zi_strategy_margin_max=1.2e-4,
+        zi_strategy_band_halfwidth=0.0,
+        zi_strategy_anchor_smooth_bars=8,
+        zi_strategy_hub_scope="per_agent",
+        bar_size=10, order_ttl=10,
+        sigma_eval=5e-5, margin_min=2.0e-5, margin_max=6.0e-5,
+        tick_size=0.001, initial_market_price=300.0,
+    )
+    res = m.run(seed=5)
+    per_bar = _v_per_bar_per_agent(res)
+    distinct_bars = sum(
+        1 for v in per_bar.values()
+        if len(v) >= 2 and max(v.values()) - min(v.values()) > 1e-9
+    )
+    assert distinct_bars >= 10, f"per_agent なのに v が共有されている (distinct={distinct_bars})"
+
+
 def test_shared_hub_sma_anchor_unit():
     """SMA anchor の単体挙動: stub market で bar 更新と anchor 平均を確認。"""
 
