@@ -194,7 +194,13 @@ class ZIAgent(LimitAgentBase):
             self._cached_bar_index = bar_index
             self._cached_v = v
 
-        # side は v-mid 由来 (Kronos と同じ意思決定式で dose-match を公平に保つ、spec 003 §4)
+        # side は v-mid 由来 (Kronos と同じ意思決定式で dose-match を公平に保つ、spec 003 §4)。
+        # 設計判断 (spec 003 §3.3 の 2 階層): 「評価値 v = bar 固定」だが side は step ごとに
+        # 現 mid と比較して導出する = 固定した私的評価額 v の周りで指値を出す trader は、
+        # 価格が v を跨げば自然に反対側の板に立つ (Chiarella 型 LOB の需要関数と同じ扱い)。
+        # bar 内 side flip は全条件 (kronos/matched/shared/E) に共通の substrate 特性であり、
+        # 条件間比較 (P3/P3-D/E/F) では差分として消える。bounce の駆動源でないことは
+        # D1 条件 (同じ step 再計算下で ret_acf[1]≈−0.04) が反例として実証済み。
         # 旧版 (50/50 random side) は P1 naive では成立したが、matched_ar1 では v が mid 周辺に
         # 集中して半分の agent が「反対方向 + margin」で実質クロスしない degeneracy に陥った。
         if v > mid:

@@ -60,11 +60,13 @@ def _v_mid_diag(agents) -> dict:
         if not a.action_log:
             continue
         bar_size = getattr(a, "bar_size", 10)
+        # bar 内最初の entry を採用 (v 評価時点の mid と対にする。last-wins は
+        # bar 内 drift を (v−mid) に混入させ φ/σ を汚す — p2 script と同じ修正)
         bars = {}
         for t, side, price, payload in a.action_log:
             if payload is None or "v" not in payload or "mid" not in payload:
                 continue
-            bars[t // bar_size] = float(payload["v"]) - float(payload["mid"])
+            bars.setdefault(t // bar_size, float(payload["v"]) - float(payload["mid"]))
         if len(bars) >= 10:
             ks = sorted(bars.keys())
             series.append(np.array([bars[k] for k in ks], dtype=np.float64))

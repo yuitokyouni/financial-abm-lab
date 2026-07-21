@@ -39,7 +39,9 @@ class SharedSignalHub:
         bar_index = current_step // self.bar_size
         if bar_index == self._current_bar_index:
             return self._current_signal
-        if len(history_df) < self.lookback:
+        # provider (KronosPredictorWrapper) は timestamp 間隔の計算に最低 2 行必要。
+        # lookback=1 でも 1 bar だけで呼ぶと ValueError になるため下限 2 を強制する。
+        if len(history_df) < max(self.lookback, 2):
             self._current_signal = None
         else:
             self._current_signal = self.provider(history_df)
