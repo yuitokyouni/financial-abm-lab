@@ -1,4 +1,8 @@
-# YH007: Self-organized Speculation Game — 論文3 再現
+# YH006_3: Self-organized Speculation Game — 論文3 再現
+
+> **改称注記 (2026-07-02)**: 本計画の旧称は **YH007**。番号 YH007 は新リポジトリの
+> Kronos × microstructure 系列 (`specs/002`, `specs/003`) に譲り、本計画 (C 内生化 SOSG) は
+> YH006 系列の延長として **YH006_3** と呼称する。本文中の「YH007」は旧称のまま残る箇所がある。
 
 **状態: 骨格 (未実装)**。Katahira, Chen (2021 頃) "Self-organized speculation game for the spontaneous emergence of financial stylized facts" *Physica A* (PDF: `../YH005/papers/self-organized speculation game ....pdf`) の再現。
 

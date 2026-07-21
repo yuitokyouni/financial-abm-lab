@@ -1,12 +1,13 @@
 # 002 — YH007 大幅方針変更: リアル LOB × Kronos 戦略による SF 生成機構の同定
 
-**状態: ドラフト (設計合意前)**。本 spec は `imported/speculation-game-info/experiments/YH007/`
-の旧骨格(自己組織化 Speculation Game = Katahira & Chen 2021 の C 内生化再現)を
-**supersede** する。旧 YH007 はコード未実装の骨格(README + PDF のみ)であり、本方針転換に
+**状態: ドラフト (設計合意前)**。本 spec は `imported/speculation-game-info/experiments/YH006_3/`
+(旧称 YH007) の旧骨格(自己組織化 Speculation Game = Katahira & Chen 2021 の C 内生化再現)を
+**supersede** する。旧骨格はコード未実装(README + PDF のみ)であり、本方針転換に
 よる手戻りは無い。作業ブランチ `claude/yh007-policy-overhaul-h1rya4` はこの overhaul 用。
 
-> 旧 YH007 の自己組織化 SG 系譜は破棄ではなく**凍結**。`imported/.../YH007/README.md` は
-> 履歴として残す。本 spec が新 YH007 の ground truth。
+> 自己組織化 SG 系譜は破棄ではなく**凍結**し、番号衝突解消のため **YH006_3 に改称**
+> (2026-07-02、`imported/.../YH006_3/README.md` に注記)。以後 YH007 は本 spec 系列
+> (Kronos × microstructure) を一意に指す。本 spec が YH007 の ground truth。
 
 ---
 
