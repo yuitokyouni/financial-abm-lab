@@ -343,10 +343,21 @@ class SelfOrganizedBookMarket:
             price_source="mid",
         )
         # main session 区間のみで SF を取る (warmup の transient を除外)。
-        # ceil: warmup_steps が bar_size で割り切れない場合、warmup を含む端数 bar も除外する
+        # main 系列は bar を session 境界 (start_step=warmup_steps) に整列させて別集計する:
+        # step-0 起点の bar 列を slice する方式だと、warmup_steps が bar_size 非整除のとき
+        # 境界跨ぎ bar で「warmup 混入 (floor)」か「main 冒頭欠落 (ceil)」のどちらかが必ず
+        # 起きる。境界整列なら両方ゼロで、整除ケースは従来 slice と同一の bar 窓になる。
+        closes_main_market = build_ohlcv_from_market(
+            market, bar_size=self.bar_size, start_step=self.warmup_steps,
+            end_step=end_step, price_source="market",
+        )["close"].to_numpy(dtype=np.float64)
+        closes_main_mid = build_ohlcv_from_market(
+            market, bar_size=self.bar_size, start_step=self.warmup_steps,
+            end_step=end_step, price_source="mid",
+        )["close"].to_numpy(dtype=np.float64)
+        # warmup_bars は step-0 起点 bar 列 (history_*) 用の情報値: warmup を (部分的にでも)
+        # 含む bar の数
         warmup_bars = -(-self.warmup_steps // self.bar_size)
-        closes_main_market = history_market["close"].to_numpy(dtype=np.float64)[warmup_bars:]
-        closes_main_mid = history_mid["close"].to_numpy(dtype=np.float64)[warmup_bars:]
         ret_market = closes_to_returns(closes_main_market)
         ret_mid = closes_to_returns(closes_main_mid)
 

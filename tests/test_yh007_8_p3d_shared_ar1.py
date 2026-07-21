@@ -118,6 +118,26 @@ def test_per_agent_hub_scope_gives_independent_v():
     assert distinct_bars >= 10, f"per_agent なのに v が共有されている (distinct={distinct_bars})"
 
 
+def test_main_series_aligned_to_session_boundary():
+    """main SF 系列は session 境界整列 bar で集計される (warmup 非整除でも混入/欠落なし)。
+
+    - 非整除 (warmup=45, bar=10): main 系列の bar 数 = main_steps//bar_size ちょうど
+      (旧 floor 実装なら warmup 5 step 混入、旧 ceil 実装なら bar 数が 1 少ない)
+    - 整除 (warmup=40): 従来の step-0 起点 slice と同一窓なので同じ bar 数
+    """
+    for warmup, expect_bars in ((45, 50), (40, 50)):
+        m = SelfOrganizedBookMarket(
+            warmup_steps=warmup, main_steps=500, n_zi=8,
+            bar_size=10, order_ttl=10, zi_mode="naive",
+            sigma_eval=5e-5, margin_min=2.0e-5, margin_max=6.0e-5,
+            tick_size=0.001, initial_market_price=300.0,
+        )
+        res = m.run(seed=2)
+        n_bars = res["closes_main_mid"].size
+        assert n_bars == expect_bars, \
+            f"warmup={warmup}: main bars={n_bars}, expected {expect_bars}"
+
+
 def test_shared_hub_sma_anchor_unit():
     """SMA anchor の単体挙動: stub market で bar 更新と anchor 平均を確認。"""
 
