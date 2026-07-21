@@ -187,6 +187,33 @@ over-shoot に逆らう復元力になり、`ret_acf τ=1` を 0 に押し戻す
 - **中庸**(over-shoot は消すが予想に固定しない)が要る。本来 ④(淘汰)が内生で見つけるべきで、
   ダメなら fade 比率 / gain を tune。**Hill α / vol_acf を同時監視**して over-pin を検出する。
 
+> **【P3'' で無効を実証 → §3.8 に supersede】** arb_fraction ∈ {0, 0.3, 0.5, 0.7, 1.0} の grid
+> (8 seed × 2000 step) で ret_acf[1] は −0.22〜−0.30 の帯から動かず、スイートスポットは
+> 存在しなかった。§12 round6 参照。本節の「強すぎ↔弱すぎ」トレードオフ軸は実装上
+> 立ち上がらない(arb は 1 bar 遅れの追従として作動し、復元力にならない)。
+
+### 3.8 quantile の mid 再センタリング(recenter)【round6 fix、P3-D/E の機構判定に基づく】
+
+P3-D/E(§12 round6)で bounce の機構が確定した: **必要十分条件は「評価値の水準が遅行履歴に
+係留されている(sticky anchor)」こと**。共有(横断相関)でも Kronos 情報内容でもない。
+閉じた系では Kronos 予測は必然的に「直近履歴の平滑化」なので、予測**水準**を side の決定に
+使う限り(chase も arb も同罪)、遅行 anchor への集合的 mean reversion = 負の ret_acf が
+構造的に注入される。
+
+**修正 = 水準を捨て、形状を残す**(`KronosCIAgent` の `evalMode="recenter"`):
+
+```
+v_i = mid + (X_i − median(X))
+```
+
+- side = sign(X_i − median(X)) は**分布内位置のみ**で決まり、sticky な予測中心の drift は
+  side 決定に一切入らない → mid 係留 = D1 系(P3-D)の実測 ret_acf[1] ≈ −0.04〜−0.06 が期待値。
+- Kronos の寄与は**予測分布の形状(幅・歪み・裾)**として配置層に残る = §3.6 の「分布幅を
+  捨てない」という本来の狙いに純化される。agent は方向を持たない流動性供給者になる。
+- D/E で「方向チャネル(水準)には遅行ノイズと区別できる情報が乗っていない」ことを実測済み
+  なので、水準を捨てても失う情報は無い。
+- 合格判定は round5 と同じ二重条件: (i) ret_acf[1] ∈ [−0.1, 0.1]、(ii) SF 指標健全 + agg parity。
+
 **自己組織化 CDA は ZI(ランダム注文)だけでも SF の一部を生む**
 (Smith-Farmer-Gillemot-Krishnamurthy 2003)。「YH007-8 で SF が出た」だけでは **Kronos 由来か
 CDA 機構由来か切り分けられない**。さらに ZI の**分散を Kronos と揃えないと**、SF 差が
@@ -457,3 +484,37 @@ quantile-rank は **cross-section の幅**を散らすが、**時間方向の集
 2. (d) が degeneracy を確認したら **§3.7 の予測誤差・裁定エージェントを実装**して P3 を再走(P3')。
 3. 合格判定は **二重**: (i) `ret_acf τ=1 → ~0`(substrate clean)**かつ** (ii) **価格が Kronos 予想に
    ピン留めされていない**(Hill α/vol_acf が生きている = SF 候補が残る)。両立して初めて P4 へ。
+
+### round6 裁定(P3''/P3-D/E — bounce 機構の確定と §3.7 の supersede、2026-07-21)
+
+**確定した実験事実**(いずれも 8 seed × 2000 step, mid):
+
+1. **P3''(arb_fraction grid)**: §3.7 の arb を {0, 0.3, 0.5, 0.7, 1.0} で掃引しても
+   ret_acf[1] は −0.22〜−0.30 で flat。arb=1.0 でむしろ僅かに悪化(−0.295)。std は全条件
+   ~1.8e-5 で一定 = round5 caveat の「ピン留め」も起きていない。**§3.7 は復元力として
+   立ち上がらなかった**(X_t ≈ X_{t+1} のため chase とほぼ同一判定 + 1 bar 遅れの追従)。
+2. **P3-D/E(構造分解対照)**: matched ZI との構造差を 3 軸に分解 — S1 時系列持続性
+   (φ=0.42、P3 で一致済)/ S2 横断相関(共有 hub vs 独立 draw)/ S3 係留先(遅行履歴 vs
+   現 mid)。判定は**二重乖離**:
+   - D1(S1+S2、mid 係留): |net side|=0.74 と方向偏り最大なのに **ret_acf[1]=−0.04**(bounce 無し)
+   - E(S1+S3、独立 deviation + SMA-8 係留): 共有なし・偏り小(|net|=0.41)なのに
+     **ret_acf[1]=−0.250**(kronos −0.238 を完全再現、same-side 率・std も全指標一致)
+   - → **bounce の必要十分条件 = S3(sticky anchor)単独**。round4 裁定 2 の
+     「集合 same-side cross → over-shoot」仮説は**棄却**(D1 が反例)。正しい機構は
+     「**遅行 anchor への集合的 mean reversion**」— 評価値が現 mid でなく遅行履歴の関数に
+     係留されていると、mid が anchor から離れるたび大多数の v が同じ側に落ち、order flow が
+     価格を anchor へ引き戻す。これが bar return の負の自己相関そのもの。
+3. **一般形の教訓**: 閉鎖系では全ての予測器は履歴の平滑化 → 履歴ベース点予測を方向シグナル
+   として使うと**予測器の implied 自己相関構造が市場に注入される**(Kronos の implied 構造は
+   このスケールで mean-reverting だった。momentum 型予測器なら正の自己相関を注入したはず)。
+   方向性戦略層で足跡ゼロは原理的に不可能 — 選択肢は形状情報への制限 / 生態学的相殺 / 用量希釈。
+
+**裁定**:
+- **§3.7 を supersede、fix F(§3.8 recenter)を採択**: v_i = mid + (X_i − median(X))。
+  水準(sticky、情報なしを D/E で実証済)を捨て、形状(幅・歪み)を配置に残す。
+- **round4 裁定 5 の候補 finding を更新**: 「同一基盤モデル共有 → directional 同期」より
+  一段深く、「**history-anchored forecast の方向利用は、共有の有無に関わらず、その予測器の
+  implied 自己相関を市場に注入する**」(E 条件 = 共有なしで再現、が根拠)。identifiability 側の
+  帰結: E が正しい完全 matched 対照であり、E vs kronos は SF 全指標で識別不能 = **P3 の
+  「Kronos vs matched noise」比較は S2/S3 マッチング不完全の分だけ差を過大評価していた**。
+- **P3-F 検証**: kronos recenter × 8 seed × 2000 step、二重条件判定。(実行中 — 結果は本節末尾に追記)
