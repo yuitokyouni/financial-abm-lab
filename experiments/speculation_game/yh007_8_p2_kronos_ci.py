@@ -72,12 +72,16 @@ def _v_minus_mid_ar1(agents) -> dict:
     series: list[np.ndarray] = []
     for a in agents:
         bar_size = getattr(a, "bar_size", 10)
-        # bar 単位で (v − mid) を時系列化 (同 bar 内では agent は 1 回 evaluate のみ想定)
+        # bar 単位で (v − mid) を時系列化。v は bar 内固定だが mid は repost ごとの現在値が
+        # 記録されるので、**bar 内最初の entry** を採用する (= v を評価した時点の mid と
+        # 対にする)。last-wins だと bar 頭の v と bar 末の mid を混ぜ、bar 内 drift が
+        # (v−mid) に混入して φ/σ 較正を汚す (Bugbot 指摘)。
         vs_minus_mid_by_bar: dict[int, float] = {}
         for t, side, price, payload in a.action_log:
             if payload is None or "v" not in payload or "mid" not in payload:
                 continue
-            vs_minus_mid_by_bar[t // bar_size] = float(payload["v"]) - float(payload["mid"])
+            vs_minus_mid_by_bar.setdefault(
+                t // bar_size, float(payload["v"]) - float(payload["mid"]))
         if len(vs_minus_mid_by_bar) >= 3:
             bars_sorted = sorted(vs_minus_mid_by_bar.keys())
             arr = np.array([vs_minus_mid_by_bar[b] for b in bars_sorted], dtype=np.float64)

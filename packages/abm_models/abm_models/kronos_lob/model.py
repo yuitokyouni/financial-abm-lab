@@ -19,13 +19,26 @@ import pandas as pd
 from pams.logs.market_step_loggers import MarketStepSaver
 from pams.runners import SequentialRunner
 
-# MMFCN を再利用 (流動性供給)
+# MMFCN (流動性供給) は monorepo の imported/ からの再利用なので lazy import にする:
+# imported/ が無い環境でも bar_aggregator 等のユーティリティは import 可能に保つ。
 import sys
 from pathlib import Path
+
 _YH006_DIR = Path(__file__).resolve().parents[4] / "imported" / "speculation-game-info" / "experiments" / "YH006"
-if _YH006_DIR.exists() and str(_YH006_DIR) not in sys.path:
-    sys.path.insert(0, str(_YH006_DIR))
-from mm_fcn_agent import MMFCNAgent  # noqa: E402
+
+
+def _load_mmfcn_agent():
+    """imported/.../YH006 の MMFCNAgent を遅延ロード。無ければ明示エラー。"""
+    if _YH006_DIR.exists() and str(_YH006_DIR) not in sys.path:
+        sys.path.insert(0, str(_YH006_DIR))
+    try:
+        from mm_fcn_agent import MMFCNAgent
+    except ImportError as e:
+        raise ImportError(
+            f"MMFCNAgent requires the monorepo checkout: {_YH006_DIR} not importable. "
+            "KronosLOBMarket needs imported/speculation-game-info/experiments/YH006/."
+        ) from e
+    return MMFCNAgent
 
 from ..kronos_aggregate.model import SignalProvider, constant_signal_provider
 from .adaptive_agent import KronosAdaptiveAgent
@@ -292,7 +305,7 @@ class KronosLOBMarket:
 
         saver = MarketStepSaver()
         runner = SequentialRunner(settings=cfg, prng=random.Random(seed), logger=saver)
-        runner.class_register(MMFCNAgent)
+        runner.class_register(_load_mmfcn_agent())
         runner.class_register(KronosTrendAgent)
         runner.class_register(KronosFadeAgent)
         runner.class_register(KronosAdaptiveAgent)

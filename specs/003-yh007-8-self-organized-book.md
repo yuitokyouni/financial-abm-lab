@@ -359,6 +359,8 @@ mock で板機構と artifact 消去を検証 → 実 Kronos は headline のみ
 ## 11. 改訂履歴
 | 日付 | 内容 |
 |---|---|
+| 2026-07-21 | **round6 完結: P3-F 合格 = substrate 完成**。kronos recenter (§3.8) 8 seed × 2000 step で **ret_acf[1] = −0.020±0.03**(chase −0.238 から実質ゼロ)、Hill α 5.92 / std 2.09e-5 でピン留めなし = 二重条件 (i)(ii) 同時 PASS、**P4 held 解除可能**。Bugbot 指摘 2 件対応: kronos_lob の MMFCN import を lazy 化(imported/ 無し環境でも bar_aggregator import 可)、(v−mid) 較正の bar 内 pairing を first-entry に修正 → **φ/σ 修正値 = 0.615 / 3.81e-3**(旧 0.418/6e-3 は bar 内 drift 汚染)。修正 φ/σ での頑健性再走で zi_matched −0.094 / E −0.260 = round6 二重乖離は較正修正に頑健。§3.8 結果表・§12 round6 追記。 |
+| 2026-07-21 | **round6 裁定(P3''/P3-D/E)**。P3'' arb grid flat(−0.22〜−0.30、スイートスポット不在)で §3.7 無効を確定し supersede。P3-D/E の二重乖離(D1: 方向偏り最大で bounce なし / E: 共有なし・独立 AR(1)+SMA-8 係留で kronos の −0.24 を全指標再現)により **bounce の必要十分条件 = sticky anchor(S3)単独**を確定、round4 の「集合 same-side cross」仮説を棄却。機構 = 遅行 anchor への集合的 mean reversion。一般形: 閉鎖系で履歴ベース点予測を方向利用すると予測器の implied 自己相関が市場に注入される。identifiability 帰結: E が正しい完全 matched 対照で P3 の差は S2/S3 マッチング不完全分だけ過大。fix F = §3.8 recenter(v_i = mid + (X_i − median(X)))を採択。§3.7 注記・§3.8 新設・§12 round6。 |
 | 2026-06-23 | 初版ドラフト。全 LIMIT 化 + 内生流動性(MMFCN 廃止)+ Kronos 評価値→指値。4 ガード、成功条件 3 点、実験計画 P0–P5、α/β 分担。CI/ZI は reduced-form のため PAMS LIMIT agent を新規実装する点を明記。 |
 | 2026-06-23 | **round5 裁定(fix 方針)**。P3 FAIL の root cause(集合 over-shoot を吸収する逆張り流動性の欠如)への fix を確定。ユーザ直感「Kronos の予想と実際の乖離から裁定を取れば収束」を採択し **§3.7「予測誤差・裁定エージェント」** として仕様化。**アンカーを現予想でなく直前予想に**(直前予想 X_t に対し実現値 P_t を fade: P_t>X_t→売 / P_t<X_t→買)— 現状 fade(現価格 vs 現中心)は trend と同方向に潰れて安定化しないのが根因。caveat: gain 過大で価格が予想にピン留め→SF 消失(Hill/vol_acf 監視)。β 指示: 診断 (d) で chase 型を実証 → 実装 → P3' 再走、合格は ret_acf≈0 **かつ** SF が生きてる二重条件。§3.7 新設・§7 P3'・§12 round5。 |
 | 2026-06-23 | **round4 裁定(P3 結果)**。P3 FAIL を支持(CI×Kronos ret_acf τ=1=−0.228 が |.|<0.1 超過、ZI-matched=−0.054 合格)。**機械的 artifact でなく Kronos 戦略構造由来**を 3 discriminator で確定。β の「herding だから OK」化を継続して却下、substrate 未完成・P4 held。根因精緻化: quantile-rank は幅を散らすが時間方向の集合 directionality を散らさない + 戦略 mix が ~all-trend に collapse して逆張り流動性枯渇(④ 不全)。診断順序: (d)+戦略 mix readout を最優先(logs から cheap)、(c) 板密度は候補 fix 検証として後回し。**裁定: これは substrate 欠陥(潰す)であると同時に「同一基盤モデル共有 → directional 同期 → 集合 over-reaction」という候補 finding として保存**(破棄しない)。§3.2 限界注記・§7 P3 FAIL・§10・§12 round4 改訂。 |
@@ -517,4 +519,25 @@ quantile-rank は **cross-section の幅**を散らすが、**時間方向の集
   implied 自己相関を市場に注入する**」(E 条件 = 共有なしで再現、が根拠)。identifiability 側の
   帰結: E が正しい完全 matched 対照であり、E vs kronos は SF 全指標で識別不能 = **P3 の
   「Kronos vs matched noise」比較は S2/S3 マッチング不完全の分だけ差を過大評価していた**。
-- **P3-F 検証**: kronos recenter × 8 seed × 2000 step、二重条件判定。(実行中 — 結果は本節末尾に追記)
+- **P3-F 検証**: kronos recenter × 8 seed × 2000 step、二重条件判定。
+
+**P3-F 結果(2026-07-21)— 合格、substrate 完成**:
+
+| cond | ret_acf[1] | vol_acf[1] | Hill α | std | agg | same/\|net\| |
+|---|---|---|---|---|---|---|
+| kronos chase(P3'') | −0.238±0.04 | +0.076 | 5.47 | 1.81e-5 | 0.068 | n/a |
+| **kronos recenter(F)** | **−0.020±0.03** | +0.001 | 5.92±1.52 | 2.09e-5 | 0.050 | 0.00 / 0.00 |
+
+- **(i) PASS**: |ret_acf[1]| = 0.020 < 0.1(chase 比で bounce 92% 減、実質ゼロ)
+- **(ii) PASS**: Hill α 5.92 / std 2.09e-5 = ピン留め・凍結なし。vol_acf は ZI 並み
+- 注意点: agg = 0.050 は目標帯 [0.05, 0.20] 下限。rank 対称配置 (|net|=0.00) で cross 頻度が
+  下がるのは構造的。zi_matched (0.102) との厳密 dose parity が要る比較では margin 再較正の余地
+- **P4 held を解除可能**(round4 以来の封鎖条件 ret_acf≈0 を初達成)
+
+**追記 — φ/σ 較正規約の修正(Bugbot 指摘、2026-07-21)**: P2 の (v−mid) 較正は bar 内
+last-wins pairing で「bar 頭の v × bar 末の mid」を混ぜ、bar 内 drift が混入していた。
+修正規約(bar 内 first entry = v 評価時点の mid と対にする)での再実測は
+**φ=0.615, σ=3.81e-3**(旧: φ=0.418, σ=6e-3。同一 run の旧規約再計算 0.463/5.34e-3 との差が
+汚染分)。**頑健性再走**: 修正 φ/σ で zi_matched = −0.094±0.06(mid 係留、bounce なし)、
+E_W0 = −0.260±0.06(sticky、bounce 再現)— **round6 の二重乖離・機構結論は較正修正に頑健**。
+以後の dose-match には修正値 φ=0.615/σ=3.81e-3 を使うこと。

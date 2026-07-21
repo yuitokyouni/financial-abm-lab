@@ -52,12 +52,13 @@ def test_matched_ar1_phi_recovered_from_v_minus_mid():
     for a in res["agents"]:
         if not a.action_log:
             continue
-        # bar 単位で 1 サンプル化 (各 step で agent は 1 回 evaluate)
+        # bar 単位で 1 サンプル化。bar 内最初の entry を採用 (v 評価時点の mid と対にする。
+        # last-wins は bar 内 drift を混入させる — p2 script と同じ規約)
         bars: dict[int, float] = {}
         for t, side, price, payload in a.action_log:
             if payload is None or "v" not in payload or "mid" not in payload:
                 continue
-            bars[t // bar_size] = float(payload["v"]) - float(payload["mid"])
+            bars.setdefault(t // bar_size, float(payload["v"]) - float(payload["mid"]))
         if len(bars) >= 30:
             ks = sorted(bars.keys())
             series_per_agent.append(np.array([bars[k] for k in ks], dtype=np.float64))
