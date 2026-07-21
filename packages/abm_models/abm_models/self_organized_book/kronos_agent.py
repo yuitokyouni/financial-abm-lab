@@ -121,6 +121,15 @@ class KronosCIAgent(LimitAgentBase):
         #     side = sign(X_t - mid) = sign(X_t - P_t) → P_t > X_t で売り、< X_t で買い。
         #     直前予想からの乖離を fade することで集合 over-shoot に逆らう復元力。
         self.arb_mode: bool = bool(settings.get("arbMode", False))
+        # P3-F (round6): evalMode ∈ {"chase", "arb", "recenter"}。
+        #   chase   = §3.6: v = 現 quantile X_i (sticky 水準込み)
+        #   arb     = §3.7: v = 直前予想 X_t (同じく sticky 水準込み) — P3'' で無効を実証
+        #   recenter= §3.8: v = mid + (X_i − median(X))。P3-D/E の判定 (bounce の必要十分
+        #     条件は sticky anchor = 予測「水準」の遅行) を受け、水準を捨てて予測の
+        #     「形状」(幅・歪み = rank 分散情報) だけを流動性の配置に使う。
+        #     mid 係留なので D1 系 (ret_acf[1] ≈ −0.04〜−0.06) の挙動が期待値。
+        self.eval_mode: str = str(settings.get(
+            "evalMode", "arb" if self.arb_mode else "chase"))
         self.kronos_hub: Optional[KronosQuantileHub] = None
 
     def _evaluate(self, market: Market, bar_index: int) -> AgentEvaluation:
@@ -139,12 +148,23 @@ class KronosCIAgent(LimitAgentBase):
         if closes_sorted is None:
             return AgentEvaluation(side=0)
 
-        if self.arb_mode:
+        if self.eval_mode == "arb":
             # §3.7: v = 直前予想 X_t、 side = sign(X_t - P_t)
             v = self.kronos_hub.get_prev_eval_for_rank(self.agent_rank)
             if v is None or not (v > 0):
                 return AgentEvaluation(side=0)  # 最初の bar は prev 無し
-        else:
+        elif self.eval_mode == "recenter":
+            # §3.8 (P3-F): 予測の水準を捨て、形状だけを mid 周りに移す。
+            # v − mid = X_i − median(X) なので side は rank の分布内位置で決まり、
+            # sticky な予測中心の drift は側の決定に一切入らない。
+            x = self.kronos_hub.get_eval_for_rank(self.agent_rank, closes_sorted)
+            center = quantile_to_eval(closes_sorted, 0.5)
+            if not (x > 0) or not (center > 0):
+                return AgentEvaluation(side=0)
+            v = mid + (x - center)
+            if not (v > 0):
+                return AgentEvaluation(side=0)
+        else:  # "chase" (§3.6 default)
             v = self.kronos_hub.get_eval_for_rank(self.agent_rank, closes_sorted)
             if not (v > 0):
                 return AgentEvaluation(side=0)
@@ -159,5 +179,5 @@ class KronosCIAgent(LimitAgentBase):
         return AgentEvaluation(
             side=side, price=price, volume=self.order_volume,
             log_payload={"v": v, "mid": mid, "margin": margin,
-                         "rank": self.agent_rank, "arb_mode": self.arb_mode},
+                         "rank": self.agent_rank, "mode": self.eval_mode},
         )

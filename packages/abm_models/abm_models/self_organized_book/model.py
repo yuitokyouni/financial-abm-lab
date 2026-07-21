@@ -66,6 +66,7 @@ def build_sob_config(
     kronos_margin_min: float = 3e-5,
     kronos_margin_max: float = 1e-4,
     kronos_arb_fraction: float = 0.0,  # §3.7: arb_mode で動かす Kronos agent の割合 (0.0=全 chase, 1.0=全 arb)
+    kronos_eval_mode: str = "chase",  # §3.8 (P3-F): "chase" | "recenter"。arb_fraction 指定分は arb が優先
 ) -> Dict[str, Any]:
     market = deepcopy(_MARKET)
     market["marketPrice"] = initial_market_price
@@ -129,6 +130,7 @@ def build_sob_config(
                 "marginMin": float(kronos_margin_min),
                 "marginMax": float(kronos_margin_max),
                 "arbMode": bool(i < n_arb),
+                "evalMode": "arb" if i < n_arb else str(kronos_eval_mode),
             }
             agents_list.append(name)
     return {
@@ -210,6 +212,7 @@ class SelfOrganizedBookMarket:
         kronos_margin_max: float = 1e-4,
         kronos_predictor: Optional[KronosQuantilePredictor] = None,
         kronos_arb_fraction: float = 0.0,
+        kronos_eval_mode: str = "chase",
     ):
         self.warmup_steps = warmup_steps
         self.main_steps = main_steps
@@ -246,6 +249,7 @@ class SelfOrganizedBookMarket:
         self.kronos_margin_max = kronos_margin_max
         self.kronos_predictor = kronos_predictor
         self.kronos_arb_fraction = kronos_arb_fraction
+        self.kronos_eval_mode = kronos_eval_mode
 
     def run(self, *, seed: int) -> dict:
         cfg = build_sob_config(
@@ -270,6 +274,7 @@ class SelfOrganizedBookMarket:
             kronos_margin_min=self.kronos_margin_min,
             kronos_margin_max=self.kronos_margin_max,
             kronos_arb_fraction=self.kronos_arb_fraction,
+            kronos_eval_mode=self.kronos_eval_mode,
         )
         # Kronos predictor (n_kronos>0 のとき必須)
         kronos_hub = None

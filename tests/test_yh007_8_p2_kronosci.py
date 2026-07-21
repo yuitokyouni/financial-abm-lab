@@ -75,3 +75,31 @@ def test_kronos_quantile_distinct_evaluations():
         if len(vs) >= 2 and len(set(round(v, 6) for v in vs)) > 1:
             diverse_bars += 1
     assert diverse_bars > 0, "全 bar で全 agent の v が一致 = quantile-rank の分散注入が機能していない"
+
+
+def test_kronos_recenter_mode_centers_on_mid():
+    """P3-F (§3.8): evalMode="recenter" で v − mid = X_i − median(X)。
+
+    - 各 bar で agent 群の (v − mid) が median 中心に対称 (rank 0.5 近傍 ≈ 0)
+    - |v − mid| が quantile band 半幅程度に収まる (sticky 水準が乗っていない)
+    """
+    from abm_models.self_organized_book import SelfOrganizedBookMarket
+    m = SelfOrganizedBookMarket(
+        warmup_steps=60, main_steps=200, n_zi=8, n_kronos=4,
+        bar_size=10, order_ttl=10,
+        sigma_eval=5e-5, margin_min=3e-5, margin_max=1e-4,
+        tick_size=0.001, initial_market_price=300.0,
+        kronos_lookback_bars=4, kronos_n_samples=8,
+        kronos_eval_mode="recenter",
+    )
+    res = m.run(seed=11)
+    devs = []
+    for a in res["kronos_agents"]:
+        assert a.eval_mode == "recenter"
+        for t, side, price, payload in a.action_log:
+            if payload and "v" in payload:
+                assert payload["mode"] == "recenter"
+                devs.append(float(payload["v"]) - float(payload["mid"]))
+    assert len(devs) > 20, "recenter mode で submission が少なすぎる"
+    # 水準が乗っていない: |v − mid| は band スケール (<< 価格 300 の 1%)
+    assert max(abs(d) for d in devs) < 3.0, f"max|v-mid|={max(abs(d) for d in devs)}"
