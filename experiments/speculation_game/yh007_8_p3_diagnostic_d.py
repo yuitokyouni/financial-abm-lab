@@ -139,7 +139,10 @@ def main() -> None:
 
     # ---- (4) 同側比率と bias |·| の相関 ----
     print(f"\n=== (4) 同側比率 vs |bias| の関係 ===")
-    if diffs.size == ss_valid.size and diffs.size >= 4:
+    # ss (bars_sorted 全体, NaN 含む) と b_arr を同じ index で対にし、内側の valid mask で
+    # 両者の NaN を落とす。旧 gate (diffs.size == ss_valid.size) はフィルタ基準が異なる
+    # 配列同士のサイズ一致を要求していて、ほぼ常に相関計算を skip していた。
+    if ss.size == len(bars_sorted) and ss.size >= 4:
         valid_idx = ~np.isnan(ss)
         b_arr = np.array([bar_to_median_v_mid.get(bi, float("nan")) for bi in bars_sorted])
         valid = valid_idx & ~np.isnan(b_arr)

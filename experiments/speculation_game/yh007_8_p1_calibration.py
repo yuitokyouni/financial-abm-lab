@@ -39,11 +39,11 @@ def _sf(returns: np.ndarray) -> dict | None:
 def _required_n_for_detection(
     std: float, effect_size: float, alpha: float = 0.05, power: float = 0.80
 ) -> int:
-    """両側 z-test の必要 seed 数 (Wald 近似): N ≥ ((z_α + z_β) × std / effect)^2。"""
-    # z_{α/2} for two-sided = 1.96 at α=0.05
-    z_alpha = 1.959963984540054 if abs(alpha - 0.05) < 1e-9 else math.sqrt(2) * 1.96
-    # z_{β} for power=0.80 = 0.8416
-    z_beta = 0.8416212335729143 if abs(power - 0.80) < 1e-9 else math.sqrt(2) * 0.84
+    """両側 z-test の必要 seed 数 (Wald 近似): N ≥ ((z_{α/2} + z_β) × std / effect)^2。"""
+    from scipy.stats import norm
+
+    z_alpha = float(norm.ppf(1.0 - alpha / 2.0))
+    z_beta = float(norm.ppf(power))
     if effect_size <= 0:
         return -1
     n = ((z_alpha + z_beta) * std / effect_size) ** 2

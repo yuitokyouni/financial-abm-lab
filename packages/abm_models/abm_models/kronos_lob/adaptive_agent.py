@@ -116,7 +116,10 @@ class KronosAdaptiveAgent(_KronosReaderAgent):
                 self._last_actions["fade"] = fade_a
                 self.action_log.append((time, chosen_a, chosen_strat, s_trend, s_fade))
 
-        # 執行層 (YH007-4): parent は bar 切替時のみ発生
+        # 執行層 (YH007-4): parent は bar 切替時のみ更新 (spec 002 §3.3 の bar/step 2 階層)。
+        # bar 途中の chosen_a は意図的に parent へ反映されない — per-step の再計算と
+        # action_log 記録は仮想スコア (_update_scores_from_market) の連続性のためで、
+        # 執行判断の cadence は bar 単位が仕様。
         bar_index = market.get_time() // self.bar_size
         self._scheduler.update_parent(chosen_a, bar_index=bar_index)
         child = self._scheduler.next_child()

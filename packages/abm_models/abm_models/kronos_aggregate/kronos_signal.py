@@ -60,9 +60,10 @@ class KronosPredictorWrapper:
         )
 
     def __call__(self, history: pd.DataFrame) -> KronosSignal:
-        if len(history) < self.lookback:
+        # 次バー timestamp 推定に iloc[-2] を使うため、lookback=1 設定でも最低 2 bar 必要
+        if len(history) < max(self.lookback, 2):
             raise ValueError(
-                f"history が短すぎる: len={len(history)} < lookback={self.lookback}"
+                f"history が短すぎる: len={len(history)} < required={max(self.lookback, 2)}"
             )
         x_df = history.iloc[-self.lookback:][
             ["open", "high", "low", "close", "volume", "amount"]

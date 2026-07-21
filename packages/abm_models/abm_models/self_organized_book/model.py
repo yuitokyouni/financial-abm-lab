@@ -342,8 +342,9 @@ class SelfOrganizedBookMarket:
             market, bar_size=self.bar_size, start_step=0, end_step=end_step,
             price_source="mid",
         )
-        # main session 区間のみで SF を取る (warmup の transient を除外)
-        warmup_bars = self.warmup_steps // self.bar_size
+        # main session 区間のみで SF を取る (warmup の transient を除外)。
+        # ceil: warmup_steps が bar_size で割り切れない場合、warmup を含む端数 bar も除外する
+        warmup_bars = -(-self.warmup_steps // self.bar_size)
         closes_main_market = history_market["close"].to_numpy(dtype=np.float64)[warmup_bars:]
         closes_main_mid = history_mid["close"].to_numpy(dtype=np.float64)[warmup_bars:]
         ret_market = closes_to_returns(closes_main_market)

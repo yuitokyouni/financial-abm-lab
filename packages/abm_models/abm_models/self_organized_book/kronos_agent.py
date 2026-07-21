@@ -51,7 +51,8 @@ class KronosQuantileHub:
             price_source="market",
         )
         n_bars_now = len(history)
-        if n_bars_now < self.lookback_bars:
+        # 次バー timestamp 推定に iloc[-2] を使うため、lookback=1 設定でも最低 2 bar 必要
+        if n_bars_now < max(self.lookback_bars, 2):
             return None
         with self._lock:
             if bar_index == self._current_bar and self._closes_sorted is not None:
