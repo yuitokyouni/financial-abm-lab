@@ -5,7 +5,7 @@
 測定アーティファクト確定 → 既存 ablation の指標を mid 版で読み直せる。
 
 実行:
-    uv run python -m experiments.speculation_game.yh007_midprice_diagnostic \\
+    uv run python -m experiments.YH007.scripts.yh007_midprice_diagnostic \\
       --warmup-steps 200 --main-steps 1000 --n-adaptive 30 --bar-size 10 \\
       --lookback-bars 16 --score-window 50 --out-png /tmp/yh007_mid_vs_market.png
 """

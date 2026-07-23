@@ -4,11 +4,11 @@ spec §5 YH007-3: 逆張り比率を内生決定。
 mock / 実 Kronos 両 backend で SF baseline を計算し、YH007-2 (静的混合) と比較する。
 
 実行 (mock):
-    uv run python -m experiments.speculation_game.yh007_3_adaptive --backend mock --main-steps 2000 --n-adaptive 40
+    uv run python -m experiments.YH007.scripts.yh007_3_adaptive --backend mock --main-steps 2000 --n-adaptive 40
 
 実行 (実 Kronos, 重い):
     KRONOS_PATH=/path/to/Kronos \\
-      uv run python -m experiments.speculation_game.yh007_3_adaptive --backend kronos \\
+      uv run python -m experiments.YH007.scripts.yh007_3_adaptive --backend kronos \\
       --warmup-steps 100 --main-steps 200 --bar-size 10 --lookback-bars 16 --n-adaptive 30
 """
 from __future__ import annotations

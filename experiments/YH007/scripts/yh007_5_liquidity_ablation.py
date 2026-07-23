@@ -5,7 +5,7 @@ spec §5 YH007-5 / §2 機構 1: 大変化は大口注文ではなく板の **ga
 ablation: MMFCN の depth (n_fcn × fcn_order_volume) を厚/中/薄で振り、Hill α / vol_acf を比較。
 
 実行 (mock, adaptive 構成):
-    uv run python -m experiments.speculation_game.yh007_5_liquidity_ablation \\
+    uv run python -m experiments.YH007.scripts.yh007_5_liquidity_ablation \\
       --liq-levels thin,medium,thick
 
 各 level の意味:

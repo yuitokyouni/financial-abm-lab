@@ -9,7 +9,7 @@ arb_fraction ∈ {0.0, 0.3, 0.5, 0.7, 1.0} で kronos を走らせ、ZI-matched 
 
 実行:
     KRONOS_PATH=/path/to/Kronos uv run python \\
-      -m experiments.speculation_game.yh007_8_p3prime2_arb_grid --n-seeds 8 --main-steps 2000
+      -m experiments.YH007.scripts.yh007_8_p3prime2_arb_grid --n-seeds 8 --main-steps 2000
 """
 from __future__ import annotations
 

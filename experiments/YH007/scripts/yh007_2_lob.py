@@ -5,11 +5,11 @@ spec 002 §5 YH007-2 / §8: bar_size 集約した close 列で SF (Hill α, vol_
 出なければ YH007-3 以降の機構で達成、出ればこの baseline 自体が成果。
 
 実行 (mock signal, 高速):
-    uv run python -m experiments.speculation_game.yh007_2_lob --backend mock --main-steps 2000
+    uv run python -m experiments.YH007.scripts.yh007_2_lob --backend mock --main-steps 2000
 
 実行 (実 Kronos, 閉ループ; KRONOS_PATH 必須, 重い):
     KRONOS_PATH=/path/to/Kronos \\
-      uv run python -m experiments.speculation_game.yh007_2_lob --backend kronos \\
+      uv run python -m experiments.YH007.scripts.yh007_2_lob --backend kronos \\
       --warmup-steps 100 --main-steps 200 --bar-size 10 --lookback-bars 32
 """
 from __future__ import annotations

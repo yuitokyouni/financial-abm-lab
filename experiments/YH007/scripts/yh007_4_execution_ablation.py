@@ -5,11 +5,11 @@ spec §5 YH007-4: 執行層 (機構 2) を on/off。Bouchaud 仮説 = 大口 par
 (pass-through), >1 で TWAP-like 分割。
 
 実行 (mock, adaptive 構成で 3 horizon を比較):
-    uv run python -m experiments.speculation_game.yh007_4_execution_ablation --horizons 1 5 10
+    uv run python -m experiments.YH007.scripts.yh007_4_execution_ablation --horizons 1 5 10
 
 実行 (実 Kronos, 重い):
     KRONOS_PATH=/path/to/Kronos \\
-      uv run python -m experiments.speculation_game.yh007_4_execution_ablation \\
+      uv run python -m experiments.YH007.scripts.yh007_4_execution_ablation \\
       --backend kronos --horizons 1 5 --warmup-steps 100 --main-steps 300 --bar-size 10 --lookback-bars 16
 """
 from __future__ import annotations

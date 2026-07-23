@@ -8,7 +8,7 @@ spec 002 §6 のインフラ実測値 (HF API ✓, Kronos weights ✓, CPU 推�
 
 実行:
     git clone https://github.com/shiyu-coder/Kronos.git /tmp/Kronos
-    KRONOS_PATH=/tmp/Kronos uv run python -m experiments.speculation_game.yh007_kronos_smoke
+    KRONOS_PATH=/tmp/Kronos uv run python -m experiments.YH007.scripts.yh007_kronos_smoke
 
 合格基準:
     - Tokenizer + Kronos-small が HF からロード成功

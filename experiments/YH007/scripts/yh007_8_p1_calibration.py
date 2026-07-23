@@ -8,7 +8,7 @@ P1 では tick / 分散の幾つかの組合せで pilot を回し、
   (mid 増分の tick 単位分布, |r|_max/std, SF 指標の seed 間 std) を表示する。
 
 実行:
-    uv run python -m experiments.speculation_game.yh007_8_p1_calibration \\
+    uv run python -m experiments.YH007.scripts.yh007_8_p1_calibration \\
       --n-seeds 8 --warmup-steps 200 --main-steps 1000 --n-zi 30
 
 出力: /tmp/yh007_8_p1_pilot.json (multi-seed × multi-config の SF テーブル)。

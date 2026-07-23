@@ -26,8 +26,9 @@ packages/
   market/          aggregate + CLOB + LOB
   regimes/         KM + β-VAE + free-energy
   provenance/      PROV-O + L2 ctx + prov_record(cap-alloc から昇格)
-experiments/       core を import する薄いラッパー (classical / speculation_game /
-                   microstructure / intervention_atlas / regimes / llm_abm)
+experiments/       core を import する実験。研究ライン単位の YH0xx/ ディレクトリに
+                   spec・スクリプト・レポートを同居させる (2026-07-23 再編。例:
+                   YH007/{specs,scripts}, YH008/, YH009/。共有コア実装は packages/ 側)
 research/          atelier/mycelium 同期 (idea-provenance.ttl)
 ```
 
@@ -39,6 +40,15 @@ findings が**統計的等価**(相対誤差 ≤ 5%)で再現するか。go な�
 - **capital-allocation** … IBKR 実運用リポ。研究核と混ぜない。`prov_record.py` のみ `packages/provenance` に昇格して逆参照させる。
 - **MultiAgent-Trader** … 日本株×LLM 応用。core を import する satellite に留める。
 - **atelier/mycelium** … マザー知識ベース。`research/` に同期し、コードと混ぜない。
+
+## 実験配置規約 (2026-07-23 再編)
+
+現行の実験は旧リポのアーカイブ (`imported/speculation-game-info/experiments/YH00x`) と同じく
+**研究ライン ID ごとの `experiments/YH0xx/` ディレクトリ**に置く。spec・スクリプト・レポートを
+1 フォルダに同居させ、人間が系譜を追いやすくする。ただし**再利用可能なモデル実装は
+`packages/` の正準コアに置き** (spec 001 の規約)、YH0xx 側からは import して使う。
+YH007 固有 spec (002/003) は `experiments/YH007/specs/` へ移動済み (旧 `specs/` パスには
+案内スタブを残置)。
 
 ## 新規研究ライン
 

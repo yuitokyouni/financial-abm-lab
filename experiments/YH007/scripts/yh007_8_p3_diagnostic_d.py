@@ -15,7 +15,7 @@ spec 003 §3.2 round4 + §12 round5 の根因仮説の検証:
 
 実行:
     KRONOS_PATH=/path/to/Kronos uv run python \\
-      -m experiments.speculation_game.yh007_8_p3_diagnostic_d \\
+      -m experiments.YH007.scripts.yh007_8_p3_diagnostic_d \\
       --seed 0 --warmup-steps 200 --main-steps 1000
 """
 from __future__ import annotations

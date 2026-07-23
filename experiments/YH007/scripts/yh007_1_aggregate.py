@@ -3,11 +3,11 @@
 spec 002 §5 (YH007-1) の最小実装の experiment ラッパー。core を import するだけ。
 
 実行 (mock signal):
-    uv run python -m experiments.speculation_game.yh007_1_aggregate --backend mock
+    uv run python -m experiments.YH007.scripts.yh007_1_aggregate --backend mock
 
 実行 (実 Kronos, 閉ループ; KRONOS_PATH 必須):
     KRONOS_PATH=/path/to/Kronos \\
-      uv run python -m experiments.speculation_game.yh007_1_aggregate --backend kronos --n-steps 30
+      uv run python -m experiments.YH007.scripts.yh007_1_aggregate --backend kronos --n-steps 30
 """
 from __future__ import annotations
 

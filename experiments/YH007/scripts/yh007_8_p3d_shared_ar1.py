@@ -12,7 +12,7 @@ P3'' 裁定図 (entanglement map §3-4) の対照 D:
 
 実行:
     KRONOS_PATH=/path/to/Kronos uv run python \\
-      -m experiments.speculation_game.yh007_8_p3d_shared_ar1 --n-seeds 8 --main-steps 2000
+      -m experiments.YH007.scripts.yh007_8_p3d_shared_ar1 --n-seeds 8 --main-steps 2000
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 
 from abm_models.self_organized_book import SelfOrganizedBookMarket
-from experiments.speculation_game.yh007_8_p3prime2_arb_grid import _acf_shape, _agg, _sf
+from experiments.YH007.scripts.yh007_8_p3prime2_arb_grid import _acf_shape, _agg, _sf
 
 
 # ---------------------------------------------------------------- diagnostics

@@ -7,7 +7,7 @@ ZI-matched AR(1) 較正値: P2 実測 φ=0.418, σ=6e-3 absolute on mid=300 (= �
 
 実行:
     KRONOS_PATH=/path/to/Kronos uv run python \\
-      -m experiments.speculation_game.yh007_8_p3_kronos_vs_zi \\
+      -m experiments.YH007.scripts.yh007_8_p3_kronos_vs_zi \\
       --n-seeds 8 --main-steps 2000
 """
 from __future__ import annotations

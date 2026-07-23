@@ -11,7 +11,7 @@ ablation 4 条件:
   both  : + 両方
 
 実行 (mock):
-    uv run python -m experiments.speculation_game.yh007_6_7_amplifier_ablation \\
+    uv run python -m experiments.YH007.scripts.yh007_6_7_amplifier_ablation \\
       --conditions none pred spoof both --main-steps 1200 --n-adaptive 30
 """
 from __future__ import annotations

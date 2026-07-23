@@ -10,7 +10,7 @@ P3-D/E の判定 (bounce の必要十分条件 = sticky anchor) を受けた fix
 
 実行:
     KRONOS_PATH=/path/to/Kronos uv run python \\
-      -m experiments.speculation_game.yh007_8_p3f_recenter --n-seeds 8 --main-steps 2000
+      -m experiments.YH007.scripts.yh007_8_p3f_recenter --n-seeds 8 --main-steps 2000
 """
 from __future__ import annotations
 
@@ -22,8 +22,8 @@ from pathlib import Path
 import numpy as np
 
 from abm_models.self_organized_book import SelfOrganizedBookMarket
-from experiments.speculation_game.yh007_8_p3d_shared_ar1 import _metrics
-from experiments.speculation_game.yh007_8_p3prime2_arb_grid import _agg
+from experiments.YH007.scripts.yh007_8_p3d_shared_ar1 import _metrics
+from experiments.YH007.scripts.yh007_8_p3prime2_arb_grid import _agg
 
 
 def run_kronos_recenter(seed: int, common: dict) -> dict:

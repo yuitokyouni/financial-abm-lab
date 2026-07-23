@@ -11,7 +11,7 @@
 
 実行:
     KRONOS_PATH=/path/to/Kronos uv run python \\
-      -m experiments.speculation_game.yh007_8_p2_kronos_ci \\
+      -m experiments.YH007.scripts.yh007_8_p2_kronos_ci \\
       --n-seeds 4 --warmup-steps 200 --main-steps 1500 --n-zi 20 --n-kronos 10
 """
 from __future__ import annotations

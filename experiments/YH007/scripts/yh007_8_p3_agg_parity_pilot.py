@@ -5,7 +5,7 @@ CI×Kronos の P2 実測 agg=0.106 に揃える値を探す (margin grid search)
 (裁定 §12 round3 の dose-matching parity 要件)。
 
 実行:
-    uv run python -m experiments.speculation_game.yh007_8_p3_agg_parity_pilot \\
+    uv run python -m experiments.YH007.scripts.yh007_8_p3_agg_parity_pilot \\
       --warmup-steps 200 --main-steps 800 --n-agents 10 --n-seeds 3
 """
 from __future__ import annotations
