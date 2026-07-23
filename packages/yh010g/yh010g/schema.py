@@ -51,6 +51,7 @@ _DATE_PATTERNS = [
     re.compile(r"^(\d{4})-(\d{2})-(\d{2})$"),
     re.compile(r"^(\d{4})(\d{2})(\d{2})$"),
     re.compile(r"^(\d{4})年(\d{1,2})月(\d{1,2})日$"),
+    re.compile(r"^(\d{4})/(\d{1,2})/(\d{1,2})$"),
 ]
 
 
@@ -65,6 +66,37 @@ def normalize_date(v) -> str:
             y, mo, d = (int(g) for g in m.groups())
             return f"{y:04d}-{mo:02d}-{d:02d}"
     raise ValueError(f"unrecognized date format: {v!r}")
+
+
+def normalize_month(v) -> str:
+    """SMTAM の総会日程 'YYYYMM' → 'YYYY-MM' (月精度。build 側で日精度に解決する)。"""
+    s = unicodedata.normalize("NFKC", str(v)).strip()
+    m = re.fullmatch(r"(\d{4})(\d{2})", s)
+    if not m:
+        raise ValueError(f"unrecognized month format: {v!r}")
+    return f"{m.group(1)}-{m.group(2)}"
+
+
+def parse_proposal_no(v) -> tuple[int, int]:
+    """議案番号の各社表記 → (親議案番号, 子議案番号)。
+
+    '2.10' (野村・大和) / '2-1' (SMDAM) / '2' / int 2 → (2, 10) 等。
+    値はほぼ文字列格納 ('2.10' と '2.1' は区別される) だが、大和2024年版に
+    孤立した float セル (例: 1.1 = 候補1番) が僅かに混在することを実査で確認。
+    float は '%g' 表記で解釈する。理論上 '1.10' が float 化していると (1,1) に
+    潰れるリスクがあるが、その場合は同一キー重複として build_matrix の
+    矛盾検出に必ず現れる (黙って混ざらない)。
+    """
+    if isinstance(v, float) and not v.is_integer():
+        v = "%g" % v
+    if isinstance(v, (int, float)):
+        return int(v), 0
+    s = unicodedata.normalize("NFKC", str(v)).strip()
+    for sep in (".", "-"):
+        if sep in s:
+            a, b = s.split(sep, 1)
+            return int(a), int(b)
+    return int(s), 0
 
 
 def normalize_sub_no(v) -> int:

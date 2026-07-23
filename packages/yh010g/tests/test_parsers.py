@@ -2,7 +2,10 @@ from pathlib import Path
 
 import pytest
 
-from yh010g.parsers import parse_amova, parse_mufg_trust, parse_nissay
+from yh010g.parsers import (
+    parse_amova, parse_daiwa, parse_mufg_am, parse_mufg_trust,
+    parse_nissay, parse_nomura, parse_smdam, parse_smtam,
+)
 from yh010g.schema import proposal_col_id
 
 
@@ -57,6 +60,16 @@ REAL_CASES = [
     ("amova_25q1.xlsx", parse_amova, 14000),
     ("nissay_2407.xlsx", parse_nissay, 14000),
     ("nissay_2507.xlsx", parse_nissay, 13000),
+    ("nomura_2024q2.xlsx", parse_nomura, 17000),
+    ("nomura_2025q2.xlsx", parse_nomura, 14000),
+    ("daiwa_202406.xlsx", parse_daiwa, 15000),
+    ("daiwa_202506.xlsx", parse_daiwa, 13000),
+    ("smdam_2024q2.xlsx", parse_smdam, 17000),
+    ("smdam_2025q2.xlsx", parse_smdam, 15000),
+    ("mufgam_2024q2.xlsx", parse_mufg_am, 17000),
+    ("mufgam_2025q2.xlsx", parse_mufg_am, 14000),
+    ("smtam_2024q2.csv", parse_smtam, 17000),
+    ("smtam_2025q2.csv", parse_smtam, 14000),
 ]
 
 
@@ -69,4 +82,6 @@ def test_real_files(fname, parser, min_rows):
     recs = parser(str(path))
     assert len(recs) >= min_rows
     assert all(r.vote in (1.0, -1.0, 0.0) for r in recs)
-    assert all(len(r.meeting_date) == 10 for r in recs)
+    # SMTAM は月精度 ('YYYY-MM') — build 側で日精度に解決される
+    expected_len = 7 if parser is parse_smtam else 10
+    assert all(len(r.meeting_date) == expected_len for r in recs)

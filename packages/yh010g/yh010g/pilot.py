@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 from agora_engine import sha256_file, utcnow_iso, write_sidecar
-from yh010g.build_matrix import build_decision_matrix, records_to_rows
+from yh010g.build_matrix import build_decision_matrix, records_to_rows, resolve_month_only_dates
 from yh010g.parsers import PARSERS
 
 RAW_DIR = Path("data/raw/yh010g")
@@ -36,6 +36,35 @@ PILOT_SOURCES = [
     {"manager": "nissay", "season": "2025Q2",
      "url": "https://www.nam.co.jp/company/responsibleinvestor/excel/report_ex2507.xlsx",
      "filename": "nissay_2507.xlsx", "format": "xlsx", "parser": "nissay"},
+    {"manager": "nomura", "season": "2024Q2",
+     "url": "https://www.nomura-am.co.jp/special/esg/excel/vote2024_q2.xlsx",
+     "filename": "nomura_2024q2.xlsx", "format": "xlsx", "parser": "nomura"},
+    {"manager": "nomura", "season": "2025Q2",
+     "url": "https://www.nomura-am.co.jp/special/esg/excel/vote2025_q2.xlsx",
+     "filename": "nomura_2025q2.xlsx", "format": "xlsx", "parser": "nomura"},
+    *[{"manager": "daiwa", "season": f"20{y}Q2",
+       "url": f"https://www.daiwa-am.co.jp/company/stewardship/files/20{y}{m:02d}.xlsx",
+       "filename": f"daiwa_20{y}{m:02d}.xlsx", "format": "xlsx", "parser": "daiwa"}
+      for y in (24, 25) for m in (4, 5, 6)],
+    {"manager": "smdam", "season": "2024Q2",
+     "url": "https://www.smd-am.co.jp/corporate/responsible_investment/voting/report/files/smdam_votingresults_Apr-Jun-2024_jp.xlsx",
+     "filename": "smdam_2024q2.xlsx", "format": "xlsx", "parser": "smdam"},
+    {"manager": "smdam", "season": "2025Q2",
+     "url": "https://www.smd-am.co.jp/corporate/responsible_investment/voting/report/files/smdam_votingresults_Apr-Jun-2025_jp.xlsx",
+     "filename": "smdam_2025q2.xlsx", "format": "xlsx", "parser": "smdam"},
+    {"manager": "mufg_am", "season": "2024Q2",
+     "url": "https://www.am.mufg.jp/assets/pdf/investment_policy/giketsu_202404-202406.xlsx",
+     "filename": "mufgam_2024q2.xlsx", "format": "xlsx", "parser": "mufg_am"},
+    {"manager": "mufg_am", "season": "2025Q2",
+     "url": "https://www.am.mufg.jp/assets/pdf/investment_policy/giketsu_202504-202506.xlsx",
+     "filename": "mufgam_2025q2.xlsx", "format": "xlsx", "parser": "mufg_am"},
+    # SMTAM の file/{id} は非規則 — 一覧ページから解決した ID を固定記録 (2026-07-23)
+    {"manager": "smtam", "season": "2024Q2",
+     "url": "https://www.smtam.jp/file/205/voting_2024Q1.csv",
+     "filename": "smtam_2024q2.csv", "format": "csv", "parser": "smtam"},
+    {"manager": "smtam", "season": "2025Q2",
+     "url": "https://www.smtam.jp/file/247/voting_2025Q1.csv",
+     "filename": "smtam_2025q2.csv", "format": "csv", "parser": "smtam"},
 ]
 
 
@@ -69,6 +98,9 @@ def build(raw_dir: Path = RAW_DIR, out_dir: Path = OUT_DIR, matrix_id: str | Non
         print(f"parsed {s['filename']}: {len(recs)} records")
 
     mid = matrix_id or f"yh010g-A-pilot-{utcnow_iso()}"
+    # 月精度日付 (SMTAM) をここで解決し、長形式 parquet と行列を同一のレコード集合から作る
+    # (解決前レコードで parquet を書くと col_id が行列と食い違う)
+    records, _ = resolve_month_only_dates(records)
     result = build_decision_matrix(records, matrix_id=mid, sources=sources_meta)
     out_dir.mkdir(parents=True, exist_ok=True)
 

@@ -21,6 +21,41 @@ class BuildResult:
     sidecar: dict
     n_meetings: int
     duplicate_conflicts: list[tuple[str, str]]  # (manager, col_id)
+    month_resolution: dict | None = None        # 月精度日付の解決統計
+
+
+def resolve_month_only_dates(records: list[UnifiedRecord]) -> tuple[list[UnifiedRecord], dict]:
+    """月精度 ('YYYY-MM') の meeting_date を、日精度レコードとの突き合わせで解決する。
+
+    SMTAM は総会日を年月でしか開示しないため、(証券コード, 年月) に対して他社の
+    日精度総会日が一意に存在する場合のみその日を割り当てる。複数候補 (同月複数総会) や
+    候補なしのレコードは解決不能として除外し、統計を返す (黙って落とさない)。
+    """
+    full_dates: dict[tuple[str, str], set[str]] = {}
+    for r in records:
+        if len(r.meeting_date) == 10:
+            full_dates.setdefault((r.sec_code, r.meeting_date[:7]), set()).add(r.meeting_date)
+    resolved: list[UnifiedRecord] = []
+    stats = {"month_only": 0, "resolved": 0, "ambiguous": 0, "no_candidate": 0}
+    for r in records:
+        if len(r.meeting_date) == 10:
+            resolved.append(r)
+            continue
+        stats["month_only"] += 1
+        cands = full_dates.get((r.sec_code, r.meeting_date), set())
+        if len(cands) == 1:
+            stats["resolved"] += 1
+            resolved.append(UnifiedRecord(**{**vars(r), "meeting_date": next(iter(cands))}))
+        elif len(cands) > 1:
+            stats["ambiguous"] += 1
+        else:
+            stats["no_candidate"] += 1
+    if stats["ambiguous"] or stats["no_candidate"]:
+        warnings.warn(
+            f"month-only dates dropped: ambiguous={stats['ambiguous']} "
+            f"no_candidate={stats['no_candidate']} (resolved={stats['resolved']})",
+            stacklevel=2)
+    return resolved, stats
 
 
 def build_decision_matrix(
@@ -29,6 +64,7 @@ def build_decision_matrix(
     sources: list[dict],
     created_by: str = "claude-code",
 ) -> BuildResult:
+    records, month_stats = resolve_month_only_dates(records)
     cell: dict[tuple[str, str], float] = {}
     conflicts: set[tuple[str, str]] = set()
     meetings: set[tuple[str, str]] = set()
@@ -55,10 +91,11 @@ def build_decision_matrix(
         extra={
             "coverage": {"meetings": len(meetings)},
             "duplicate_conflicts": [list(k) for k in sorted(conflicts)],
+            "month_resolution": month_stats,
         },
     )
     return BuildResult(dm=dm, sidecar=sidecar, n_meetings=len(meetings),
-                       duplicate_conflicts=sorted(conflicts))
+                       duplicate_conflicts=sorted(conflicts), month_resolution=month_stats)
 
 
 def records_to_rows(records: list[UnifiedRecord]) -> list[dict]:
