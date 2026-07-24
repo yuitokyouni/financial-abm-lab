@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 from agora_engine import DecisionMatrix, fit_pca_em, monoculture_index
-from agora_engine.factor_model import fit_irt
 
 
 def _planted_low_rank(n=60, p=200, k=2, noise=0.1, missing=0.4, seed=0):
@@ -51,8 +50,3 @@ def test_accepts_decision_matrix_and_validates_k():
     assert fit.scores.shape == (6, 1) and fit.loadings.shape == (8, 1)
     with pytest.raises(ValueError, match="out of range"):
         fit_pca_em(dm, k=7)
-
-
-def test_irt_stub():
-    with pytest.raises(NotImplementedError):
-        fit_irt()

@@ -27,6 +27,7 @@ def parse_daiwa(path: str) -> list[UnifiedRecord]:
             raise ValueError(f"{path}: no 個別開示 sheet (got {wb.sheetnames})")
         out: list[UnifiedRecord] = []
         unknown_votes: list[str] = []
+        skipped_special: list[str] = []
         for sn in names:
             ws = wb[sn]
             header_seen = False
@@ -39,7 +40,13 @@ def parse_daiwa(path: str) -> list[UnifiedRecord]:
                     continue
                 if first == "":
                     continue
-                pno, sub = parse_proposal_no(cells[4])
+                try:
+                    pno, sub = parse_proposal_no(cells[4])
+                except ValueError:
+                    # 'C.1' 等の非数値議案番号 (種類株主総会系、ごく少数)。
+                    # 他社と結合不能なためスキップし記録する
+                    skipped_special.append(f"{cells[0]}:{cells[4]}")
+                    continue
                 vote, known = map_vote(cells[8])
                 if not known:
                     unknown_votes.append(str(cells[8]))
@@ -64,6 +71,9 @@ def parse_daiwa(path: str) -> list[UnifiedRecord]:
         if unknown_votes:
             warnings.warn(f"{path}: {len(unknown_votes)} unknown vote values, e.g. {unknown_votes[:5]}",
                           stacklevel=2)
+        if skipped_special:
+            warnings.warn(f"{path}: skipped {len(skipped_special)} non-numeric proposal rows "
+                          f"{skipped_special[:3]}", stacklevel=2)
         return out
     finally:
         wb.close()

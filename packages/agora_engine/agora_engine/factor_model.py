@@ -110,6 +110,84 @@ def fit_pca_em(
     )
 
 
-def fit_irt(*args, **kwargs):  # pragma: no cover - スタブ
-    """ルートB (2パラメータ IRT / ベイズ理想点)。YH010g_HANDOFF §7 Task 5 で実装。"""
-    raise NotImplementedError("Route B (IRT) is scheduled for YH010-g Task 5")
+@dataclass
+class IrtFit:
+    theta: np.ndarray      # (N,) 主体の理想点 (平均0・分散1に標準化)
+    slope: np.ndarray      # (P,) 識別力 a_j
+    intercept: np.ndarray  # (P,) 切片 d_j (P(+1)=sigmoid(a_j*theta_i + d_j))
+    n_iter: int
+    converged: bool
+
+
+def fit_irt(
+    dm: DecisionMatrix | np.ndarray,
+    max_iter: int = 100,
+    tol: float = 1e-4,
+    l2: float = 1.0,
+    inner_newton: int = 3,
+) -> IrtFit:
+    """ルートB: 1次元 2パラメータ・ロジスティック IRT (交互 MAP 推定)。
+
+    ±1 の二値投票を y=(x+1)/2 に変換し P(y=1)=sigmoid(a_j*theta + d_j) を推定。
+    識別制約 (docstring 冒頭の回転規約に対応):
+      - 尺度: theta を各反復で平均0・分散1に標準化
+      - 符号: sum(a_j) >= 0 に固定 (因子の命名・向きの解釈は外部照合でのみ行う)
+    事前分布は L2 正則化として実装 (theta, a, d ~ N(0, 1/l2))。
+    多次元版・完全ベイズ版は将来 feature。
+    """
+    X = dm.values if isinstance(dm, DecisionMatrix) else np.asarray(dm, dtype=float)
+    obs = ~np.isnan(X)
+    if obs.sum() == 0:
+        raise ValueError("no observed cells")
+    Y = np.where(obs, (X + 1.0) / 2.0, 0.0)  # 欠測セルは重み0で無視
+    n, p = X.shape
+    rng_free_start = np.where(obs, X, 0.0).mean(axis=1)
+    theta = (rng_free_start - rng_free_start.mean())
+    sd = theta.std()
+    theta = theta / sd if sd > 0 else np.zeros(n)
+    a = np.ones(p)
+    d = np.zeros(p)
+
+    def sigmoid(z):
+        return 1.0 / (1.0 + np.exp(-np.clip(z, -30, 30)))
+
+    converged = False
+    n_iter = 0
+    for n_iter in range(1, max_iter + 1):
+        theta_prev = theta.copy()
+        # item step: 各 j について (a_j, d_j) を Newton 法で更新 (ベクトル化)
+        for _ in range(inner_newton):
+            Z = theta[:, None] * a[None, :] + d[None, :]
+            P1 = sigmoid(Z)
+            W = np.where(obs, P1 * (1 - P1), 0.0)
+            R = np.where(obs, Y - P1, 0.0)
+            g_a = (R * theta[:, None]).sum(axis=0) - l2 * a
+            g_d = R.sum(axis=0) - l2 * d
+            h_aa = (W * theta[:, None] ** 2).sum(axis=0) + l2
+            h_dd = W.sum(axis=0) + l2
+            h_ad = (W * theta[:, None]).sum(axis=0)
+            det = h_aa * h_dd - h_ad ** 2
+            det = np.where(det < 1e-10, 1e-10, det)
+            a = a + (h_dd * g_a - h_ad * g_d) / det
+            d = d + (h_aa * g_d - h_ad * g_a) / det
+        # person step: 各 i について theta_i を Newton 法で更新 (ベクトル化)
+        for _ in range(inner_newton):
+            Z = theta[:, None] * a[None, :] + d[None, :]
+            P1 = sigmoid(Z)
+            W = np.where(obs, P1 * (1 - P1), 0.0)
+            R = np.where(obs, Y - P1, 0.0)
+            g = (R * a[None, :]).sum(axis=1) - l2 * theta
+            h = (W * a[None, :] ** 2).sum(axis=1) + l2
+            theta = theta + g / h
+        # 識別制約: 標準化 + 符号固定 (a を尺度に合わせて逆スケール)
+        mu_t, sd_t = theta.mean(), theta.std()
+        if sd_t > 0:
+            theta = (theta - mu_t) / sd_t
+            d = d + a * mu_t
+            a = a * sd_t
+        if a.sum() < 0:
+            theta, a = -theta, -a
+        if np.max(np.abs(theta - theta_prev)) < tol:
+            converged = True
+            break
+    return IrtFit(theta=theta, slope=a, intercept=d, n_iter=n_iter, converged=converged)

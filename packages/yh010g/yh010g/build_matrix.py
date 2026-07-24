@@ -24,6 +24,40 @@ class BuildResult:
     month_resolution: dict | None = None        # 月精度日付の解決統計
 
 
+def drop_class_meetings(records: list[UnifiedRecord]) -> tuple[list[UnifiedRecord], int]:
+    """種類株主総会の行を除外する。
+
+    種類株主総会は普通株主総会と同日に開かれることがあり (例: 7150 2022-06-24)、
+    総会キー (証券コード, 総会日) が普通総会と衝突する。開示しているのは一部の
+    運用機関のみでクロス結合もできないため、除外して件数を記録する。
+    """
+    kept = [r for r in records if "種類" not in r.meeting_type]
+    return kept, len(records) - len(kept)
+
+
+def long_rows_to_matrix(
+    rows: list[tuple[str, str, float]],
+) -> tuple[DecisionMatrix, list[tuple[str, str]]]:
+    """(manager, col_id, vote) の長形式から、矛盾重複を NA 化して行列を構築する。
+
+    同一キーの賛否矛盾 (不統一行使の分割開示等) は単一の ±1 で表現できないため
+    NA とし、キーのリストを返す (build_decision_matrix と同一の規約)。
+    panel_analysis 等、parquet から部分行列を作る全ての場所でこれを使うこと。
+    """
+    cell: dict[tuple[str, str], float] = {}
+    conflicts: set[tuple[str, str]] = set()
+    for m, c, v in rows:
+        key = (m, c)
+        if key in cell and cell[key] != v:
+            conflicts.add(key)
+        else:
+            cell.setdefault(key, v)
+    for key in conflicts:
+        cell[key] = np.nan
+    dm = DecisionMatrix.from_long([(m, c, v) for (m, c), v in cell.items()])
+    return dm, sorted(conflicts)
+
+
 def resolve_month_only_dates(records: list[UnifiedRecord]) -> tuple[list[UnifiedRecord], dict]:
     """月精度 ('YYYY-MM') の meeting_date を、日精度レコードとの突き合わせで解決する。
 
