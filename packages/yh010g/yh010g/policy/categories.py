@@ -58,6 +58,10 @@ _LABEL_MAP = {
 }
 
 
+# 正準カテゴリ名自身は恒等写像 (検証CSV等が正準名を直接与える場合に対応)
+_LABEL_MAP.update({c: c for c in CANONICAL_CATEGORIES})
+
+
 def normalize_category(label: str) -> str:
     s = unicodedata.normalize("NFKC", str(label)).strip()
     return _LABEL_MAP.get(s, "unknown")
