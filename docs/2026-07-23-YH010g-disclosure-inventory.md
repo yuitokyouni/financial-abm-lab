@@ -90,7 +90,7 @@
 - パターン: PDF `/company/stewardship/files/giketsuYYYYMM.pdf`（**月次**、2019年1月〜2026年5月、89ファイル）、Excel `同/YYYYMM.xlsx`（2023年1月〜2025年12月、36ファイル）。Glass Lewis Viewpoint検索ツール併設（`viewpoint.glasslewis.com/WD/?siteID=DaiwaAM`）
 - 列構成: 検証済み（サマリー表の項2）。反対議案に理由記載。「利益相反」「不統一行使」列あり
 - robots: 404。規約: 「電子的または機械的方法を問わず」複製等禁止
-- 注意: **同社がGlass Lewisのプラットフォームを開示に使用している事実は、助言会社との関係を示すシグナルとしてそれ自体が分析対象**（追随度対比の腕の選定材料）
+- 注意: **同社がGlass Lewisのプラットフォームを開示に使用している事実は、助言会社との関係を示すシグナルとしてそれ自体が分析対象**（追随度対比の実験条件の選定材料）
 
 ### アモーヴァ・アセットマネジメント（旧日興AM）
 - URL: https://www.amova-am.com/about/vote/results （nikkoam.comから301）

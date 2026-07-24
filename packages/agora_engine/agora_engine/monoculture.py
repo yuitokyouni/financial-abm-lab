@@ -18,8 +18,8 @@ from agora_engine.factor_model import FactorFit
 def monoculture_index(fit: FactorFit) -> float:
     """mu 条件付け後の因子分散シェア in [0, 1]。
 
-    注意: k を増やせば機械的に増える (PCA の性質)。腕間比較は必ず同一 k で行い、
-    絶対水準の解釈には対照系 (独立エージェント腕) との差分を使うこと。
+    注意: k を増やせば機械的に増える (PCA の性質)。条件間比較は必ず同一 k で行い、
+    絶対水準の解釈には対照系 (独立エージェント条件) との差分を使うこと。
     """
     share = fit.explained_share
     return float(min(max(share, 0.0), 1.0))

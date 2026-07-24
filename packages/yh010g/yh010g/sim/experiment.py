@@ -33,24 +33,24 @@ MIXES = {
 
 
 def run_sweep(n_proposals: int = 4000, seeds: tuple = (0, 1, 2, 3, 4)) -> dict:
-    arms = []
+    conditions = []
     for mix_name, mix in MIXES.items():
         for n_adv in (1, 2, 5):
             for rho in (0.0, 0.5, 0.9):
-                arms.append({"mix": mix_name, "n_advisors": n_adv, "rho": rho, **mix})
+                conditions.append({"mix": mix_name, "n_advisors": n_adv, "rho": rho, **mix})
 
     results = []
-    for arm in arms:
+    for cond in conditions:
         iv = Intervention(t=0, type="advisor_correlation", target="market",
-                          params={"n_advisors": arm["n_advisors"], "rho": arm["rho"],
-                                  "mix": arm["mix"]})
+                          params={"n_advisors": cond["n_advisors"], "rho": cond["rho"],
+                                  "mix": cond["mix"]})
         vals = {"monoculture_k1": [], "agg_eff": [], "sel_q": []}
         for seed in seeds:
             cfg = MeetingSimConfig(
-                n_proposals=n_proposals, n_advisors=arm["n_advisors"], rho=arm["rho"],
+                n_proposals=n_proposals, n_advisors=cond["n_advisors"], rho=cond["rho"],
                 advisor=Advisor(sigma_pol=1.0),
-                investors=mixed_investors(arm["n_follower"], arm["n_threshold"],
-                                          arm["n_independent"], arm["n_advisors"]),
+                investors=mixed_investors(cond["n_follower"], cond["n_threshold"],
+                                          cond["n_independent"], cond["n_advisors"]),
                 seed=seed)
             res = simulate(cfg)
             dmf = res.dm.filter_cols(min_observed=2, min_minority_share=0.05)
@@ -59,7 +59,7 @@ def run_sweep(n_proposals: int = 4000, seeds: tuple = (0, 1, 2, 3, 4)) -> dict:
             vals["sel_q"].append(selection_quality(res))
         summary = {m: {"mean": float(np.mean(v)), "se": float(np.std(v, ddof=1) / np.sqrt(len(v)))}
                    for m, v in vals.items()}
-        results.append({"arm": arm, "intervention": iv.to_dict(), "metrics": summary,
+        results.append({"condition": cond, "intervention": iv.to_dict(), "metrics": summary,
                         "n_seeds": len(seeds)})
 
     report = {
@@ -67,7 +67,7 @@ def run_sweep(n_proposals: int = 4000, seeds: tuple = (0, 1, 2, 3, 4)) -> dict:
         "created_at": utcnow_iso(),
         "code_sha": git_sha(),
         "n_proposals": n_proposals,
-        "arms": results,
+        "conditions": results,
         "note": "装置検証の記述統計。厚生比較の主張は実データ較正+事前登録後。",
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -78,8 +78,8 @@ def run_sweep(n_proposals: int = 4000, seeds: tuple = (0, 1, 2, 3, 4)) -> dict:
 
 def _print_table(report: dict) -> None:
     print(f"{'mix':<4}{'A':>3}{'rho':>5} | {'monoculture':>12} {'agg_eff':>9} {'sel_q':>8}")
-    for r in report["arms"]:
-        a, m = r["arm"], r["metrics"]
+    for r in report["conditions"]:
+        a, m = r["condition"], r["metrics"]
         print(f"{a['mix']:<4}{a['n_advisors']:>3}{a['rho']:>5.1f} | "
               f"{m['monoculture_k1']['mean']:>7.3f}±{m['monoculture_k1']['se']:.3f} "
               f"{m['agg_eff']['mean']:>8.3f} {m['sel_q']['mean']:>8.3f}")
