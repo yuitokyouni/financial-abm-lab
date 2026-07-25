@@ -53,6 +53,7 @@ YH007 固有 spec (002/003) は `experiments/YH007/specs/` へ移動済み (旧 
 ## 新規研究ライン
 
 - **`unwind-tape/` (YH009)** … 日本株の政策保有株解消イベントの経験的イベントスタディ(AR/CAR)。YH001-008 の ABM シミュレーションとは別系譜(実証)。インフラ(JPX 日次捕捉 / xlsx→CSV 正規化 / J-Quants CAR エンジン)完了、findings 保留。台帳: `imported/speculation-game-info/docs/findings.md` の YH009 節。
+- **`packages/agora_engine` + `packages/yh010g` (YH010 / YH010-g)** … 協調 vs モノカルチャーの観測的識別と、議決権行使ガバナンス翼。HANDOFF: `specs/YH010_HANDOFF.md` / `specs/YH010g_HANDOFF.md`。ポインタ: `experiments/YH010/`。
 
 ## 旧リポの扱い
 
