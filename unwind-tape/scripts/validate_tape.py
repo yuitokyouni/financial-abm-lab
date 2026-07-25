@@ -41,6 +41,7 @@ ENUM_FIELDS = {
     "event_tier": "event_tier",
     "event_role": "event_role",
     "sale_route": "sale_route",
+    "offering_type": "offering_type",
     "absorption_route": "absorption_route",
     "seller_type": "seller_type",
     "quantity_basis": "quantity_basis",

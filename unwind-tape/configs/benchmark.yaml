@@ -1,0 +1,46 @@
+# unwind-tape / BENCHMARK_SPEC v0.1 — 無条件 exec_gap 参照分布 設定
+# scripts/benchmark_engine.py が読む。tape本体(系統A/B, MEASUREMENT_SPEC)とは独立。
+# 参照分布は tape に混入させない。母集団 = ToSTNeT-1・50億円以上・非委託(Task A の
+# tostnet_large_lots がこの切片そのもの)+ 立会外分売。統計的 null ではない(位置づけ参照)。
+
+inputs:
+  # Task A の parsed CSV(gitignore)。header は fetch_jpx_offauction の schema-lock に一致。
+  tostnet_csv: data/parsed/jpx_offauction/tostnet_large_lots.csv
+  distro_csv: data/parsed/jpx_offauction/offauction_distribution.csv
+
+prices:
+  # プリント出現銘柄のみの J-Quants 日次バー。生バーは license 上再配布不可 → 必ず git外。
+  bars_dir: data/raw/prices/benchmark_bars
+  calendar: data/raw/prices/trading_calendar.jsonl
+  adv_window_days: 20            # ADV20 = 取引日直前 [-20,-1] の平均出来高
+  adv_min_ratio: 0.8            # window の 80% 未満の営業日しか無ければ ADV=NA
+  fetch_lookback_calendar_days: 60   # --fetch 時、min(取引日) からこの暦日ぶん遡って取得(ADV用)
+
+# 価格基準は生終値(C)。調整後を混ぜると分割銘柄で gap が壊れる(MEASUREMENT_SPEC 実装ノートと同じ理由)。
+classification:
+  prev_close_cross_bp: 10       # |exec_gap_prev| < 10bp を「前日終値クロス」に分類
+  side_at_ref_bp: 10            # side 代理: |exec_gap_close| < 10bp を「終値ちょうど(at_ref)」に。
+                                # それより上=discount(px<終値, 売り手コスト様)、下=premium(px>終値, 買い手様)。
+                                # ※符号で割るのは自己選択なので各サイドの median は片側に寄る(機械的)。
+                                # 使うのは discount 側の裾(p90/95/99)と件数バランスであって median ではない。
+  price_band_pct: 0.07          # 直近値±7%「目安」。バンド境界集積率をレポート(規則打ち切り注記用)。
+                                # 注: 実際の制限値幅は絶対円ラダーで通常もっと広い。7% は spec の目安近似。
+                                # 集積率は診断用であって規則の証明ではない(データを見て校正する前提)。
+  band_ref: prev_close          # バンド基準(直近値の代理)。prev_close | close
+
+buckets:
+  # size/ADV20 (participation ratio) のバケット境界。ToSTNeT 超大口は 1 ADV 超も普通。
+  size_over_adv20_edges: [0.25, 0.5, 1.0, 2.0]
+
+# PATCH v0.2: プリント3分類 + 配当落ち疑いフラグ(prev p99 汚染対策)。これで凍結。
+ex_div_suspect:
+  period_end_months: [3, 6, 9, 12]   # 3/9=本決算・中間。配当銘柄は 6/12 も。近傍=配当落ち疑い
+  window_business_days: 3            # 月末の最終N営業日(権利落ちは月末2営業日前あたり)。カレンダー発見的
+
+health:
+  max_publication_lag_business_days: 5   # max(公表日/実施日) がこれ超なら WARN(launchd 監視兼用)
+
+output:
+  detail_csv: data/parsed/benchmark/benchmark_detail.csv     # 価格含む → gitignore
+  summary_csv: data/parsed/benchmark/benchmark_summary.csv   # 集計のみ → git-track
+  report_md: data/parsed/benchmark/benchmark_report.md       # 集計のみ → git-track

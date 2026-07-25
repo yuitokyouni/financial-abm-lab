@@ -59,9 +59,11 @@ def load_raw_ohlc(path: Path) -> dict[str, dict[str, float]]:
                 continue
             c = _first_key(e, ["Close", "C"])
             o = _first_key(e, ["Open", "O"])
+            af = _first_key(e, ["AdjustmentFactor", "AdjFactor", "AF"])
             out[date] = {
                 "close": float(c) if c is not None else None,
                 "open": float(o) if o is not None else None,
+                "adj_factor": float(af) if af is not None else None,
             }
     return out
 
@@ -123,6 +125,8 @@ class ShortfallResult:
     P_ref_date: str = ""
     exec_ref_date: str = ""
     degenerate: str = ""               # TRUE / "" — 即日型 (exec_ref < day0+a)
+    split_in_window: str = ""          # TRUE / FALSE — [P_ref, exec_ref] に分割 → s1/s2/IS が段差
+    leak_adjusted: str = ""            # TRUE — リーク報道で P_ref をリーク前日に前倒し(s1 がリーク下げを拾う)
     stage1_cost: float | None = None
     stage2_cost: float | None = None
     stage3_cost: float | None = None
@@ -143,6 +147,8 @@ class ShortfallResult:
             "P_ref_date": self.P_ref_date,
             "exec_ref_date": self.exec_ref_date,
             "degenerate": self.degenerate,
+            "split_in_window": self.split_in_window,
+            "leak_adjusted": self.leak_adjusted,
             "stage1_cost": _blank(self.stage1_cost),
             "stage2_cost": _blank(self.stage2_cost),
             "stage3_cost": _blank(self.stage3_cost),
@@ -156,8 +162,8 @@ class ShortfallResult:
 
 COLUMNS = ["event_group_id", "event_leg_id", "issuer_code", "sale_route",
            "measurable_flag", "parent_day0", "P_ref_date", "exec_ref_date", "degenerate",
-           "stage1_cost", "stage2_cost", "stage3_cost", "IS_raw", "IS_adj",
-           "aux_protection", "fill_ratio", "status"]
+           "split_in_window", "leak_adjusted", "stage1_cost", "stage2_cost", "stage3_cost",
+           "IS_raw", "IS_adj", "aux_protection", "fill_ratio", "status"]
 
 
 # ---------------------------------------------------------------------------
@@ -177,6 +183,21 @@ def _num(s: str) -> float | None:
         return float(s)
     except ValueError:
         return None
+
+
+def _split_in_window(ohlc: dict[str, dict], cal: BusinessCalendar,
+                     start: str | None, end: str | None) -> bool:
+    """[start, end] の営業日(start 当日は除く)に AdjustmentFactor≠1(分割/割当 ex-date)が
+    あるか。start 当日の分割は P_ref も新基準になり段差にならないため除外する。"""
+    if not start or not end or start >= end:
+        return False
+    for d in cal.range_business_days(start, end):
+        if d == start:
+            continue
+        af = ohlc.get(d, {}).get("adj_factor")
+        if af is not None and abs(af - 1.0) > 1e-9:
+            return True
+    return False
 
 
 def resolve_group_day0(legs_in_group: list[dict], cal: BusinessCalendar, cfg: Config) -> str | None:
@@ -229,8 +250,15 @@ def compute_leg_shortfall(leg: dict, code: str, parent_day0: str | None,
     def open_(d: str | None) -> float | None:
         return ohlc.get(d, {}).get("open") if d else None
 
-    # P_ref = 親 day0 の前営業日 生終値
+    # P_ref = 親 day0 の前営業日 生終値。ただしリーク報道(leak_date)があればリーク前日まで前倒し
+    # — s1 = ln(P_ref) - ln(close[day0+a]) がリーク下げを取りこぼさないため(大型売出しはよく前日リーク)。
     p_ref_date = cal.prev_business_day(parent_day0)
+    leak = _iso(leg.get("leak_date", ""))
+    if leak:
+        leak_ref = cal.prev_business_day(leak)
+        if leak_ref and p_ref_date and leak_ref < p_ref_date:
+            p_ref_date = leak_ref
+            r.leak_adjusted = "TRUE"
     P_ref = close(p_ref_date)
     if P_ref is None:
         r.status = f"skip:no_P_ref_close({p_ref_date})"
@@ -291,6 +319,19 @@ def compute_leg_shortfall(leg: dict, code: str, parent_day0: str | None,
         return r
 
     r.exec_ref_date = exec_ref_date
+
+    # 窓内分割ガード: [P_ref_date, exec_ref_date] に分割 ex-date があると、P_ref(分割前)と
+    # P_exec(分割後)が別基準になり IS_raw/s1/s2/IS_adj が段差で壊れる(生終値ベースの窓内版)。
+    # s3(offering=pricing-local / toSTNeT=≡0)は分割の影響を受けないので保持し、残りは NA + フラグ。
+    r.split_in_window = "FALSE"
+    if _split_in_window(ohlc, cal, p_ref_date, exec_ref_date):
+        r.split_in_window = "TRUE"
+        if route == "secondary_offering":
+            r.stage3_cost = math.log(P_exec_ref) - math.log(P_exec)   # pricing-local、分割影響なし
+        elif route == "toSTNeT_3":
+            r.stage3_cost = 0.0                                       # 構成上
+        r.status = "ok:split_in_window(s1/s2/IS_raw/IS_adj=NA, s3のみ有効)"
+        return r
 
     # IS_raw (恒等)
     r.IS_raw = math.log(P_ref) - math.log(P_exec)

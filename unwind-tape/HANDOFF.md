@@ -1,6 +1,11 @@
 # unwind-tape — HANDOFF
 
-**最終更新**: 2026-07-08 JST (Task A cron登録済み・自動発火は次回21:00待ち / Task B **v0.4 完了** / Task C **G004/G008 手計算突合 MATCH — 完了条件(3)達成**)
+**最終更新**: 2026-07-16 JST — 記述版 `FINDINGS.md` v1 完成(32 群/28 分解 leg)。**participation(Q/ADV20)の系統バグを発見・修正**: Q=sold_shares は day0 基準の未調整、V=ADV20 は最新基準の調整出来高で、発表後の分割/権利落ちのぶん基準がズレる。Mac 実測で **28 本中 6 本が該当**(アイシン×3・サンリオ×5・高砂熱学×2・兼松×2・古河×10・アシックスは窓内分割)。`residual_engine.py` に基準合わせを実装:**day0 より後の AdjustmentFactor だけ**の逆積 factor=1/Π(AF:Date>day0) で Q を最新基準へ写す(発表前・窓内分割は開示 Q に反映済なので数えない=過補正回避)。窓内分割は straddle フラグで明示、AdjustmentFactor 欠は af_missing で fail-loud。古河は 0.042→0.417。**§4 の participation 軸/散布図は 6 本ぶん右へ動くので Mac 再計算後に確定**。
+_（過去更新: 2026-07-14 JST — 台帳 27 groups / 28 legs、Nゲート到達計画新設、ABM を BP2005 予測取引モデルへ改修）_
+_（過去更新: 2026-07-08 JST — Task A cron登録済 / Task B v0.4 完了 / Task C G004/G008 手計算突合 MATCH）_
+
+> **新規性と設計不変条件は `docs/CONTRIBUTION.md`。** 設計を変えるたびに3問を照合:
+> ① 差分表(研究対象/実測値/検証のしかた)のどの行を毀損するか ② 退化経路 D1(単一方式化)/D2(SF回帰)/D3(違いの検証を後回し)に近づくか ③ 凍結spec(s1/s2/s3・IS_adj・Nゲート・s3の方式間比較禁止)と矛盾しないか。いずれか YES なら一時簡略化と明示するか設計を戻す(恒久化不可)。用語「売却方式」= 売出し/立会外分売/ToSTNeT-3 等(旧「ルート/ベニュー」)。
 
 ## Task 状況
 
@@ -9,6 +14,54 @@
 | **A** JPX 立会外取引 日次キャプチャ | ✅ 実装完了、初回バックフィル成功、**cron 登録済み**(ユーザ Mac, 毎日21:00)。手動実行では成功確認済み、自動発火は次回21:00で確認予定 | — | `scripts/fetch_jpx_offauction.py` |
 | **B** xlsx → CSV 正規化 + PDF アーカイバ + build round-trip | ✅ v0.4 pipeline 完了 (**validator errors=0 warnings=0**) | — | `scripts/{migrate_xlsx_to_csv,validate_tape,archive_pdfs,build_tape}.py` |
 | **C** J-Quants + AR/CAR エンジン | ✅ **完了** — G004/G008 の CAR が独立実装の手計算と **3/3 MATCH (diff=0.000000)** | — | `scripts/{jquants_fetch,car_engine,hand_check_car}.py`, `configs/car.yaml`, `docs/j_quants_plan_report.md`, `PREREG.md`(空テンプレ) |
+| **D** EDINET 母集団拡張 → Nゲート | 🔁 **進行中** — パイプライン4段 実装済・テスト緑。台帳 27/28。**計測可能20 leg**(→転記で23)、ゲート30まで **あと7 leg**(EDINET で補充)。下記「Nゲート到達」節参照 | 要 `EDINET_API_KEY`(Mac) | `scripts/edinet_{fetch,classify,to_worksheet,merge}.py`, `configs/edinet.yaml`, `docs/TASK_D_DESIGN.md` |
+
+---
+
+## Nゲート到達 — カバレッジ現状と実行計画 (2026-07-14)
+
+台帳は **27 groups / 28 legs**。Nゲート = 「**計測可能な執行 leg ≥30、≥2方式 ×各≥10**」。以下は `legs.csv` を実測監査した結果(推測なし)。
+
+### 現状
+- **計測可能(s1/s2/s3 を計算できる)= 20 leg** … 必要セル(day0=`after_close`/`disclosure_time`・`pricing_date`・`offer_price_JPY`・`sold_shares`)が揃った secondary_offering。
+  - うち **15** は `offering_type` 付与済、**5**(G001/G003/G004/G006/G008)は **offering_type 未分類**(=計測は可能・方式ゲート用ラベルだけ欠)。
+- **あと少しで計測可能 = 3 leg** … G009 信越化学 / G010 イビデン / G011 ニチレイ = **`sold_shares` のみ欠**(他は揃)。→ 埋めれば **23 leg**。
+- **計測対象外 = 5 leg** … G005・G008/L002(ToSTNeT-3 自己株買い, s3≡0)/ G013・G021(degenerate ABB=発表≈翌日値決め, IS_raw のみ)/ G029(発表=同日値決め)。
+- **方式バランス(計測可能20のうち offering_type)**: global_offering **8** / domestic_bookbuild **4**(+未分類5)/ overseas_bookbuild **3**。
+
+### ゲートまでの差分
+- **計測数**: 20 →(+3 転記)23 → **あと 7 leg 不足** ← EDINET母集団拡張 D で補充(全期間で株式売出 **105 offering** 発見済・台帳化は ~24)。
+- **方式ゲート(≥2×≥10)**: 未分類5を分類 + 新規7を global/domestic に寄せれば、global と domestic を **各 ≥10** にできる射程。
+
+### 実行計画(律速順)
+
+**① 拡張台帳の s1/s2/s3 を実際に計算する（最優先・コード完備・要 Mac + `JQUANTS_API_KEY`）**
+`jquants_fetch.py` は `tape_codes()` で `groups.csv` の `issuer_code` を**自動追従**するので、再実行だけで新規銘柄(G009-G030)の日次バーを取得する。続けて shortfall を回すと現有 20 leg の s1/s2/s3 が一気に出る。**コード変更不要=「実行」であって「実装」ではない。**
+```
+export JQUANTS_API_KEY="..."
+python3 unwind-tape/scripts/jquants_fetch.py      # 新規銘柄を自動追加取得(15-20分)
+python3 unwind-tape/scripts/shortfall_engine.py   # s1/s2/s3 → data/parsed/tape/legs_shortfall.csv
+python3 unwind-tape/scripts/car_engine.py         # 系統A CAR(任意)
+```
+→ これが **ABM 較正・√則検定(`implied_Y_s2`)を実データに接続する最初の点**。まず現有20 legで実測を出す。
+
+**② 転記で +3(sold_shares）+ 方式ラベル5（要一次PDF・データ創作厳禁）**
+`transcription/disclosure_transcription.csv` の `needs` を現状に更新済(下記参照)。一次PDFから**確定値のみ**記入 → `scripts/apply_transcription.py --check` → `--apply`。
+- `sold_shares`: G009 信越 / G010 イビデン / G011 ニチレイ（`final_offer_shares`。collect の 約23.68M/6.87M/16.73M は概算なので一次で確定）
+- `offering_type`: G001 DENSO / G003 Aisin / G004 Honda / G006 The Pack / G008 任天堂（**海外トランシェの有無**を一次で判定 → domestic/global）
+
+**③ EDINET母集団拡張で +7（要 Mac + `EDINET_API_KEY`・パイプライン実装済/テスト緑）**
+```
+export EDINET_API_KEY="..."
+python3 unwind-tape/scripts/edinet_fetch.py        # step1 候補抽出(値決め書類 ord=010×docType{030,040,100,190})
+python3 unwind-tape/scripts/edinet_classify.py     # step2 本文DL+株式売出抽出(tier2)
+python3 unwind-tape/scripts/edinet_to_worksheet.py # step3 offering単位集約+include列つき下書き
+#   ↑の下書き include 列を人がレビュー(下記スクリーニング)
+python3 unwind-tape/scripts/edinet_merge.py --apply # step4 include=Y を Tier2_candidate で追記(発行体×値決め日で重複ガード)
+```
+**下書きレビューのスクリーニング基準**: (a) **政策保有/持合い解消**の売出しか（単なる公募増資・希薄化調達は除外=G017型）/ (b) 既存 leg と重複しないか / (c) 方式が global か domestic か（**≥10 バランスを埋める向きを優先**）/ (d) degenerate ABB(発表≈翌日値決め)は IS_raw のみ=計測対象外。
+
+**到達後**: N≥30 で「記述のみ」制約が外れ、√則の非線形検定と ABM 較正が実データに乗る。
 
 ---
 
@@ -314,6 +367,88 @@ cat unwind-tape/data/parsed/tape/legs_shortfall.csv
 
 **→ 系統Bを動かすための最優先作業は spec §依存の通り: G001-G007 の `disclosure_time` 転記、
 次に pricing_date / offer_price の一次PDF転記。** これが済めば offering 系の s1/s2/s3 が一気に埋まる。
+
+---
+
+## BENCHMARK — 無条件 exec_gap 参照分布 (BENCHMARK_SPEC v0.1, 2026-07-08)
+
+Task A が日次で貯める立会外プリント(ToSTNeT-1 超大口約定・立会外分売)× その日の J-Quants
+生終値から、**平時の執行ギャップの正常水準**(参照分布)を作る。**tape 本体(系統A/B)には
+混入させない**。帰属 leg の s3 が異常かどうかを後で判定するための対照であって、統計的 null では
+ない。帰属 leg の転記待ちに**ブロックされず今すぐ回せる**唯一の経験的アウトプット。
+
+- **spec**: `unwind-tape/BENCHMARK_SPEC.md`(ユーザ確定 v0.1 + 実装ノート)
+- **engine**: `unwind-tape/scripts/benchmark_engine.py`
+- **config**: `configs/benchmark.yaml`
+- **tests**: `tests/test_benchmark_engine.py`(exec_gap 恒等 `close=prev+day_return`、生終値、
+  ±7%バンド/前日終値クロス分類、size/ADV20 バケット、超大口/分売の row、summary facet、健康診断)
+- **出力**:
+  - `data/parsed/benchmark/benchmark_detail.csv`(px/prev/close/両gap/day_return/size/ADV20/ex-div/分類) — **価格含む→git外**
+  - `data/parsed/benchmark/benchmark_summary.csv`(route×参照×size/ADV20 別 N/median/IQR/p90/p95/p99/バンド集積率) — git-track
+  - `data/parsed/benchmark/benchmark_report.md`(同上+注記) — git-track
+
+**定義**: 超大口は `exec_gap_prev=ln(prev_close)−ln(px)`、`exec_gap_close=ln(close)−ln(px)`
+(参照は両方保存、恒等 `close=prev+day_return`)。分売は `exec_gap=ln(prev_close)−ln(分売価格)`
+= 開示ディスカウント(administered price、交渉価格系と別 route)。**生終値基準**(系統Bと同じ)。
+
+**注記(裾の解釈に必須、report にも出力)**: (a) `band_edge_rate` の ±7% は**目安**で、実際の
+制限値幅は絶対円ラダー。裾は規則打ち切りされ得るので売出しの裾と直接比較しない。(b) `ex_div_flag`
+は `AdjustmentFactor≠1` 判定なので**分割/割当は拾うが現金配当の落ちは検出できない**(既知の盲点、
+要 /fins/dividends)。
+
+**side 代理分割(v0.1 への追記)**: 超大口は売買側が公開データに無く median exec_gap≈0 は買い/売り
+の対称混合。同日終値の上下(`exec_gap_close` の符号)で `discount`(売り手コスト様)/`premium`/
+`at_ref`/`unknown` に代理分割し、summary に `side` 次元を追加。政策保有=売りの対照は **discount 側の
+p90/95/99** と **discount/premium の件数比**で読む(符号で割るので median は機械的に片寄る=使わない)。
+分売は `administered`(売り確定)で分割しない。詳細は BENCHMARK_SPEC.md 追記。
+
+### Mac での実行
+```bash
+# 1) プリント出現銘柄の日次バーだけ取得・キャッシュ(要 JQUANTS_API_KEY, レート制御)
+python3 unwind-tape/scripts/benchmark_engine.py --fetch
+# 2) 参照分布を計算
+python3 unwind-tape/scripts/benchmark_engine.py
+cat unwind-tape/data/parsed/benchmark/benchmark_report.md
+```
+現状 N はまだ薄い(Task A の backfill 2週間+日次ぶん)。日々のキャプチャ蓄積で自動的に増える。
+`benchmark_engine.py` は Task A の停止も検知する(最新プリントが 5営業日超遅延なら WARN)。
+
+---
+
+## 開示転記 — 帰属側(系統A/B)を動かす律速作業 (2026-07-08)
+
+`after_close` 空欄の leg は day0=None(R1 fail-loud)。CAR/shortfall とも NA。現状 day0 解決は
+G008 のみ。**disclosure_time 転記が全計算の最上流**、次に offering の pricing_date/offer_price。
+
+- **シート**: `transcription/disclosure_transcription.csv`(埋めるだけ。G001-G008 の行+所在ヒント)
+- **ガイド**: `transcription/README.md`(時刻の取り方・time_source enum・取得PDF・サニティ)
+- **反映**: `scripts/apply_transcription.py --check`(検証のみ)→ `--apply`(ERROR以外を legs.csv へ)
+- **反映列**: disclosure_time / after_close / pricing_date / offer_price_JPY / OA_exercised_shares
+  のみ。time_source は legs.csv に載せずシートを出所台帳として保持。
+
+**タイムスタンプ所在**: 発表PDFに時刻が無いことが多く、TDnet 公開検索は過去31日のみ(本シートは
+全 leg が範囲外)→ **株探/Yahoo適時開示アーカイブ**で取得(2023分も残存)。`time_source` は
+{pdf_header,tdnet,yahoo_archive,kabutan,media} のみ、**inferred(推定)は apply が ERROR で拒否**、
+取れなければ空欄=fail-loud 維持。
+
+**サニティ(拒否でなく確認フラグ)**: discount が 2〜5% 帯の外 / pricing_date が announce day0 の
+5〜15営業日後の外 → WARN。**inferred・時刻矛盾・time_source 未記録は ERROR**(そのセルは書かない)。
+
+**既知**: シート同梱の G008 は disclosure_time=15:40 済だが time_source 未記録 → 初回 `--check` は
+「time_source を記録せよ」の ERROR を1件出す(既存 15:40 の出所を一次で確定する促し。仕様どおり)。
+
+### 転記の現状 (2026-07-08 適用済)
+一次調査に基づき pricing_date / offer_price を転記・適用済み(validate errors=0):
+- **G007 日付訂正**: announce 2026-01-19→**2026-01-07**(旧 announce は条件決定日。day0 が12営業日ズレていた)。
+  offer 789.28→**824**(旧は引受価額)。pricing=2026-01-19。discount 5.1%=サニティ帯外(需要弱の実例)。
+  **一次の穴=発行体1/7発表PDF**(daikyonishikawa.co.jp/ir/)。
+- **G008(任天堂): pricing=2026-03-09 / offer=8347 投入 → offering の s1/s2/s3 が立つ**(唯一の完全 offering)。
+  close 8606 比 discount≈3.0%(ベンチマークの discount 裾 p90≈3.4% / 分売 3.0% と同水準)。
+- G001(2069.5)/G006(1099)/G003(pricing のみ)/G004(after_close=TRUE, pricing 7/17): pricing/offer 投入済。
+  ただし G001/G003/G006 は **announce の after_close 未確定** → parent day0 が None のまま CAR/s3 は NA
+  (announce の開示時刻を株探/Yahoo/nikkei_nkd で埋めれば解ける)。G004 は day0 解決も offer 未取得で s3 NA。
+- **残る穴**: 各社の announce 開示時刻(day0)、Aisin/Honda の offer_price、
+  Aisin/Denso/任天堂の OA行使・シンジケートカバー終了 PDF、加賀電子の取得結果 PDF、G007 発行体1/7 PDF。
 
 ---
 

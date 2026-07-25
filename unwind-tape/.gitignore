@@ -19,6 +19,28 @@ data/raw/pdfs/*.pdf
 data/raw/pdfs/*.html
 !data/raw/pdfs/manifest.jsonl
 
+# --- BENCHMARK (BENCHMARK_SPEC v0.1): 無条件 exec_gap 参照分布 ---
+# J-Quants 生バーは license 上再配布不可 → data/raw/prices/ ごと gitignore。
+data/raw/prices/
+# 明細 benchmark_detail.csv は価格(prev/close/px)を含むため親の *.csv 無視のまま(=git外)。
+# 集計 summary は N/median/percentile のみで安全なので明示的に回復。report.md も残す。
+!data/parsed/benchmark/benchmark_summary.csv
+!data/parsed/benchmark/*.md
+
+# --- 転記シート: 出所台帳(provenance)。*.csv 無視を回復して git-track ---
+!transcription/*.csv
+!transcription/*.md
+
+# --- Task D: EDINET 母集団拡張 (生JSON + candidate CSV は git外。report.md は残す) ---
+# 生レスポンスと候補明細は成長し得る + 転記前の未確認 lead なので git外。
+# 確定候補は Tier2_candidate として legs.csv / worksheet に流し込む(そちらは git-track)。
+data/raw/edinet/
+!data/parsed/edinet/*.md
+
 # --- 汎用 ---
 data/logs/
 data/**/__pycache__/
+**/__pycache__/
+
+# --- ABM (agent-based model) 派生出力 ---
+abm/out/

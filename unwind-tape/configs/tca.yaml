@@ -1,0 +1,14 @@
+# unwind-tape / TCA_BASELINE_SPEC の残差エンジン設定。
+# 相転移点は決め打たず推定(N<30 は記述のみ、係数Yは当てはめない)。docs/TCA_BASELINE_SPEC.md 参照。
+
+comparison_target: s2_plus_s3       # 総実現コスト側の参考(spec §1): measured = s2 + s3。s1 は系統Aへ
+sqrt_test_target: s2                 # √則の非線形テストの主指標(2026-07 決定): implied_Y_s2 = s2/(σ√(Q/V))。
+                                     # s3=発行ディスカウント層(引受手腕・需要の強弱=市場清算価格でない)は判定から外し別掲
+sigma_window_days: 60               # σ = 直前60営業日の日次 log リターン標準偏差(調整終値=分割安全)
+adv_window_days: 20                 # V = ADV20(調整出来高、参照分布と統一)
+adv_min_ratio: 0.8
+size_over_adv_edges: [0.25, 0.5, 1.0, 2.0]   # 参照分布(ベンチ v0.2)と同一の size/ADV20 軸
+
+output:
+  detail_csv: data/parsed/benchmark/residual_detail.csv    # σ/participation/implied_Y(価格なし・派生量)
+  report_md: data/parsed/benchmark/residual_report.md
