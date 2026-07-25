@@ -16,3 +16,7 @@ experiments/runs/
 *.parquet
 *.csv
 dashboard/*.html
+
+# YH010-g 検証セット (親の *.csv を例外)
+!docs/yh010g_validation_groundtruth.csv
+!docs/yh010g_validation_targets.csv

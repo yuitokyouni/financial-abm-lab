@@ -17,6 +17,8 @@ dependencies = [
     "stylized-facts",
     "provenance",
     "fingerprint-atlas",
+    "agora-engine",
+    "yh010g",
 ]
 
 [project.optional-dependencies]
@@ -36,6 +38,8 @@ abm-models = { workspace = true }
 stylized-facts = { workspace = true }
 provenance = { workspace = true }
 fingerprint-atlas = { workspace = true }
+agora-engine = { workspace = true }
+yh010g = { workspace = true }
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "packages"]
