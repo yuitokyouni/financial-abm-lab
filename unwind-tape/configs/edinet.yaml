@@ -1,0 +1,70 @@
+# unwind-tape / Task D — EDINET 母集団拡張の設定(docs/TASK_D_DESIGN.md)。
+# EDINET API v2。売出し系書類(有価証券届出書ほか)を期間網羅で発見し、候補を出す。
+# 数値の転記は一次(本文)からのみ。ここが出すのは lead(候補)だけ。創作禁止。
+
+base_url: https://api.edinet-fsa.go.jp/api/v2
+api_key_env: EDINET_API_KEY          # サブスクリプションキーは env のみ(コミット禁止)
+
+date_from: "2023-01-01"              # 東証要請(2023-03)を触媒とする処置窓(TASK_D_DESIGN 確定)
+date_to:   "2026-06-30"
+
+request_sleep_sec: 0.3               # API への礼儀。429 はバックオフでリトライ
+retries: 4                          # 指数バックオフ base=2s factor=2(Task A/C と統一)
+backoff_base_sec: 2.0
+backoff_factor: 2.0
+
+# 候補として拾う doc type(ground-truth = DENSO/Aisin/Honda/すかいらーくの生データ + 全期間の件数で決定)。
+# 売出しは必ず「条件決定(値決め)の書類」を出す → それを work-list にする(発表側は後から parentDocID で引く)。
+target_doc_type_codes: ["030", "040", "100", "190"]
+#   030 有価証券届出書 / 040 訂正有価証券届出書(値決め) / 100 発行登録追補書類(値決め、例: すかいらーく)
+#   190 訂正臨時報告書(臨時報告ルートの値決め。例: アイシン 7/8・ホンダ 7/17)
+#     ← **既に上場している株式の売出しは有価証券届出書でなく臨時報告書で開示される**(届出免除ルート):
+#        発表日=臨時報告書(180)、条件決定日=訂正臨時報告書(190、発行価格入り)。
+#   ※ 180(臨時報告書=発表側)は work-list から除外: 1日約87件=全期間約8万件、大半が主要株主異動/代表異動/
+#      災害等の非売出。売出しの発表側 180 は、確定した売出しごとに parentDocID で生rawから引く(rawには全部残る)。
+#      → 値決め訂正を出さない 180-only 売出しは取りこぼし得る(稀)。gaps に記録する。
+#   ※ 130=訂正有報・140=四半期報告書 は offering でないので除外(初回 config の誤りを訂正済)
+#   ※ 売った側(銀行/事業会社)は 大量保有変更報告書 350/360(ord=060)。将来 seller-side クロスチェックに使う
+# ordinanceCode で母集団を「事業会社(株式)」に限定する。ここが最重要フィルタ:
+#   010 企業内容等開示府令(=事業会社の株式) / 030 特定有価証券開示府令(=投資信託・REIT。除外)
+target_ordinance_codes: ["010"]
+# docDescription はタグ付けのみ(有価証券届出書本文の募集/売出は step2 で判定。ここでは text 一致に頼らない)
+uridashi_keywords: ["売出"]          # 稀に届出名に売出を含む → 弱いタグ
+ipo_keywords: ["新規公開", "新規上場"]  # IPO は政策保有解消でない → step2 で除外するためタグ付け
+
+output:
+  raw_dir:        data/raw/edinet/documents     # {date}.json(生レスポンス、gitignore)
+  manifest:       data/raw/edinet/manifest.jsonl
+  candidates_csv: data/parsed/edinet/candidates.csv
+  report_md:      data/parsed/edinet/edinet_report.md
+
+# --- step 2: 本文分類(株式の売出し × 政策保有)。candidates.csv の非IPO行の本文を読む ---
+classify:
+  doc_type: "5"                       # EDINET 書類取得の type: 5=CSV(zip)。無ければ 1=XBRL に fallback
+  # 政策保有の明示(A_explicit)を示す本文キーワード(EDINET本文には稀。多くはTDnet側 → 人が確認)。
+  # ※「主要株主の異動」は届出の boilerplate に頻出し誤検出するので入れない。
+  policy_keywords: ["政策保有", "政策保有株式", "純投資目的以外", "縮減", "持ち合い", "持合い"]
+  # 株式の売出し判定は「表現」で行う(社債の boilerplate 募集（売出）に釣られないため)。
+  uridashi_equity_phrases: ["株式の売出", "普通株式の売出", "株券の売出", "株式売出"]
+  uridashi_na_markers: ["該当事項はありません", "該当ありません", "該当なし"]   # 売出要項=該当なし → 社債等
+  bond_markers: ["社債券", "新株予約権付社債", "第１回無担保社債", "無担保社債"]
+  # 売出人(seller)の属性判定。政策保有の売り手=銀行/保険/信託/事業会社。ファンド/個人は非政策保有
+  seller_type_rules:
+    bank:       ["銀行"]
+    insurance:  ["生命保険", "損害保険", "保険"]
+    trust:      ["信託"]
+    securities: ["証券"]
+    fund:       ["ファンド", "投資事業有限責任組合", "アセットマネジメント", "キャピタル", "インベストメント", "パートナーズ", "投資組合"]
+  output:
+    raw_docs_dir: data/raw/edinet/docs          # 取得した本文(zip/csv)。gitignore
+    manifest:     data/raw/edinet/docs_manifest.jsonl
+    detail_csv:   data/parsed/edinet/classify_detail.csv
+    tier2_csv:    data/parsed/edinet/tier2_candidates.csv   # 確定した株式売出(転記シートへ流す)
+    report_md:    data/parsed/edinet/classify_report.md
+
+# --- step 3: tier2(株式売出) を offering 単位にまとめ、EDINET値決め書類から日付/株数/価格を下書き ---
+step3:
+  cluster_gap_days: 45                # 同一発行体で 45日 以内の書類は1 offering とみなす(発表→条件決定+訂正)
+  min_offer_price_yen: 50             # 発行価格の誤拾い(手数料/割引=小額)を除くため下限
+  output:
+    draft_csv: data/parsed/edinet/tier2_offering_draft.csv   # offering 1行。include 列を人が Y にして採用
