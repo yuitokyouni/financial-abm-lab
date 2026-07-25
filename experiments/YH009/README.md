@@ -11,6 +11,7 @@ cron/launchd が `unwind-tape/scripts/fetch_jpx_offauction.py` のパスを直�
 - 規約・不変条件: `unwind-tape/CLAUDE.md`
 - マスター台帳 (YH009 節): `imported/speculation-game-info/docs/findings.md`
 
-**現在地 (2026-07-08)**: データ基盤 3 タスク (A/B/C) + 系統 B (shortfall 分解) 実装完了、
-findings 未確定。ブロッカーは `disclosure_time`/`after_close` の一次資料転記と
-Task D (TDnet 母集団拡張)。
+**現在地 (2026-07-24 merge)**: EDINET/TCA/benchmark/residual/stylized-facts エンジン、
+開示転記パイプライン、ABM regime harness、FINDINGS v1（記述・サイズ説明力・SF）まで
+`claude/unwind-tape-data-foundation-0txm6z` から main 向けに取り込み済み。詳細は
+`unwind-tape/HANDOFF.md` / `FINDINGS.md`。
