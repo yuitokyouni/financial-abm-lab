@@ -1,0 +1,24 @@
+model_id: self_organized_book
+model_version: spec003-P0-zi
+display_name: Self-Organized Book (ZI-only, endogenous liquidity CDA)
+model_family: lob-abm
+parameters:
+  warmup_steps: 200
+  main_steps: 5000
+  n_zi: 50
+  bar_size: 10
+  order_ttl: 20
+  order_volume: 1
+  sigma_eval: 0.005
+  margin_min: 0.001
+  margin_max: 0.01
+  initial_market_price: 300.0
+  tick_size: 1.0e-05
+  zi_mode: naive
+geometry: multi_run_ensemble
+derive_return: log
+burn_in:
+  steps: 200
+notes: PAMS CDA, all-LIMIT ZI agents, endogenous liquidity (no market maker; spec
+  003 YH007-8). price = market price (last executed), volume = executed volume per
+  step. Rows 0..199 are the ZI warmup session, declared as burn_in.

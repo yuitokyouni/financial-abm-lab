@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 330" width="660" height="330" role="img">
+<rect x="0" y="0" width="660" height="330" fill="#ffffff"/>
+<line x1="58.00" y1="238.39" x2="646.00" y2="238.39" stroke="#e5eaef" stroke-width="1"/>
+<text x="52.00" y="241.79" text-anchor="end" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">-0.4</text>
+<line x1="58.00" y1="153.49" x2="646.00" y2="153.49" stroke="#e5eaef" stroke-width="1"/>
+<text x="52.00" y="156.89" text-anchor="end" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">-0.2</text>
+<line x1="58.00" y1="68.58" x2="646.00" y2="68.58" stroke="#e5eaef" stroke-width="1"/>
+<text x="52.00" y="71.98" text-anchor="end" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">0</text>
+<line x1="73.82" y1="46.00" x2="73.82" y2="284.00" stroke="#e5eaef" stroke-width="1"/>
+<text x="73.82" y="298.00" text-anchor="middle" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">0</text>
+<line x1="182.91" y1="46.00" x2="182.91" y2="284.00" stroke="#e5eaef" stroke-width="1"/>
+<text x="182.91" y="298.00" text-anchor="middle" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">10</text>
+<line x1="292.00" y1="46.00" x2="292.00" y2="284.00" stroke="#e5eaef" stroke-width="1"/>
+<text x="292.00" y="298.00" text-anchor="middle" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">20</text>
+<line x1="401.09" y1="46.00" x2="401.09" y2="284.00" stroke="#e5eaef" stroke-width="1"/>
+<text x="401.09" y="298.00" text-anchor="middle" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">30</text>
+<line x1="510.18" y1="46.00" x2="510.18" y2="284.00" stroke="#e5eaef" stroke-width="1"/>
+<text x="510.18" y="298.00" text-anchor="middle" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">40</text>
+<line x1="619.27" y1="46.00" x2="619.27" y2="284.00" stroke="#e5eaef" stroke-width="1"/>
+<text x="619.27" y="298.00" text-anchor="middle" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">50</text>
+<line x1="58.00" y1="68.58" x2="646.00" y2="68.58" stroke="#8a94a3" stroke-width="1.0"/>
+<clipPath id="c"><rect x="58.00" y="46.00" width="588.00" height="238.00"/></clipPath>
+<g clip-path="url(#c)">
+<polygon points="84.73,56.82 95.64,56.82 106.55,56.82 117.45,56.82 128.36,56.82 139.27,56.82 150.18,56.82 161.09,56.82 172.00,56.82 182.91,56.82 193.82,56.82 204.73,56.82 215.64,56.82 226.55,56.82 237.45,56.82 248.36,56.82 259.27,56.82 270.18,56.82 281.09,56.82 292.00,56.82 302.91,56.82 313.82,56.82 324.73,56.82 335.64,56.82 346.55,56.82 357.45,56.82 368.36,56.82 379.27,56.82 390.18,56.82 401.09,56.82 412.00,56.82 422.91,56.82 433.82,56.82 444.73,56.82 455.64,56.82 466.55,56.82 477.45,56.82 488.36,56.82 499.27,56.82 510.18,56.82 521.09,56.82 532.00,56.82 542.91,56.82 553.82,56.82 564.73,56.82 575.64,56.82 586.55,56.82 597.45,56.82 608.36,56.82 619.27,56.82 619.27,80.35 608.36,80.35 597.45,80.35 586.55,80.35 575.64,80.35 564.73,80.35 553.82,80.35 542.91,80.35 532.00,80.35 521.09,80.35 510.18,80.35 499.27,80.35 488.36,80.35 477.45,80.35 466.55,80.35 455.64,80.35 444.73,80.35 433.82,80.35 422.91,80.35 412.00,80.35 401.09,80.35 390.18,80.35 379.27,80.35 368.36,80.35 357.45,80.35 346.55,80.35 335.64,80.35 324.73,80.35 313.82,80.35 302.91,80.35 292.00,80.35 281.09,80.35 270.18,80.35 259.27,80.35 248.36,80.35 237.45,80.35 226.55,80.35 215.64,80.35 204.73,80.35 193.82,80.35 182.91,80.35 172.00,80.35 161.09,80.35 150.18,80.35 139.27,80.35 128.36,80.35 117.45,80.35 106.55,80.35 95.64,80.35 84.73,80.35" fill="#8a94a3" opacity="0.18" stroke="none"/>
+<polygon points="84.73,266.89 95.64,66.35 106.55,63.21 117.45,62.39 128.36,62.93 139.27,66.33 150.18,65.77 161.09,66.47 172.00,61.72 182.91,64.71 193.82,59.34 204.73,66.84 215.64,62.28 226.55,64.63 237.45,67.64 248.36,62.80 259.27,67.16 270.18,65.32 281.09,61.50 292.00,61.23 302.91,71.81 313.82,62.30 324.73,65.91 335.64,63.05 346.55,64.43 357.45,64.04 368.36,57.01 379.27,61.82 390.18,63.69 401.09,59.70 412.00,67.46 422.91,64.70 433.82,64.21 444.73,62.68 455.64,63.49 466.55,68.88 477.45,61.99 488.36,66.13 499.27,66.46 510.18,63.28 521.09,69.92 532.00,61.61 542.91,67.30 553.82,64.00 564.73,63.87 575.64,68.10 586.55,64.63 597.45,63.61 608.36,66.75 619.27,60.79 619.27,68.92 608.36,74.62 597.45,75.20 586.55,67.98 575.64,73.51 564.73,72.60 553.82,70.93 542.91,75.06 532.00,66.44 521.09,76.27 510.18,68.10 499.27,74.61 488.36,75.89 477.45,67.68 466.55,72.10 455.64,72.50 444.73,74.15 433.82,77.10 422.91,73.13 412.00,79.33 401.09,67.27 390.18,74.79 379.27,75.02 368.36,77.52 357.45,75.55 346.55,74.18 335.64,70.02 324.73,74.04 313.82,69.33 302.91,75.53 292.00,66.54 281.09,71.18 270.18,73.54 259.27,74.24 248.36,68.29 237.45,75.06 226.55,68.91 215.64,73.32 204.73,75.16 193.82,72.28 182.91,76.30 172.00,70.70 161.09,69.85 150.18,73.92 139.27,73.57 128.36,70.87 117.45,76.26 106.55,72.06 95.64,75.70 84.73,273.18" fill="#2a78d6" opacity="0.22" stroke="none"/>
+<polyline points="84.73,269.51 95.64,69.45 106.55,68.06 117.45,70.43 128.36,65.43 139.27,69.49 150.18,71.60 161.09,67.80 172.00,62.62 182.91,71.96 193.82,64.67 204.73,72.03 215.64,68.33 226.55,66.41 237.45,70.46 248.36,66.43 259.27,69.57 270.18,69.79 281.09,70.36 292.00,63.25 302.91,72.46 313.82,67.45 324.73,71.17 335.64,64.78 346.55,67.44 357.45,70.90 368.36,69.43 379.27,67.99 390.18,68.36 401.09,64.84 412.00,71.37 422.91,67.47 433.82,68.87 444.73,66.91 455.64,68.59 466.55,70.65 477.45,64.97 488.36,69.84 499.27,71.01 510.18,64.73 521.09,71.25 532.00,62.97 542.91,68.46 553.82,66.63 564.73,69.35 575.64,71.70 586.55,66.58 597.45,67.98 608.36,71.97 619.27,63.96" fill="none" stroke="#2a78d6" stroke-width="2.2" opacity="1.0" stroke-linejoin="round" stroke-linecap="round"/>
+</g>
+<line x1="58.00" y1="284.00" x2="646.00" y2="284.00" stroke="#aab4c0" stroke-width="1"/>
+<line x1="58.00" y1="46.00" x2="58.00" y2="284.00" stroke="#aab4c0" stroke-width="1"/>
+<text x="58.00" y="17" font-size="12.5" font-weight="600" fill="#14181f" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">autocorrelation of returns</text>
+<text x="646.00" y="17" text-anchor="end" font-size="10" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">runs=10, median n=5000, lags 1..50</text>
+<line x1="58.00" y1="30" x2="72.00" y2="30" stroke="#8a94a3" stroke-width="3" stroke-linecap="round"/>
+<text x="76.00" y="33.4" font-size="10.5" fill="#14181f" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">approx. iid 95% band</text>
+<line x1="236.00" y1="30" x2="250.00" y2="30" stroke="#2a78d6" stroke-width="3" stroke-linecap="round"/>
+<text x="254.00" y="33.4" font-size="10.5" fill="#14181f" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">across-run IQR</text>
+<line x1="370.80" y1="30" x2="384.80" y2="30" stroke="#2a78d6" stroke-width="3" stroke-linecap="round"/>
+<text x="388.80" y="33.4" font-size="10.5" fill="#14181f" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">across-run median</text>
+<text x="352.00" y="322.00" text-anchor="middle" font-size="11" fill="#5a6577" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">lag</text>
+<text x="14" y="165.00" text-anchor="middle" font-size="11" fill="#5a6577" transform="rotate(-90 14 165.00)" font-family="system-ui,-apple-system,'Segoe UI',sans-serif">ACF(r)</text>
+</svg>

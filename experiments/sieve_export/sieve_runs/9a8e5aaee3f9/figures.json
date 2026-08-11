@@ -1,0 +1,329 @@
+[
+ {
+  "artifact_path": "figures/return_path.svg",
+  "caveats": [
+   "min-max decimation per pixel bucket: extremes are preserved, point density is not",
+   "showing the first 4 of 10 runs in run_id order — a fixed selection rule, not a curated pick"
+  ],
+  "display_name": "Return path / volatility texture",
+  "figure_id": "return_path",
+  "n_obs_used": 20000,
+  "n_runs_used": 4,
+  "note": null,
+  "parameters": {
+   "max_panels": 4,
+   "max_points_per_panel": 1200,
+   "rolling_window": 25,
+   "run_selection": "first runs in run_id order"
+  },
+  "reading_guide": "Look for episodes where large |r| clusters in time (clustering/intermittency) and for drifts or level shifts in the band of typical returns. Across runs, textures should vary in detail but not in kind.",
+  "related_metrics": [
+   "acf_abs_1@1",
+   "acf_abs_20@1"
+  ],
+  "status": "OBSERVED",
+  "stylized_fact": "volatility clustering, intermittency",
+  "summary_values": {},
+  "version": "1"
+ },
+ {
+  "artifact_path": "figures/marginal_distribution.svg",
+  "caveats": [
+   "standardized per run, then pooled across runs for this marginal view; pooling is disclosed here and never applied to time-indexed quantities",
+   "histogram shape depends on binning; the tail CCDF figure is the primary tail evidence",
+   "pooled histogram can hide run-to-run differences; per-run tail indices are in the metric table"
+  ],
+  "display_name": "Marginal distribution vs Gaussian",
+  "figure_id": "marginal_distribution",
+  "n_obs_used": 50000,
+  "n_runs_used": 10,
+  "note": null,
+  "parameters": {
+   "bins": 61,
+   "comparator": "standard normal pdf",
+   "z_range": 8.0
+  },
+  "reading_guide": "On the linear panel the simulated density vs the Gaussian shows peakedness; the log-y panel shows whether the tails sit above the Gaussian (heavy tails) and how far out they extend.",
+  "related_metrics": [
+   "excess_kurtosis@1"
+  ],
+  "status": "OBSERVED",
+  "stylized_fact": "heavy tails",
+  "summary_values": {
+   "excess_kurtosis_run_median": 0.11885345862634167
+  },
+  "version": "1"
+ },
+ {
+  "artifact_path": "figures/tail_ccdf.svg",
+  "caveats": [
+   "positive tail: Hill uses the top 1248 order statistics (frac=0.05); the estimate is k-sensitive (recorded blind spot: ~0.9 IQR swing across frac 2.5-10%)",
+   "negative (|z|) tail: Hill uses the top 1251 order statistics (frac=0.05); the estimate is k-sensitive (recorded blind spot: ~0.9 IQR swing across frac 2.5-10%)",
+   "runs are scaled by their own sd (mean NOT removed) before pooling, so the Hill overlay estimates the same tail index as the hill_left/hill_right metrics; pooling is disclosed and applies to this marginal view only",
+   "each panel shows the survival fraction WITHIN its own tail (conditional on the sign), as labeled on the y axis",
+   "log-log straightness alone does not establish a power law; the Hill line is an estimate over the marked k region only"
+  ],
+  "display_name": "Tail CCDF with Hill overlay",
+  "figure_id": "tail_ccdf",
+  "n_obs_used": 50000,
+  "n_runs_used": 10,
+  "note": null,
+  "parameters": {
+   "display_thinning": "log-rank, display only",
+   "min_tail_points": 50,
+   "tail_frac": 0.05
+  },
+  "reading_guide": "A roughly straight upper region on log-log axes is consistent with power-law- like tails; the dashed line shows the Hill fit over the marked k region only. Compare the two tails for asymmetry.",
+  "related_metrics": [
+   "hill_left@1",
+   "hill_right@1"
+  ],
+  "status": "OBSERVED",
+  "stylized_fact": "heavy tails (tail index)",
+  "summary_values": {
+   "hill_left_run_median": 5.535718506912821,
+   "hill_right_run_median": 5.594634509448109
+  },
+  "version": "1"
+ },
+ {
+  "artifact_path": "figures/return_acf.svg",
+  "caveats": [
+   "the +/-1.96/sqrt(n) band assumes an iid series and UNDERSTATES uncertainty under volatility clustering",
+   "read the decay shape across lags, not a single lag"
+  ],
+  "display_name": "Autocorrelation of returns",
+  "figure_id": "return_acf",
+  "n_obs_used": 50000,
+  "n_runs_used": 10,
+  "note": null,
+  "parameters": {
+   "effective_max_lag": 50,
+   "max_lag": 50
+  },
+  "reading_guide": "Values should sit mostly inside the band at all displayed lags if returns are serially uncorrelated. A slow decay or systematic sign pattern indicates predictability the model may not intend.",
+  "related_metrics": [],
+  "status": "OBSERVED",
+  "stylized_fact": "absence of autocorrelation in returns",
+  "summary_values": {
+   "acf_return_lag1_run_median": -0.47330533411652853
+  },
+  "version": "1"
+ },
+ {
+  "artifact_path": "figures/volatility_acf.svg",
+  "caveats": [
+   "vertical mark at lag 20: the acf_abs_20 metric's lag",
+   "the +/-1.96/sqrt(n) band assumes an iid series and UNDERSTATES uncertainty under volatility clustering",
+   "no functional form is fitted: apparent straightness on log-log is NOT evidence of a power law (fit range and estimator would have to be prespecified)"
+  ],
+  "display_name": "Autocorrelation of |r| and r^2",
+  "figure_id": "volatility_acf",
+  "n_obs_used": 50000,
+  "n_runs_used": 10,
+  "note": null,
+  "parameters": {
+   "effective_max_lag": 100,
+   "max_lag": 100
+  },
+  "reading_guide": "Positive, slowly decaying ACF(|r|) (and ACF(r^2)) is the volatility-clustering signature; compare the decay shape, not one lag. The log-log view helps judge slow decay but fits nothing.",
+  "related_metrics": [
+   "acf_abs_1@1",
+   "acf_abs_20@1"
+  ],
+  "status": "OBSERVED",
+  "stylized_fact": "volatility clustering; slow decay of volatility autocorrelation",
+  "summary_values": {
+   "acf_abs_1_run_median": 0.20920454035703673,
+   "acf_abs_20_run_median": -0.004257891488767042
+  },
+  "version": "1"
+ },
+ {
+  "artifact_path": "figures/aggregation_profile.svg",
+  "caveats": [
+   "the effective sample size shrinks with the horizon (n/dt aggregated observations); rightmost points are the noisiest",
+   "horizons shown only where every run keeps >= 200 aggregated observations",
+   "kurtosis -> 0 with growing horizon is consistent with aggregational Gaussianity but is not a test of it"
+  ],
+  "display_name": "Aggregation profile (kurtosis vs horizon)",
+  "figure_id": "aggregation_profile",
+  "n_obs_used": 50000,
+  "n_runs_used": 10,
+  "note": null,
+  "parameters": {
+   "horizons": [
+    1,
+    2,
+    5,
+    10,
+    20,
+    40,
+    80,
+    160
+   ],
+   "min_aggregated_obs": 200,
+   "n_effective": {
+    "1": 5000,
+    "10": 500,
+    "2": 2500,
+    "20": 250,
+    "5": 1000
+   }
+  },
+  "reading_guide": "Excess kurtosis should fall toward 0 as the horizon grows if aggregational Gaussianity holds; read the right side with care - the effective sample size shrinks with the horizon.",
+  "related_metrics": [
+   "excess_kurtosis@1"
+  ],
+  "status": "OBSERVED",
+  "stylized_fact": "aggregational Gaussianity",
+  "summary_values": {
+   "excess_kurtosis_run_median": 0.11885345862634167
+  },
+  "version": "1"
+ },
+ {
+  "artifact_path": "figures/leverage_kernel.svg",
+  "caveats": [
+   "the scalar 'leverage' metric is the mean of c(tau) over tau=1..5 (shaded region) — same per-tau computation as this curve, verified by tests",
+   "c(tau) for tau<0 (future return vs past volatility) is shown for the time-arrow contrast; equity data typically show c(tau)<0 only for tau>0",
+   "recorded metric blind spot: the lag-count knob moves the scalar level by ~0.94 IQR"
+  ],
+  "display_name": "Leverage kernel c(tau)",
+  "figure_id": "leverage_kernel",
+  "n_obs_used": 50000,
+  "n_runs_used": 10,
+  "note": null,
+  "parameters": {
+   "definition": "corr(r_t, |r_(t+tau)|)",
+   "max_tau": 20,
+   "metric_lags": 5
+  },
+  "reading_guide": "In equity-like data c(tau) is negative for tau>0 (bad returns precede high volatility) and near 0 for tau<0. A symmetric kernel means the model has no leverage-type asymmetry.",
+  "related_metrics": [
+   "leverage@1"
+  ],
+  "status": "OBSERVED",
+  "stylized_fact": "leverage effect",
+  "summary_values": {
+   "leverage_run_median": -0.0006955048717315767
+  },
+  "version": "1"
+ },
+ {
+  "artifact_path": "figures/drift_variance_diagnostic.svg",
+  "caveats": [
+   "drift here is per-run mean/sd in step units — compare against your model's intended drift, not against an absolute standard",
+   "VR(q) needs q*10 observations per point; short runs drop the largest q values to NaN"
+  ],
+  "display_name": "Drift and variance-ratio diagnostic",
+  "figure_id": "drift_variance_diagnostic",
+  "n_obs_used": 50000,
+  "n_runs_used": 10,
+  "note": null,
+  "parameters": {
+   "q_values": [
+    2,
+    5,
+    10,
+    20,
+    40
+   ]
+  },
+  "reading_guide": "Per-run drift should scatter near the model's intended drift (often ~0); VR(q) near 1 at all q means no strong mean reversion (<1) or trending (>1) in returns.",
+  "related_metrics": [
+   "drift@1",
+   "variance_ratio_20@1"
+  ],
+  "status": "OBSERVED",
+  "stylized_fact": "drift / return dependence (calibration sanity)",
+  "summary_values": {
+   "drift_run_median": -0.0007624770681348721,
+   "variance_ratio_20_run_median": 0.08763628752410274
+  },
+  "version": "1"
+ },
+ {
+  "artifact_path": "figures/volume_volatility.svg",
+  "caveats": [
+   "pairs are matched within each run; runs are pooled only for this marginal scatter (disclosed)",
+   "display: stride thinning and volume clipped at the 99.5th percentile; the binned means and rho use ALL points",
+   "Spearman rho is reported per run (median across runs); no uncertainty interval is attached in exploratory mode",
+   "volume and |return| are divided by their per-run means before pooling, so the scatter and binned means show the WITHIN-run relation; cross-run level differences are deliberately removed (they would otherwise fabricate a pooled slope no single run contains)"
+  ],
+  "display_name": "Volume-volatility relation",
+  "figure_id": "volume_volatility",
+  "n_obs_used": 50000,
+  "n_runs_used": 10,
+  "note": null,
+  "parameters": {
+   "bins": 12,
+   "correlation": "spearman",
+   "display_clip_quantile": 0.995
+  },
+  "reading_guide": "A rising binned mean of |r| across volume bins (and positive rank correlation) is the volume-volatility relation; the raw scatter is dominated by dense low- volume regions.",
+  "related_metrics": [],
+  "status": "OBSERVED",
+  "stylized_fact": "volume/volatility correlation",
+  "summary_values": {
+   "spearman_volume_absret_run_median": 0.11264616460060142
+  },
+  "version": "1"
+ },
+ {
+  "artifact_path": null,
+  "caveats": [
+   "standardizing by a fitted GARCH adds an estimation dependency; the volatility model and its parameters must be recorded",
+   "confusing raw-tail and residual-tail evidence"
+  ],
+  "display_name": "Conditional heavy tails (standardized residuals)",
+  "figure_id": "conditional_tails",
+  "n_obs_used": 0,
+  "n_runs_used": 0,
+  "note": "registered but not implemented in this version; see references for the planned method",
+  "parameters": {},
+  "reading_guide": "Planned: compare the tail of raw returns to the tail of conditional- volatility-standardized residuals; heavy residual tails mean heavy tails beyond what volatility dynamics explain.",
+  "related_metrics": [],
+  "status": "NOT_TESTED",
+  "stylized_fact": "conditional heavy tails",
+  "summary_values": {},
+  "version": "1"
+ },
+ {
+  "artifact_path": null,
+  "caveats": [
+   "lag sign conventions differ across the literature; the aggregation horizons and lag convention must be printed with the figure"
+  ],
+  "display_name": "Coarse-fine volatility lead-lag",
+  "figure_id": "timescale_asymmetry",
+  "n_obs_used": 0,
+  "n_runs_used": 0,
+  "note": "registered but not implemented in this version; see references for the planned method",
+  "parameters": {},
+  "reading_guide": "Planned: cross-correlation of coarse-grained and fine-grained volatility at positive vs negative lags; asymmetry indicates information flowing from long to short horizons.",
+  "related_metrics": [],
+  "status": "NOT_TESTED",
+  "stylized_fact": "asymmetry in time scales",
+  "summary_values": {},
+  "version": "1"
+ },
+ {
+  "artifact_path": null,
+  "caveats": [
+   "first-passage times are right-censored by the series end; the handling of non-passages must be explicit",
+   "passages must never cross a run boundary"
+  ],
+  "display_name": "Gain/loss first-passage distribution",
+  "figure_id": "gain_loss_asymmetry",
+  "n_obs_used": 0,
+  "n_runs_used": 0,
+  "note": "registered but not implemented in this version; see references for the planned method",
+  "parameters": {},
+  "reading_guide": "Planned: distribution of first-passage times to +theta vs -theta from each starting point; in equity indices losses of a given size tend to be reached faster than equal gains.",
+  "related_metrics": [],
+  "status": "NOT_TESTED",
+  "stylized_fact": "gain/loss asymmetry",
+  "summary_values": {},
+  "version": "1"
+ }
+]
