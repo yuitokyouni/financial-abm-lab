@@ -24,3 +24,4 @@ dashboard/*.html
 # sieve export dataset + inspect bundle (親の *.csv / *.parquet を例外)
 !experiments/sieve_export/dataset/runs/*.csv
 !experiments/sieve_export/sieve_runs/**/*.parquet
+!experiments/sieve_export/test_inputs/**/*.csv

@@ -1,0 +1,13 @@
+model_id: self_organized_book
+model_version: spec003-P0-zi
+display_name: Self-Organized Book (ZI-only) — seed-002
+model_family: lob-abm
+parameters: {warmup_steps: 200, main_steps: 5000, n_zi: 50, bar_size: 10,
+  order_ttl: 20, order_volume: 1, sigma_eval: 0.005, margin_min: 0.001,
+  margin_max: 0.01, initial_market_price: 300.0, tick_size: 1.0e-05,
+  zi_mode: naive}
+notes: >-
+  Log returns of the step-level market price, warmup (200 steps) already
+  removed at export time; derived from ../dataset/runs/seed-002.csv. Step
+  resolution, not daily: comparison to the financial-daily reference is
+  structural (unit-sd scaled), not calendar-aligned.

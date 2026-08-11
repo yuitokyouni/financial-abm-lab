@@ -1,0 +1,48 @@
+{
+ "command": "sieve test experiments/sieve_export/test_inputs/seed-000 --suite financial-daily@1.0 --claim descriptive-market-dynamics",
+ "created_at": "2026-08-11T23:44:58.491106Z",
+ "environment": {
+  "numpy": "2.4.6",
+  "platform": "Linux-6.18.5-fc-v20-x86_64-with-glibc2.39",
+  "polars": "1.43.2",
+  "pydantic": "2.13.4",
+  "python": "3.11.15",
+  "scipy": "1.17.1"
+ },
+ "input_hash": "b21998e0764e48784b46466d0946453c4eabbfd6d9df5216a0547611c2911a06",
+ "input_path": "experiments/sieve_export/test_inputs/seed-000",
+ "master_seed": 20260802,
+ "run_id": "d2d50f882ba6",
+ "schema_version": "0.1.0",
+ "seed_tree": [
+  {
+   "entropy": 20260802,
+   "name": "windows",
+   "spawn_key": [
+    0
+   ]
+  },
+  {
+   "entropy": 20260802,
+   "name": "resampling",
+   "spawn_key": [
+    1
+   ]
+  },
+  {
+   "entropy": 20260802,
+   "name": "baselines",
+   "spawn_key": [
+    2
+   ]
+  },
+  {
+   "entropy": 20260802,
+   "name": "report",
+   "spawn_key": [
+    3
+   ]
+  }
+ ],
+ "sieve_version": "0.4.0"
+}

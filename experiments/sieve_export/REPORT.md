@@ -44,10 +44,76 @@ volume×|r| 相関、bar=10 集約)に基づく所見。
 - sieve の注意書きどおり、これは reference 比較なしの探索的所見であり
   「実市場に合う/合わない」の確認には `sieve test` が必要。
 
+## 確認的評価: sieve test vs 実市場 reference(2026-08-11 追記)
+
+`financial-daily@1.0.0` suite は実市場 reference を**同梱**している(S&P 500 / FTSE 100 /
+DAX / 日経225 / Hang Seng / EURO STOXX 50 の日次 log return、unit-sd スケール、
+2001-07〜2026-06 の 124 window の凍結統計。生系列は非再配布、SHA-256 のみ同梱)。
+そのため外部データ取得は不要だった。
+
+- 入力: `test_inputs/seed-XXX/`(warmup 除去済み log return、`step,return` 列)。
+  sieve test は単一長系列のみ受けるため seed ごとに独立評価(連結はしない)。
+- 実行: `sieve test experiments/sieve_export/test_inputs/seed-000 --suite financial-daily@1.0
+  --claim descriptive-market-dynamics --out experiments/sieve_export/sieve_runs`
+- 主 bundle(seed-000): `sieve_runs/d2d50f882ba6/`。seeds 1–9 は同条件で実行し
+  verdict のみ下表に集計(bundle は再現可能なので未コミット)。
+- 注意: SOB は step 解像度で reference は日次。比較は unit-sd スケール後の
+  構造比較であり、カレンダー対応ではない。
+
+### Reference 分布(124 window の 5%–95% 分位)vs SOB(10 seed 平均)
+
+| metric | ref 5% | ref median | ref 95% | SOB | 位置 |
+|---|---|---|---|---|---|
+| acf_abs(1) | +0.034 | +0.193 | +0.317 | **+0.203** | **ほぼ median 直上** |
+| acf_abs(20) | +0.011 | +0.114 | +0.253 | −0.004 | 下方に域外 |
+| excess kurtosis | +1.318 | +3.979 | +17.64 | +0.234 | 下方に域外 |
+| Hill left | +2.346 | +3.436 | +4.844 | +5.567 | 上方に域外(裾薄) |
+| Hill right | +2.285 | +3.342 | +5.428 | +5.568 | 95% 分位の外縁 |
+| leverage | −0.129 | −0.099 | −0.052 | −0.001 | 域外(市場は全 window 負) |
+| variance_ratio(20) | +0.548 | +0.813 | +1.347 | **+0.089** | **完全分離(KS=1.0)** |
+| drift | −0.020 | +0.017 | +0.058 | −0.000 | 域内 |
+
+### Per-seed verdict(10 seeds、α=0.01 較正、Holm 補正)
+
+| metric | 000 | 001 | 002 | 003 | 004 | 005 | 006 | 007 | 008 | 009 | 安定性 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| acf_abs_1 | P | P | P | P | P | P | P | P | P | P | **PASS 10/10** |
+| drift | P | F | F | P | P | P | P | P | P | P | PASS 8/10 |
+| excess_kurtosis | F | F | F | F | F | F | F | P | F | F | FAIL 9/10 |
+| hill_left | F | F | F | F | F | F | F | P | F | F | FAIL 9/10 |
+| hill_right | F | F | F | F | P | F | F | F | F | F | FAIL 9/10 |
+| acf_abs_20 | F | F | F | F | F | F | F | P | F | F | FAIL 9/10 |
+| leverage | F | F | F | F | F | F | F | F | F | F | **FAIL 10/10** |
+| variance_ratio_20 | F | F | F | F | F | F | F | F | F | F | **FAIL 10/10** |
+
+### 構造的読み
+
+- **短期 volatility clustering(acf_abs(1))は 10/10 で reference と分離不能**。
+  SOB の +0.203 は市場 median +0.193 のほぼ真上。ZI-only + 内生流動性だけで
+  この次元は市場帯に入る。ただし sieve の caveat どおり、この metric は
+  block_bootstrap / garch 系とも分離しないため単独では弱い証拠。
+- **clustering の持続性(acf_abs(20))が別次元として FAIL** — 「clustering が
+  一部だけ自己組織化する(短期のみ、長期記憶なし)」という inspect の読みが
+  確認的にも支持された。
+- **return dependence(variance_ratio(20) = 0.089)は KS = 1.0 の完全分離**。
+  市場 reference の下限 0.548 の 6 分の 1 で、全次元中いちばん異様。
+  −0.47 の reversal は「やや強い」ではなく実市場の変動集積構造と完全に別物。
+- leverage は市場側が 124 window 全て負(−0.13〜−0.05)に対し SOB はゼロ近傍で
+  10/10 FAIL。方向性非対称の欠如は決定的。
+- 裾は「薄すぎて」FAIL(kurtosis が ref 5% 分位 1.32 に対し 0.23、Hill が
+  ref 95% 4.84 に対し 5.57)。
+- まとめ: **「ZI-only は vol clustering の水準では市場側に寄るが、return
+  dependence・持続性・非対称性・裾で市場から構造的に外れる」**が、reference
+  付きの確認的評価として成立した。
+
 ## 再現手順
 
 ```bash
 uv sync
 uv run python experiments/sieve_export/run_sieve_export.py
 sieve inspect experiments/sieve_export/dataset --out experiments/sieve_export/sieve_runs
+# 確認的評価 (seed ごと)
+sieve test experiments/sieve_export/test_inputs/seed-000 \
+  --suite financial-daily@1.0 --claim descriptive-market-dynamics \
+  --out experiments/sieve_export/sieve_runs
 ```
