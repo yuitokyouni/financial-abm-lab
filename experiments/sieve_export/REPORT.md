@@ -106,6 +106,37 @@ DAX / 日経225 / Hang Seng / EURO STOXX 50 の日次 log return、unit-sd ス�
   dependence・持続性・非対称性・裾で市場から構造的に外れる」**が、reference
   付きの確認的評価として成立した。
 
+## 日経225 reference overlay(2026-08-12 追記、sieve 0.5.0)
+
+sieve 0.5.0 で `--reference` overlay が入ったので、日経225 の実系列を重ねた
+探索レポートを追加した。
+
+- 取得: `python tools/fetch_index_data.py ^N225 nikkei`(新規スクリプト。
+  Yahoo Finance v8 chart API、`fingerprint_atlas.real_refs` 再利用)。
+  2462 営業日(2016-08-15〜2026-08-12)→ `data/index_cache/nikkei_daily.csv`。
+  生データはコミットしない(financial-daily suite と同じ流儀)。同一性検証用
+  SHA-256: `49161191a3795913821b0821fa1cecb1981ed9efa3ef56026da315301a90a7f5`
+- 実行: `sieve inspect experiments/sieve_export/dataset
+  --reference data/index_cache/nikkei_daily.csv --reference-derive-return log
+  --reference-label "Nikkei 225" --out experiments/sieve_export/sieve_runs`
+- バンドル: `sieve_runs/5c3efb1b156e/`(全 figure に Nikkei 225 の導出曲線が
+  visual context として overlay される)
+
+### 同一パイプラインでの対比(SOB は 10 seed 平均 ± sd)
+
+| metric | Nikkei 225 (10y) | SOB | 過不足 |
+|---|---|---|---|
+| excess kurtosis | +8.96 | +0.23 ± 0.26 | **不足**(裾が桁違いに薄い) |
+| Hill left / right | 2.99 / 3.05 | 5.58 / 5.58 | **不足**(cubic law 域に届かない) |
+| acf\|r\|(1) | +0.289 | +0.203 ± 0.016 | ほぼ同水準(やや不足) |
+| acf\|r\|(20) | +0.079 | −0.004 ± 0.010 | **不足**(持続性ゼロ) |
+| leverage | −0.135 | −0.002 ± 0.003 | **不足**(非対称性なし) |
+| VR(20) | 0.92 | 0.089 ± 0.007 | **過剰**(mean reversion が実市場の約10倍強い) |
+
+注: Nikkei 10 年窓 1 本 vs SOB step 解像度 10 run の構造比較(unit-sd 基準)。
+確認的な separation 判定は上の financial-daily sieve test 節が正で、
+この節はその日本市場・単一系列版の描像。両者は整合している。
+
 ## 再現手順
 
 ```bash

@@ -1,0 +1,94 @@
+{
+ "columns": [
+  "price",
+  "volume",
+  "return"
+ ],
+ "geometry": "multi_run_ensemble",
+ "geometry_source": "declared",
+ "n_obs_total": 50000,
+ "n_runs": 10,
+ "runs": [
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-000",
+   "seed": null
+  },
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-001",
+   "seed": null
+  },
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-002",
+   "seed": null
+  },
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-003",
+   "seed": null
+  },
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-004",
+   "seed": null
+  },
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-005",
+   "seed": null
+  },
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-006",
+   "seed": null
+  },
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-007",
+   "seed": null
+  },
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-008",
+   "seed": null
+  },
+  {
+   "irregular_spacing": false,
+   "n_burned": 200,
+   "n_obs": 5000,
+   "n_obs_raw": 5201,
+   "run_id": "seed-009",
+   "seed": null
+  }
+ ],
+ "time_basis": "step"
+}
