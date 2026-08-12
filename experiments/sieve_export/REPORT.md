@@ -121,6 +121,16 @@ sieve 0.5.0 で `--reference` overlay が入ったので、日経225 の実系�
   --reference-label "Nikkei 225" --out experiments/sieve_export/sieve_runs`
 - バンドル: `sieve_runs/5c3efb1b156e/`(全 figure に Nikkei 225 の導出曲線が
   visual context として overlay される)
+- **2026-08-12 追記**: 上記 bundle の report/index.html には表示バグがあった
+  (全 figure が `clipPath id="c"` を共有 → HTML にインライン展開すると id 衝突で
+  後続 figure が他 figure の clip 矩形で切られ、例えば VR(q) の median 線が途中で
+  消える。単体 SVG は正常)。sieve 側を修正
+  (`yuitokyouni/sieve` branch `claude/fix-report-svg-clip-ids`: clip id の
+  figure 単位スコープ化 + 明示 xlim/ylim 越えデータの「境界破線 + 50% 減光
+  gutter」描画)し、修正版で再生成した bundle が
+  **`sieve_runs/010bf1d5c448/`**(内容・数値は 5c3efb1b156e と同一、描画のみ修正)。
+  日本語レビュー版(英語レポート全文の対訳、非公式・封印外)は
+  `REPORT_ja_review.html`(生成: `build_ja_report.py`)。
 
 ### 同一パイプラインでの対比(SOB は 10 seed 平均 ± sd)
 

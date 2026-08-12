@@ -1,0 +1,7 @@
+{
+ "content_hash_sha256": "49161191a3795913821b0821fa1cecb1981ed9efa3ef56026da315301a90a7f5",
+ "label": "Nikkei 225",
+ "n_obs": 2461,
+ "role": "figure overlay comparator (exploratory; no inference)",
+ "source_path_informational": "data/index_cache/nikkei_daily.csv"
+}
