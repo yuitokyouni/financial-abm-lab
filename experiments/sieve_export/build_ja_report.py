@@ -173,7 +173,7 @@ def main() -> None:
         ".guide{background:#f6f8fa;border-radius:6px;padding:10px 12px;margin:10px 0}"
         "ul{margin:6px 0}li{margin:3px 0;font-size:13.5px;color:#3a4454}"
         "h1{font-size:22px}h2{font-size:16px;margin:4px 0}"
-        ".meta{font-size:13px;color:#5a6577}svg{max-width:100%;height:auto}"
+        ".meta{font-size:13px;color:#5a6577}.fig>svg{max-width:100%;height:auto}"
         ".warn{background:#fff8e6;border:1px solid #e6d9a8;border-radius:6px;"
         "padding:10px 12px;font-size:13.5px}</style>",
         "<h1>sieve inspect 日本語レビュー版 — Self-Organized Book (ZI-only, 10 seeds) "
