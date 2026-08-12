@@ -25,3 +25,6 @@ dashboard/*.html
 !experiments/sieve_export/dataset/runs/*.csv
 !experiments/sieve_export/sieve_runs/**/*.parquet
 !experiments/sieve_export/test_inputs/**/*.csv
+
+# 指数生データキャッシュ (tools/fetch_index_data.py が生成; 非再配布, SHA-256 は REPORT に記録)
+data/index_cache/
