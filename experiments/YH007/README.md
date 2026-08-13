@@ -1,9 +1,11 @@
 # YH007 — Kronos × microstructure: リアル LOB 上の SF 生成機構同定
 
-**現在地 (2026-07-21)**: spec 003 round6 完結 — **P3-F 合格 = substrate 完成**
-(kronos recenter で ret_acf[1] = −0.020±0.03、二重条件 (i)(ii) 同時 PASS)。
-**P4 (headline run) の held が解除可能**になった状態。次は P4、その先の P5
-(機構 ablation 再走) は 003 の scope 外 (002 §11 へ差し戻し)。
+**現在地 (2026-08-13)**: spec 003 round6 完結後、P0 監査 (docs/audit/) の是正で
+φ/σ 較正を修正値 0.615/3.81e-3 に統一。**P3-F は旧較正下の条件付き合格**
+(kronos recenter ret_acf[1] = −0.020±0.03 は較正非依存だが、agg parity 判定が
+旧較正参照 0.102 に対するもの。修正較正の参照は 0.072)。**P4 (headline run) の
+held は継続** — 解除の前提は修正較正での P3-F 再走 (docs/audit/BACKLOG.md)。
+その先の P5 (機構 ablation 再走) は 003 の scope 外 (002 §11 へ差し戻し)。
 
 ## 位置付け
 

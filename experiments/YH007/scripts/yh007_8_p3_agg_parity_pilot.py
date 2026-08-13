@@ -1,4 +1,4 @@
-"""YH007-8 P3 dose-matching pilot: ZI-matched (AR(1) φ=0.418, σ=6e-3) の margin を
+"""YH007-8 P3 dose-matching pilot: ZI-matched (AR(1) φ=0.615, σ=3.81e-3) の margin を
 CI×Kronos の P2 実測 agg=0.106 に揃える値を探す (margin grid search)。
 
 これがないと P3 の SF 差が「Kronos 情報」でなく「aggression 量」由来になる
@@ -29,8 +29,8 @@ def _agg_one(seed: int, *, mm: float, mx: float, common: dict) -> dict:
         n_kronos=0,
         n_zi_strategy=n_strategy,
         zi_strategy_mode="matched_ar1",
-        zi_strategy_phi_ar1=0.418,
-        zi_strategy_sigma_ar1_abs=6e-3,
+        zi_strategy_phi_ar1=0.615,
+        zi_strategy_sigma_ar1_abs=3.81e-3,
         zi_strategy_mu_ar1=0.0,
         zi_strategy_margin_min=mm,
         zi_strategy_margin_max=mx,

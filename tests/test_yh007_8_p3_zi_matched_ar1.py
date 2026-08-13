@@ -22,7 +22,7 @@ def test_matched_ar1_does_not_diverge():
         warmup_steps=40, main_steps=500, n_zi=8,
         bar_size=10, order_ttl=10,
         zi_mode="matched_ar1",
-        zi_phi_ar1=0.42, zi_sigma_ar1_abs=6e-3, zi_mu_ar1=0.0,
+        zi_phi_ar1=0.615, zi_sigma_ar1_abs=3.81e-3, zi_mu_ar1=0.0,
         margin_min=3e-5, margin_max=1e-4,
         tick_size=0.001, initial_market_price=300.0,
     )
@@ -81,15 +81,31 @@ def test_matched_ar1_phi_recovered_from_v_minus_mid():
 
 
 def test_matched_ar1_agg_rate_within_band():
-    """P2 実測値 (φ=0.42, σ=6e-3) で agg_rate が目標帯 [0.05, 0.20] に入る。"""
+    """P2 実測値 (φ=0.615, σ=3.81e-3、first-entry 修正規約) で戦略群 agg_rate が目標帯近傍に入る。
+
+    構成は P3 の 2-group dose-match (7eadfe3 で本体が移行済み: ZI-naive 流動性役 +
+    matched_ar1 戦略役、margin は p3d スクリプトと同一)。旧 1-group 構成 (全 agent が
+    matched_ar1) は修正 φ/σ では agg が ~0.001 に崩壊するため代表性が無い
+    (docs/audit/P0_yh007_recalibration_rerun.md に記録)。
+    """
     m = SelfOrganizedBookMarket(
-        warmup_steps=80, main_steps=400, n_zi=20,
+        warmup_steps=80, main_steps=400,
+        n_zi=10, zi_mode="naive",
+        n_zi_strategy=10,
+        zi_strategy_mode="matched_ar1",
+        zi_strategy_phi_ar1=0.615, zi_strategy_sigma_ar1_abs=3.81e-3, zi_strategy_mu_ar1=0.0,
+        zi_strategy_margin_min=2.5e-5, zi_strategy_margin_max=1.2e-4,
         bar_size=10, order_ttl=15,
-        zi_mode="matched_ar1",
-        zi_phi_ar1=0.418, zi_sigma_ar1_abs=6e-3, zi_mu_ar1=0.0,
-        margin_min=3e-5, margin_max=1e-4,
+        sigma_eval=5e-5, margin_min=2.0e-5, margin_max=6.0e-5,
         tick_size=0.001, initial_market_price=300.0,
     )
     res = m.run(seed=42)
-    agg_rate = res["n_executed"] / max(res["n_submitted"], 1)
-    assert 0.02 < agg_rate < 0.40, f"agg_rate={agg_rate}, expected near [0.05, 0.20]"
+    strat = [a for a in res["zi_agents"] if getattr(a, "zi_mode", "") == "matched_ar1"]
+    assert strat, "matched_ar1 戦略群が生成されていない"
+    n_sub = sum(sum(1 for _, s, p, _ in a.action_log if s != 0 and p is not None)
+                for a in strat)
+    n_exec = sum(len(a.executed_log) for a in strat)
+    agg_rate = n_exec / max(n_sub, 1)
+    # spec 003 §3.1 の目標帯そのもので判定する (旧 assert は 0.02..0.40 の緩和帯だった。
+    # 修正較正 + 2-group 構成の実測 0.079 は帯内 — 監査条件 3 で厳格化)
+    assert 0.05 <= agg_rate <= 0.20, f"agg_rate={agg_rate}, target band [0.05, 0.20]"

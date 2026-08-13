@@ -126,7 +126,11 @@ def run_zi_cond(seed: int, mode: str, band: float, anchor_bars: int, common: dic
         n_kronos=0,
         n_zi_strategy=common["n_strategy"],
         zi_strategy_mode=mode,
-        zi_strategy_phi_ar1=0.418, zi_strategy_sigma_ar1_abs=6e-3, zi_strategy_mu_ar1=0.0,
+        # 既定は P2 実測の修正較正値 (spec 003 §12 round6 追記)。CLI --phi-ar1 /
+        # --sigma-ar1-abs で override 可 (対照 run 用。実効値は out JSON の args に残る)
+        zi_strategy_phi_ar1=common.get("phi_ar1", 0.615),
+        zi_strategy_sigma_ar1_abs=common.get("sigma_ar1_abs", 3.81e-3),
+        zi_strategy_mu_ar1=0.0,
         zi_strategy_margin_min=2.5e-5, zi_strategy_margin_max=1.2e-4,
         zi_strategy_band_halfwidth=band,
         zi_strategy_anchor_smooth_bars=anchor_bars,
@@ -154,6 +158,10 @@ def main() -> None:
     p.add_argument("--w-band", type=str, default="auto",
                    help="'auto' = kronos 較正 run から実測、または float 直接指定")
     p.add_argument("--anchor-smooth-bars", type=int, default=8)
+    p.add_argument("--phi-ar1", type=float, default=0.615,
+                   help="戦略群 AR(1) φ (既定 = 修正較正値 0.615。対照 run で旧値指定用)")
+    p.add_argument("--sigma-ar1-abs", type=float, default=3.81e-3,
+                   help="戦略群 AR(1) innovation σ (既定 = 修正較正値 3.81e-3)")
     p.add_argument("--p3prime2-json", type=str, default="/tmp/yh007_8_p3prime2.json",
                    help="P3'' の結果 JSON (kronos 参照行の再掲用、無ければ skip)")
     p.add_argument("--out-json", type=str, default="/tmp/yh007_8_p3d.json")
@@ -164,6 +172,7 @@ def main() -> None:
         n_strategy=args.n_strategy, n_zi_liq=args.n_zi_liq,
         kronos_lookback_bars=args.kronos_lookback_bars,
         kronos_n_samples=args.kronos_n_samples,
+        phi_ar1=args.phi_ar1, sigma_ar1_abs=args.sigma_ar1_abs,
     )
     out: dict = {"args": vars(args)}
 
