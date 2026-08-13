@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import inspect
 import re
+from pathlib import Path
 
 from abm_models.self_organized_book import SelfOrganizedBookMarket, ZIAgent
 from abm_models.self_organized_book.model import build_sob_config
@@ -57,6 +58,28 @@ def test_zi_agent_settings_fallback_uses_corrected_calibration():
     assert m_phi and m_sig, "phiAr1/sigmaAr1Abs の fallback 既定値が見つからない"
     assert float(m_phi.group(1)) == PHI_CORRECTED
     assert float(m_sig.group(1)) == SIGMA_CORRECTED
+
+
+def test_p3d_cli_override_defaults_use_corrected_calibration():
+    """p3d スクリプトの CLI override 既定値 (--phi-ar1 / --sigma-ar1-abs) も修正値。
+
+    呼び出し点ハードコードを common.get(...) + CLI 既定値に置き換えたことで
+    値の定義箇所が 1 つ増えた (P0_numeric_literal_diff.md の残注意)。較正定数の
+    入力アーティファクト化 (BACKLOG の Contract 要件 1) までの追随漏れガード。
+    """
+    script = (Path(__file__).resolve().parent.parent
+              / "experiments" / "YH007" / "scripts" / "yh007_8_p3d_shared_ar1.py")
+    src = script.read_text()
+    m_phi = re.search(r'"--phi-ar1",\s*type=float,\s*default=([0-9.e+-]+)', src)
+    m_sig = re.search(r'"--sigma-ar1-abs",\s*type=float,\s*default=([0-9.e+-]+)', src)
+    m_get_phi = re.search(r'common\.get\("phi_ar1",\s*([0-9.e+-]+)\)', src)
+    m_get_sig = re.search(r'common\.get\("sigma_ar1_abs",\s*([0-9.e+-]+)\)', src)
+    assert m_phi and m_sig and m_get_phi and m_get_sig, \
+        "p3d の CLI/common.get 既定値が見つからない (構造変更時はこのテストを追随させること)"
+    for m in (m_phi, m_get_phi):
+        assert float(m.group(1)) == PHI_CORRECTED
+    for m in (m_sig, m_get_sig):
+        assert float(m.group(1)) == SIGMA_CORRECTED
 
 
 def test_matched_ar1_run_wires_corrected_defaults_to_agents():
