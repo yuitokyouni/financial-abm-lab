@@ -106,4 +106,6 @@ def test_matched_ar1_agg_rate_within_band():
                 for a in strat)
     n_exec = sum(len(a.executed_log) for a in strat)
     agg_rate = n_exec / max(n_sub, 1)
-    assert 0.02 < agg_rate < 0.40, f"agg_rate={agg_rate}, expected near [0.05, 0.20]"
+    # spec 003 §3.1 の目標帯そのもので判定する (旧 assert は 0.02..0.40 の緩和帯だった。
+    # 修正較正 + 2-group 構成の実測 0.079 は帯内 — 監査条件 3 で厳格化)
+    assert 0.05 <= agg_rate <= 0.20, f"agg_rate={agg_rate}, target band [0.05, 0.20]"
