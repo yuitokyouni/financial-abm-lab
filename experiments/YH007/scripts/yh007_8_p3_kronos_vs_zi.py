@@ -3,7 +3,8 @@
 成功条件 3 (§6): ZI-matched control 比で Kronos 寄与が分離できる
   = SF 指標に統計的有意な差 (Welch t-test, two-sided)
 
-ZI-matched AR(1) 較正値: P2 実測 φ=0.418, σ=6e-3 absolute on mid=300 (= 裁定 A)。
+ZI-matched AR(1) 較正値: P2 実測 φ=0.615, σ=3.81e-3 absolute on mid=300 (= 裁定 A、
+first-entry pairing 修正規約 = spec 003 §12 round6 追記)。
 
 実行:
     KRONOS_PATH=/path/to/Kronos uv run python \\
@@ -149,8 +150,8 @@ def _run_one_seed(seed: int, *, condition: str, common: dict,
             n_kronos=0,
             n_zi_strategy=n_strategy,
             zi_strategy_mode="matched_ar1",
-            zi_strategy_phi_ar1=0.418,
-            zi_strategy_sigma_ar1_abs=6e-3,
+            zi_strategy_phi_ar1=0.615,
+            zi_strategy_sigma_ar1_abs=3.81e-3,
             zi_strategy_mu_ar1=0.0,
             zi_strategy_margin_min=zi_strategy_margin_min,
             zi_strategy_margin_max=zi_strategy_margin_max,

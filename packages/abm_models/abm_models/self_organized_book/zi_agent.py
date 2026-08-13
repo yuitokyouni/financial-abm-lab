@@ -128,9 +128,11 @@ class ZIAgent(LimitAgentBase):
         self.mu_match: float = float(settings.get("muMatch", 0.0))
         self.sigma_match: float = float(settings.get("sigmaMatch", self.sigma_eval))
         # matched_ar1 用 (P3, spec 003 §4 + 裁定 A): v_t - mid = φ(v_{t-1}-mid) + ε
-        # P2 実測 default: φ=0.418, σ=6e-3 (absolute on mid scale ≈ 300)
-        self.phi_ar1: float = float(settings.get("phiAr1", 0.418))
-        self.sigma_ar1_abs: float = float(settings.get("sigmaAr1Abs", 6e-3))
+        # P2 実測 default: φ=0.615, σ=3.81e-3 (absolute on mid scale ≈ 300、
+        # first-entry pairing 修正規約 = spec 003 §12 round6 追記。旧 0.418/6e-3 は
+        # last-wins pairing の bar 内 drift 汚染値)
+        self.phi_ar1: float = float(settings.get("phiAr1", 0.615))
+        self.sigma_ar1_abs: float = float(settings.get("sigmaAr1Abs", 3.81e-3))
         self.mu_ar1: float = float(settings.get("muAr1", 0.0))
         # AR(1) state (= 前 bar の v_t - mid_t) と現 bar のキャッシュ
         # spec 003 §3.3 の bar/step 2 階層: 評価値は bar 単位で更新、step 単位は TTL/再貼り。
@@ -171,7 +173,7 @@ class ZIAgent(LimitAgentBase):
             elif self.zi_mode == "matched_ar1":
                 # P3 (spec 003 §4 + 裁定 A): v_t - mid_t = φ (v_{t-1} - mid_{t-1}) + ε
                 # ε ~ N(mu_ar1, sigma_ar1_abs)。φ<1 で mid 周辺に mean-revert。
-                # P2 実測 default φ=0.418, σ=6e-3 (absolute) で Kronos と dose-match。
+                # P2 実測 default φ=0.615, σ=3.81e-3 (absolute) で Kronos と dose-match。
                 if self._last_v_minus_mid is None:
                     self._last_v_minus_mid = 0.0
                 eps = self.prng.gauss(self.mu_ar1, self.sigma_ar1_abs)

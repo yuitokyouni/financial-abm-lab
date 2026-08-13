@@ -126,7 +126,7 @@ def run_zi_cond(seed: int, mode: str, band: float, anchor_bars: int, common: dic
         n_kronos=0,
         n_zi_strategy=common["n_strategy"],
         zi_strategy_mode=mode,
-        zi_strategy_phi_ar1=0.418, zi_strategy_sigma_ar1_abs=6e-3, zi_strategy_mu_ar1=0.0,
+        zi_strategy_phi_ar1=0.615, zi_strategy_sigma_ar1_abs=3.81e-3, zi_strategy_mu_ar1=0.0,
         zi_strategy_margin_min=2.5e-5, zi_strategy_margin_max=1.2e-4,
         zi_strategy_band_halfwidth=band,
         zi_strategy_anchor_smooth_bars=anchor_bars,

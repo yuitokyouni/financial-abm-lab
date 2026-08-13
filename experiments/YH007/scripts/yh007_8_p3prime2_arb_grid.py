@@ -77,7 +77,7 @@ def _run_zi(seed: int, zi_strategy_margin_min: float, zi_strategy_margin_max: fl
         n_kronos=0,
         n_zi_strategy=common["n_strategy"],
         zi_strategy_mode="matched_ar1",
-        zi_strategy_phi_ar1=0.418, zi_strategy_sigma_ar1_abs=6e-3, zi_strategy_mu_ar1=0.0,
+        zi_strategy_phi_ar1=0.615, zi_strategy_sigma_ar1_abs=3.81e-3, zi_strategy_mu_ar1=0.0,
         zi_strategy_margin_min=zi_strategy_margin_min,
         zi_strategy_margin_max=zi_strategy_margin_max,
         bar_size=10, order_ttl=15,
