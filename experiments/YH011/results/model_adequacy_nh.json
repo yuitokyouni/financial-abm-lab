@@ -1,0 +1,275 @@
+{
+ "window": 2000,
+ "n_draws": 15000,
+ "prior": {
+  "rho": [
+   4.0,
+   4.0
+  ],
+  "k": [
+   0.05,
+   1.2
+  ],
+  "p1": [
+   0.0,
+   0.8
+  ],
+  "p2": [
+   0.0,
+   0.8
+  ],
+  "lam": [
+   0.1,
+   4.0
+  ],
+  "gam": [
+   0.1,
+   4.0
+  ],
+  "h_coef": [
+   0.0,
+   1.0
+  ]
+ },
+ "per_feature": [
+  {
+   "feature": "excess_kurtosis",
+   "model_min": -0.6814332553717621,
+   "model_max": 1687.641772925203,
+   "model_p05": -0.24052454042940039,
+   "model_p95": 140.48819133395958,
+   "btc_median": 12.185641097105204,
+   "btc_p05": 5.5706852661674375,
+   "btc_p95": 47.63744822083325,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": [
+    "time-reversal invariant: identical on a series and its reverse",
+    "location invariant: cannot see drift (by design; see drift metric)",
+    "cannot separate a jointly-fitted Student-t GARCH from real data (research KS 0.18, p=0.22)"
+   ]
+  },
+  {
+   "feature": "hill_left",
+   "model_min": 0.20060181818426345,
+   "model_max": 155.39529216807577,
+   "model_p05": 1.4631196591547353,
+   "model_p95": 21.51423820099409,
+   "btc_median": 2.636059572783494,
+   "btc_p05": 1.7604585402286954,
+   "btc_p95": 3.5062880341395504,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": [
+    "time-reversal invariant: identical on a series and its reverse",
+    "depends on tail fraction k (swing 0.92 IQR across k in 2.5-10%)"
+   ]
+  },
+  {
+   "feature": "hill_right",
+   "model_min": 0.020863358154973886,
+   "model_max": 14.980702316269706,
+   "model_p05": 3.412268592172688,
+   "model_p95": 7.710517970801683,
+   "btc_median": 2.5585781155006684,
+   "btc_p05": 1.9163704267078325,
+   "btc_p95": 3.272094061960189,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": [
+    "time-reversal invariant: identical on a series and its reverse",
+    "depends on tail fraction k"
+   ]
+  },
+  {
+   "feature": "acf_abs_1",
+   "model_min": -0.3788824999029063,
+   "model_max": 0.9674341890822683,
+   "model_p05": -0.14979501077866103,
+   "model_p95": 0.7118348053194552,
+   "btc_median": 0.24697020520232285,
+   "btc_p05": 0.14615099453656497,
+   "btc_p95": 0.35643708263381035,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": [
+    "time-reversal invariant: identical on a series and its reverse",
+    "location invariant: cannot see drift (by design; see drift metric)",
+    "reproduced by GARCH(1,1): passing this says nothing about mechanism"
+   ]
+  },
+  {
+   "feature": "acf_abs_20",
+   "model_min": -0.08505864606930325,
+   "model_max": 0.6883568871331227,
+   "model_p05": -0.03794070044521265,
+   "model_p95": 0.047730052292671375,
+   "btc_median": 0.11046713512958808,
+   "btc_p05": 0.03622725888885847,
+   "btc_p95": 0.20020518388830455,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": [
+    "time-reversal invariant: identical on a series and its reverse",
+    "blind to all GARCH-family baselines in the research matrix (KS <= 0.18)"
+   ]
+  },
+  {
+   "feature": "leverage",
+   "model_min": -0.9106324764985668,
+   "model_max": 0.06899005301615196,
+   "model_p05": -0.47771721522854277,
+   "model_p95": 0.03702550267616073,
+   "btc_median": -0.017721861068052236,
+   "btc_p05": -0.07651600166331284,
+   "btc_p95": 0.04213090959041184,
+   "btc_windows_inside_model_range": 0.9722222222222222,
+   "sieve_blind_spots": [
+    "lag-count knob moves the level by 0.94 IQR",
+    "retained by block bootstrap of real data (real blocks keep the real arrow)"
+   ]
+  },
+  {
+   "feature": "variance_ratio_20",
+   "model_min": 0.3159862476630371,
+   "model_max": 16.73389765243428,
+   "model_p05": 0.5660442245067507,
+   "model_p95": 6.276230603443406,
+   "btc_median": 0.9268101522965827,
+   "btc_p05": 0.7080668712467582,
+   "btc_p95": 1.1920004161198023,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": [
+    "time-reversal invariant: identical on a series and its reverse",
+    "location invariant: cannot see drift (by design; see drift metric)"
+   ]
+  },
+  {
+   "feature": "cv_abs",
+   "model_min": 0.6600438244578994,
+   "model_max": 13.359711179917177,
+   "model_p05": 0.7319923092506931,
+   "model_p95": 2.4486094240967633,
+   "btc_median": 1.1913398281349008,
+   "btc_p05": 1.0524828582614039,
+   "btc_p95": 1.7999335567548056,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": []
+  },
+  {
+   "feature": "acf_absr_1",
+   "model_min": -0.2085471278095544,
+   "model_max": 0.9639324101580699,
+   "model_p05": -0.08324224595382035,
+   "model_p95": 0.683246707119105,
+   "btc_median": 0.24654055498336902,
+   "btc_p05": 0.14617181877519608,
+   "btc_p95": 0.35606689920318163,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": []
+  },
+  {
+   "feature": "acf_absr_5",
+   "model_min": -0.11073064745566548,
+   "model_max": 0.8538656465487985,
+   "model_p05": -0.036550074989282366,
+   "model_p95": 0.29419612943960516,
+   "btc_median": 0.13158067899984238,
+   "btc_p05": 0.034877749699609883,
+   "btc_p95": 0.25425988458920284,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": []
+  },
+  {
+   "feature": "acf_absr_20",
+   "model_min": -0.08162133881786679,
+   "model_max": 0.5875991015138583,
+   "model_p05": -0.03643132172650394,
+   "model_p95": 0.04531970012030728,
+   "btc_median": 0.11050192684665083,
+   "btc_p05": 0.03656739134167689,
+   "btc_p95": 0.20035579242360368,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": []
+  },
+  {
+   "feature": "q_tail_ratio",
+   "model_min": 1.8741490574936646,
+   "model_max": 19606646025042.496,
+   "model_p05": 2.2662568963001593,
+   "model_p95": 4.114371484327956,
+   "btc_median": 3.5521683464145415,
+   "btc_p05": 3.0176252234711662,
+   "btc_p95": 4.157208459035274,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": []
+  },
+  {
+   "feature": "q_xtail_ratio",
+   "model_min": 2.568019262189248,
+   "model_max": 1851185716926614.5,
+   "model_p05": 3.166511170683293,
+   "model_p95": 10.96320853621409,
+   "btc_median": 7.186506791911949,
+   "btc_p05": 5.753845272474606,
+   "btc_p95": 10.468361719092725,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": []
+  },
+  {
+   "feature": "q_skew",
+   "model_min": -1.0,
+   "model_max": 0.3874388324251401,
+   "model_p05": -0.5923400976991591,
+   "model_p95": 0.20134260579999896,
+   "btc_median": -0.01499782627669552,
+   "btc_p05": -0.056359972613775455,
+   "btc_p95": 0.04676775796165183,
+   "btc_windows_inside_model_range": 1.0,
+   "sieve_blind_spots": []
+  }
+ ],
+ "joint": {
+  "null_median": 0.2835464679921996,
+  "null_p99": 0.47978126323182263,
+  "btc_median": 0.47458296200965533,
+  "btc_min": 0.3213673262745357,
+  "btc_windows_beyond_null_p99": 0.4722222222222222,
+  "btc_window_pvalues": [
+   0.051,
+   0.0,
+   0.0015,
+   0.0035,
+   0.0005,
+   0.003,
+   0.0045,
+   0.0085,
+   0.002,
+   0.002,
+   0.0,
+   0.0035,
+   0.012,
+   0.2325,
+   0.0085,
+   0.2235,
+   0.252,
+   0.133,
+   0.0475,
+   0.018,
+   0.281,
+   0.0,
+   0.005,
+   0.001,
+   0.0,
+   0.0775,
+   0.018,
+   0.0515,
+   0.0135,
+   0.0705,
+   0.0045,
+   0.045,
+   0.121,
+   0.167,
+   0.065,
+   0.012
+  ],
+  "n_model_cloud": 12998,
+  "n_null": 2000,
+  "n_btc_windows": 36
+ }
+}

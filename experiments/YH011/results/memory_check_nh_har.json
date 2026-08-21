@@ -1,0 +1,124 @@
+{
+ "hourly": {
+  "n_obs": 2000,
+  "n_segments": 36,
+  "lags": [
+   1,
+   2,
+   5,
+   10,
+   20,
+   50,
+   100
+  ],
+  "rows": [
+   {
+    "lag": 1,
+    "btc": 0.2440141448546808,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.946294882727713
+   },
+   {
+    "lag": 2,
+    "btc": 0.18583732253369417,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.9137685847230838
+   },
+   {
+    "lag": 5,
+    "btc": 0.13887769019623045,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.8721488775789057
+   },
+   {
+    "lag": 10,
+    "btc": 0.11946461186445806,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.8223744196771117
+   },
+   {
+    "lag": 20,
+    "btc": 0.10548666978396504,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.7307487992676698
+   },
+   {
+    "lag": 50,
+    "btc": 0.06676482684520908,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.47508389411989194
+   },
+   {
+    "lag": 100,
+    "btc": 0.04312874270879276,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.3190692027805655
+   }
+  ],
+  "frac_prior_reaching_lag20": 0.0035,
+  "frac_prior_matching_both": 0.0,
+  "n_close_at_lag1": 4,
+  "n_model_draws": 4000
+ },
+ "daily": {
+  "n_obs": 3862,
+  "n_segments": 1,
+  "lags": [
+   1,
+   2,
+   5,
+   10,
+   20,
+   50,
+   100
+  ],
+  "rows": [
+   {
+    "lag": 1,
+    "btc": 0.28261070298281576,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.9448029014192051
+   },
+   {
+    "lag": 2,
+    "btc": 0.17697665496838985,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.9260506047673857
+   },
+   {
+    "lag": 5,
+    "btc": 0.18202153238143548,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.8915539011404362
+   },
+   {
+    "lag": 10,
+    "btc": 0.1355511637844596,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.8472875244368216
+   },
+   {
+    "lag": 20,
+    "btc": 0.11259102533024805,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.7906406214878466
+   },
+   {
+    "lag": 50,
+    "btc": 0.08470110245239663,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.6903402661109547
+   },
+   {
+    "lag": 100,
+    "btc": 0.021057091225867113,
+    "model_matched_lag1_median": NaN,
+    "model_max_over_prior": 0.4809931987642546
+   }
+  ],
+  "frac_prior_reaching_lag20": 0.00375,
+  "frac_prior_matching_both": 0.00025,
+  "n_close_at_lag1": 1,
+  "n_model_draws": 4000
+ }
+}

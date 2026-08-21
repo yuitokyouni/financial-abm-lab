@@ -21,6 +21,7 @@ from pathlib import Path
 import numpy as np
 
 from btc_data import load, windows
+from nh_har import simulate_population_har
 from nh_model import simulate_population
 from run_model_adequacy import draw
 
@@ -43,6 +44,11 @@ def aggregate(r: np.ndarray, factor: int) -> np.ndarray:
 
 
 def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--model", choices=["nh", "nh_har"], default="nh")
+    args = ap.parse_args()
+    sim = simulate_population if args.model == "nh" else simulate_population_har
     rng = np.random.default_rng(11)
     ts, r = load()
 
@@ -65,7 +71,7 @@ def main() -> None:
     for freq, segs in series.items():
         n = len(segs[0])
         btc = np.nanmean([acf_abs(s) for s in segs], axis=0)
-        M = simulate_population(theta, n, seed=21)
+        M = sim(theta, n, seed=21)
         model = np.array([acf_abs(x) for x in M])
         ok = np.isfinite(model).all(axis=1)
         model, th = model[ok], {k: v[ok] for k, v in theta.items()}
@@ -73,7 +79,8 @@ def main() -> None:
         # the draws that match BTC at lag 1, then where they land at lag 20
         j1, j20 = LAGS.index(1), LAGS.index(20)
         close = np.abs(model[:, j1] - btc[j1]) < 0.02
-        print(f"\n=== {freq}  (n = {n} per segment, {len(segs)} segment(s)) ===")
+        print(f"\n=== [{args.model}] {freq}  (n = {n} per segment, "
+              f"{len(segs)} segment(s)) ===")
         print(f"{'lag':>5s} {'BTC':>9s} {'model best-lag1 med':>21s} "
               f"{'model max over prior':>22s}")
         rows = []
@@ -97,8 +104,8 @@ def main() -> None:
                      "n_model_draws": int(len(model))}
 
     RESULTS.mkdir(exist_ok=True)
-    (RESULTS / "memory_check.json").write_text(json.dumps(out, indent=1))
-    print(f"\nwrote {RESULTS/'memory_check.json'}")
+    (RESULTS / f"memory_check_{args.model}.json").write_text(json.dumps(out, indent=1))
+    print(f"\nwrote {RESULTS/f'memory_check_{args.model}.json'}")
 
 
 if __name__ == "__main__":

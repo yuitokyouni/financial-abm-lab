@@ -1,0 +1,27 @@
+drawing model cloud ...
+
+=== hourly  (n = 2000 per segment, 36 segment(s)) ===
+  lag       BTC   model best-lag1 med   model max over prior
+    1    0.2440                0.2427                 0.9496
+    2    0.1858                0.1143                 0.8867
+    5    0.1389                0.0132                 0.8141
+   10    0.1195               -0.0027                 0.6940
+   20    0.1055               -0.0028                 0.5228
+   50    0.0668               -0.0041                 0.3123
+  100    0.0431               -0.0024                 0.2442
+  draws with acf|r|(20) >= BTC's 0.105: 2.17% of the prior
+  draws matching BTC at lag 1 AND reaching lag 20: 0.00%
+
+=== daily  (n = 3862 per segment, 1 segment(s)) ===
+  lag       BTC   model best-lag1 med   model max over prior
+    1    0.2826                0.2813                 0.9433
+    2    0.1770                0.1664                 0.8908
+    5    0.1820                0.0223                 0.8211
+   10    0.1356                0.0001                 0.6932
+   20    0.1126               -0.0005                 0.5327
+   50    0.0847               -0.0038                 0.3319
+  100    0.0211               -0.0029                 0.2364
+  draws with acf|r|(20) >= BTC's 0.113: 2.48% of the prior
+  draws matching BTC at lag 1 AND reaching lag 20: 0.00%
+
+wrote /home/user/financial-abm-lab/experiments/YH011/results/memory_check.json

@@ -1,0 +1,28 @@
+drawing 15000 stationary points from the generous prior ...
+summaries ...
+  14998 usable model draws
+  36 BTC windows of 2000 hourly returns
+
+feature                           model range  BTC median  BTC windows in range
+excess_kurtosis         [   -0.681, 1687.642]      12.186                 1.00
+hill_left               [    0.201,  155.395]       2.636                 1.00
+hill_right              [    0.021,   14.981]       2.559                 1.00
+acf_abs_1               [   -0.379,    0.967]       0.247                 1.00
+acf_abs_20              [   -0.085,    0.688]       0.110                 1.00
+leverage                [   -0.911,    0.069]      -0.018                 0.97
+variance_ratio_20       [    0.316,   16.734]       0.927                 1.00
+cv_abs                  [    0.660,   13.360]       1.191                 1.00
+acf_absr_1              [   -0.209,    0.964]       0.247                 1.00
+acf_absr_5              [   -0.111,    0.854]       0.132                 1.00
+acf_absr_20             [   -0.082,    0.588]       0.111                 1.00
+q_tail_ratio       [    1.874,19606646025042.496]       3.552                 1.00
+q_xtail_ratio      [    2.568,1851185716926614.500]       7.187                 1.00
+q_skew                  [   -1.000,    0.387]      -0.015                 1.00
+
+joint nearest-neighbour distance (rank-normalised, per feature)
+  model-vs-model null: median 0.2835, 99th pct 0.4798
+  BTC windows:         median 0.4746, closest 0.3214
+  BTC windows beyond the null's 99th percentile: 47%
+  largest single-window p-value: 0.2810
+
+wrote /home/user/financial-abm-lab/experiments/YH011/results/model_adequacy.json
