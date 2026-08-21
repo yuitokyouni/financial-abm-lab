@@ -127,3 +127,90 @@
   同じ run が必ず出力していた agg(t=−65、実質重なりなしで較正を識別)は
   記録されなかった。その結果 provenance は復元不能で恒久クローズとなった。
   **何を保存するかの選択自体が provenance の一部である**。
+
+## W1D6(2026-08-21)起票 — Evidence Contract v0.1 の実装から出た項目
+
+成果物は `yuitokyouni/sieve` の branch `claude/schema-v2-fixture-7c82kx` に
+ある(`schemas/` の 3 件、`docs/contract/` の 6 文書、`fixtures/canary/`、
+`tools/cont_harness_reference.py`)。**内容は複製しない。本節は作業項目のみ。**
+
+### A. 契約 gap(2026-08-22 review の議題)
+
+`sieve:docs/contract/contract_gaps.md` に選択肢・推奨・根拠を記載済み。
+本節は「決めること」の一覧であり、判断内容は転記しない。
+
+1. **G1 Level-I 状態の取得経路を決める。** 2026-08-19 の「Level-I OFI に必要な
+   共通 field」の判断が **両 repo のどこにも無い**(下記 D-1)。schema 側は
+   header の `l1_availability` で経路を宣言できるようにしてあるので schema は
+   ブロックしていないが、決定自体は未了。**Cont harness は inline を要求するので、
+   Week 3 の主推定量がこの決定に依存する。**
+2. **G2 `actor_role` に `exogenous_harness` を採るか決める。** 無いと shock 注入
+   order が識別不能。BACKLOG 既存項目「主推定量を local projection(既知の外生
+   ε_t への応答)に置く」も、外生入力が log 上で識別できることに依存する。
+3. **G4 同時刻 event の順序と `cause_event_id` の整合を決める。**
+4. **G5 終端状態記録と `order_id` の共通 surface 昇格を決める。** 現状、数量保存則
+   が共通 8 field だけでは閉じない。canary は終端 `book_level` event で回避して
+   いる(新 field も ext.* も使わない)が、per-order 版は order_id 無しでは不可能。
+5. **G6 binary observation file(parquet 等)の canonical form を決める。** 現在は
+   file byte のみ hash。writer 設定違いで意味的に同一の parquet が別 digest になる。
+6. **G7 共通 surface 比較表が観測 domain まで digest で固定している件の是非。**
+7. **G8 conformance profile の FAIL 項目リストを作る。** Q1 で schema は permissive、
+   severity は profile 層と確定済み。profile 自体が未作成。D-1 に依存。
+
+### B. 既存 schema への変更要求(承認範囲外につき本日は起票のみ)
+
+Cont harness 出力が `MetricSpec` で表現できるかを確認した結果、3 箇所で不可。
+
+8. **G9 `MetricSpec` に `parameters` が無い。** `BaselineSpec` にはある。
+   interval / window / depth / shock protocol という「何を計算したかを変える
+   knob」が spec に載らない。**これは本 backlog の incident 材料と同型**
+   (宣言された基準と実際に実行される基準の乖離)。推奨は `BaselineSpec` と
+   同形の `parameters` 追加。
+9. **G10 `TestResult` に `standard_error` が無い。** `ci_low`/`ci_high` はあるが、
+   本 backlog の不確実性表記規約(SD か SE か・ddof・n を必須)を CI は担えない。
+   加えて `TestResult` 1 件 = scalar 1 件なので、window 別の
+   (β̂_i, SE_i, R²_i) ベクトルの置き場が無い。
+10. **G11 `MetricRequirements` が event log 入力を表現できない。** column /
+    geometry 指向であり、「`ordering.tie_break` が undefined でない log」「
+    `l1_availability` が inline の log」という要求が書けない。
+
+    8〜10 は「event stream 推定量を metric registry の中に置くか横に置くか」という
+    1 つの問いなので、**まとめて決める**こと。別々に答えると半端に非互換な
+    答えが 3 つできる。
+
+### C. 実装(freeze 後)
+
+11. **RunManifest v2 / EventLog / CanaryResult を `sieve.core.models` の pydantic
+    model にし、`sieve schemas export` の対象に入れる。** 現状は hand-authored の
+    JSON Schema として並置(既存 schema を触らないため)。移行時に
+    `tests/unit/test_cli.py::test_schemas_export` の期待も更新が要る。
+12. **canary を CI に統合する(8/24)。** `fixtures/canary/run_canary.py` は exit code
+    が verdict(0 MATCH / 1 MISMATCH / 2 UNVERIFIABLE / 3 PENDING_GENERATION)なので
+    パース不要。標準ライブラリのみ・1 秒未満で走る。
+13. **Cont estimator 用の非退化 fixture を用意する。** canary fixture は 40 step の
+    toy で価格がほとんど動かず(328 pair 中 price-changing 5)、β̂ はほぼ 0、
+    λ は not estimable。**canary fixture は Cont estimator の妥当な入力ではない。**
+    I/O 形状の確認には使えるが、推定量の数値的な確認には別の入力が要る。
+
+### D. 所在確認が必要な文書(本日ブロックされた項目)
+
+14. **§2.1 必須 10 項目を定義しているカレンダー原本の所在。** 両 repo に無く
+    (`§2.1` の全文検索は `imported/` 配下の無関係文書のみ)、**「§2.1 全項目 →
+    具体 field」解決表(8/22 凍結条件)が埋められなかった。** field 側は完成して
+    いる(`sieve:docs/contract/evidence_contract_v0.1.md` §7 Table A)ので、項目
+    一覧さえあれば機械的に埋まる。項目名を推測で埋めることはしていない。
+    G8(profile の FAIL リスト)も同じ文書に依存する。
+15. **F8-R1〜R3 の隔離表の所在。** `F8-R` は両 repo に 1 件も無い。よって
+    「対応差計算に対して成立、run 再生成は /tmp 未 digest により対象外」という
+    検証範囲注記は**どこにも反映していない**。注記文は失われないよう
+    2026-08-21 のセッション出力に保存してある。存在しない表を新規作成すると、
+    注記が乗るべき権威そのものを捏造することになるため作成しなかった。
+16. **`claims v1.0` の所在。** Cont harness の位置づけの参照先だが未確認。
+    近いものとして `imported/PROV-ABM-atlas/docs/program_claims_v1.md` が
+    あるが、同一である確証は無い。
+17. **commit 規則(2026-08-20 承認)の正本行。** 本ファイルのヘッダにあるはず
+    との指示だったが、現ヘッダは「権威の分担」宣言のみで commit 規則の記載は
+    無い。**委任記録行も存在せず、前倒し 2 件(カレンダーヘッダ追記 /
+    BACKLOG 起票 commit)に対応する commit も両 repo の履歴に無い**
+    (`origin/main` からの差分はゼロだった)。したがって hash の追記は
+    行っていない。規則本文を知らないまま復元すると、それ自体が並行権威になる。
