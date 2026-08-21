@@ -1,0 +1,13 @@
+  25 requests, 7499 candles, at 2016-10-27
+  50 requests, 14991 candles, at 2017-09-04
+  75 requests, 22481 candles, at 2018-07-14
+  100 requests, 29964 candles, at 2019-05-22
+  125 requests, 37461 candles, at 2020-03-30
+  150 requests, 44959 candles, at 2021-02-05
+  175 requests, 52459 candles, at 2021-12-15
+  200 requests, 59959 candles, at 2022-10-23
+  225 requests, 67456 candles, at 2023-09-01
+  250 requests, 74956 candles, at 2024-07-09
+  275 requests, 82456 candles, at 2025-05-18
+  300 requests, 89951 candles, at 2026-03-26
+93203 candles 2016-01-01 00:00:00+00:00 -> 2026-08-21 17:00:00+00:00, 21 gaps (left as gaps), wrote ../data/btc_usd_1h.csv

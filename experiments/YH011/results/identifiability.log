@@ -1,0 +1,33 @@
+p2 grid 0.00..0.45 (stationarity ceiling 0.481)
+
+=== T = 1000  (400 runs per grid point, oracle nuisance) ===
+feature             d(feat)/dp2   noise sd  sens/unit p2  min detectable dp2
+excess_kurtosis         10.7758     0.3165         34.04               0.082
+hill_left              -23.6755     0.9306         25.44               0.110
+acf_abs_1                0.5740     0.0336         17.07               0.164
+cv_abs                   0.3595     0.0220         16.36               0.171
+q_xtail_ratio            2.6671     0.1922         13.87               0.202
+variance_ratio_20        1.5077     0.1408         10.71               0.261
+  joint vector: min detectable dp2 ranges 0.063 (at p2~0.0) .. 0.180 (at p2~0.2)
+
+=== T = 5000  (400 runs per grid point, oracle nuisance) ===
+feature             d(feat)/dp2   noise sd  sens/unit p2  min detectable dp2
+excess_kurtosis         53.3802     0.1512        353.08               0.008
+cv_abs                   0.6163     0.0088         69.69               0.040
+leverage                -0.3001     0.0057         52.70               0.053
+hill_left              -24.2865     0.4657         52.15               0.054
+variance_ratio_20        3.2329     0.0661         48.88               0.057
+acf_abs_1                0.7708     0.0162         47.48               0.059
+  joint vector: min detectable dp2 ranges 0.030 (at p2~0.0) .. 0.071 (at p2~0.2)
+
+=== T = 20000  (400 runs per grid point, oracle nuisance) ===
+feature             d(feat)/dp2   noise sd  sens/unit p2  min detectable dp2
+excess_kurtosis        770.9419     0.1025       7522.59               0.000
+cv_abs                   1.6110     0.0049        329.15               0.009
+leverage                -0.6664     0.0026        259.27               0.011
+variance_ratio_20        8.2792     0.0338        245.03               0.011
+acf_abs_1                1.1375     0.0082        139.29               0.020
+acf_absr_1               1.0105     0.0089        113.15               0.025
+  joint vector: min detectable dp2 ranges 0.015 (at p2~0.0) .. 0.038 (at p2~0.2)
+
+wrote /home/user/financial-abm-lab/experiments/YH011/results/identifiability.json
