@@ -44,12 +44,17 @@ def main() -> None:
     print(f"bank {bank_path.name}: {len(S)} draws, "
           f"p2 prior [{p2.min():.2f}, {p2.max():.2f}]")
 
-    abc = ABCPosterior(S, p2, accept_frac=0.02)
-
-    # null distribution of the support distance, from the bank against itself
+    # The null for the support distance has to come from draws the ABC cloud
+    # does NOT contain: scoring a bank point against its own bank finds itself
+    # at distance zero, which collapses the gate and lets every observation
+    # through. Hold out a slice, build the cloud on the rest.
     rng = np.random.default_rng(0)
-    idx = rng.choice(len(abc.raw), min(600, len(abc.raw)), replace=False)
-    d_null = abc.support_distance(abc.raw[idx])
+    n_hold = min(800, len(S) // 5)
+    hold = rng.choice(len(S), n_hold, replace=False)
+    mask = np.ones(len(S), bool); mask[hold] = False
+
+    abc = ABCPosterior(S[mask], p2[mask], accept_frac=0.02)
+    d_null = abc.support_distance(S[hold][np.isfinite(S[hold]).all(axis=1)])
     gate = float(np.percentile(d_null, 99))
     print(f"support-distance null: median {np.median(d_null):.4f}, "
           f"99th pct {gate:.4f}  <- gate")
