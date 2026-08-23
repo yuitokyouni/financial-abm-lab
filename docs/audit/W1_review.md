@@ -18,6 +18,7 @@ began (§1), so the term is used only where that is true.
 |---|---|---|
 | D1 | **spec freeze 8/22→8/23 (1 day slip; the 8/22 session was not run). The floor the 8/24 work consumes directly (3 schemas + exact fixture) was already satisfied by the W1D6 output, so there is no downstream effect — conditional on the `main` integration completing today.** | integration completed 2026-08-23, §1 below |
 | D2 | The 8/20 output sat on a branch for two days and was consequently invisible to the 8/21 session, which recorded the calendar and claims freeze as "not present in either repository" and inferred content it could have read. Corrected by the rule added to `BACKLOG.md`: a session branch is integrated to `main` the same day, and content before integration is not called repo-held. | §1, and the correction in §2 |
+| D2b | Two distinct loss modes were conflated under "missing" until 2026-08-23: **unmerged-branch** (the 8/20 output — recoverable inside the repository) and **chat-output-only** (the 8/19 comparison table — never in the repository at all, recoverable only from the transcript). Only the first is addressed by the same-day integration rule; the second needs a session rule that forbids producing a durable artifact into chat alone. | filed as W1D7 backlog item 8b |
 | D3 | The core event-log field set was **inferred** on 8/21 and was wrong in 2 of 8 slots (`event_id`, `actor_id` in place of order/trade ID and cause ID). Corrected on 8/23 against the calendar original and blocked by a test. | `sieve/docs/contract/evidence_contract_v0.1.md` §7 |
 
 ## 2. Branch inventory and integration (8/23, before anything else)
@@ -27,7 +28,7 @@ began (§1), so the term is used only where that is true.
 | `financial-abm-lab` | `9c9fc07` and `78419d5` are both on `origin/claude/w1d1-claims-freeze-revision-wubnix`, together with `c51cf59` and `4fdafd7`. **Not lost.** Carried `W1D1_claims_freeze.md`, `sieve_12_week_calendar_2026-08-16.md` (header 3 lines + change note), and the BACKLOG commit-rule and delegation-record lines. Merged to `main` (`c1f718a`), then the W1D6 branch merged (`dd32446`). `BACKLOG.md` auto-merged, both sections retained; no conflict outside it. |
 | `sieve` | the W1D6 output (3 schemas, 2 fixtures, contract docs, tests) was on `origin/claude/schema-v2-fixture-7c82kx`. Merged to `main` (`9fbb47c`). **No re-submission from the session log was needed.** |
 | 8/18 quarantine table (`F8-R1`–`R3`) | **absent.** `F8-R` returns zero hits across both repositories, every branch. |
-| 8/19 comparison table (`sieve/docs/contract/schema.md`) | **absent** from every branch of both repositories. |
+| 8/19 comparison table (`sieve/docs/contract/schema.md`) | **never committed to any ref.** `git log --all -- docs/contract/schema.md` is empty, and no file of that name appears anywhere in either repository's history (8 refs in `sieve`, 82 in `financial-abm-lab`). |
 
 Both `main` branches pushed. No force-push, no history rewrite.
 
@@ -126,8 +127,13 @@ chain, and only the second was originally on that day.
 
 1. 8/18 quarantine table (`F8-R1`–`R3`) — 0 hits. Yuito's call whether to
    rewrite or close.
-2. 8/19 comparison table, 20 items — absent; the item-by-item check against the
-   freeze could not be performed.
+2. 8/19 comparison table, 20 items — **never committed to any ref**, confirmed
+   by history search across both repositories. A DIFFERENT failure mode from
+   the 8/20 branch: that branch existed and was merely unmerged, whereas the
+   8/19 table was produced under a "no commits, markdown to chat" session rule
+   and so never entered a repository at all. Recoverable only from the 8/20
+   chat transcript, by the same route the claims document took. The
+   item-by-item check against the freeze could not be performed.
 3. incident report skeleton — absent; 追補③ therefore not applied.
 4. the 2026-08-19 Level-I decision — not located. G1 was resolved on the
    options as stated, not against it.
