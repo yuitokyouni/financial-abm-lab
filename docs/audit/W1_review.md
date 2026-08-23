@@ -19,6 +19,7 @@ began (§1), so the term is used only where that is true.
 | D1 | **spec freeze 8/22→8/23 (1 day slip; the 8/22 session was not run). The floor the 8/24 work consumes directly (3 schemas + exact fixture) was already satisfied by the W1D6 output, so there is no downstream effect — conditional on the `main` integration completing today.** | integration completed 2026-08-23, §1 below |
 | D2 | The 8/20 output sat on a branch for two days and was consequently invisible to the 8/21 session, which recorded the calendar and claims freeze as "not present in either repository" and inferred content it could have read. Corrected by the rule added to `BACKLOG.md`: a session branch is integrated to `main` the same day, and content before integration is not called repo-held. | §1, and the correction in §2 |
 | D2b | Two distinct loss modes were conflated under "missing" until 2026-08-23: **unmerged-branch** (the 8/20 output — recoverable inside the repository) and **chat-output-only** (the 8/19 comparison table — never in the repository at all, recoverable only from the transcript). Only the first is addressed by the same-day integration rule; the second needs a session rule that forbids producing a durable artifact into chat alone. | filed as W1D7 backlog item 8b |
+| D4 | `sieve` `main` CI was **red for roughly 40 minutes** on the freeze day (runs 25, 26, 28, 30), caused by this session's own pushes. Two distinct faults: (i) a real defect — the `CanaryResult` carried the running interpreter version in a `reason` string, so a machine-local fact reached a hashed document and the minted examples could not be regenerated on another interpreter; (ii) the guard test written for (i) was itself wrong — it substring-scanned for `getpass.getuser()`, which is `runner` on the GitHub runner and matched the example's own literal `example-runner`. Root process cause: the full suite was not run locally before pushing (no numpy in the session environment), so only the stdlib-only contract tests were exercised. Both faults fixed; `main` green at `0a44b2b` (test run 32636373569, lint run 32636373585, all jobs success, both interpreters, seal reproduces). | §4 |
 | D3 | The core event-log field set was **inferred** on 8/21 and was wrong in 2 of 8 slots (`event_id`, `actor_id` in place of order/trade ID and cause ID). Corrected on 8/23 against the calendar original and blocked by a test. | `sieve/docs/contract/evidence_contract_v0.1.md` §7 |
 
 ## 2. Branch inventory and integration (8/23, before anything else)
@@ -82,6 +83,21 @@ in the same file.
 ```
 All checks passed!
 ```
+
+**CI on `main`** — the acceptance evidence above is local; this is the same
+work on GitHub's runners, which is what makes the cross-machine claims real.
+`main @ 0a44b2b`:
+
+```
+test  run 32636373569  success   test (3.11) / test (3.12) / parity
+      incl. "golden path smoke" and "seal reproduces on this machine" on both
+lint  run 32636373585  success
+```
+
+Two intermediate runs on `main` were red today; see deviation D4. The defect
+that caused the first of them — a machine-local fact reaching a hashed
+document — is the contract's own prohibition, and it was the 3.11/3.12 matrix
+that caught it.
 
 **Exact fixture digests** (what 8/24's hash chain consumes)
 
