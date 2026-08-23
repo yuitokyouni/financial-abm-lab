@@ -9,6 +9,36 @@
 - 理由: 並行権威は本プロジェクトで再現している失敗様式である(下記
   incident 材料 3 件)。P4 の research_status.yaml(単一状態源)と同じ原則を
   backlog にも適用する。
+- **claim・非claim の正は `W1D1_claims_freeze.md` (v1.0)。** 日程・gate・11/7
+  決定表の正は `sieve_12_week_calendar_2026-08-16.md` §4。
+- **commit 規則(2026-08-20 Yuito 承認)**: commit は Yuito の明示指示がある場合のみ
+  CC が実行可。自発 commit は禁止。指示文言がセッションログに残ることをもって
+  委任記録とする。**本行を規則文の正本とし、プロンプトでは再掲せず参照のみとする**
+  (規則文自体を書き写すと、規則の並行典拠という同型の穴を開けることになるため)。
+- **委任適用記録**: `9c9fc07`(claims 収容) / `78419d5`(カレンダー収容) /
+  `c51cf59`(カレンダーヘッダへ claim 記述の優先順位宣言を追記) / 本起票コミット自身
+  (自己参照のため hash は本文に持てない — `git log` 上で本行を追加したコミットが
+  4 件目にあたる)。
+
+## P0〜P5 進捗表(claims 草稿 §4 から移設)
+
+| P | 内容 | 状態 |
+|---|---|---|
+| P0 | read-only 棚卸し | 完了・main マージ済み |
+| P1 | effective_config | 未着手 |
+| P2 | canary | 未着手 |
+| P3 | q 置換＋対照群 | 未着手 |
+| P4 | repo 状態源一元化 | 保留 — 解除前提は下記§「P4 解除の前提(YH007-8)」を正とする |
+| P5 | 2×2 ベンチマーク | 未着手 |
+
+- 日程・週割当は入れない(カレンダー権限)。
+- **番号衝突の注意**: 本表の P 番号は financial-abm-lab の監査系列である。sieve の
+  コミット `6cce339`「external audit P1/P2」は**別系列**で、そちらは sieve main へ
+  マージ済み。本表の P1/P2 は未着手であり、両者を同一視しないこと
+  (「宣言された状態」と「実際の状態」の乖離は下記 incident 材料の再発型)。
+- 状態列は 2026-08-16 に repo 現況と照合済み(P0 は `746b854` 以降マージ条件 1-5・
+  Week 0 クローズまで origin/main、P1 の effective_config は言及のみで実装なし、
+  P2 の canary は 3 repo に不在、P4 の research_status.yaml は不在)。
 
 ## P4 解除の前提(YH007-8)
 
@@ -58,6 +88,29 @@
    ret_acf は較正を識別せず agg のみが決定的(paired t=−65)だったのに、元の
    主張が agg を記録していなかったため遡及識別が不能だった実例
    (P3 の「流動性診断量を全 run の出力に含める」要件の先取り根拠)。
+5. **atlas 各セルの「反証されていない」に最小検出可能効果量を必須添付。**
+   表示仕様は Contract v0.2 候補。
+6. **contract v0.1 に外部の書き手を 1 名以上入れる。** Week 7 接触の目的として明記。
+
+## 事業形態・governance(11/7 decision memo で判断)
+
+1. **commercial simulator と neutral benchmark governance の利益相反。**
+   11/7 decision memo で組織分離を含め判断する。
+2. **初期 data moat は customer realized data ではなく falsification atlas。**
+3. **Week 7 インタビューに運営主体の条件を開かせる設問を追加**(5 択は後段)。
+4. **ground truth 不要評価の一般化構想(property-based evaluation
+   infrastructure)。**「rejector ＋ ground truth 割当最適化」への再定式化を含む。
+   検討は 11/7 以降(claims v1.0 §2「範囲」の非 claim 行と対)。
+
+## 恒久クローズ(再探索しない)
+
+- **claims 草稿 §5 項目 9 以降**: 原本未コミットのため両側で復元不能を確認
+  (2026-08-16)。再探索しない。確認範囲: 3 repo の作業ツリー、全ブランチ・
+  全コミットの履歴検索(追加/削除/改名を含む)、Google Drive のタイトル・全文検索。
+  いずれも 0 件。**追記(2026-08-20)**: 凍結本文 v1.0 は
+  `docs/audit/W1D1_claims_freeze.md` として本 repo にコミットされ、外部のみの
+  正本ではなくなった。ただし v1.0 は草稿 §5 を削除した後の版であり、項目 9 以降は
+  v1.0 にも含まれない。本クローズは維持する。
 
 ## Week 3 pilot への引き継ぎ(P0 是正の副産物 — 数値と方針)
 
