@@ -15,6 +15,12 @@
   CC が実行可。自発 commit は禁止。指示文言がセッションログに残ることをもって
   委任記録とする。**本行を規則文の正本とし、プロンプトでは再掲せず参照のみとする**
   (規則文自体を書き写すと、規則の並行典拠という同型の穴を開けることになるため)。
+- **統合規則(2026-08-23 追加)**: セッション branch は**当日中に main へ統合する**
+  (統合自体は委任可)。**統合前の内容を「repo 収容済み」と呼ばない。**
+  根拠は事故 1 件: 8/20 の成果(claims 凍結 v1.0・12 週カレンダー v1.1)が
+  branch 上に 2 日留まった結果、8/21 セッションからは「両 repo のどこにも無い」と
+  観測され、読めば済んだ §2.1 を推定で埋めて 8 項目中 2 項目を誤った。
+  branch にあることと repo にあることは別である。
 - **委任適用記録**: `9c9fc07`(claims 収容) / `78419d5`(カレンダー収容) /
   `c51cf59`(カレンダーヘッダへ claim 記述の優先順位宣言を追記) / 本起票コミット自身
   (自己参照のため hash は本文に持てない — `git log` 上で本行を追加したコミットが
@@ -267,3 +273,48 @@ Cont harness 出力が `MetricSpec` で表現できるかを確認した結果�
     BACKLOG 起票 commit)に対応する commit も両 repo の履歴に無い**
     (`origin/main` からの差分はゼロだった)。したがって hash の追記は
     行っていない。規則本文を知らないまま復元すると、それ自体が並行権威になる。
+
+
+## W1D7(2026-08-23)起票 — v0.1 凍結レビューから出た項目
+
+成果物は sieve `main`(`docs/contract/`・`schemas/`・`fixtures/canary/`)。
+**内容は複製しない。本節は作業項目のみ。** 凍結時点の状態は
+`W1_review.md` を正とする。
+
+### A. 凍結後(v0.2 以降・post-G0)
+
+1. **G7 比較表の互換/観測分離。** canary は現行の厳格版のまま維持と決定済み。
+   一般 conformance check 用に「互換性半分(field 有無・型・単位=安定)」と
+   「観測半分(値域=情報のみ、hash しない)」へ割るかは post-G0。
+   precondition の意味が変わるため凍結日の判断にしない。
+2. **Parquet content の canonical form。** 現在 contract digest を持てるのは
+   canonical serialization を定義した 4 形式のみで、Parquet は byte digest しか
+   無い。byte digest には何も束縛していないので当面の実害は無いが、
+   observation を chain に載せるには要る。
+3. **G9〜G11 の非対称そのもの。** 8/23 は「harness を registry の横に置く」で
+   解決したが、`MetricSpec` に `parameters` が無い(`BaselineSpec` にはある)、
+   `TestResult` に `standard_error` が無い、`MetricRequirements` が event stream
+   入力を表現できない、の 3 点は残っている。**3 件は 1 つの問いなのでまとめて
+   決める。**
+4. **pydantic 化。** 3 + 3 schema を `core/models.py` へ移す場合、
+   **「`sieve schemas export` の出力 == 規範ファイル」の test を通ることを条件と
+   する**(規範は schema ファイル側、実装は models.py 側という宣言を守るため)。
+   現在は export guard で上書きを禁止している。
+
+### B. 8/24 の前提として今日確定した事項(作業ではなく制約)
+
+5. **Engine 1 の exact fixture は full runtime fingerprint domain で、固定
+   container で 8/24 に生成する。** toy engine の interpreter 除外は
+   harness self-test 限定であり contract 上の前例ではない(fixture と registry の
+   両方に注記済み)。
+6. **8/24 は「Engine 1 fixture の mint」と「hash chain 構築」の 2 件を同日に
+   持つ。** 当初は後者のみが割り当てられていた。時間超過の唯一の予見リスク。
+
+### C. 復元・判断待ち(W1_review.md §6 と対)
+
+7. 8/18 隔離表(F8-R1〜R3)が全 branch に不在。書き直すか恒久クローズかは
+   Yuito 判断。検証範囲注記は W1_review.md に逐語保存済み。
+8. 8/19 対照表(20 項目)が不在。凍結内容との逐項チェックは実施できていない。
+9. incident report 骨子が不在。**追補③の 4 項目は骨子復元が条件のため未適用**
+   (部分適用もしていない)。内訳は W1_review.md §6 の 5〜8。
+10. 2026-08-19 の Level-I 判断が不在。G1 は提示された選択肢の上で決定した。
