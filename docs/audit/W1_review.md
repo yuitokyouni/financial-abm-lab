@@ -150,6 +150,18 @@ chain, and only the second was originally on that day.
    and so never entered a repository at all. Recoverable only from the 8/20
    chat transcript, by the same route the claims document took. The
    item-by-item check against the freeze could not be performed.
+
+   **Partly substituted, not discharged (2026-08-23):**
+   `W1D4_schema_table_reconstruction.md` reconstructs the table from what the
+   repository can still prove — the frozen `conformance_map.v1.json` and the
+   16 schemas as they stood at `sieve@6cce339` — using only mechanically
+   derivable columns, and declines to re-invent the original's verdict
+   vocabulary. Every derivable claim in it was machine-verified on intake
+   (26/26 pointers exact, 20/20 schema-state claims true, 16 schemas
+   confirmed); the verification is recorded in its appendix. It is **not**
+   the verbatim original and does **not** discharge this item: whether the
+   original's 20 rows agree with the freeze is still unanswerable without the
+   transcript, and the freeze checklist entry stands unchanged.
 3. incident report skeleton — absent; 追補③ therefore not applied.
 4. the 2026-08-19 Level-I decision — not located. G1 was resolved on the
    options as stated, not against it.
