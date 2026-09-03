@@ -1,0 +1,26 @@
+[project]
+name = "yh012-lobcore-impact"
+version = "0.1.0"
+description = "YH012: lobcore single-order impact (Phase 1 World)"
+requires-python = ">=3.11"
+dependencies = [
+    # ローカル lobcore（ユーザマシン既定パス）。CI/Cloud では LOBCORE_ROOT と editable install を併用。
+    "lobcore @ file:///home/yuito/dev/lobcore/python",
+    "numpy>=1.24",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["../.."]
+include = ["experiments.YH012*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["../.."]

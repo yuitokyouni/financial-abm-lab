@@ -1,0 +1,24 @@
+seed: 42
+end_time: 50000
+rule: price_time
+
+# 出口基準を満たすよう調整済み。理由は specs/spec.md
+# end_time=500_000 は Python バッチ経路で重い。50k で出口基準を満たすことを確認済み。
+mean_wakeup: 800
+f0: 10000
+f_sigma: 0.25
+band: 30
+qty_min: 1
+qty_max: 5
+noise_offset_max: 15
+chartist_lookback: 3
+noise_take_prob: 0.15
+chartist_take_prob: 0.25
+
+agents:
+  n_fundamentalist: 30
+  n_chartist: 25
+  n_noise: 45
+
+# 未設定時は LOBCORE_ROOT / /home/yuito/dev/lobcore / /workspace を探索
+# lobcore_root: /home/yuito/dev/lobcore
