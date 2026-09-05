@@ -100,7 +100,8 @@ def test_prefix_gate_rejects_changed_fields_and_padding():
     changed = bytearray(f.tobytes())
     changed[11] ^= 1  # aligned LogRecord padding; np.array_equal alone misses this
     b = np.frombuffer(changed, dtype=LOG_DTYPE)
-    assert logs_byte_equal(f, b)
+    assert np.array_equal(f, b)
+    assert not logs_byte_equal(f, b)
     with pytest.raises(CounterfactualMismatch, match="byte"):
         assert_pre_intervention_equal(f, b, t0=4)
     b = _log([2, 4], [98, 99], [101, 101])

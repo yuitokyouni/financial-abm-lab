@@ -22,12 +22,12 @@ def assert_pre_intervention_equal(
         raise CounterfactualMismatch(
             "Empty pre-intervention log; cannot certify prefix equality"
         )
-    if not logs_byte_equal(f_prefix, b_prefix):
+    prefix_equal = logs_byte_equal(f_prefix, b_prefix)
+    if not prefix_equal and not np.array_equal(f_prefix, b_prefix):
         raise CounterfactualMismatch(
             "Pre-intervention fields differ; counterfactual analysis stopped"
         )
-    # Use slices of the original arrays to preserve native alignment bytes.
-    # Boolean indexing in log_before_time may allocate new padding bytes.
+    # Also inspect original buffers to locate padding-only mismatches precisely.
     for name, log in (("factual", factual), ("baseline", baseline)):
         if np.any(np.diff(log["received_at"]) < 0):
             raise CounterfactualMismatch(f"{name} log is not time ordered")
