@@ -12,6 +12,7 @@ import subprocess
 import sys
 import time
 
+import numpy as np
 import yaml
 
 from .impact import assert_pre_intervention_equal
@@ -21,6 +22,91 @@ from .version import default_lobcore_root, lobcore_git_hash
 
 def save_json(path, value):
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+
+def select_eligible_seeds(diagnostic, candidates, config):
+    """Apply the fixed-t0 ask criterion to saved, native background observations."""
+    diagnostic = Path(diagnostic)
+    provenance_path = diagnostic / "provenance.json"
+    provenance = json.loads(provenance_path.read_text())
+    source = Path(__file__).parent
+    for name in ("agents.py", "experiment.py"):
+        if (
+            hashlib.sha256((source / name).read_bytes()).hexdigest()
+            != provenance["model_source_sha256"][name]
+        ):
+            raise ValueError(f"Background source changed since diagnostic: {name}")
+    t0 = config["impact"]["t0"]
+    observations, eligible = [], []
+    for seed in candidates:
+        directory = diagnostic / f"seed{seed:04d}"
+        summary_path = directory / "summary.json"
+        summary = json.loads(summary_path.read_text())
+        # Recheck both the saved native quotes and the background log provenance.
+        meta, _ = read_verified_log(directory / "background.bin", summary["log"])
+        observed_config = deepcopy(meta.agent_config["config"])
+        expected = {**config, "seed": seed}
+        observed_config["end_time"] = config["end_time"]
+        if (
+            observed_config != expected
+            or meta.master_seed != seed
+            or meta.end_time < t0
+        ):
+            raise ValueError(f"Diagnostic configuration mismatch: seed={seed}")
+        quotes_path = directory / "native_quotes.npz"
+        quotes_hash = hashlib.sha256(quotes_path.read_bytes()).hexdigest()
+        if quotes_hash != summary["native_quotes_sha256"]:
+            raise ValueError(f"Native quotes SHA-256 mismatch: seed={seed}")
+        with np.load(quotes_path, allow_pickle=False) as data:
+            quotes = data["quotes"]
+            rows = quotes[quotes[:, 0] == t0]
+        if rows.shape != (1, 5):
+            raise ValueError(
+                f"Require exactly one native observation at t0: seed={seed}"
+            )
+        _, bid_price, bid_qty, ask_price, ask_qty = map(int, rows[0])
+        if bid_qty < 0 or ask_qty < 0:
+            raise ValueError(f"Negative native quote quantity: seed={seed}")
+        at_t0 = {
+            "time": t0,
+            "bid_price": bid_price,
+            "bid_qty": bid_qty,
+            "ask_price": ask_price if ask_qty else None,
+            "ask_qty": ask_qty,
+        }
+        if at_t0 != summary["at_t0"]:
+            raise ValueError(f"Native t0 observation/summary mismatch: seed={seed}")
+        keep = ask_qty > 0
+        if keep:
+            eligible.append(seed)
+        observations.append(
+            {
+                "seed": seed,
+                "eligible": keep,
+                "at_t0": at_t0,
+                "reason": "best_ask present at fixed t0"
+                if keep
+                else "best_ask absent at fixed t0",
+                "diagnostic_lobcore_commit": meta.lobcore_version,
+                "native_quotes_sha256": quotes_hash,
+                "background_log_sha256": summary["log"]["log_sha256"],
+                "summary_sha256": hashlib.sha256(summary_path.read_bytes()).hexdigest(),
+            }
+        )
+    if len(eligible) < 2:
+        raise ValueError("Fewer than two eligible seeds")
+    return eligible, {
+        "criterion": "Exclude iff native best_ask is absent at fixed t0; no outcome-based exclusions.",
+        "estimand": "Mean impact conditional on a background best_ask existing at t0.",
+        "timing": "Criterion adopted after liquidity diagnosis, before this ensemble rerun.",
+        "candidate_seeds": list(candidates),
+        "eligible_seeds": eligible,
+        "excluded_seeds": [row["seed"] for row in observations if not row["eligible"]],
+        "diagnostic_provenance_sha256": hashlib.sha256(
+            provenance_path.read_bytes()
+        ).hexdigest(),
+        "observations": observations,
+    }
 
 
 def verified_pair(directory, config, lobcore_version):
@@ -171,6 +257,11 @@ def main():
     parser.add_argument("--n-seeds", type=int, default=40)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--liquidity-diagnostic",
+        type=Path,
+        help="Saved native background observations used to exclude absent best_ask at fixed t0",
+    )
     args = parser.parse_args()
     if args.first_seed < 0 or args.n_seeds < 2 or args.workers < 1:
         parser.error("Require nonnegative seeds, n-seeds >= 2 and workers >= 1")
@@ -209,10 +300,22 @@ def main():
             "tail_start": 45000,
         },
     }
+    if args.liquidity_diagnostic:
+        plan["seeds"], plan["eligibility"] = select_eligible_seeds(
+            args.liquidity_diagnostic, plan["seeds"], config
+        )
+        plan["selection"] = plan["eligibility"]["criterion"]
+        plan["budget"] += (
+            f" Eligibility leaves {len(plan['seeds'])}/{args.n_seeds} candidates."
+        )
     if plan_path.exists():
         previous = json.loads(plan_path.read_text())
-        if not args.resume or any(
-            previous[k] != plan[k] for k in ("seeds", "config", "lobcore_commit")
+        if (
+            not args.resume
+            or any(
+                previous[k] != plan[k] for k in ("seeds", "config", "lobcore_commit")
+            )
+            or previous.get("eligibility") != plan.get("eligibility")
         ):
             parser.error(
                 "Existing plan requires --resume with identical seeds, config and lobcore"

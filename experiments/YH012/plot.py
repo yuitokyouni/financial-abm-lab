@@ -146,7 +146,7 @@ def plot_ensemble(times, delta, stats, *, t0, t1, qty, tail, output):
         decorate(ax)
     axes[2].set_xlim(t0 - 1000, times[-1])
     fig.suptitle(
-        f"YH012 | buy Q={qty} | {len(delta)} seeds | end={times[-1]:,}\nAll pre-t0 F/B prefixes byte-identical; no seed exclusions"
+        f"YH012 | buy Q={qty} | {len(delta)} seeds | end={times[-1]:,}\nAll included pre-t0 F/B prefixes byte-identical; fixed eligible cohort"
     )
     fig.savefig(output / "ensemble.png", dpi=170)
     plt.close(fig)

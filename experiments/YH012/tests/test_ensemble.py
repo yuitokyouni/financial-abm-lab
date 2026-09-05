@@ -243,3 +243,90 @@ def test_incomplete_ensemble_cannot_produce_a_partial_mean(saved_ensemble, tmp_p
     with pytest.raises(ValueError, match="incomplete or stopped"):
         analyze(saved_ensemble, tmp_path / "report")
     assert not (tmp_path / "report").exists()
+
+
+@pytest.fixture
+def liquidity_diagnostic(tmp_path):
+    from pathlib import Path
+    from lobcore import ExperimentMeta, LOG_DTYPE, write_log_file
+    from experiments.YH012 import run_ensemble
+
+    source = Path(run_ensemble.__file__).parent
+    config = {"end_time": 12, "impact": {"t0": 5, "t1": 7, "qty": 200}}
+    provenance = {
+        "model_source_sha256": {
+            name: hashlib.sha256((source / name).read_bytes()).hexdigest()
+            for name in ("agents.py", "experiment.py")
+        }
+    }
+    (tmp_path / "provenance.json").write_text(json.dumps(provenance))
+    # Seed 13 is deliberately eligible: selection must depend on the quote,
+    # never on the identity of the previously observed outlier.
+    for seed, ask_qty in ((7, 0), (13, 1), (21, 2)):
+        directory = tmp_path / f"seed{seed:04d}"
+        directory.mkdir()
+        quotes = np.array(
+            [[1, 99, 1, 101, 1], [5, 99, 1, 101 if ask_qty else 0, ask_qty]]
+        )
+        path = directory / "native_quotes.npz"
+        np.savez_compressed(path, quotes=quotes)
+        log = np.zeros(1, dtype=LOG_DTYPE)
+        meta = ExperimentMeta(
+            seed,
+            "price_time",
+            2,
+            1,
+            6,
+            "a" * 40,
+            agent_config={"config": {**config, "seed": seed, "end_time": 6}},
+        )
+        write_log_file(directory / "background.bin", meta, log)
+        summary = {
+            "log": {
+                "meta": asdict(meta),
+                "n_records": 1,
+                "log_sha256": hashlib.sha256(log.tobytes()).hexdigest(),
+            },
+            "native_quotes_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "at_t0": {
+                "time": 5,
+                "bid_price": 99,
+                "bid_qty": 1,
+                "ask_price": 101 if ask_qty else None,
+                "ask_qty": ask_qty,
+            },
+        }
+        (directory / "summary.json").write_text(json.dumps(summary))
+    return tmp_path, config
+
+
+def test_eligibility_uses_native_ask_at_fixed_time_not_seed_number(
+    liquidity_diagnostic,
+):
+    from experiments.YH012.run_ensemble import select_eligible_seeds
+
+    directory, config = liquidity_diagnostic
+    selected, certificate = select_eligible_seeds(directory, [7, 13, 21], config)
+    assert selected == [13, 21]
+    assert certificate["excluded_seeds"] == [7]
+    assert certificate["candidate_seeds"] == [7, 13, 21]
+    assert len(certificate["observations"]) == 3
+
+
+def test_eligibility_rejects_corrupt_native_quotes(liquidity_diagnostic):
+    from experiments.YH012.run_ensemble import select_eligible_seeds
+
+    directory, config = liquidity_diagnostic
+    path = directory / "seed0013/native_quotes.npz"
+    path.write_bytes(path.read_bytes() + b"corruption")
+    with pytest.raises(ValueError, match="Native quotes SHA-256"):
+        select_eligible_seeds(directory, [7, 13, 21], config)
+
+
+def test_eligibility_rejects_different_experiment_configuration(liquidity_diagnostic):
+    from experiments.YH012.run_ensemble import select_eligible_seeds
+
+    directory, config = liquidity_diagnostic
+    config["impact"]["t0"] = 4
+    with pytest.raises(ValueError, match="configuration mismatch"):
+        select_eligible_seeds(directory, [7, 13, 21], config)

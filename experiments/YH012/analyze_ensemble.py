@@ -46,7 +46,7 @@ def analyze(directory: Path, output: Path):
         row = sample_delta(series, times)
         if not np.isfinite(row[t0:]).all():
             raise ValueError(
-                f"seed={seed}: missing post-intervention mid; no seed exclusions"
+                f"seed={seed}: missing post-intervention mid; no further seed exclusions"
             )
         if np.any(np.isfinite(row[:t0]) & (row[:t0] != 0)):
             raise ValueError(f"seed={seed}: aligned pre-intervention delta differs")
