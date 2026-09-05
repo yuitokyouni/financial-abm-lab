@@ -11,14 +11,14 @@ def default_lobcore_root() -> Path:
     env = os.environ.get("LOBCORE_ROOT")
     if env:
         return Path(env).expanduser().resolve()
-    # ユーザ環境の既定パス（指示どおり）
-    home = Path("/home/yuito/dev/lobcore")
+    # macOS / Linux 共通のユーザ環境の既定パス
+    home = Path.home() / "dev" / "lobcore"
     if home.exists():
         return home.resolve()
     # Cloud / CI: 隣接または /workspace
     for candidate in (
         Path("/workspace"),
-        Path(__file__).resolve().parents[4] / "lobcore",
+        Path(__file__).resolve().parents[3] / "lobcore",
         Path.cwd() / "lobcore",
     ):
         if (candidate / "python").is_dir() or (candidate / ".git").exists():

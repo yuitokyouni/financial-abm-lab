@@ -2,6 +2,7 @@ notebooks/yahoo_cache/
 dashboard/assets/
 canon_atlas.html
 __pycache__/
+*.egg-info/
 .ipynb_checkpoints/
 .venv/
 .venv-pams/

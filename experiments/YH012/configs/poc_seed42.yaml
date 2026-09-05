@@ -20,5 +20,5 @@ agents:
   n_chartist: 25
   n_noise: 45
 
-# 未設定時は LOBCORE_ROOT / /home/yuito/dev/lobcore / /workspace を探索
-# lobcore_root: /home/yuito/dev/lobcore
+# 未設定時は LOBCORE_ROOT / ~/dev/lobcore / /workspace / 隣接リポジトリを探索
+# 別配置の場合は LOBCORE_ROOT または lobcore_root で実際のクローンを指定する。

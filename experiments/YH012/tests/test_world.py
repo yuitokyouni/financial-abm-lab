@@ -21,7 +21,6 @@ def _base_config(**overrides) -> dict:
         "qty_max": 5,
         "noise_offset_max": 15,
         "chartist_lookback": 3,
-        "lobcore_root": "/workspace",
         "agents": {
             "n_fundamentalist": 30,
             "n_chartist": 25,

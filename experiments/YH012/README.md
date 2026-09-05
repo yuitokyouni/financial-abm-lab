@@ -49,14 +49,28 @@ $f_t$ は **sentinel ストリーム**（`Kernel.sentinel_rng(0)`）から事前
 
 ## 実行
 
-```bash
-# lobcore を editable で入れる（パスは環境に合わせる）
-pip install -e /home/yuito/dev/lobcore/python
-pip install -e experiments/YH012
+Mac / WSL ともにリポジトリ直下で以下を実行する。Python 3.12 の専用 `.venv` を使い、
+`lobcore` と `financial-abm-lab`（worktree 名でも可）を同じ親ディレクトリに置く。
 
-python -m experiments.YH012.run_world --config experiments/YH012/configs/poc_seed42.yaml
-pytest experiments/YH012/tests -q
+```bash
+git pull --ff-only
+git -C ../lobcore pull --ff-only
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -e ../lobcore/python -e "experiments/YH012[test]"
+
+.venv/bin/python -m experiments.YH012.run_world --config experiments/YH012/configs/poc_seed42.yaml
+.venv/bin/python -m pytest experiments/YH012/tests -q
 ```
+
+`pyproject.toml` にマシン固有の絶対パスは保存しない。上のコマンドはローカルの lobcore を使う。
+別の場所に置く場合は `-e ../lobcore/python` を変更し、`LOBCORE_ROOT` または設定の
+`lobcore_root` にそのクローンを指定する。既定の Git コミット取得先は `~/dev/lobcore`。
+
+GitHub の `yuitokyouni/financial-abm-lab` を正本とする。作業前に `git pull --ff-only`、
+作業後に検証して commit / push し、Mac と WSL で同時に変更しない。
+Mac の現行作業場所は `~/dev/financial-abm-lab-main`（Git worktree、`main`）。
+元の `~/dev/financial-abm-lab` とその中の同名クローンは旧作業の保存用で、YH012 には使わない。
+worktree は元のリポジトリの Git 管理領域を共有するため、元フォルダを単純削除しない。
 
 ## 構成
 
