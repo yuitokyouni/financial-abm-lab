@@ -1,0 +1,184 @@
+{
+  "seed": 42,
+  "impact_id": 100,
+  "qty": 200,
+  "t0": 25000,
+  "t1": 26000,
+  "price_offset": 2,
+  "environment": {
+    "platform": "macOS-26.5.2-arm64-arm-64bit",
+    "python": "3.12.7",
+    "numpy": "2.5.2",
+    "matplotlib": "3.11.1"
+  },
+  "arms": {
+    "factual": {
+      "meta": {
+        "master_seed": 42,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 50000,
+        "lobcore_version": "4fb83dcb2c0d17cc5239816606d2ec4cc0e3fabf",
+        "agent_config": {
+          "yh012": "phase2_impact",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "seed": 42,
+            "end_time": 50000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            }
+          },
+          "suppress_agent_ids": [],
+          "impact_id": 100,
+          "impact": {
+            "t0": 25000,
+            "t1": 26000,
+            "qty": 200,
+            "price_offset": 2,
+            "side": "buy"
+          }
+        }
+      },
+      "state_hash": 1925857981061294172,
+      "log_sha256": "d940cd31142ee3d2f27ebfb5704b3e6fd9a22f766476b3421247f518dcafbe10",
+      "n_records": 43993,
+      "n_fills": 9032,
+      "n_rejects": 0
+    },
+    "baseline": {
+      "meta": {
+        "master_seed": 42,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 50000,
+        "lobcore_version": "4fb83dcb2c0d17cc5239816606d2ec4cc0e3fabf",
+        "agent_config": {
+          "yh012": "phase2_impact",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "seed": 42,
+            "end_time": 50000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            }
+          },
+          "suppress_agent_ids": [
+            100
+          ],
+          "impact_id": 100,
+          "impact": {
+            "t0": 25000,
+            "t1": 26000,
+            "qty": 200,
+            "price_offset": 2,
+            "side": "buy"
+          }
+        }
+      },
+      "state_hash": 15247905874259579476,
+      "log_sha256": "fc2fe1e3e4b5907ff54e4c8277d62c36c8c4618a6b87c00f45d20816bc4842ed",
+      "n_records": 43858,
+      "n_fills": 8917,
+      "n_rejects": 0
+    }
+  },
+  "prefix": {
+    "records": 20570,
+    "bytes": 1974720,
+    "sha256": "194108d4de64c6928660a0d04ca2a5b845c473a1210d9e9c9762f7508c711cc2",
+    "byte_equal": true
+  },
+  "mean_delta": 0.537,
+  "positive_mean_delta": true,
+  "status": "PASS",
+  "impact_executed_qty": 200,
+  "impact_fill_count": 81,
+  "repeat_identical_log_files": true,
+  "baseline_matches_phase1_fields": true,
+  "initial_q50_trial": {
+    "prefix": {
+      "records": 20570,
+      "bytes": 1974720,
+      "sha256": "194108d4de64c6928660a0d04ca2a5b845c473a1210d9e9c9762f7508c711cc2",
+      "byte_equal": true
+    },
+    "mean_delta": 0.0,
+    "positive": false,
+    "arms": {
+      "factual": {
+        "n_records": 43878,
+        "n_fills": 8924,
+        "n_rejects": 0,
+        "state_hash": 17799541607810634958,
+        "log_sha256": "55303fc5105be95b852aedec7441cbfc37979efd459633d379e0575b6d76cfce",
+        "lobcore_version": "4fb83dcb2c0d17cc5239816606d2ec4cc0e3fabf"
+      },
+      "baseline": {
+        "n_records": 43858,
+        "n_fills": 8917,
+        "n_rejects": 0,
+        "state_hash": 15247905874259579476,
+        "log_sha256": "fc2fe1e3e4b5907ff54e4c8277d62c36c8c4618a6b87c00f45d20816bc4842ed",
+        "lobcore_version": "4fb83dcb2c0d17cc5239816606d2ec4cc0e3fabf"
+      }
+    }
+  },
+  "validation": {
+    "pytest": "37 passed",
+    "ruff": "passed",
+    "uv_pip_check": "passed"
+  }
+}

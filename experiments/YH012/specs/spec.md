@@ -1,4 +1,4 @@
-# YH012 Phase 1 — World 市場の確立
+# YH012 Phase 1–3 — 背景市場と単一注文インパクト
 
 ## Stage 6 の目的（転記）
 
@@ -56,11 +56,46 @@ sentinel component 0: 外生 fundamental $f_t$ のドリフト（`Kernel.sentine
 
 ### 実装メモ: 注文 ID
 
-lobcore の `Context` は起床ごとに `_seq` がリセットされる。同じ agent が毎起床
-自動採番だけに頼ると `order_id` が衝突し DuplicateReject になる。
-YH012 ではエージェント側で `_order_seq` を保持して明示採番する。
-（将来 lobcore 側で永続採番するなら実験側は簡略化できる。）
+lobcore PR #23（`4fb83dcb2c0d17cc5239816606d2ec4cc0e3fabf`）で、
+`BatchAdapter` がエージェントごとの連番を起床間で保持するよう修正済み。
+YH012 の `_order_seq` / `_next_order_id` は削除し、すべて `Context.submit` の自動採番を使う。
 
-## Phase 2 以降（未実装）
+## Phase 2 — 単一買い meta-order
 
-Experimental Impact agent、`run_pair`、$\Delta(t)$ 可視化は YH012 で続行。
+背景の後に ImpactAgent 1体を追加する。t0 までは注文を出さず、t0 の起床で
+最良 ask + `price_offset` の買い指値を数量 Q で1本発注する。現在は分割執行しない。
+最良 ask がない場合は明示的なエラーとし、黙って介入を省略しない。
+t0 は意思決定時刻であり、受付は核の遅延（現行1）を加えた時刻。
+
+既定設定は `configs/impact_seed42.yaml`。seed=42、t0=25,000、t1=26,000、Q=200、
+price_offset=2。初回 Q=50 は最良 ask の153を消費し切れず平均 Δ=0だったため、
+時刻・窓・指値条件を維持したまま Q のみ200に変更した。
+初回設定と結果も保存する。これは単一 seed の実装 PoC であり、較正や普遍的なインパクト則の検証ではない。
+
+## Phase 3 — F/B と成功基準
+
+lobcore `Experiment.run_pair(suppress_agent_ids=[impact_id])` を使う。
+YH012 の `ImpactExperiment._run_once` が各実行で新しい World・エージェント・
+BatchAdapter・sentinel 系列を構築する。F の Chartist 履歴や起床カウンタを B に持ち越さない。
+ImpactAgent は両実行に存在し、B の核だけが submit を捨てる。
+
+最優先ゲート: `logs_byte_equal(log_before_time(F,t0), log_before_time(B,t0))` が真、
+かつ元ログの t<t0 の生バイト列も完全一致すること。不一致なら原因・生ログを保存して
+終了コード2で停止し、Δ の計算・描画はしない。
+lobcore の同名ヘルパーは構造化配列のフィールド比較なので、パディングを含む比較を別に行う。
+核から受け取ったログは生 bytes を保持し、フィールドだけをコピーする NumPy `.copy()` を避ける。
+
+`mid_series` は各注文の受付**直前**の板スナップショット（片側のみならその価格）を読む。
+同時刻の最後の観測を採用し、F/B の観測時刻の和集合で直前値保持して整列する。
+将来値の逆埋めは行わず、空板は欠測として保持する。したがって、連続的な真の板経路の
+全時点復元ではなく、受付直前観測から定義した階段状の価格系列である。
+
+Δ(t)=m_F(t)−m_B(t)。評価窓 [t0,t1] における時間平均は
+`sum(delta_i * (time_{i+1}-time_i)) / (t1-t0)`。
+窓全体で両系列が観測可能で、平均 Δ>0 を成功とする。欠測は除外して平均せずエラーにする。
+図は matplotlib のみで全期間と評価窓の2枚を出力する。
+
+両 `ExperimentMeta` に lobcore の40桁 Git hash を保存する。取得不能なら実行を拒否する。
+比較用レポートには状態ハッシュとログ本体の SHA-256 も保存する。
+WSL/Mac 間の完全一致は、同じコード・設定での SHA-256 と状態ハッシュを両環境で照合して判定する。
+約定件数の一致だけではログ全体の同一性までは主張しない。

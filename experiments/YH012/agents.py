@@ -79,17 +79,10 @@ class AgentParams:
     market_id: int = 0
 
 
-def _next_order_id(agent: Agent, ctx: Context) -> int:
-    seq = getattr(agent, "_order_seq", 0) + 1
-    agent._order_seq = seq  # type: ignore[attr-defined]
-    return (ctx.agent_id << 32) + seq
-
-
 class Fundamentalist(Agent):
     def __init__(self, fundamental: SharedFundamental, params: AgentParams) -> None:
         self.fundamental = fundamental
         self.params = params
-        self._order_seq = 0
         self._wake_count = 0
 
     def on_wakeup(self, view: View, ctx: Context) -> None:
@@ -109,27 +102,21 @@ class Fundamentalist(Agent):
                 "buy",
                 max(1, f - half - off),
                 qty,
-                order_id=_next_order_id(self, ctx),
             )
             ctx.submit(
                 p.market_id,
                 "sell",
                 f + half + off,
                 max(1, qty),
-                order_id=_next_order_id(self, ctx),
             )
 
         if mid is not None:
             if mid < f - p.band:
                 target = min(f, int(mid) + max(1, half // 2))
-                ctx.submit(
-                    p.market_id, "buy", target, qty, order_id=_next_order_id(self, ctx)
-                )
+                ctx.submit(p.market_id, "buy", target, qty)
             elif mid > f + p.band:
                 target = max(f, int(mid) - max(1, half // 2))
-                ctx.submit(
-                    p.market_id, "sell", target, qty, order_id=_next_order_id(self, ctx)
-                )
+                ctx.submit(p.market_id, "sell", target, qty)
 
         nxt = view.now + _wakeup_delay(ctx, p.mean_wakeup)
         ctx.schedule_wakeup(nxt)
@@ -140,7 +127,6 @@ class Chartist(Agent):
         self.params = params
         self.take_prob = float(take_prob)
         self.mid_history: list[float] = []
-        self._order_seq = 0
 
     def on_wakeup(self, view: View, ctx: Context) -> None:
         p = self.params
@@ -161,28 +147,25 @@ class Chartist(Agent):
                     price = mkt.best_ask.price
                 else:
                     price = int(recent[-1]) + off
-                ctx.submit(
-                    p.market_id, "buy", price, qty, order_id=_next_order_id(self, ctx)
-                )
+                ctx.submit(p.market_id, "buy", price, qty)
             elif ret < 0:
                 if take and mkt.best_bid is not None:
                     price = mkt.best_bid.price
                 else:
                     price = int(recent[-1]) - off
-                ctx.submit(
-                    p.market_id, "sell", price, qty, order_id=_next_order_id(self, ctx)
-                )
+                ctx.submit(p.market_id, "sell", price, qty)
 
         nxt = view.now + _wakeup_delay(ctx, p.mean_wakeup)
         ctx.schedule_wakeup(nxt)
 
 
 class NoiseTrader(Agent):
-    def __init__(self, params: AgentParams, *, f0: int, take_prob: float = 0.35) -> None:
+    def __init__(
+        self, params: AgentParams, *, f0: int, take_prob: float = 0.35
+    ) -> None:
         self.params = params
         self.f0 = int(f0)
         self.take_prob = float(take_prob)
-        self._order_seq = 0
 
     def on_wakeup(self, view: View, ctx: Context) -> None:
         p = self.params
@@ -201,9 +184,7 @@ class NoiseTrader(Agent):
                 price = m.best_ask.price - 1 - off
             else:
                 price = self.f0 - off
-            ctx.submit(
-                p.market_id, "buy", max(1, price), qty, order_id=_next_order_id(self, ctx)
-            )
+            ctx.submit(p.market_id, "buy", max(1, price), qty)
         else:
             if take and m.best_bid is not None:
                 price = m.best_bid.price
@@ -213,10 +194,35 @@ class NoiseTrader(Agent):
                 price = m.best_bid.price + 1 + off
             else:
                 price = self.f0 + off
-            ctx.submit(p.market_id, "sell", price, qty, order_id=_next_order_id(self, ctx))
+            ctx.submit(p.market_id, "sell", price, qty)
 
         nxt = view.now + _wakeup_delay(ctx, p.mean_wakeup)
         ctx.schedule_wakeup(nxt)
+
+
+class ImpactAgent(Agent):
+    """One buy parent order, submitted at decision time t0 with lobcore's IDs."""
+
+    def __init__(self, *, t0: int, qty: int, price_offset: int = 0, market_id: int = 0):
+        if t0 < 1 or qty <= 0 or price_offset < 0:
+            raise ValueError("impact requires t0 >= 1, qty > 0, price_offset >= 0")
+        self.t0 = t0
+        self.qty = qty
+        self.price_offset = price_offset
+        self.market_id = market_id
+        self.submitted = False
+
+    def on_wakeup(self, view: View, ctx: Context) -> None:
+        if self.submitted:
+            return
+        if view.now < self.t0:
+            ctx.schedule_wakeup(self.t0)
+            return
+        ask = view.market(self.market_id).best_ask
+        if ask is None:
+            raise RuntimeError("ImpactAgent requires a best ask at t0")
+        ctx.submit(self.market_id, "buy", ask.price + self.price_offset, self.qty)
+        self.submitted = True
 
 
 def build_world_agents(

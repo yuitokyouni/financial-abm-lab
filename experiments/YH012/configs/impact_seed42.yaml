@@ -1,0 +1,24 @@
+# Phase 2/3 PoC: Q=200 consumes the observed 153 units at the initial best ask.
+# The initial Q=50 trial and its zero window mean are retained in the report.
+seed: 42
+end_time: 50000
+rule: price_time
+mean_wakeup: 800
+f0: 10000
+f_sigma: 0.25
+band: 30
+qty_min: 1
+qty_max: 5
+noise_offset_max: 15
+chartist_lookback: 3
+noise_take_prob: 0.15
+chartist_take_prob: 0.25
+agents:
+  n_fundamentalist: 30
+  n_chartist: 25
+  n_noise: 45
+impact:
+  t0: 25000  # decision time; arrival uses lobcore's latency (currently 1)
+  t1: 26000  # time-weighted mean delta over [t0, t1]
+  qty: 200
+  price_offset: 2  # aggressive buy limit = best ask at t0 + 2 ticks
