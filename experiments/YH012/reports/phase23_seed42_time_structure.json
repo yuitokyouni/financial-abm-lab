@@ -1,0 +1,73 @@
+{
+  "analyzed_saved_logs": true,
+  "lobcore_version": "4fb83dcb2c0d17cc5239816606d2ec4cc0e3fabf",
+  "prefix": {
+    "records": 20570,
+    "bytes": 1974720,
+    "sha256": "194108d4de64c6928660a0d04ca2a5b845c473a1210d9e9c9762f7508c711cc2",
+    "byte_equal": true
+  },
+  "time_structure": {
+    "t0": 25000,
+    "t1": 26000,
+    "end_time": 50000,
+    "onset": {
+      "time": 25002,
+      "delta": 0.5
+    },
+    "first_zero_after_onset": 26450,
+    "zero_through_end_since": 35561,
+    "peak": {
+      "time": 31298,
+      "delta": 8.0
+    },
+    "trough": {
+      "time": 32884,
+      "delta": -8.5
+    },
+    "final_delta": 0.0,
+    "late_window": {
+      "start": 45000,
+      "end": 50000,
+      "time_mean_delta": 0.0
+    },
+    "full_post_time_mean_delta": -0.03548,
+    "intervals": [
+      {
+        "start": 25000,
+        "end": 26000,
+        "time_mean_delta": 0.537
+      },
+      {
+        "start": 26000,
+        "end": 30000,
+        "time_mean_delta": 0.14175
+      },
+      {
+        "start": 30000,
+        "end": 35000,
+        "time_mean_delta": -0.4013
+      },
+      {
+        "start": 35000,
+        "end": 40000,
+        "time_mean_delta": 0.0031
+      },
+      {
+        "start": 40000,
+        "end": 45000,
+        "time_mean_delta": 0.0
+      },
+      {
+        "start": 45000,
+        "end": 50000,
+        "time_mean_delta": 0.0
+      }
+    ],
+    "interpretation_scope": "Finite observed horizon and this seed; not an estimate of the infinite-time limit."
+  },
+  "log_sha256": {
+    "factual": "d940cd31142ee3d2f27ebfb5704b3e6fd9a22f766476b3421247f518dcafbe10",
+    "baseline": "fc2fe1e3e4b5907ff54e4c8277d62c36c8c4618a6b87c00f45d20816bc4842ed"
+  }
+}

@@ -105,6 +105,20 @@ F/B のバイナリログ、`summary.json`、`mid_paths.npz`、全期間の `imp
 評価窓拡大の `impact_window.png` を保存する。`summary.json` には両実行の
 `ExperimentMeta.lobcore_version`、状態ハッシュ、ログ本体の SHA-256、介入前一致の証拠を記録する。
 
+Q=200 の元ログは [圧縮アーカイブ](reports/phase23_seed42_logs.tar.gz) にも保存しており、
+GitHub から取得して再シミュレーションなしで解析できる。
+中身は `write_log_file` で出力した F/B バイナリそのもの、メタデータ・設定・チェックサム。
+
+```bash
+mkdir -p experiments/YH012/artifacts/restored_seed42
+tar -xzf experiments/YH012/reports/phase23_seed42_logs.tar.gz -C experiments/YH012/artifacts/restored_seed42
+.venv/bin/python -m experiments.YH012.inspect_saved_pair --run-dir experiments/YH012/artifacts/restored_seed42
+```
+
+この再解析はファイルの SHA-256・`ExperimentMeta`・介入前バイト一致を再検証してから、
+立ち上がり、初回ゼロ復帰、終了までゼロになる時刻、ピーク・谷、区間平均と終盤平均を計算する。
+終盤平均は有限期間の指標であり、無限時間の Δ∞ と同一視しない。
+
 ## 構成
 
 ```
@@ -116,6 +130,7 @@ experiments/YH012/
   metrics.py          # 出口基準の統計
   run_world.py
   run_impact.py       # 厳密な介入前ゲート → 指標 → 保存・可視化
+  inspect_saved_pair.py # 保存ログの検証・時間構造の再解析
   impact.py           # バイト比較、時刻整列、時間平均 Δ
   plot.py             # matplotlib のみ
   configs/poc_seed42.yaml
@@ -123,5 +138,7 @@ experiments/YH012/
   configs/impact_seed42_q50.yaml  # 初回試行（平均 Δ=0）を保存
   tests/test_world.py
   tests/test_impact.py
+  tests/test_saved_pair.py
   reports/phase23_seed42.md
+  reports/phase23_seed42_logs.tar.gz # 元の F/B ファイルを圧縮保存
 ```
