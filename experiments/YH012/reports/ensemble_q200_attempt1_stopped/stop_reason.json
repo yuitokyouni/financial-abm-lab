@@ -1,0 +1,212 @@
+{
+  "status": "STOP: missing best ask at t0; ensemble not computed",
+  "requested_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39
+  ],
+  "completed_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    9,
+    10,
+    12
+  ],
+  "failed_seed": 13,
+  "failure": "RuntimeError: ImpactAgent requires a best ask at t0",
+  "cancelled_seeds": [
+    8,
+    11,
+    14
+  ],
+  "not_started_seeds": [
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39
+  ],
+  "prefix_mismatch_observed": false,
+  "completed_prefixes": [
+    {
+      "seed": 0,
+      "prefix": {
+        "records": 32295,
+        "bytes": 3100320,
+        "sha256": "6739e36cd15a15de3c330c2ceb97eb3b9883512b6d85266b2c3d25c46c0ef75f",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    },
+    {
+      "seed": 1,
+      "prefix": {
+        "records": 21096,
+        "bytes": 2025216,
+        "sha256": "1ea3ceb62a42921594d4b74015fb102f2aaf25679015ceb79bda668df10b24d3",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    },
+    {
+      "seed": 2,
+      "prefix": {
+        "records": 26687,
+        "bytes": 2561952,
+        "sha256": "fe55003099b1972c88ed1830740809a4e42158d3852db1652fd49c4cd629ae2b",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    },
+    {
+      "seed": 3,
+      "prefix": {
+        "records": 13593,
+        "bytes": 1304928,
+        "sha256": "094d81115ff6ed7bfa83e1b183621d628313b375805ade4e0db00445972eec95",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    },
+    {
+      "seed": 4,
+      "prefix": {
+        "records": 25938,
+        "bytes": 2490048,
+        "sha256": "b4db5cd67fea4fb553c160f9c7a37afeef9ca54e25aab98e187cdf556d23156e",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    },
+    {
+      "seed": 5,
+      "prefix": {
+        "records": 22591,
+        "bytes": 2168736,
+        "sha256": "824bf75d418335251c8dfd7970e8ebf60292ea391a3078debb72d47994195de9",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    },
+    {
+      "seed": 6,
+      "prefix": {
+        "records": 21341,
+        "bytes": 2048736,
+        "sha256": "350c147e942f202f045f4ad58c7af691acc88b23ed6e73b6a66ed2d7b72df165",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 45
+    },
+    {
+      "seed": 7,
+      "prefix": {
+        "records": 37815,
+        "bytes": 3630240,
+        "sha256": "b35a31ffcc3aea9aa0f7c537a34729bc1140a686995c99d39af34b7e1932dded",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    },
+    {
+      "seed": 9,
+      "prefix": {
+        "records": 19509,
+        "bytes": 1872864,
+        "sha256": "4e0ddafd18df8825156c8b29ac92769d952d203695d2d6fbccc2bbe7ab2c7d51",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    },
+    {
+      "seed": 10,
+      "prefix": {
+        "records": 29359,
+        "bytes": 2818464,
+        "sha256": "0eb197afeb31cfa5c85c863786c9c0e933b712bb47c12dc008edf48f5806093c",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    },
+    {
+      "seed": 12,
+      "prefix": {
+        "records": 22343,
+        "bytes": 2144928,
+        "sha256": "54e638055f426646ca9c81ca495fe66954593c7ec974e42fc6b93f51f5aec412",
+        "byte_equal": true
+      },
+      "impact_executed_qty": 200
+    }
+  ],
+  "no_aggregate": "Do not report a mean of the 11 finished seeds; completion order and liquidity failures would select the sample.",
+  "decision_needed": "Define the intervention when no ask exists at t0. The existing contract raises; waiting would change intervention timing.",
+  "pilot_seconds": 65.32,
+  "ensemble_invocation_seconds": 450.47545912500937,
+  "parameters_changed": false,
+  "lobcore_commit": "4fb83dcb2c0d17cc5239816606d2ec4cc0e3fabf",
+  "fal_simulation_base_commit": "7f53978ce81cacedf243d992fffba75c2fc2f50b"
+}

@@ -1,0 +1,18 @@
+{
+  "status": "STOP",
+  "completed": [
+    0,
+    3,
+    2,
+    1,
+    5,
+    4,
+    6,
+    9,
+    7,
+    10,
+    12
+  ],
+  "error": "[Errno 2] No such file or directory: '/Users/hasegawayuito/dev/financial-abm-lab-main/experiments/YH012/artifacts/ensemble_q200_seeds0_39/seed0013/summary.json'",
+  "wall_seconds_this_invocation": 450.47545912500937
+}

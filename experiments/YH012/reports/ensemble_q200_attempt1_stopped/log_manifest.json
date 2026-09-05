@@ -1,0 +1,313 @@
+{
+  "status": "STOP: missing best ask at t0; ensemble not computed",
+  "members": {
+    "plan.json": {
+      "bytes": 2395,
+      "sha256": "7fe810ab7a082b8c1b6836b3b96941abf3581b1c7077d83afc890b7970d7b014"
+    },
+    "progress.json": {
+      "bytes": 352,
+      "sha256": "b8c469bbf214bcc1d502095d5a89f1d42dcf2c6bff2c847c6606553183521265"
+    },
+    "seed0000/baseline.bin": {
+      "bytes": 5663913,
+      "sha256": "da8acfd3d8005fc350a47421d4ca3fb9b32fc5a6c232f823e20a992d3b6a5728"
+    },
+    "seed0000/config.yaml": {
+      "bytes": 325,
+      "sha256": "edd524599bc0c773e141a84af14b3e32192f13df54f1f3140ef1b6b727d9e764"
+    },
+    "seed0000/factual.bin": {
+      "bytes": 5720838,
+      "sha256": "a04f92d644237972c539cf56a8f75378427fd105204fcbd060340fa7fdab6f89"
+    },
+    "seed0000/mid_paths.npz": {
+      "bytes": 44047,
+      "sha256": "88c099d1809a7d0d94965f49e1e475c14f698ed76f3a2d28907ffec6ab71dd9f"
+    },
+    "seed0000/summary.json": {
+      "bytes": 3942,
+      "sha256": "b62ebab47b8ae553579464b25f1a50e468ee61180d1e6c3cab4bb45e6beea54c"
+    },
+    "seed0001/baseline.bin": {
+      "bytes": 4060425,
+      "sha256": "f6d3b08483d4896a5c24a8c8698b908bf42947ed728c422489dd00f0f89a519e"
+    },
+    "seed0001/config.yaml": {
+      "bytes": 325,
+      "sha256": "98cb83df7f5bb60335b1ba1d25ef4b6ddcd4b9005c2946efd0f1dacacbcd5c0d"
+    },
+    "seed0001/factual.bin": {
+      "bytes": 4051686,
+      "sha256": "7f222510acb61cc1073ebddfae6740b95a977729435978ea86025e599415e32d"
+    },
+    "seed0001/mid_paths.npz": {
+      "bytes": 31641,
+      "sha256": "81d92e03dd8b1b1529223cef63e6ac769e529271e4d287782e74acbdbaae644f"
+    },
+    "seed0001/summary.json": {
+      "bytes": 3941,
+      "sha256": "418d66dfbd08a4ca5681cc674291c88fe35fadf3bdbfc587e63f7580c646d988"
+    },
+    "seed0001/worker.log": {
+      "bytes": 413,
+      "sha256": "2b9ecf593743cdf097e415587f9a6b3159456cf4ac3b216a95e9f49d4f39dfcb"
+    },
+    "seed0002/baseline.bin": {
+      "bytes": 5729673,
+      "sha256": "cd191adb229bb947150f74fd64db73b56f737879f6b00686ae3d11cc8d2fd480"
+    },
+    "seed0002/config.yaml": {
+      "bytes": 325,
+      "sha256": "4bf0c199b8ef56e79ec1fa482a2b92b8fbb25bc281fefa69b217561c6bb57672"
+    },
+    "seed0002/factual.bin": {
+      "bytes": 5745702,
+      "sha256": "4002d2258a89ce86583553edb85792ca75cda717ffb0aa51ad104cf89c3505ac"
+    },
+    "seed0002/mid_paths.npz": {
+      "bytes": 31079,
+      "sha256": "bf1c2ccf727dc3b57c6549168ff0a234646ee844f41c1c0f7e3bbe08bc8047be"
+    },
+    "seed0002/summary.json": {
+      "bytes": 3940,
+      "sha256": "777fbb42efedce2959203116c39a2db52275a624334d42708732b41e8eee2d16"
+    },
+    "seed0002/worker.log": {
+      "bytes": 413,
+      "sha256": "5440f1823cbb2e221d98fcae536cfdeb77ef1154e248f1d6ba604b63cefdda7a"
+    },
+    "seed0003/baseline.bin": {
+      "bytes": 2339241,
+      "sha256": "fbdf438033fcb02b998c6137196f7d85101c24cbcb34276ab464e23690145f36"
+    },
+    "seed0003/config.yaml": {
+      "bytes": 325,
+      "sha256": "8c4e58c7a6afb4fdf5f2cabb7af96c0109d6490b69946394351ea6aef4e69e8a"
+    },
+    "seed0003/factual.bin": {
+      "bytes": 2348934,
+      "sha256": "21fd346aa42d275034652a4085d56940e73163f4ffe6dac4a1962e733a3cc2a7"
+    },
+    "seed0003/mid_paths.npz": {
+      "bytes": 16387,
+      "sha256": "c6fa927361aec438a5e4b8f1d3d0e43fc9cdbc79b127e5445e9b11bc0740ffec"
+    },
+    "seed0003/summary.json": {
+      "bytes": 3942,
+      "sha256": "024520cd98593a12b53e548d904ab240bd1e99793d33acee85e4db03ea68b45a"
+    },
+    "seed0003/worker.log": {
+      "bytes": 413,
+      "sha256": "f33cd0623a5c12fddc20857052fc394e00642dd57ffc4d9897f0638841ca1975"
+    },
+    "seed0004/baseline.bin": {
+      "bytes": 5809161,
+      "sha256": "7401803cbda932b58890286b508ca027289b4e2052aed295e2b0ddc946e80933"
+    },
+    "seed0004/config.yaml": {
+      "bytes": 325,
+      "sha256": "20daeb0e65508c11b7b789f2728d785fb6d9245d28b9f18cca7837b2c0fa0f40"
+    },
+    "seed0004/factual.bin": {
+      "bytes": 5812422,
+      "sha256": "dbba8e150a647461ade4f7457d5e8614582a6b475052af576791ebe1b7de75f9"
+    },
+    "seed0004/mid_paths.npz": {
+      "bytes": 54310,
+      "sha256": "ef26b4db264857a09920b0c94d7bcae8c0a442592b163db4b77bb2c41d5f54fd"
+    },
+    "seed0004/summary.json": {
+      "bytes": 3943,
+      "sha256": "d8f6ad4d0bba4ed8603f0b680d02a3f245d9714fa63b86e0ab801b8a474a0c4a"
+    },
+    "seed0004/worker.log": {
+      "bytes": 413,
+      "sha256": "5bdf6d53c716e24f6180090edad56575ee60e3032e3e27b0d36f50cf9191d15c"
+    },
+    "seed0005/baseline.bin": {
+      "bytes": 4690281,
+      "sha256": "e4606520271258cc6b51613c21487940f69b6475da9b342b4692ee2655c09843"
+    },
+    "seed0005/config.yaml": {
+      "bytes": 325,
+      "sha256": "b556898e8c6e1151a2bff6a3607ea12abb652d3e38336b5fc24919e288c62c4b"
+    },
+    "seed0005/factual.bin": {
+      "bytes": 4685670,
+      "sha256": "9eafa649d17c6261ec5aba1c7bb68d593ef015fb483c6093f4e0b5757646e342"
+    },
+    "seed0005/mid_paths.npz": {
+      "bytes": 28119,
+      "sha256": "d4983d3aa7dbf6b5d2ba3c61e2ce41e34fdcbc5b2abee4e9bba0ded7e45de0af"
+    },
+    "seed0005/summary.json": {
+      "bytes": 3955,
+      "sha256": "13834a1195b74b6f8d64a0045c362795e562241600fa2613eda15921eb6532af"
+    },
+    "seed0005/worker.log": {
+      "bytes": 430,
+      "sha256": "07eccbdc4f0a47404d7f9cd887dc6847b8edbab27c2e61337af2e07a441c478f"
+    },
+    "seed0006/baseline.bin": {
+      "bytes": 4546665,
+      "sha256": "8d793f9e9156d58bd6bf4e5d239d15dec5f1ca5b172f410e6bbdab2ccb8e561c"
+    },
+    "seed0006/config.yaml": {
+      "bytes": 325,
+      "sha256": "ba59d4708fb762a2b5e26a5167f2c1ab533f0e258a1225eacdbe7aba49e32495"
+    },
+    "seed0006/factual.bin": {
+      "bytes": 4555014,
+      "sha256": "6fa30ecc74836b6b9ad8831e16b6880da845cc4fad933c5a7653210bfdecf7d2"
+    },
+    "seed0006/mid_paths.npz": {
+      "bytes": 40561,
+      "sha256": "8e5e05fc5d786912f1ceed043bbb3f2704dbae47d15fb97c2cb3628707daff52"
+    },
+    "seed0006/summary.json": {
+      "bytes": 3939,
+      "sha256": "7624e5078715860c6521f7f3b12d3d94853868c4d60e86884eed5772172919a3"
+    },
+    "seed0006/worker.log": {
+      "bytes": 412,
+      "sha256": "34b4d196b074b185b59e87c6dc676d9e95536bf575c7ea9111775f8568a32946"
+    },
+    "seed0007/baseline.bin": {
+      "bytes": 7523913,
+      "sha256": "fce8737c850af871ca3a298d0112b3e093e54bdd3d47b4de04d7656304b93b9c"
+    },
+    "seed0007/config.yaml": {
+      "bytes": 325,
+      "sha256": "310de9be4fe006b34a67bb3b785250bc725c186f42c2cd9ca772599b7030cd19"
+    },
+    "seed0007/factual.bin": {
+      "bytes": 7588422,
+      "sha256": "ed520ece2b5e661e5c173b08ee4c7112920c03d5a2276ed0b3f1dafaae5167bd"
+    },
+    "seed0007/mid_paths.npz": {
+      "bytes": 37459,
+      "sha256": "cce3c4fa69c9b788b184e1ac529adfbe3ea3a8ec5872439059c79f6a10f3fe0d"
+    },
+    "seed0007/summary.json": {
+      "bytes": 3942,
+      "sha256": "59db9bc2495b4f2c8d3c1c90ca3d71496318e3a3b049273380b8399eb5cc9da3"
+    },
+    "seed0007/worker.log": {
+      "bytes": 413,
+      "sha256": "95c9873af407364792f8277161d42ad76616eea60cc1d6cf004f52b6b8f016e2"
+    },
+    "seed0008/config.yaml": {
+      "bytes": 325,
+      "sha256": "d97c3bee4f4c6f34a0a93c8cffb699bf13a1642bb73b3c83f63a6f21856334cb"
+    },
+    "seed0008/worker.log": {
+      "bytes": 45,
+      "sha256": "325528b602b3f058fb8e784b1dca40c07f27b895ef5c7bd475c8b32a291fe1ef"
+    },
+    "seed0009/baseline.bin": {
+      "bytes": 3830793,
+      "sha256": "4f671829fa184a0834b4d81c9daae54aedd2971f6be112dcdf4620e2e447a797"
+    },
+    "seed0009/config.yaml": {
+      "bytes": 325,
+      "sha256": "b9a8fec6665477473892f11892375ca8f3dce9f09c4fbc0b7a84929e7e5b2dfc"
+    },
+    "seed0009/factual.bin": {
+      "bytes": 3841734,
+      "sha256": "679a1b44e37a225d1bbb9bdd87309f4f24e2ee66616a228edb871b476853d02f"
+    },
+    "seed0009/mid_paths.npz": {
+      "bytes": 23071,
+      "sha256": "a6884ada81bfc4c68e6d36bb085e05f3480e95a5d8c79e06a1ac44bd74d44cee"
+    },
+    "seed0009/summary.json": {
+      "bytes": 3939,
+      "sha256": "ae603f315d7828c36144eeed3006be31ec7a5a9d21ffd0677a7bd2e9da34e18d"
+    },
+    "seed0009/worker.log": {
+      "bytes": 413,
+      "sha256": "22ebf2d1218a303ebe72cd9494952b1820a20c6c9c885cca7ad77e9445390d5f"
+    },
+    "seed0010/baseline.bin": {
+      "bytes": 5712875,
+      "sha256": "c71cb762f73cbe4f5f4a7e730dfb19b80a0c3a27ed3313e009ddcad97f9cf2eb"
+    },
+    "seed0010/config.yaml": {
+      "bytes": 326,
+      "sha256": "14078d6c154e8d5e56bd96e1c77b000d38f78db7bf73bb8c6f507f6a32e715d1"
+    },
+    "seed0010/factual.bin": {
+      "bytes": 5708360,
+      "sha256": "1e6300b76b3f585e0f921da39a565546677c360ee6162d8b9429e803c7ff6fb6"
+    },
+    "seed0010/mid_paths.npz": {
+      "bytes": 51650,
+      "sha256": "8da6eeb828fbf0ad42c3a10c88d16c0dea530fb82aab192ef6499a4fbaee030c"
+    },
+    "seed0010/summary.json": {
+      "bytes": 3968,
+      "sha256": "913fe71bd13d46b95b49c11accdab80597ad7d2af62639a9e8d7f539876ae6c9"
+    },
+    "seed0010/worker.log": {
+      "bytes": 431,
+      "sha256": "5f91b22af0e8535760781eb79eda46b94e877442db1c0f05244879f8f8b19373"
+    },
+    "seed0011/config.yaml": {
+      "bytes": 326,
+      "sha256": "eacf32e817d152ff4dd7ee3576206ba1c9debc59b22e02ebfd59328d29ffb160"
+    },
+    "seed0011/worker.log": {
+      "bytes": 46,
+      "sha256": "ec7e67ddfd89887444322b23bc4c722916f9c3c0a805cbccabc3570afc597bd6"
+    },
+    "seed0012/baseline.bin": {
+      "bytes": 4059563,
+      "sha256": "b975606a88f014c89a02fe89854b77c7247fd27747adb4bdf8b4afa032bb949c"
+    },
+    "seed0012/config.yaml": {
+      "bytes": 326,
+      "sha256": "ae658eb20b584c988dd51d1c63049b1eadafce2a0dc27afb1607f967782da930"
+    },
+    "seed0012/factual.bin": {
+      "bytes": 4085864,
+      "sha256": "70c770ecadafcbe687e8793e4e75129d776b8f1fd79593f026fe8fe0d9a5aba0"
+    },
+    "seed0012/mid_paths.npz": {
+      "bytes": 23498,
+      "sha256": "131ffb7fbc91f85bfb07f7a6d84b5a985b6d431f7be8b39fad40dd8e16ffda39"
+    },
+    "seed0012/summary.json": {
+      "bytes": 3945,
+      "sha256": "83c62c56e3bc7b46c0ba51e480ac9305f4d8eef51976223095b1c8cda677a744"
+    },
+    "seed0012/worker.log": {
+      "bytes": 414,
+      "sha256": "72efc8e65a6934b258f7c62ae4dbbd9d7c07947e62d8f38a54eadfd64143690c"
+    },
+    "seed0013/config.yaml": {
+      "bytes": 326,
+      "sha256": "414d85bfaf359e8e634380fc14c7f4e372e8bdca6ea18039ddf0486fd252181f"
+    },
+    "seed0013/worker.log": {
+      "bytes": 1416,
+      "sha256": "51ae18074690d595f8f305997a90f0dfec19fe9a7be228d90ab6d50cc0c006e6"
+    },
+    "seed0014/config.yaml": {
+      "bytes": 326,
+      "sha256": "387f31727518f5b30167602bdc76bc84e2e755cd99e103dda225cc0d04d3f5fa"
+    },
+    "seed0014/worker.log": {
+      "bytes": 46,
+      "sha256": "c22728c7c746d9efab2163e2b5502f978a8eae933e7e58807da185bb07410e1e"
+    },
+    "stop_reason.json": {
+      "bytes": 4283,
+      "sha256": "ec4093479165b00e85e77cf6ed2ad5b23c17a4cfa97afa061bb9f756b84eb104"
+    }
+  },
+  "archive": "attempt_logs.tar.gz",
+  "archive_sha256": "cacdf5ca05f287be9bf7ba8a218915e3e573e2c2fa3094de2974483ed16f4d8f",
+  "compressed_bytes": 11967853,
+  "uncompressed_bytes": 108553995
+}

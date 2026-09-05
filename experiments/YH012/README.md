@@ -119,6 +119,52 @@ tar -xzf experiments/YH012/reports/phase23_seed42_logs.tar.gz -C experiments/YH0
 立ち上がり、初回ゼロ復帰、終了までゼロになる時刻、ピーク・谷、区間平均と終盤平均を計算する。
 終盤平均は有限期間の指標であり、無限時間の Δ∞ と同一視しない。
 
+## Q=200 の複数 seed 実験
+
+seed 0〜39 の40個、end_time=50,000、4プロセスで開始したが、
+**seed 13 の t0=25,000 に売り板がなく停止**した。
+完了した11 seed は全件で介入前ログが生バイトまで一致した。
+未完了の ensemble を平均した図・Δ∞ 推定値は出していない。
+[停止記録と元ログ](reports/ensemble_q200_attempt1_stopped/README.md) を参照。
+売り板がない場合に発注を待つかどうかは、介入時刻を変えるモデル上の判断として未確定。
+
+再現用の実行・集計コマンド（現行の発注ルールでは同じ売り板欠損で停止する）:
+
+```bash
+.venv/bin/python -m experiments.YH012.run_ensemble \
+  --out-dir experiments/YH012/artifacts/ensemble_q200_reproduction \
+  --first-seed 0 --n-seeds 40 --workers 4
+
+# 以下は予定した全 seed が完了した場合だけ実行可能。
+.venv/bin/python -m experiments.YH012.analyze_ensemble \
+  --run-dir experiments/YH012/artifacts/ensemble_q200_reproduction \
+  --out-dir experiments/YH012/reports/ensemble_q200
+.venv/bin/python -m experiments.YH012.archive_ensemble \
+  --run-dir experiments/YH012/artifacts/ensemble_q200_reproduction \
+  --out-dir experiments/YH012/reports/ensemble_q200
+```
+
+各子プロセスは既存の `run_impact` / `Experiment.run_pair` を呼ぶ。
+介入前不一致または実行エラーを検出すると、管理側は新規投入を止め、
+自分が起動した残りのプロセスを終了・回収する。
+負またはゼロの初期窓平均は実行エラーと区別し、集計対象に残す。
+`--resume` は保存済みペアのチェックサム・設定・lobcore コミット・介入前生バイトを再検証し、
+シミュレーションコードが変わっている場合や、未完了ディレクトリの上書きは拒否する。
+
+集計は全ログを再検証した後、整数時刻の共通グリッド上で直前観測を保持する。
+介入後は全 seed の気配被覆を要求し、欠測のゼロ埋めや seed の除外を行わない。
+`ensemble_paths.npz` には各 seed の Δ、平均、標本標準偏差（ddof=1）、標準誤差、
+平均の95%信頼区間、有効標本数を保存する。
+信頼区間は seed 軌跡全体を再標本化する4,000回の percentile bootstrap
+（解析用 RNG seed=20260905）。図の帯は時刻ごとの区間で、全時刻を同時に保証する帯ではない。
+終盤 [45,000,50,000] は各 seed の時間平均を求め、その40個を再標本化する。
+時間点を独立標本として数えない。元のイベント時刻上の積分とも照合する。
+標準偏差は seed 間のばらつき、信頼区間は平均の推定不確実性であり、別々に表示する。
+
+発注数量 Q=200 と実現約定数量は区別する。ask+2 の指値で全量約定しない seed も残す。
+完全な実験のアーカイブ機能は seed ごとの `tar.gz` に F/B の `write_log_file` 出力を保存し、
+展開後の全バイトを元ファイルと照合してからチェックサム一覧を出す。
+
 ## 構成
 
 ```
