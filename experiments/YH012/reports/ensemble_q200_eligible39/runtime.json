@@ -1,0 +1,18 @@
+{
+  "lobcore_commit": "6aff004bf77cc7c70aceea6e409f8155f7cd94ce",
+  "fal_commit": "7f71f9e450978ffc73a2c711a9591cd43018869a",
+  "native_extension_sha256": "47020da0e8cf2f2a36b00dbc6eddb01c978a47ac40e0dfedf0e7b5420b90940b",
+  "platform": "macOS-26.5.2-arm64-arm-64bit",
+  "python": "3.12.7",
+  "numpy": "2.5.2",
+  "t0": 25000,
+  "t1": 26000,
+  "end_time": 50000,
+  "qty": 200,
+  "candidate_count": 40,
+  "eligible_count": 39,
+  "workers": 4,
+  "horizon_changed": false,
+  "source_hashes_verified": true,
+  "lobcore_tracked_changes": ""
+}

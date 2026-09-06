@@ -1,0 +1,26 @@
+{
+  "analysis_commit": "b41db9fe5fdb2f0fdaf796000388d4047ec9c8ea",
+  "simulation_commit": "7f71f9e450978ffc73a2c711a9591cd43018869a",
+  "lobcore_commit": "6aff004bf77cc7c70aceea6e409f8155f7cd94ce",
+  "analysis_source_sha256": {
+    "analyze_ensemble.py": "7b7e2a978cee31a2e63d2560969a834ee896c50ba51e5a7b583901d60a928a86",
+    "ensemble.py": "4334941eee708f06863859e6a28f8cbbc3ff06b9101a6a16b8885c07af630010",
+    "impact.py": "98fa4c177c2a8ed2394100b92010b3536bbff80c99ec0436b1c4e3ceb8c3104d",
+    "plot.py": "1a86c4f5e7717330b13c37fab67a689878667c33d0366ba63c43eb3b6d427f30",
+    "inspect_saved_pair.py": "2896663d4d42a6f7ed676e71bddd4330354114d26f1e3bf80cca2cf4c91928ec",
+    "run_ensemble.py": "11f6c64fa9ec247502880d76fdd03c3f25cc8ee197f24bf707fdce5f82bf2aca"
+  },
+  "delta_data_unchanged_after_execution_count_correction": true,
+  "ensemble_paths_sha256": "1ec6122167e54d06f7476a3d062a6f4dd95029b1e107ef5057f1205f87bbb8de",
+  "validation": {
+    "padding_python_tests": 62,
+    "cpp_debug_asan_ubsan_tests": 79,
+    "after_execution_correction_related_python_tests": 32
+  },
+  "ci": {
+    "lobcore": "https://github.com/yuitokyouni/lobcore/actions/runs/33998658451",
+    "lobcore_conclusion": "success",
+    "fal_cohort_selection": "https://github.com/yuitokyouni/financial-abm-lab/actions/runs/33998854805",
+    "fal_cohort_selection_conclusion": "success"
+  }
+}

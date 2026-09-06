@@ -1,0 +1,359 @@
+{
+  "all_passed": true,
+  "n_pairs": 39,
+  "n_files": 78,
+  "lobcore_commit": "6aff004bf77cc7c70aceea6e409f8155f7cd94ce",
+  "pairs": [
+    {
+      "seed": 0,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        59584,
+        58991
+      ]
+    },
+    {
+      "seed": 1,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        42197,
+        42288
+      ]
+    },
+    {
+      "seed": 2,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        59843,
+        59676
+      ]
+    },
+    {
+      "seed": 3,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        24460,
+        24359
+      ]
+    },
+    {
+      "seed": 4,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        60538,
+        60504
+      ]
+    },
+    {
+      "seed": 5,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        48801,
+        48849
+      ]
+    },
+    {
+      "seed": 6,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        47440,
+        47353
+      ]
+    },
+    {
+      "seed": 7,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        79038,
+        78366
+      ]
+    },
+    {
+      "seed": 8,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        71818,
+        71600
+      ]
+    },
+    {
+      "seed": 9,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        40010,
+        39896
+      ]
+    },
+    {
+      "seed": 10,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        59454,
+        59501
+      ]
+    },
+    {
+      "seed": 11,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        73604,
+        73751
+      ]
+    },
+    {
+      "seed": 12,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        42553,
+        42279
+      ]
+    },
+    {
+      "seed": 14,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        165636,
+        167588
+      ]
+    },
+    {
+      "seed": 15,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        29669,
+        29467
+      ]
+    },
+    {
+      "seed": 16,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        54099,
+        54157
+      ]
+    },
+    {
+      "seed": 17,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        69161,
+        69105
+      ]
+    },
+    {
+      "seed": 18,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        52374,
+        51974
+      ]
+    },
+    {
+      "seed": 19,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        87855,
+        87798
+      ]
+    },
+    {
+      "seed": 20,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        77865,
+        76904
+      ]
+    },
+    {
+      "seed": 21,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        31447,
+        31398
+      ]
+    },
+    {
+      "seed": 22,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        26116,
+        26097
+      ]
+    },
+    {
+      "seed": 23,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        27789,
+        27537
+      ]
+    },
+    {
+      "seed": 24,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        115587,
+        115534
+      ]
+    },
+    {
+      "seed": 25,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        52306,
+        52155
+      ]
+    },
+    {
+      "seed": 26,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        43490,
+        43389
+      ]
+    },
+    {
+      "seed": 27,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        67636,
+        68348
+      ]
+    },
+    {
+      "seed": 28,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        55902,
+        56250
+      ]
+    },
+    {
+      "seed": 29,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        35416,
+        35187
+      ]
+    },
+    {
+      "seed": 30,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        42633,
+        42430
+      ]
+    },
+    {
+      "seed": 31,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        36782,
+        36928
+      ]
+    },
+    {
+      "seed": 32,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        37958,
+        37893
+      ]
+    },
+    {
+      "seed": 33,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        94146,
+        94084
+      ]
+    },
+    {
+      "seed": 34,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        33473,
+        33414
+      ]
+    },
+    {
+      "seed": 35,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        38574,
+        38433
+      ]
+    },
+    {
+      "seed": 36,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        97193,
+        97156
+      ]
+    },
+    {
+      "seed": 37,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        148323,
+        149048
+      ]
+    },
+    {
+      "seed": 38,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        29401,
+        28818
+      ]
+    },
+    {
+      "seed": 39,
+      "prefix_byte_equal": true,
+      "read_log_file_preserves_payload": true,
+      "record_counts": [
+        25635,
+        25621
+      ]
+    }
+  ]
+}

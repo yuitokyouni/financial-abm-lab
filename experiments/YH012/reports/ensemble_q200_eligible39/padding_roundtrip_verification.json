@@ -1,0 +1,11 @@
+{
+  "lobcore_commit": "6aff004bf77cc7c70aceea6e409f8155f7cd94ce",
+  "native_extension_sha256": "47020da0e8cf2f2a36b00dbc6eddb01c978a47ac40e0dfedf0e7b5420b90940b",
+  "n_records": 70715,
+  "n_bytes": 6788640,
+  "nonzero_padding_records": 11774,
+  "original_payload_sha256": "6c3b72226aa9857bffdcab67f4b6a3faca563833035aa85bd6242f2c3b34d061",
+  "restored_payload_sha256": "6c3b72226aa9857bffdcab67f4b6a3faca563833035aa85bd6242f2c3b34d061",
+  "byte_equal": true,
+  "metadata_equal": true
+}
