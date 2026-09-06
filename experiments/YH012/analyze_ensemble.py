@@ -16,7 +16,7 @@ from .ensemble import (
     seed_statistics,
     window_statistics,
 )
-from .impact import align_mid_series, time_mean_delta
+from .impact import align_mid_series, time_mean_delta, impact_execution
 from .run_ensemble import save_json, verified_pair
 
 
@@ -72,8 +72,9 @@ def analyze(directory: Path, output: Path):
                 "prefix": summary["prefix"],
                 "arms": summary["arms"],
                 "initial_window_mean": summary["mean_delta"],
-                "impact_executed_qty": summary["impact_executed_qty"],
-                "impact_fill_count": summary["impact_fill_count"],
+                # Recompute from the saved log: historical summaries counted
+                # only taker fills and omitted later executions as maker.
+                **impact_execution(factual, summary["impact_id"]),
                 "peak": float(row[t0:].max()),
                 "trough": float(row[t0:].min()),
                 "final_delta": float(row[-1]),

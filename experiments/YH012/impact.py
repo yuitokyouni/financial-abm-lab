@@ -13,6 +13,20 @@ class CounterfactualMismatch(RuntimeError):
     """Stop analysis when the pre-intervention paths do not match exactly."""
 
 
+def impact_execution(log: np.ndarray, impact_id: int) -> dict:
+    """Include subsequent maker fills of the residual aggressive limit order."""
+    fills = log[log["kind"] == 1]
+    taker = (fills["order_id"] >> 32) == impact_id
+    maker = (fills["maker_id"] >> 32) == impact_id
+    involved = taker | maker
+    return {
+        "impact_executed_qty": int(fills["qty"][involved].sum()),
+        "impact_fill_count": int(involved.sum()),
+        "impact_taker_executed_qty": int(fills["qty"][taker].sum()),
+        "impact_maker_executed_qty": int(fills["qty"][maker].sum()),
+    }
+
+
 def assert_pre_intervention_equal(
     factual: np.ndarray, baseline: np.ndarray, *, t0: int
 ) -> dict:

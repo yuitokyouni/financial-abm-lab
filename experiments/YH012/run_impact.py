@@ -15,7 +15,12 @@ import numpy as np
 from lobcore import write_log_file
 
 from .experiment import ImpactExperiment
-from .impact import assert_pre_intervention_equal, align_mid_series, time_mean_delta
+from .impact import (
+    assert_pre_intervention_equal,
+    align_mid_series,
+    time_mean_delta,
+    impact_execution,
+)
 
 
 def main() -> int:
@@ -82,12 +87,7 @@ def main() -> int:
     summary["mean_delta"] = mean_delta
     summary["positive_mean_delta"] = mean_delta > 0
     summary["status"] = "PASS" if mean_delta > 0 else "FAIL: mean delta <= 0"
-    impact_fills = pair.factual.log[
-        (pair.factual.log["kind"] == 1)
-        & ((pair.factual.log["order_id"] >> 32) == exp.impact_id)
-    ]
-    summary["impact_executed_qty"] = int(impact_fills["qty"].sum())
-    summary["impact_fill_count"] = len(impact_fills)
+    summary.update(impact_execution(pair.factual.log, exp.impact_id))
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     np.savez_compressed(
         out / "mid_paths.npz",

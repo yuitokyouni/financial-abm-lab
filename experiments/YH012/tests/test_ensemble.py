@@ -330,3 +330,25 @@ def test_eligibility_rejects_different_experiment_configuration(liquidity_diagno
     config["impact"]["t0"] = 4
     with pytest.raises(ValueError, match="configuration mismatch"):
         select_eligible_seeds(directory, [7, 13, 21], config)
+
+
+def test_execution_counts_later_maker_fills_without_counting_other_orders():
+    from lobcore import LOG_DTYPE
+    from experiments.YH012.impact import impact_execution
+
+    impact_id = 100
+    order = (impact_id << 32) + 1
+    other = (1 << 32) + 1
+    log = np.zeros(5, dtype=LOG_DTYPE)
+    log["kind"] = [0, 1, 1, 1, 1]
+    log["order_id"] = [order, order, other, other, other]
+    log["maker_id"] = [0, other, order, order, other + 1]
+    log["qty"] = [200, 11, 100, 89, 7]
+    result = impact_execution(log, impact_id)
+    assert result == {
+        "impact_executed_qty": 200,
+        "impact_fill_count": 3,
+        "impact_taker_executed_qty": 11,
+        "impact_maker_executed_qty": 189,
+    }
+    assert impact_execution(log, 99)["impact_executed_qty"] == 0
