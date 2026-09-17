@@ -1,5 +1,11 @@
 # YH012 — lobcore 単一注文インパクト（反実仮想）Phase 1–3
 
+**2026-09-17 訂正:** 旧Python bindingで乱数状態が取得ごとにコピーされるバグを確認。
+従来のseed42・適格39 seedの結果は、修正後の市場応答を示す結果としては使用しない。
+[lobcoreの修正記録](https://github.com/yuitokyouni/lobcore/blob/main/docs/python-rng-correction.md)を参照。
+旧ログは保持し、`rerun_fixed_cohort`で旧planの39 seed・設定をそのまま再実行する。
+現在の板で全39件のaskを事前確認し、欠けるseedがあれば標本を変えず停止する。
+
 **親設計:** [`lobcore/docs/stage6-impact-experiment.md`](https://github.com/yuitokyouni/lobcore/blob/main/docs/stage6-impact-experiment.md)
 
 ## 目的

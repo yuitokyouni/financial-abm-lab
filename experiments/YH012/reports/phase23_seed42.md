@@ -1,5 +1,9 @@
 # YH012 Phase 2–3 — seed 42 の反実仮想 PoC
 
+> **2026-09-17 訂正:** 以下はPython RNGの状態コピー不具合を含む旧実装の保存結果。
+> 経済的なインパクト応答として使用するには再実験が必要。
+> [不具合と修正](https://github.com/yuitokyouni/lobcore/blob/main/docs/python-rng-correction.md)。元ログ・数値は変更しない。
+
 2026-09-05、Mac（arm64）で実行。単一買い注文を抑制した Baseline と Factual を比較し、
 **介入前の生バイト完全一致、評価窓の時間平均 Δ>0 をともに確認した。**
 数値・環境情報・両 `ExperimentMeta` は [機械可読レポート](phase23_seed42.json) に保存。
