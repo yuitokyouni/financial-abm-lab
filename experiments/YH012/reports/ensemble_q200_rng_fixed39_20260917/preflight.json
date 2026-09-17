@@ -1,0 +1,2308 @@
+{
+  "cohort_unchanged": true,
+  "missing_ask_seeds": [],
+  "observations": [
+    {
+      "seed": 0,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9998,
+        "bid_qty": 58,
+        "ask_price": 9999,
+        "ask_qty": 2
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 0,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 0
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4929,
+      "file_sha256": "9e13fca432da913bc3840e5ec86a49f43889f962a89eded30848c19031710807",
+      "log_sha256": "eeeec5a71df25554fc703ab330f516955924b783067bddb384f878088af47906"
+    },
+    {
+      "seed": 1,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10027,
+        "bid_qty": 4,
+        "ask_price": 10029,
+        "ask_qty": 44
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 1,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 1
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5044,
+      "file_sha256": "c715505ae5d3a4e3e855e80ff6a757e2d475da1f5fb37553fc0d73a71c91e5d3",
+      "log_sha256": "a73854f414dfb05392d1a6afb3304419e9826438dfdadbfc43ed98172ea68622"
+    },
+    {
+      "seed": 2,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10048,
+        "bid_qty": 1,
+        "ask_price": 10049,
+        "ask_qty": 7
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 2,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 2
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5349,
+      "file_sha256": "d6ad32e940edbd17ee1db5a6bf92ad3af73e9d621135a5074eca992f01e6415a",
+      "log_sha256": "a5fbacb6b6942efe21da14c5cb96404ab1b6312519ef0818ddb8ae7f28566afe"
+    },
+    {
+      "seed": 3,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9955,
+        "bid_qty": 81,
+        "ask_price": 9956,
+        "ask_qty": 4
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 3,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 3
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4641,
+      "file_sha256": "a152166f43828568b932a0653894201f77e7636d46d2de5be34cb279fef6a80b",
+      "log_sha256": "ee3277acaa43f24acf19440865d16ad0453a68f2f034457a866a1ddbc062281e"
+    },
+    {
+      "seed": 4,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10012,
+        "bid_qty": 107,
+        "ask_price": 10013,
+        "ask_qty": 7
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 4,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 4
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5183,
+      "file_sha256": "a9575775f511fbd8edb42ce4ae904475849fb9e2e46eff9f1547c8b5c0b0d176",
+      "log_sha256": "2c6f789bd2abf0b48e4353496799884f4cb4cf2607dc9d3ae2c4437c1976c05c"
+    },
+    {
+      "seed": 5,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10004,
+        "bid_qty": 30,
+        "ask_price": 10005,
+        "ask_qty": 21
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 5,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 5
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4623,
+      "file_sha256": "2cc0a284fc8c6aa75e1ba58280119a6a19fd03324a3d43fb7f1848b3647bceb8",
+      "log_sha256": "44d58c6d9c56ee2dfaba497bd6925cad6f2ea3d1144887dc1dc46da9089c6ea0"
+    },
+    {
+      "seed": 6,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9995,
+        "bid_qty": 1,
+        "ask_price": 9996,
+        "ask_qty": 4
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 6,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 6
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4575,
+      "file_sha256": "b85c91bb82834f6546834cb5ca43fa37df9c700ba49fe7bb8dcf793c320e08cd",
+      "log_sha256": "3be71d4afc48fb8d225b62ded0fa63467a609cfa05eebed34fad87c0f049a0a7"
+    },
+    {
+      "seed": 7,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9960,
+        "bid_qty": 48,
+        "ask_price": 9961,
+        "ask_qty": 1
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 7,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 7
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5221,
+      "file_sha256": "6fd198888fecc4064bc1c3a403ce79c8158eefd6749d2a72df4739696a719ae3",
+      "log_sha256": "ac5e1b7ae83b9cd674aa77ce63987b41ff7eae19e5c1ae454ea39a499f66e452"
+    },
+    {
+      "seed": 8,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10006,
+        "bid_qty": 13,
+        "ask_price": 10007,
+        "ask_qty": 97
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 8,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 8
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4492,
+      "file_sha256": "d80de36aabe1bf7009b628e01d2994ba84836a355d40c196464b773db66b763c",
+      "log_sha256": "1bc8de0061d88c2e5f74d2ec944889cca770a9061b4af30f031b66123ddddf81"
+    },
+    {
+      "seed": 9,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9985,
+        "bid_qty": 51,
+        "ask_price": 9986,
+        "ask_qty": 6
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 9,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 9
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4700,
+      "file_sha256": "08d37bf7c90dcc7fcfe8c90f2ba5d057a74e96e35ac519b5409a684ee6a55628",
+      "log_sha256": "c0bf8d7d6229a6d6c0441794b3a4dada1591768559780045f5ddb9539b8d5afe"
+    },
+    {
+      "seed": 10,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9997,
+        "bid_qty": 42,
+        "ask_price": 9998,
+        "ask_qty": 4
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 10,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 10
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4592,
+      "file_sha256": "c44458ecdc5c168d9cd7cc01dd2e60204dc3be7395554c85893dbe280cffb527",
+      "log_sha256": "de295422f990135e1e6e0812b29954ec8b31b3cd4c962accb94906775e9a2ec5"
+    },
+    {
+      "seed": 11,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9997,
+        "bid_qty": 67,
+        "ask_price": 9999,
+        "ask_qty": 28
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 11,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 11
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4522,
+      "file_sha256": "51ee702c008011b58be88b2a55e2999143797f6f282561876d3cdbbdbc62f4b0",
+      "log_sha256": "a02fdfced9e5143616c1859975fd65cae88cec7c7fd013a7242a1ba6f48bab9b"
+    },
+    {
+      "seed": 12,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9963,
+        "bid_qty": 69,
+        "ask_price": 9966,
+        "ask_qty": 1
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 12,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 12
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4661,
+      "file_sha256": "71e13fb5da20cd6826e0b782e9a994fa678a32c2bc506fbcffb89d0856f2397f",
+      "log_sha256": "2e01785e84d5e2e6880087562940944fb5fb9626c3348279125e38b49893e6b8"
+    },
+    {
+      "seed": 14,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9989,
+        "bid_qty": 58,
+        "ask_price": 9990,
+        "ask_qty": 6
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 14,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 14
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5018,
+      "file_sha256": "07c39226d1005f57fdb5958d50e96c593be08d1822ba84e87e5fff3b41755b33",
+      "log_sha256": "1deb45b898c0ac266424403f903c47ce80a60ec8f31c38e9c702385c9f7b1e0c"
+    },
+    {
+      "seed": 15,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9974,
+        "bid_qty": 2,
+        "ask_price": 9975,
+        "ask_qty": 1
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 15,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 15
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5053,
+      "file_sha256": "4f1add9cca9c6723bbc1109c91f03b9936985362b59824eae47782fe7c6f9041",
+      "log_sha256": "465eab3a493ff70ad4784011645c4e92a1ca58000e977e56eab3c4fde01e1d19"
+    },
+    {
+      "seed": 16,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10050,
+        "bid_qty": 10,
+        "ask_price": 10053,
+        "ask_qty": 106
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 16,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 16
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5089,
+      "file_sha256": "53ddb37b454e7b4bb78a9e89181d1f0e535083ccdf2f8bf884243020578cd3a6",
+      "log_sha256": "6b203f7c6d65e21b618ee355c4b4422893e496badb776ac3174bb17c9e8608e3"
+    },
+    {
+      "seed": 17,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10003,
+        "bid_qty": 7,
+        "ask_price": 10004,
+        "ask_qty": 37
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 17,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 17
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4512,
+      "file_sha256": "8f9a3c80f5263d5a9be54c4ea9c637866870925a41bd70029388c6f80056c512",
+      "log_sha256": "fb916bc3ae27f2b3c685ac9eb98adea5d8bac6201056555db616d5919c29fc48"
+    },
+    {
+      "seed": 18,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10015,
+        "bid_qty": 26,
+        "ask_price": 10016,
+        "ask_qty": 1
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 18,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 18
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4454,
+      "file_sha256": "d32acf7e0bb4f5d97a887dcd2cb91cb13628be3499638487e37999e1abb642d9",
+      "log_sha256": "fa22c5c25df8f3c98c5d8f864ce5cb7fa9779d7b0acfddd5d003d09dd1fb73f8"
+    },
+    {
+      "seed": 19,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9988,
+        "bid_qty": 33,
+        "ask_price": 9989,
+        "ask_qty": 10
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 19,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 19
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4611,
+      "file_sha256": "706ce26b80acdd7ca0ae5b2d128f68f4e6a64a753f88e9a7f179ece464d2ea63",
+      "log_sha256": "86f2b91456c08b1801626e55bb6889d9f54e8a7a73ad48422b9351bb65864a24"
+    },
+    {
+      "seed": 20,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9998,
+        "bid_qty": 19,
+        "ask_price": 9999,
+        "ask_qty": 57
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 20,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 20
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4528,
+      "file_sha256": "6a0f3e52bcd11d1db7be497c310ecb5ed783a8c4432413cf9c5ffb6868f735df",
+      "log_sha256": "c1c14093be8af110288094855898267d1bc0706c1a156c48fb5b0295d1e6c16c"
+    },
+    {
+      "seed": 21,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9957,
+        "bid_qty": 2,
+        "ask_price": 9958,
+        "ask_qty": 4
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 21,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 21
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4685,
+      "file_sha256": "03936a1ec66f152dcc0d2e8fbd9fbc13f5a971e535c4dfb8d9584367c2cb9bc8",
+      "log_sha256": "f76d93eeb1c6efd92613f1723b00a6b5a35ccc7c6bc08528e6060c2cb8f2f0c3"
+    },
+    {
+      "seed": 22,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9980,
+        "bid_qty": 127,
+        "ask_price": 9981,
+        "ask_qty": 4
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 22,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 22
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4903,
+      "file_sha256": "0c5f8b3ebc06324c6e5595fd593c5f7395714952113c8c8b28a712e15b0a0942",
+      "log_sha256": "87863d6f755103abcc03dabd0f8bd01361a253f408a8102c85861062907d89ab"
+    },
+    {
+      "seed": 23,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10013,
+        "bid_qty": 46,
+        "ask_price": 10015,
+        "ask_qty": 4
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 23,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 23
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4654,
+      "file_sha256": "60f933ab2c610444180e11127cc9e82a82dbc363ee611b0893552a31f89e1932",
+      "log_sha256": "9bb3b6bae7f24ca57d190304c372bc9aad1a35f0e191d0f4a4c2c7854c2ba5ec"
+    },
+    {
+      "seed": 24,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10018,
+        "bid_qty": 1,
+        "ask_price": 10019,
+        "ask_qty": 5
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 24,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 24
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4480,
+      "file_sha256": "786bb015e3e7586625d4d7be58a245e9facdc7dbe6289b95a0b28f18b471f634",
+      "log_sha256": "a3d4c85dab3f8cfa5b8c4c1903d0c1f2530b65042421b4bcfccc4a0b9d2884d4"
+    },
+    {
+      "seed": 25,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10008,
+        "bid_qty": 49,
+        "ask_price": 10010,
+        "ask_qty": 1
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 25,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 25
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4613,
+      "file_sha256": "0a86b78f35c7cc185276ce700777f1dfe89907d8497fac3005fec8d249dc049a",
+      "log_sha256": "67e45f46ac5f305dec921915fd84ee40cb70e91bb9b79c681a866f7dec4d76b8"
+    },
+    {
+      "seed": 26,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9997,
+        "bid_qty": 7,
+        "ask_price": 9998,
+        "ask_qty": 21
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 26,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 26
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4420,
+      "file_sha256": "3310eb2212b2eb83bcc66ba6eaa15e5921260d850e602cc425e54e402daef7fd",
+      "log_sha256": "48070a6dd8a24c45a20999add8e02f01ed30a1152186d319b49ff787062de8f2"
+    },
+    {
+      "seed": 27,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9950,
+        "bid_qty": 49,
+        "ask_price": 9952,
+        "ask_qty": 3
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 27,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 27
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4756,
+      "file_sha256": "06e33a6e1e002027bd14ef8dab520f56fc862e040b82fe89538ea78725f32c27",
+      "log_sha256": "162d88f48ee006b70f8f555c7e6a74f8f3b5df65748e5e030cb30e126b4b41d0"
+    },
+    {
+      "seed": 28,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10016,
+        "bid_qty": 2,
+        "ask_price": 10017,
+        "ask_qty": 12
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 28,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 28
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4788,
+      "file_sha256": "a6aee6916e9fe7f806bf7d116dc15afd333693ac2cd060595e59659d1676d466",
+      "log_sha256": "fccd762e3e6e81dd7d967cc66ae5483eaa46b43ad54f74215cc97019289e632d"
+    },
+    {
+      "seed": 29,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10010,
+        "bid_qty": 4,
+        "ask_price": 10011,
+        "ask_qty": 104
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 29,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 29
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4387,
+      "file_sha256": "9f2e5fcf16953884f774f44e8489d8afe87ed51db20637e19cd1309036391d27",
+      "log_sha256": "fce6766ca6be71e61548fc716dc6b57a139318b8d6199b25b8b19e4c3d7da0d7"
+    },
+    {
+      "seed": 30,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10008,
+        "bid_qty": 39,
+        "ask_price": 10009,
+        "ask_qty": 2
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 30,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 30
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4787,
+      "file_sha256": "c324ec46749b483c05c2cfeae8818210931d7f42433fe779afc6d3a2dc257a32",
+      "log_sha256": "f0d3ce561b84019b2195c355f07811652b10e50a8419bda72245a52faab0cc07"
+    },
+    {
+      "seed": 31,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10014,
+        "bid_qty": 20,
+        "ask_price": 10015,
+        "ask_qty": 8
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 31,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 31
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4347,
+      "file_sha256": "ac73729bead50a1d0fdd71154b3a3830838f1c37c333a08021c95fb76c314a4b",
+      "log_sha256": "633843629ce1bc869f7cab113ee84df3008c47b55edbff238ff556d32419a76f"
+    },
+    {
+      "seed": 32,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9971,
+        "bid_qty": 32,
+        "ask_price": 9974,
+        "ask_qty": 1
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 32,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 32
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4700,
+      "file_sha256": "21ab3f4929fc71821c2bf28b453b77538e8f6951d3cbef42f97d88cee9e284ab",
+      "log_sha256": "412f8ced87cd2d67878602fb6617fe24081c49e0a89a26ee0fa7ea9377164a60"
+    },
+    {
+      "seed": 33,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10024,
+        "bid_qty": 6,
+        "ask_price": 10027,
+        "ask_qty": 86
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 33,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 33
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5128,
+      "file_sha256": "90659e5005f7feeddb5962405b69504176d3d416c9b568b19a2485278699b109",
+      "log_sha256": "54d8f6b36caad1957f8af99d3a974493ad22902cb6943b7b29a4497b2428e535"
+    },
+    {
+      "seed": 34,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10039,
+        "bid_qty": 35,
+        "ask_price": 10040,
+        "ask_qty": 5
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 34,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 34
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4846,
+      "file_sha256": "9e7f88577deddf59edc62e7388c235ce9bf9070148e8272cd7cae2f70273e73c",
+      "log_sha256": "63cf2082af473ce7481abc5e4c365b93a1d0e39df469768c5249e48388fbbaf2"
+    },
+    {
+      "seed": 35,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9980,
+        "bid_qty": 19,
+        "ask_price": 9981,
+        "ask_qty": 2
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 35,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 35
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5246,
+      "file_sha256": "e48db3e5c138bee8fbe5bf7c073161941762c8d28036ef78d1cbd73bf952c197",
+      "log_sha256": "0a6a2ae0fe5da7a8941c3509af180bf3ef02774aea450a633498c967dec215c3"
+    },
+    {
+      "seed": 36,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9999,
+        "bid_qty": 44,
+        "ask_price": 10000,
+        "ask_qty": 1
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 36,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 36
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4588,
+      "file_sha256": "a38b4406478a4cb15c9715547d4a1c4be63afbc1c07c6a546060e727a143d543",
+      "log_sha256": "c26da216c4bb5382cd5aac83ac6b57c0077d9b7fb8872ce9fe1d6c1e279ab54f"
+    },
+    {
+      "seed": 37,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10000,
+        "bid_qty": 3,
+        "ask_price": 10001,
+        "ask_qty": 122
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 37,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 37
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4547,
+      "file_sha256": "cc4407840a346d5f790885fe15a7842cd2feca4033c93c99359b7e6c95c538c1",
+      "log_sha256": "3150dff1ece9c0d4ac20b3e1a7f65bb8ce38f0ee1926ded13a74e4efdec9b677"
+    },
+    {
+      "seed": 38,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 9947,
+        "bid_qty": 36,
+        "ask_price": 9948,
+        "ask_qty": 1
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 38,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 38
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 5222,
+      "file_sha256": "28f7a9a7ceffe517df855fab863b320aad4fa41fbb428db54194a7c6a2da959d",
+      "log_sha256": "51d784e160e1e15a4ba4905301a6bc6b8bc23db7b26c9b9440a6aa532b14b2e5"
+    },
+    {
+      "seed": 39,
+      "at_t0": {
+        "time": 25000,
+        "bid_price": 10008,
+        "bid_qty": 6,
+        "ask_price": 10009,
+        "ask_qty": 3
+      },
+      "eligible": true,
+      "meta": {
+        "master_seed": 39,
+        "allocation_rule": "price_time",
+        "n_agents": 101,
+        "n_markets": 1,
+        "end_time": 25000,
+        "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+        "agent_config": {
+          "yh012": "phase1_world",
+          "n_fundamentalist": 30,
+          "n_chartist": 25,
+          "n_noise": 45,
+          "mean_wakeup": 800.0,
+          "band": 30,
+          "f0": 10000,
+          "f_sigma": 0.25,
+          "config": {
+            "end_time": 25000,
+            "rule": "price_time",
+            "mean_wakeup": 800,
+            "f0": 10000,
+            "f_sigma": 0.25,
+            "band": 30,
+            "qty_min": 1,
+            "qty_max": 5,
+            "noise_offset_max": 15,
+            "chartist_lookback": 3,
+            "noise_take_prob": 0.15,
+            "chartist_take_prob": 0.25,
+            "agents": {
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45
+            },
+            "impact": {
+              "t0": 25000,
+              "t1": 26000,
+              "qty": 200,
+              "price_offset": 2
+            },
+            "seed": 39
+          },
+          "suppress_agent_ids": []
+        }
+      },
+      "n_records": 4293,
+      "file_sha256": "b6586c1ab02032abe42007fa2038eb0f0f6b8b43ee400ecee2e6cce4dcb124e2",
+      "log_sha256": "03602599cd5a885f0d5b15a1d25ea2254eaa30021829adf8222f5752f151be81"
+    }
+  ],
+  "observation_method": "Read native View at t0 after deliveries, with a non-trading observer in the impact agent slot."
+}

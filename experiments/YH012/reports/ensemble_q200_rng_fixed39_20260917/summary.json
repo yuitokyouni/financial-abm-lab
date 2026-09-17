@@ -1,0 +1,6086 @@
+{
+  "status": "ALL_SEEDS_VERIFIED",
+  "plan": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39
+    ],
+    "config": {
+      "end_time": 50000,
+      "rule": "price_time",
+      "mean_wakeup": 800,
+      "f0": 10000,
+      "f_sigma": 0.25,
+      "band": 30,
+      "qty_min": 1,
+      "qty_max": 5,
+      "noise_offset_max": 15,
+      "chartist_lookback": 3,
+      "noise_take_prob": 0.15,
+      "chartist_take_prob": 0.25,
+      "agents": {
+        "n_fundamentalist": 30,
+        "n_chartist": 25,
+        "n_noise": 45
+      },
+      "impact": {
+        "t0": 25000,
+        "t1": 26000,
+        "qty": 200,
+        "price_offset": 2
+      }
+    },
+    "analysis": {
+      "bootstrap_replicates": 4000,
+      "bootstrap_seed": 20260905,
+      "confidence_level": 0.95,
+      "grid_step": 1,
+      "tail_start": 45000
+    },
+    "workers": 4,
+    "lobcore_commit": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+    "fal_base_commit": "cb32ada2ae79982d49a9997c053317dbf66b8535",
+    "source_sha256": {
+      "__init__.py": "7306b6100b1e633a39eba3389d68fa648230cb6f99113ac82adc452a5345fde3",
+      "agents.py": "28fd597a96daba9635f054153e7c87ea033c4120545dc9682fec49d9729e61a7",
+      "analyze_ensemble.py": "7b7e2a978cee31a2e63d2560969a834ee896c50ba51e5a7b583901d60a928a86",
+      "archive_ensemble.py": "0f9b7a4524b5cdde860b4716dab489fac7712196e0e2bd668d4e088a6be65fdf",
+      "ensemble.py": "4334941eee708f06863859e6a28f8cbbc3ff06b9101a6a16b8885c07af630010",
+      "experiment.py": "e33710998a04adef1153613e7b11c8fb18b3a7a9dfb85e99b8e89ab79e4992b1",
+      "impact.py": "98fa4c177c2a8ed2394100b92010b3536bbff80c99ec0436b1c4e3ceb8c3104d",
+      "inspect_saved_pair.py": "2896663d4d42a6f7ed676e71bddd4330354114d26f1e3bf80cca2cf4c91928ec",
+      "metrics.py": "1af43c9b0f7d2cd6757fbaa6d4fc20bf0b38a6ae4bca4dc4f3c6a6b2abf51e23",
+      "plot.py": "1a86c4f5e7717330b13c37fab67a689878667c33d0366ba63c43eb3b6d427f30",
+      "rerun_fixed_cohort.py": "3e3464509d9fac6c2d873e8856352e946903dcbd24c9a4feecaf83063f48a1ff",
+      "run_ensemble.py": "11f6c64fa9ec247502880d76fdd03c3f25cc8ee197f24bf707fdce5f82bf2aca",
+      "run_impact.py": "55ed62413528d8f471cfee851aaa4ffbf40d8464359bb7e8fe11905ace64b2c1",
+      "run_world.py": "1870b5c4f88585f5c1892807f5f82cbc76747f925b9f53fba63d50e9a62116fb",
+      "version.py": "818ae3c309758a018a85d6f25ebcb07a4934f5850fddd6ce24674cac3a9b4167"
+    },
+    "previous_plan_sha256": "33c48fd7cdfde800169b201321660aae4aaa458b92734b79db00823d17b3ec8f",
+    "previous_lobcore_commit": "6aff004bf77cc7c70aceea6e409f8155f7cd94ce",
+    "selection": "Exact archived cohort retained for before/after software correction; no new exclusions, including no sign-based exclusions.",
+    "budget": "39 seeds, end=50000; all original model parameters and analysis settings retained."
+  },
+  "n_seeds": 39,
+  "all_pre_intervention_bytes_equal": true,
+  "statistics": {
+    "sd": "Sample standard deviation across seeds (ddof=1); not a confidence interval.",
+    "ci": "Pointwise 95% percentile bootstrap CI of the seed mean; resample whole seed trajectories with fixed common weights across time; not a simultaneous band.",
+    "tail_ci": "Bootstrap of the per-seed time averages; no assumption of independent timestamps.",
+    "missing": "Report a grid point only if all seeds have a mid. Require full post-t0 coverage; never zero-fill or discard seeds.",
+    "mid": "Last pre-acceptance quote snapshot at each timestamp, previous-value hold; lobcore one-sided fallback; no future backfill.",
+    "window": "Unit-spaced integer grid, exact step-function integral on [start,end); endpoint at end has zero time weight.",
+    "scope": "Monte Carlo uncertainty for this fixed model/configuration; [45000,50000] is a finite-horizon proxy, not proof of an infinite-time limit."
+  },
+  "mean_peak": {
+    "time": 25997,
+    "mean": 4.538461538461538
+  },
+  "mean_trough": {
+    "time": 25000,
+    "mean": 0.0
+  },
+  "individual_peak": 18.0,
+  "individual_trough": -10.0,
+  "final_mean": 0.41025641025641024,
+  "final_sd": 1.3468862476477232,
+  "final_ci": [
+    2.0643209364124064e-17,
+    0.846153846153846
+  ],
+  "tail": {
+    "start": 45000,
+    "end": 50000,
+    "per_seed_time_mean": [
+      -0.5632,
+      0.4386,
+      0.3147,
+      2.8179,
+      0.6892,
+      2.6912,
+      0.079,
+      0.731,
+      -0.6359,
+      0.8373,
+      0.4076,
+      0.5536,
+      0.7605,
+      1.8005,
+      -2.1698,
+      -0.129,
+      1.6318,
+      2.3039,
+      -1.0643,
+      0.2754,
+      -1.8865,
+      1.9801,
+      2.2026,
+      1.8963,
+      0.4253,
+      -1.0361,
+      0.8304,
+      3.4916,
+      1.5284,
+      1.0858,
+      -0.7533,
+      0.0665,
+      5.4647,
+      -1.3129,
+      0.4071,
+      -0.1174,
+      0.541,
+      0.0798,
+      -0.0436
+    ],
+    "mean": 0.6825589743589744,
+    "sd": 1.4881654866448912,
+    "se": 0.23829719193289547,
+    "ci_low": 0.23597794871794872,
+    "ci_high": 1.152206923076923,
+    "n_seeds": 39
+  },
+  "windows": [
+    {
+      "start": 25000,
+      "end": 26000,
+      "per_seed_time_mean": [
+        3.09,
+        3.7165,
+        2.035,
+        3.311,
+        5.4975,
+        1.9725,
+        4.724,
+        4.31,
+        1.515,
+        3.7325,
+        3.6695,
+        3.51,
+        5.179,
+        3.5295,
+        6.5185,
+        1.2335,
+        1.015,
+        3.688,
+        5.285,
+        1.9145,
+        3.6945,
+        3.2195,
+        5.371,
+        3.341,
+        6.324,
+        2.468,
+        3.454,
+        4.5495,
+        1.234,
+        3.321,
+        5.814,
+        6.9625,
+        3.242,
+        5.17,
+        3.9155,
+        1.838,
+        2.0825,
+        3.123,
+        3.649
+      ],
+      "mean": 3.6466538461538462,
+      "sd": 1.5156893869832848,
+      "se": 0.24270454327959765,
+      "ci_low": 3.187322435897436,
+      "ci_high": 4.099995833333334,
+      "n_seeds": 39
+    },
+    {
+      "start": 26000,
+      "end": 30000,
+      "per_seed_time_mean": [
+        2.41525,
+        3.56025,
+        2.560375,
+        1.88675,
+        2.932875,
+        2.6275,
+        1.47,
+        1.74875,
+        0.864625,
+        1.490625,
+        5.7745,
+        1.925875,
+        0.823,
+        5.319625,
+        13.132125,
+        1.92125,
+        1.196375,
+        6.571625,
+        5.702375,
+        1.827125,
+        0.80525,
+        1.731625,
+        8.435125,
+        8.69375,
+        4.831625,
+        0.491625,
+        6.946625,
+        3.030625,
+        1.3055,
+        2.57575,
+        2.76625,
+        2.578,
+        4.932125,
+        4.9375,
+        2.837,
+        1.4295,
+        1.5475,
+        3.742875,
+        0.992875
+      ],
+      "mean": 3.3426153846153843,
+      "sd": 2.662826003544321,
+      "se": 0.4263934118517306,
+      "ci_low": 2.564930849358974,
+      "ci_high": 4.209789342948717,
+      "n_seeds": 39
+    },
+    {
+      "start": 30000,
+      "end": 35000,
+      "per_seed_time_mean": [
+        0.7688,
+        2.4149,
+        3.2578,
+        1.6777,
+        1.6404,
+        3.0104,
+        0.1173,
+        1.1361,
+        1.4623,
+        1.0959,
+        2.0053,
+        2.5881,
+        -0.1649,
+        3.3689,
+        12.0461,
+        2.5601,
+        0.9627,
+        3.8759,
+        2.0739,
+        0.7208,
+        2.1012,
+        1.7844,
+        2.285,
+        2.1641,
+        4.9324,
+        0.0646,
+        4.0553,
+        1.5216,
+        0.9168,
+        1.5934,
+        0.6168,
+        1.9221,
+        2.0116,
+        -3.4442,
+        1.851,
+        1.2591,
+        1.1245,
+        2.5559,
+        0.382
+      ],
+      "mean": 1.956823076923077,
+      "sd": 2.1664596068557684,
+      "se": 0.3469111771391091,
+      "ci_low": 1.331158653846154,
+      "ci_high": 2.6946562820512825,
+      "n_seeds": 39
+    },
+    {
+      "start": 35000,
+      "end": 40000,
+      "per_seed_time_mean": [
+        0.0151,
+        1.3616,
+        1.6954,
+        1.9795,
+        0.3788,
+        3.2433,
+        -0.4052,
+        1.4823,
+        -0.1289,
+        0.681,
+        2.2473,
+        2.3135,
+        5.7081,
+        0.4832,
+        2.0372,
+        0.6296,
+        0.1083,
+        3.6239,
+        2.8905,
+        -1.4817,
+        -4.9688,
+        2.4225,
+        1.0758,
+        1.7695,
+        7.6888,
+        0.1188,
+        2.589,
+        1.3384,
+        0.6962,
+        1.0739,
+        0.2471,
+        1.8619,
+        5.6633,
+        -3.596,
+        -0.1424,
+        0.4983,
+        0.778,
+        1.2156,
+        1.5912
+      ],
+      "mean": 1.302151282051282,
+      "sd": 2.20649830356081,
+      "se": 0.35332249972324925,
+      "ci_low": 0.6429877564102565,
+      "ci_high": 2.0049821794871794,
+      "n_seeds": 39
+    },
+    {
+      "start": 40000,
+      "end": 45000,
+      "per_seed_time_mean": [
+        -0.7238,
+        0.8862,
+        0.8727,
+        0.7123,
+        -0.0538,
+        3.0382,
+        1.0038,
+        1.041,
+        -0.2131,
+        0.5961,
+        0.7536,
+        1.2657,
+        0.7957,
+        1.9062,
+        2.5737,
+        0.183,
+        -0.5937,
+        1.7465,
+        -0.8995,
+        0.3511,
+        -0.9411,
+        2.1016,
+        2.3516,
+        1.5229,
+        2.651,
+        -1.1314,
+        2.3131,
+        3.6756,
+        0.3111,
+        0.9991,
+        0.0292,
+        0.2848,
+        7.9196,
+        -1.4523,
+        0.6035,
+        0.3566,
+        0.5406,
+        1.6514,
+        0.2323
+      ],
+      "mean": 1.0066948717948718,
+      "sd": 1.6391582489912824,
+      "se": 0.2624753842053534,
+      "ci_low": 0.5394247435897437,
+      "ci_high": 1.5475798076923077,
+      "n_seeds": 39
+    },
+    {
+      "start": 45000,
+      "end": 50000,
+      "per_seed_time_mean": [
+        -0.5632,
+        0.4386,
+        0.3147,
+        2.8179,
+        0.6892,
+        2.6912,
+        0.079,
+        0.731,
+        -0.6359,
+        0.8373,
+        0.4076,
+        0.5536,
+        0.7605,
+        1.8005,
+        -2.1698,
+        -0.129,
+        1.6318,
+        2.3039,
+        -1.0643,
+        0.2754,
+        -1.8865,
+        1.9801,
+        2.2026,
+        1.8963,
+        0.4253,
+        -1.0361,
+        0.8304,
+        3.4916,
+        1.5284,
+        1.0858,
+        -0.7533,
+        0.0665,
+        5.4647,
+        -1.3129,
+        0.4071,
+        -0.1174,
+        0.541,
+        0.0798,
+        -0.0436
+      ],
+      "mean": 0.6825589743589744,
+      "sd": 1.4881654866448912,
+      "se": 0.23829719193289547,
+      "ci_low": 0.23597794871794872,
+      "ci_high": 1.152206923076923,
+      "n_seeds": 39
+    },
+    {
+      "start": 25000,
+      "end": 50000,
+      "per_seed_time_mean": [
+        0.40942,
+        1.73856,
+        1.71918,
+        1.8718,
+        1.22008,
+        2.89592,
+        0.58314,
+        1.33028,
+        0.29582,
+        1.02986,
+        2.15346,
+        1.79272,
+        1.75872,
+        2.50408,
+        5.25932,
+        1.00548,
+        0.65384,
+        3.50902,
+        1.7239,
+        0.34204,
+        -0.86242,
+        2.06356,
+        3.14746,
+        2.9952,
+        4.16552,
+        -0.21944,
+        3.20718,
+        2.67232,
+        0.94874,
+        1.4954,
+        0.70312,
+        1.51804,
+        5.13066,
+        -0.96428,
+        1.15438,
+        0.70156,
+        0.92772,
+        1.82432,
+        0.7372
+      ],
+      "mean": 1.6703302564102565,
+      "sd": 1.3968037189607436,
+      "se": 0.22366760074526365,
+      "ci_low": 1.2494690384615383,
+      "ci_high": 2.11804791025641,
+      "n_seeds": 39
+    }
+  ],
+  "tail_trajectory_mean_range": [
+    0.3333333333333333,
+    1.0384615384615385
+  ],
+  "n_seeds_exactly_zero_whole_tail": 0,
+  "n_initial_window_positive": 39,
+  "per_seed": [
+    {
+      "seed": 0,
+      "prefix": {
+        "records": 4929,
+        "bytes": 473184,
+        "sha256": "eeeec5a71df25554fc703ab330f516955924b783067bddb384f878088af47906",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 0,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 0
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 7397746172029263497,
+          "log_sha256": "2b60ae88454ac62d59ea274a51e147d92a71ccf6bd086a87a1df3fd02660a385",
+          "n_records": 9291,
+          "n_fills": 2848,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 0,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 0
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 7068384459261112313,
+          "log_sha256": "855a548b8a3442c6c9633263f27fb5bc0740d2a9587c4159aecfa542127508a5",
+          "n_records": 9448,
+          "n_fills": 2956,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.09,
+      "impact_executed_qty": 121,
+      "impact_fill_count": 39,
+      "impact_taker_executed_qty": 3,
+      "impact_maker_executed_qty": 118,
+      "peak": 5.5,
+      "trough": -3.0,
+      "final_delta": -1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 1,
+      "prefix": {
+        "records": 5044,
+        "bytes": 484224,
+        "sha256": "a73854f414dfb05392d1a6afb3304419e9826438dfdadbfc43ed98172ea68622",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 1,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 1
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 17936785916022124789,
+          "log_sha256": "e6276c469299d879a8932fcdd095db86cbcff0e517567a512af2bcdd8e662147",
+          "n_records": 9147,
+          "n_fills": 2815,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 1,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 1
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 15041282238048115534,
+          "log_sha256": "5c83888cbdc521aa5ba6100171ea9e33cc65166a2f951d24ed318149fd377b02",
+          "n_records": 9306,
+          "n_fills": 2878,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.7165,
+      "impact_executed_qty": 122,
+      "impact_fill_count": 48,
+      "impact_taker_executed_qty": 118,
+      "impact_maker_executed_qty": 4,
+      "peak": 4.0,
+      "trough": -0.5,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49934
+    },
+    {
+      "seed": 2,
+      "prefix": {
+        "records": 5349,
+        "bytes": 513504,
+        "sha256": "a5fbacb6b6942efe21da14c5cb96404ab1b6312519ef0818ddb8ae7f28566afe",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 2,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 2
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 10469650234563225364,
+          "log_sha256": "1625af6f24ac7844ed3b63e2e9fd41399904f429b6cc6ec8f37b315a4f13930c",
+          "n_records": 11955,
+          "n_fills": 4543,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 2,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 2
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 3617191177165027271,
+          "log_sha256": "a2272b978a06cd8ad6b4c1b9b2c0d7bed0840b5cef47a72fbff68dec0e3cdcd6",
+          "n_records": 11801,
+          "n_fills": 4447,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 2.035,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 74,
+      "impact_taker_executed_qty": 64,
+      "impact_maker_executed_qty": 136,
+      "peak": 11.0,
+      "trough": -1.0,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49346
+    },
+    {
+      "seed": 3,
+      "prefix": {
+        "records": 4641,
+        "bytes": 445536,
+        "sha256": "ee3277acaa43f24acf19440865d16ad0453a68f2f034457a866a1ddbc062281e",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 3,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 3
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 10117647144510525774,
+          "log_sha256": "13f496c5c4260be69d37e430b8b224408c37a6aa52461f9630cd5cbb7a31e69d",
+          "n_records": 9034,
+          "n_fills": 2823,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 3,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 3
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 18221323726189085127,
+          "log_sha256": "b4bbbd9b397b16cbe37b2012843582a49a8518d4a68558935012a56d7c6b2c5c",
+          "n_records": 8919,
+          "n_fills": 2738,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.311,
+      "impact_executed_qty": 19,
+      "impact_fill_count": 6,
+      "impact_taker_executed_qty": 10,
+      "impact_maker_executed_qty": 9,
+      "peak": 8.5,
+      "trough": -5.0,
+      "final_delta": 2.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 4,
+      "prefix": {
+        "records": 5182,
+        "bytes": 497472,
+        "sha256": "00e28eea79956610e194797e5be1be4dc8df84d9f26a41613fbb6d78a530aca5",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 4,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 4
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 176098583343604901,
+          "log_sha256": "ba66121f4b52eb48b5626a12c8f1fbcacf4ab4d954c017e51956e15e9f5193af",
+          "n_records": 11030,
+          "n_fills": 3908,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 4,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 4
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 14019900211061798927,
+          "log_sha256": "e667d59d023e8b7b6b17f09aa5919651d7c165297ed2a06df0ee7456ba33221e",
+          "n_records": 10866,
+          "n_fills": 3831,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 5.4975,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 67,
+      "impact_taker_executed_qty": 32,
+      "impact_maker_executed_qty": 168,
+      "peak": 10.5,
+      "trough": -1.5,
+      "final_delta": 1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 5,
+      "prefix": {
+        "records": 4623,
+        "bytes": 443808,
+        "sha256": "44d58c6d9c56ee2dfaba497bd6925cad6f2ea3d1144887dc1dc46da9089c6ea0",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 5,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 5
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 3281787626895576572,
+          "log_sha256": "886782105b8e07c13e9bb0aaf338d5a572a808f9aa50582ecb852cc1659bf68f",
+          "n_records": 8559,
+          "n_fills": 2462,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 5,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 5
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 396681345405815622,
+          "log_sha256": "d680c320c8fedfe24ca797d23f80c9e5bb5653af0b18057064682b10c91a7229",
+          "n_records": 8426,
+          "n_fills": 2356,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 1.9725,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 63,
+      "impact_taker_executed_qty": 200,
+      "impact_maker_executed_qty": 0,
+      "peak": 5.0,
+      "trough": 0.0,
+      "final_delta": 3.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 6,
+      "prefix": {
+        "records": 4575,
+        "bytes": 439200,
+        "sha256": "3be71d4afc48fb8d225b62ded0fa63467a609cfa05eebed34fad87c0f049a0a7",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 6,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 6
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 2020752169871077832,
+          "log_sha256": "985b98ba6c2788e7eb3deb3cbade363ef3c1432dc309a7473bbc46e2c3c56899",
+          "n_records": 9549,
+          "n_fills": 3085,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 6,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 6
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 14729597110518652811,
+          "log_sha256": "067e87910bf6b027862480967df678164295f9bfcc398b69a08f16f53f694846",
+          "n_records": 9668,
+          "n_fills": 3151,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 4.724,
+      "impact_executed_qty": 17,
+      "impact_fill_count": 7,
+      "impact_taker_executed_qty": 6,
+      "impact_maker_executed_qty": 11,
+      "peak": 7.0,
+      "trough": -1.5,
+      "final_delta": 0.5,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 7,
+      "prefix": {
+        "records": 5221,
+        "bytes": 501216,
+        "sha256": "ac5e1b7ae83b9cd674aa77ce63987b41ff7eae19e5c1ae454ea39a499f66e452",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 7,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 7
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 14403206547758956358,
+          "log_sha256": "fe7ecc4bc2612c91f3b936842764971a5c547d842a6e5d0cfba12c3f3473f607",
+          "n_records": 10959,
+          "n_fills": 3871,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 7,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 7
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 15369110577583702456,
+          "log_sha256": "361ebf95e6283dd829e0f2d84df6960355ca586822ea2f023f14e60fc31ee802",
+          "n_records": 10739,
+          "n_fills": 3754,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 4.31,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 69,
+      "impact_taker_executed_qty": 7,
+      "impact_maker_executed_qty": 193,
+      "peak": 6.0,
+      "trough": -2.5,
+      "final_delta": 1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 8,
+      "prefix": {
+        "records": 4492,
+        "bytes": 431232,
+        "sha256": "1bc8de0061d88c2e5f74d2ec944889cca770a9061b4af30f031b66123ddddf81",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 8,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 8
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 4924508271016716421,
+          "log_sha256": "62d84303fa9800ee6978ef8162a81714717477401dae236d8d8abc8090396dae",
+          "n_records": 9708,
+          "n_fills": 3160,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 8,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 8
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 7497744544391271440,
+          "log_sha256": "928df94fc8d5092f9a5f6caed6121328bfee8eb945763ffd17b30573650213f5",
+          "n_records": 9770,
+          "n_fills": 3173,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 1.515,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 64,
+      "impact_taker_executed_qty": 200,
+      "impact_maker_executed_qty": 0,
+      "peak": 3.0,
+      "trough": -5.5,
+      "final_delta": -1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 9,
+      "prefix": {
+        "records": 4700,
+        "bytes": 451200,
+        "sha256": "c0bf8d7d6229a6d6c0441794b3a4dada1591768559780045f5ddb9539b8d5afe",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 9,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 9
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 3473228293043925876,
+          "log_sha256": "9b96a065e054abaa24c7062e89781db0e693e236c6bf2e7ebafca8a744e96ef3",
+          "n_records": 9675,
+          "n_fills": 3124,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 9,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 9
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 753705690797558206,
+          "log_sha256": "7247a7c9e03d1468cee6b4742cdcd95ab0d93c671668d1e7610820faae98aac0",
+          "n_records": 9593,
+          "n_fills": 3072,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.7325,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 67,
+      "impact_taker_executed_qty": 33,
+      "impact_maker_executed_qty": 167,
+      "peak": 5.5,
+      "trough": -2.5,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49974
+    },
+    {
+      "seed": 10,
+      "prefix": {
+        "records": 4592,
+        "bytes": 440832,
+        "sha256": "de295422f990135e1e6e0812b29954ec8b31b3cd4c962accb94906775e9a2ec5",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 10,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 10
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 4372934810391802653,
+          "log_sha256": "2c37c2c6d435ec1b1e14e250b0d6b536470db1cdffa18fd5840b40d3a78a144f",
+          "n_records": 11145,
+          "n_fills": 3979,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 10,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 10
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 13883865684027374238,
+          "log_sha256": "38064827174b9f2022de6b373e244413119e33295bd5f28b5e6b00a5c42de760",
+          "n_records": 10845,
+          "n_fills": 3813,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.6695,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 75,
+      "impact_taker_executed_qty": 9,
+      "impact_maker_executed_qty": 191,
+      "peak": 12.5,
+      "trough": -3.0,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49977
+    },
+    {
+      "seed": 11,
+      "prefix": {
+        "records": 4522,
+        "bytes": 434112,
+        "sha256": "a02fdfced9e5143616c1859975fd65cae88cec7c7fd013a7242a1ba6f48bab9b",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 11,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 11
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 14019229313654231931,
+          "log_sha256": "737503b1e7278057d81124e9a2f9f1b612e47e516b6d10ece51f9139e77ef4e3",
+          "n_records": 9345,
+          "n_fills": 2864,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 11,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 11
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 14433491048283276001,
+          "log_sha256": "268b7cfd48554d8fbc642bd93f752d40d4daf39cb8d2d1d83eb563d0d715ac6a",
+          "n_records": 9559,
+          "n_fills": 2985,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.51,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 66,
+      "impact_taker_executed_qty": 97,
+      "impact_maker_executed_qty": 103,
+      "peak": 6.0,
+      "trough": -0.5,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49195
+    },
+    {
+      "seed": 12,
+      "prefix": {
+        "records": 4661,
+        "bytes": 447456,
+        "sha256": "2e01785e84d5e2e6880087562940944fb5fb9626c3348279125e38b49893e6b8",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 12,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 12
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 9705534012475506514,
+          "log_sha256": "2e77c27775d578f8e6621c9833bb3b99ac14c04ac2d3b2de9787de54bd4a6633",
+          "n_records": 9334,
+          "n_fills": 2886,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 12,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 12
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 12422836759830280588,
+          "log_sha256": "68a85ef85e7cfc241e20695a0ea6559d9cde74a20725499b1693a1f867689562",
+          "n_records": 9356,
+          "n_fills": 2903,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 5.179,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 73,
+      "impact_taker_executed_qty": 21,
+      "impact_maker_executed_qty": 179,
+      "peak": 11.5,
+      "trough": -6.0,
+      "final_delta": -2.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 14,
+      "prefix": {
+        "records": 5018,
+        "bytes": 481728,
+        "sha256": "1deb45b898c0ac266424403f903c47ce80a60ec8f31c38e9c702385c9f7b1e0c",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 14,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 14
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 17168007014125105097,
+          "log_sha256": "cea4a51550d015cd4d558d947e61ae5129cf29823aeac2c05ff15be6cc31d139",
+          "n_records": 9784,
+          "n_fills": 3135,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 14,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 14
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 10925887504965444828,
+          "log_sha256": "9270903c36843e14e915a6a460769280f1558479a2e4507d4988e6d3db8977ba",
+          "n_records": 9662,
+          "n_fills": 3102,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.5295,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 66,
+      "impact_taker_executed_qty": 19,
+      "impact_maker_executed_qty": 181,
+      "peak": 8.0,
+      "trough": -0.5,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49998
+    },
+    {
+      "seed": 15,
+      "prefix": {
+        "records": 5053,
+        "bytes": 485088,
+        "sha256": "465eab3a493ff70ad4784011645c4e92a1ca58000e977e56eab3c4fde01e1d19",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 15,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 15
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 16120081228109902893,
+          "log_sha256": "e1f57eeaac03aadec32063c7dfefe4b9776770f22606050ab1832113f641b867",
+          "n_records": 9240,
+          "n_fills": 2749,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 15,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 15
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 14843483917130735156,
+          "log_sha256": "55e4aec522c3b4d023ade92d85699ed393e7010d9c7d12c59c34d025dba9eebe",
+          "n_records": 9328,
+          "n_fills": 2819,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 6.5185,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 67,
+      "impact_taker_executed_qty": 10,
+      "impact_maker_executed_qty": 190,
+      "peak": 18.0,
+      "trough": -7.0,
+      "final_delta": -1.5,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 16,
+      "prefix": {
+        "records": 5089,
+        "bytes": 488544,
+        "sha256": "6b203f7c6d65e21b618ee355c4b4422893e496badb776ac3174bb17c9e8608e3",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 16,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 16
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 5860605325531209102,
+          "log_sha256": "6057f326dc0aff02c3406befb4c5413dc13818767889d4efcabeaccdb0237b7a",
+          "n_records": 10424,
+          "n_fills": 3578,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 16,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 16
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 16628859801322830029,
+          "log_sha256": "46175f06909964d40d738b4d032e7d395dfed84193bd6e853fe6270464d0aa27",
+          "n_records": 10552,
+          "n_fills": 3624,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 1.2335,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 62,
+      "impact_taker_executed_qty": 200,
+      "impact_maker_executed_qty": 0,
+      "peak": 7.0,
+      "trough": -5.0,
+      "final_delta": -1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 17,
+      "prefix": {
+        "records": 4512,
+        "bytes": 433152,
+        "sha256": "fb916bc3ae27f2b3c685ac9eb98adea5d8bac6201056555db616d5919c29fc48",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 17,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 17
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 14126996954445674564,
+          "log_sha256": "2b567c4f98e49b996f3e9589afe2e16199761a32ae24afb050b730424d8893a7",
+          "n_records": 9451,
+          "n_fills": 3048,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 17,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 17
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 12427788576143285356,
+          "log_sha256": "90ecb3015c8645c879480c1e8be2636594fd852faad68283a18ca38cc4dadeeb",
+          "n_records": 9541,
+          "n_fills": 3077,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 1.015,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 71,
+      "impact_taker_executed_qty": 200,
+      "impact_maker_executed_qty": 0,
+      "peak": 6.5,
+      "trough": -4.0,
+      "final_delta": 1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 18,
+      "prefix": {
+        "records": 4453,
+        "bytes": 427488,
+        "sha256": "46255c2e5c170bb906ce34e4fba09868046d8e71c7e51381569d0129d42af15f",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 18,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 18
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 13942264413823548205,
+          "log_sha256": "d5a5f2d52d627e1f90d74da579a7e6f7b89b74aa8d649be2bbc4f86acc57a2a9",
+          "n_records": 9825,
+          "n_fills": 3197,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 18,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 18
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 17746131412893676644,
+          "log_sha256": "5e7e6ca08e785a52a3fba3a69df3d3ddc443190b907bb4818ed588f15f1b30f9",
+          "n_records": 9933,
+          "n_fills": 3238,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.688,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 79,
+      "impact_taker_executed_qty": 86,
+      "impact_maker_executed_qty": 114,
+      "peak": 9.0,
+      "trough": -2.0,
+      "final_delta": 2.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 19,
+      "prefix": {
+        "records": 4609,
+        "bytes": 442464,
+        "sha256": "9720c34962704e203ec5999bd02d3aed5caad8852094640e71e7c07bc858e6bf",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 19,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 19
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 7434612014770184004,
+          "log_sha256": "2a8df9660f598f6fa29ce29205bab75995bf9aa3b0520805079dad61412025b6",
+          "n_records": 8862,
+          "n_fills": 2600,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 19,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 19
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 16425080720325904769,
+          "log_sha256": "f672a8c94c1c716b10657ef4896e9e34bbecd511f9de308dcc237a89be7b6ff6",
+          "n_records": 9145,
+          "n_fills": 2740,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 5.285,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 68,
+      "impact_taker_executed_qty": 21,
+      "impact_maker_executed_qty": 179,
+      "peak": 9.0,
+      "trough": -5.5,
+      "final_delta": 1.5,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 20,
+      "prefix": {
+        "records": 4528,
+        "bytes": 434688,
+        "sha256": "c1c14093be8af110288094855898267d1bc0706c1a156c48fb5b0295d1e6c16c",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 20,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 20
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 8014993060665434917,
+          "log_sha256": "e0d5e868275f74bec800ccc30035626f5aaa58293bffc79c76fac52774687673",
+          "n_records": 8842,
+          "n_fills": 2648,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 20,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 20
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 11570635033598726435,
+          "log_sha256": "c11d6d1a3972123f6c5edc847cea45130ce9deb5a1202811ee9cac7239d4c28a",
+          "n_records": 8706,
+          "n_fills": 2530,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 1.9145,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 68,
+      "impact_taker_executed_qty": 200,
+      "impact_maker_executed_qty": 0,
+      "peak": 3.5,
+      "trough": -7.0,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49954
+    },
+    {
+      "seed": 21,
+      "prefix": {
+        "records": 4685,
+        "bytes": 449760,
+        "sha256": "f76d93eeb1c6efd92613f1723b00a6b5a35ccc7c6bc08528e6060c2cb8f2f0c3",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 21,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 21
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 6739097615573106434,
+          "log_sha256": "bee4aa3844c2fed2825dccf4f339007e13afdd452b074e90da1f7324cbaeb7ed",
+          "n_records": 8988,
+          "n_fills": 2740,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 21,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 21
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 5745539825123726889,
+          "log_sha256": "5d733dd20a18f811076c618a87c7a8f2b6aec15bd9a656717e6948d84472e3ce",
+          "n_records": 9092,
+          "n_fills": 2784,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.6945,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 74,
+      "impact_taker_executed_qty": 20,
+      "impact_maker_executed_qty": 180,
+      "peak": 7.0,
+      "trough": -10.0,
+      "final_delta": -1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 22,
+      "prefix": {
+        "records": 4903,
+        "bytes": 470688,
+        "sha256": "87863d6f755103abcc03dabd0f8bd01361a253f408a8102c85861062907d89ab",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 22,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 22
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 2098849125145198800,
+          "log_sha256": "c4cf18a5e35b2e4bb6ce389d2b84f414cb46ae9000fd05e498a7d0137918f5cd",
+          "n_records": 10070,
+          "n_fills": 3280,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 22,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 22
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 11852707711427983692,
+          "log_sha256": "ba4c7da74230bc018b305d64133da92d2109449ee026f5253ffafecc00f2cbf6",
+          "n_records": 9900,
+          "n_fills": 3199,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.2195,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 67,
+      "impact_taker_executed_qty": 35,
+      "impact_maker_executed_qty": 165,
+      "peak": 6.0,
+      "trough": -3.0,
+      "final_delta": 3.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 23,
+      "prefix": {
+        "records": 4654,
+        "bytes": 446784,
+        "sha256": "9bb3b6bae7f24ca57d190304c372bc9aad1a35f0e191d0f4a4c2c7854c2ba5ec",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 23,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 23
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 16899888260782523568,
+          "log_sha256": "21b90e588b074ee66fc0003d0abb288e541090dc75f062defa2be55f5d9fc24c",
+          "n_records": 9620,
+          "n_fills": 3041,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 23,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 23
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 5949966608580718151,
+          "log_sha256": "d67c08520f4d6e296ce3c346ecabdbbba121c4b7e040db9b4a285293c1f02234",
+          "n_records": 9596,
+          "n_fills": 3019,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 5.371,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 71,
+      "impact_taker_executed_qty": 18,
+      "impact_maker_executed_qty": 182,
+      "peak": 13.0,
+      "trough": -3.0,
+      "final_delta": 2.5,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 24,
+      "prefix": {
+        "records": 4480,
+        "bytes": 430080,
+        "sha256": "a3d4c85dab3f8cfa5b8c4c1903d0c1f2530b65042421b4bcfccc4a0b9d2884d4",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 24,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 24
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 16135976968685267550,
+          "log_sha256": "ac24a33f3c758aa4c8a74bfcd8386ce6d17947670460ca43ef80e878aead9bbb",
+          "n_records": 10013,
+          "n_fills": 3407,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 24,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 24
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 16047554116872189351,
+          "log_sha256": "28ba5497bd19992333d007d355f8dd830e724ac33d93c270a815251222fdfc92",
+          "n_records": 10415,
+          "n_fills": 3627,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.341,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 64,
+      "impact_taker_executed_qty": 169,
+      "impact_maker_executed_qty": 31,
+      "peak": 12.0,
+      "trough": -3.5,
+      "final_delta": -1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 25,
+      "prefix": {
+        "records": 4613,
+        "bytes": 442848,
+        "sha256": "67e45f46ac5f305dec921915fd84ee40cb70e91bb9b79c681a866f7dec4d76b8",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 25,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 25
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 6002341647299285005,
+          "log_sha256": "ff2a65d8df2044c36b28f43227c5e3372b33eb97919b2a0ff1385c6165bfc945",
+          "n_records": 12106,
+          "n_fills": 4692,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 25,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 25
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 12122004987751661444,
+          "log_sha256": "89c1488a1d3aa121c1be84e4c0cd94d071e8a0bff0412c09eb9477975aff4000",
+          "n_records": 11748,
+          "n_fills": 4487,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 6.324,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 71,
+      "impact_taker_executed_qty": 4,
+      "impact_maker_executed_qty": 196,
+      "peak": 13.5,
+      "trough": -0.5,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49972
+    },
+    {
+      "seed": 26,
+      "prefix": {
+        "records": 4420,
+        "bytes": 424320,
+        "sha256": "48070a6dd8a24c45a20999add8e02f01ed30a1152186d319b49ff787062de8f2",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 26,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 26
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 1054629202865010218,
+          "log_sha256": "df30916b96deedc678eb32fcb59b96139f61cd7e8d72b34ff1a768debaa028c1",
+          "n_records": 9550,
+          "n_fills": 3079,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 26,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 26
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 14764883467969629655,
+          "log_sha256": "92c79a1cf63e91f098f443c7b2e2a37e34f8f7fc8540ebf2b2402aab335b29a3",
+          "n_records": 9571,
+          "n_fills": 3069,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 2.468,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 67,
+      "impact_taker_executed_qty": 74,
+      "impact_maker_executed_qty": 126,
+      "peak": 3.0,
+      "trough": -6.0,
+      "final_delta": -1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 27,
+      "prefix": {
+        "records": 4756,
+        "bytes": 456576,
+        "sha256": "162d88f48ee006b70f8f555c7e6a74f8f3b5df65748e5e030cb30e126b4b41d0",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 27,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 27
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 13425247504774532827,
+          "log_sha256": "b005519e929668d2b14fca5df3bb860583d2211e936648d039936040ac86ee01",
+          "n_records": 8467,
+          "n_fills": 2436,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 27,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 27
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 17006985378847245248,
+          "log_sha256": "a127375f4e8e56e10a5425365cff4a5698a1b7b2a6973936b0bb05b4f9a9e6cb",
+          "n_records": 8768,
+          "n_fills": 2606,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.454,
+      "impact_executed_qty": 37,
+      "impact_fill_count": 15,
+      "impact_taker_executed_qty": 14,
+      "impact_maker_executed_qty": 23,
+      "peak": 11.0,
+      "trough": -0.5,
+      "final_delta": 1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 28,
+      "prefix": {
+        "records": 4788,
+        "bytes": 459648,
+        "sha256": "fccd762e3e6e81dd7d967cc66ae5483eaa46b43ad54f74215cc97019289e632d",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 28,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 28
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 17951623319491261833,
+          "log_sha256": "4404216e3e17db0b781d353584721887e0cc44681b9a1ddbb0c940dcd07667e8",
+          "n_records": 10419,
+          "n_fills": 3499,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 28,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 28
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 17425222695481367987,
+          "log_sha256": "e9f75f541443dfad3c95d0ca134bd3feb25bf9deeb92fe94881cff7f584eec33",
+          "n_records": 10192,
+          "n_fills": 3382,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 4.5495,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 65,
+      "impact_taker_executed_qty": 56,
+      "impact_maker_executed_qty": 144,
+      "peak": 7.5,
+      "trough": -2.5,
+      "final_delta": 3.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 29,
+      "prefix": {
+        "records": 4387,
+        "bytes": 421152,
+        "sha256": "fce6766ca6be71e61548fc716dc6b57a139318b8d6199b25b8b19e4c3d7da0d7",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 29,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 29
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 11391385142995457152,
+          "log_sha256": "1d3c825f7aebc37f445b39584877b11178557f554c131ce258657d2baff8f243",
+          "n_records": 9054,
+          "n_fills": 2668,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 29,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 29
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 16822449126214469703,
+          "log_sha256": "f6ac7a1bbb5300a8f29cd257186cae57ef442c27da817b8c909e04b5fea78153",
+          "n_records": 9205,
+          "n_fills": 2711,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 1.234,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 65,
+      "impact_taker_executed_qty": 200,
+      "impact_maker_executed_qty": 0,
+      "peak": 4.0,
+      "trough": -0.5,
+      "final_delta": 1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 30,
+      "prefix": {
+        "records": 4787,
+        "bytes": 459552,
+        "sha256": "f0d3ce561b84019b2195c355f07811652b10e50a8419bda72245a52faab0cc07",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 30,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 30
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 898911525414550284,
+          "log_sha256": "a7993f67c3f260c31cd94ee2a1cc04c876aaad44c045945cd2a8d28b86b0dca1",
+          "n_records": 9674,
+          "n_fills": 3127,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 30,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 30
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 152383317595166983,
+          "log_sha256": "1133bda8c9faed4c305982fdcc0ced947c6f0d1b7dd5ce2ce631b742d2330fdd",
+          "n_records": 9491,
+          "n_fills": 3022,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.321,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 67,
+      "impact_taker_executed_qty": 49,
+      "impact_maker_executed_qty": 151,
+      "peak": 5.0,
+      "trough": -1.0,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49787
+    },
+    {
+      "seed": 31,
+      "prefix": {
+        "records": 4347,
+        "bytes": 417312,
+        "sha256": "633843629ce1bc869f7cab113ee84df3008c47b55edbff238ff556d32419a76f",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 31,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 31
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 16666678611897151194,
+          "log_sha256": "e26f6f59afc4f440967e986f9d72757dd668198cdd66a8921cf749fb920805ab",
+          "n_records": 10556,
+          "n_fills": 3700,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 31,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 31
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 6653427688855443201,
+          "log_sha256": "39e0586d2ebc55183be3361a2514817a19bbf356478c1ebee43b1cb1bfe69cbc",
+          "n_records": 10709,
+          "n_fills": 3768,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 5.814,
+      "impact_executed_qty": 20,
+      "impact_fill_count": 6,
+      "impact_taker_executed_qty": 17,
+      "impact_maker_executed_qty": 3,
+      "peak": 8.0,
+      "trough": -2.0,
+      "final_delta": -0.5,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 32,
+      "prefix": {
+        "records": 4700,
+        "bytes": 451200,
+        "sha256": "412f8ced87cd2d67878602fb6617fe24081c49e0a89a26ee0fa7ea9377164a60",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 32,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 32
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 17742372705584453216,
+          "log_sha256": "0554515792fab5ddfa4ca138dd8318fdb36d2cde05d0d901594fb7a332f94473",
+          "n_records": 11015,
+          "n_fills": 3950,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 32,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 32
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 2903646857023607871,
+          "log_sha256": "72f4a41e9517461aa62652a453b77bb377b5fc3e29cd16f0da32b888e2260e3b",
+          "n_records": 10759,
+          "n_fills": 3819,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 6.9625,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 74,
+      "impact_taker_executed_qty": 1,
+      "impact_maker_executed_qty": 199,
+      "peak": 10.5,
+      "trough": -2.0,
+      "final_delta": 1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 33,
+      "prefix": {
+        "records": 5127,
+        "bytes": 492192,
+        "sha256": "7c8a385a7cfe73e755ded0bb55eca61c8db7c455f7e2304a8cac3056fe861749",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 33,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 33
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 10954055489131973360,
+          "log_sha256": "0917f446a8ac43416dafc395aa00ebb841671cb209f754465cafae35d92972ca",
+          "n_records": 9901,
+          "n_fills": 3334,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 33,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 33
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 3683526838738972888,
+          "log_sha256": "a805c76af41575609b61007a6d2ff437e60662c74ac5d2905996236468bc8b1a",
+          "n_records": 10015,
+          "n_fills": 3377,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.242,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 64,
+      "impact_taker_executed_qty": 200,
+      "impact_maker_executed_qty": 0,
+      "peak": 13.0,
+      "trough": 0.0,
+      "final_delta": 2.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 34,
+      "prefix": {
+        "records": 4845,
+        "bytes": 465120,
+        "sha256": "9ee02726c48c65fec27ed6c057d08ab662301abe35a5bce515d73e2f87a33aad",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 34,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 34
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 4944392095731813513,
+          "log_sha256": "e99c81201d4027c03fc76a56d31c5cca6c367d7e0ce547e2249bb9a15ffe5281",
+          "n_records": 9486,
+          "n_fills": 2952,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 34,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 34
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 6890075121801138327,
+          "log_sha256": "50b9c4772a246afa222af1b4868b4cf80df2b149614277ccdf553f696062621a",
+          "n_records": 9565,
+          "n_fills": 3011,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 5.17,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 71,
+      "impact_taker_executed_qty": 10,
+      "impact_maker_executed_qty": 190,
+      "peak": 9.0,
+      "trough": -9.0,
+      "final_delta": -2.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 35,
+      "prefix": {
+        "records": 5246,
+        "bytes": 503616,
+        "sha256": "0a6a2ae0fe5da7a8941c3509af180bf3ef02774aea450a633498c967dec215c3",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 35,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 35
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 4196387932386443696,
+          "log_sha256": "cadaff7e27ed1c93f36ada4511ac82c28c45410069cb58765eb3acdb47fdc425",
+          "n_records": 10263,
+          "n_fills": 3439,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 35,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 35
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 12952285752491355225,
+          "log_sha256": "67a0f02d66230ccac09b3b2daf9ab0c85739709d87fd14aa1a85c4131138d8a1",
+          "n_records": 10131,
+          "n_fills": 3394,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.9155,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 76,
+      "impact_taker_executed_qty": 14,
+      "impact_maker_executed_qty": 186,
+      "peak": 5.0,
+      "trough": -3.0,
+      "final_delta": 1.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 36,
+      "prefix": {
+        "records": 4588,
+        "bytes": 440448,
+        "sha256": "c26da216c4bb5382cd5aac83ac6b57c0077d9b7fb8872ce9fe1d6c1e279ab54f",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 36,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 36
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 2954252220743571428,
+          "log_sha256": "04fb913f948f923afdf2c9f2af4ce7da6cb7c4a5739cbb7a07ea02db41ffc427",
+          "n_records": 10809,
+          "n_fills": 3877,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 36,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 36
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 4797963046256195632,
+          "log_sha256": "35181dfe615e402bc53e78298c40eaa17dcf893177091b052ac35280ef872e89",
+          "n_records": 10926,
+          "n_fills": 3910,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 1.838,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 68,
+      "impact_taker_executed_qty": 200,
+      "impact_maker_executed_qty": 0,
+      "peak": 3.0,
+      "trough": -4.0,
+      "final_delta": -0.5,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 37,
+      "prefix": {
+        "records": 4547,
+        "bytes": 436512,
+        "sha256": "3150dff1ece9c0d4ac20b3e1a7f65bb8ce38f0ee1926ded13a74e4efdec9b677",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 37,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 37
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 2391502024737380031,
+          "log_sha256": "798fa6b834db95ee9441d0a2db18ad6470802245ca29e94a1bd2d21f4d4475f4",
+          "n_records": 11181,
+          "n_fills": 4043,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 37,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 37
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 296499771445736978,
+          "log_sha256": "12dc3566fb278a5d76d27d4f11177b6341d269dbc57a66775fef4f86a33d5fab",
+          "n_records": 11274,
+          "n_fills": 4078,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 2.0825,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 68,
+      "impact_taker_executed_qty": 200,
+      "impact_maker_executed_qty": 0,
+      "peak": 3.0,
+      "trough": -1.0,
+      "final_delta": 2.0,
+      "zero_through_end_since": null
+    },
+    {
+      "seed": 38,
+      "prefix": {
+        "records": 5222,
+        "bytes": 501312,
+        "sha256": "51d784e160e1e15a4ba4905301a6bc6b8bc23db7b26c9b9440a6aa532b14b2e5",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 38,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 38
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 14757399313284688184,
+          "log_sha256": "fb9c4cfa2a02264ecd6f585c2c66f29ede57552ffc7531ea0158f84256c506d3",
+          "n_records": 10249,
+          "n_fills": 3480,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 38,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 38
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 1152003641061963447,
+          "log_sha256": "3eb63d02c2d967e2ff52adc03efd63bbf08774869f421ed52073c5b7398d8b80",
+          "n_records": 10210,
+          "n_fills": 3474,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.123,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 67,
+      "impact_taker_executed_qty": 19,
+      "impact_maker_executed_qty": 181,
+      "peak": 8.0,
+      "trough": -4.0,
+      "final_delta": 0.0,
+      "zero_through_end_since": 49969
+    },
+    {
+      "seed": 39,
+      "prefix": {
+        "records": 4293,
+        "bytes": 412128,
+        "sha256": "03602599cd5a885f0d5b15a1d25ea2254eaa30021829adf8222f5752f151be81",
+        "byte_equal": true
+      },
+      "arms": {
+        "factual": {
+          "meta": {
+            "master_seed": 39,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 39
+              },
+              "suppress_agent_ids": [],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 2641818774410248092,
+          "log_sha256": "e85c745840bedbf2c74a60399aed8d7e5cc89c91a9222347d34c567cae46a5bb",
+          "n_records": 8801,
+          "n_fills": 2630,
+          "n_rejects": 0
+        },
+        "baseline": {
+          "meta": {
+            "master_seed": 39,
+            "allocation_rule": "price_time",
+            "n_agents": 101,
+            "n_markets": 1,
+            "end_time": 50000,
+            "lobcore_version": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+            "agent_config": {
+              "yh012": "phase2_impact",
+              "n_fundamentalist": 30,
+              "n_chartist": 25,
+              "n_noise": 45,
+              "mean_wakeup": 800.0,
+              "band": 30,
+              "f0": 10000,
+              "f_sigma": 0.25,
+              "config": {
+                "end_time": 50000,
+                "rule": "price_time",
+                "mean_wakeup": 800,
+                "f0": 10000,
+                "f_sigma": 0.25,
+                "band": 30,
+                "qty_min": 1,
+                "qty_max": 5,
+                "noise_offset_max": 15,
+                "chartist_lookback": 3,
+                "noise_take_prob": 0.15,
+                "chartist_take_prob": 0.25,
+                "agents": {
+                  "n_fundamentalist": 30,
+                  "n_chartist": 25,
+                  "n_noise": 45
+                },
+                "impact": {
+                  "t0": 25000,
+                  "t1": 26000,
+                  "qty": 200,
+                  "price_offset": 2
+                },
+                "seed": 39
+              },
+              "suppress_agent_ids": [
+                100
+              ],
+              "impact_id": 100,
+              "impact": {
+                "t0": 25000,
+                "t1": 26000,
+                "qty": 200,
+                "price_offset": 2,
+                "side": "buy"
+              }
+            }
+          },
+          "state_hash": 7662237036230748846,
+          "log_sha256": "ae5bb3530992fb1e2f86f736810ead023d9be6ee8d93626e5429267795d14351",
+          "n_records": 8646,
+          "n_fills": 2543,
+          "n_rejects": 0
+        }
+      },
+      "initial_window_mean": 3.649,
+      "impact_executed_qty": 200,
+      "impact_fill_count": 70,
+      "impact_taker_executed_qty": 29,
+      "impact_maker_executed_qty": 171,
+      "peak": 5.0,
+      "trough": -1.0,
+      "final_delta": 0.0,
+      "zero_through_end_since": 48385
+    }
+  ],
+  "ensemble_paths_sha256": "263e3a1000279dcd118cfa445dfbf3d6c66cc680f999fc46eb87961d82175a7b"
+}

@@ -6,6 +6,10 @@
 旧ログは保持し、`rerun_fixed_cohort`で旧planの39 seed・設定をそのまま再実行する。
 現在の板で全39件のaskを事前確認し、欠けるseedがあれば標本を変えず停止する。
 
+**再実験完了:** [RNG修正後・同一39 seedの結果と元ログ](reports/ensemble_q200_rng_fixed39_20260917/README.md)。
+39/39件で介入前のバイト一致。初期窓平均+3.6467 ticks、終盤平均+0.6826 ticks
+（95% CI [+0.2360,+1.1522]）。旧版seed14の巨大な価格差は再現されなかった。
+
 **親設計:** [`lobcore/docs/stage6-impact-experiment.md`](https://github.com/yuitokyouni/lobcore/blob/main/docs/stage6-impact-experiment.md)
 
 ## 目的
@@ -128,6 +132,7 @@ tar -xzf experiments/YH012/reports/phase23_seed42_logs.tar.gz -C experiments/YH0
 ## Q=200 の複数 seed 実験
 
 **2026-09-06: [適格39 seed の平均・信頼区間・元ログ](reports/ensemble_q200_eligible39/README.md) を保存。**
+以下の段落は乱数修正前の履歴。最新の解釈には上記2026-09-17の再実験を使用する。
 全39件で介入前の生バイト一致を確認した。平均には大きな正負の変動が残り、
 終盤の時間平均は −6.8814 ticks（95% CI [−20.9606, +0.3487]）。
 特に seed 14 の変動が大きく、滑らかな減衰やゼロへの収束は確認できなかった。

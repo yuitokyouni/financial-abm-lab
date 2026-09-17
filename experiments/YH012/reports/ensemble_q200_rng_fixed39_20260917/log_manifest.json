@@ -1,0 +1,944 @@
+{
+  "format": "Per-seed deterministic tar.gz of original F/B binary files; no log regeneration.",
+  "lobcore_commit": "3f5fa20b1e9424e41a16a5a93b1fabd697b3b283",
+  "seeds": [
+    {
+      "seed": 0,
+      "path": "logs/seed0000.tar.gz",
+      "sha256": "0c2f8c3672dfe0dc4f25367fc6b6b65e1e44196537f085cf7f4e305b8f579bb8",
+      "bytes": 237944,
+      "members": {
+        "seed0000/baseline.bin": {
+          "bytes": 907785,
+          "sha256": "a495eb65eacd3f7239574ae006f06f84df572391436b2cccca1e562ee651cf87"
+        },
+        "seed0000/config.yaml": {
+          "bytes": 325,
+          "sha256": "c036009f1bdb7cffc034d26a3bb43240aef4912d31c44133af551c6fc5959b79"
+        },
+        "seed0000/factual.bin": {
+          "bytes": 892710,
+          "sha256": "d1eacbc3c5a26d120ecbaa579e6d6b5ebfd219c0032b2df3ea0bf2d42fdea3fa"
+        },
+        "seed0000/summary.json": {
+          "bytes": 4012,
+          "sha256": "033a200b21fe200ef0f97caced5438244b163bedf0a543f8b6d7a360d55efda0"
+        }
+      }
+    },
+    {
+      "seed": 1,
+      "path": "logs/seed0001.tar.gz",
+      "sha256": "11f8a50e2e212c2dc2db29ab2363cec00e9de7d925fc8a6f9169bc49976b0fe4",
+      "bytes": 233772,
+      "members": {
+        "seed0001/baseline.bin": {
+          "bytes": 894153,
+          "sha256": "875d62905881603cb8d2788e9f0bae5f3d96453c15bd4b31cf4ef81f6a8a46ee"
+        },
+        "seed0001/config.yaml": {
+          "bytes": 325,
+          "sha256": "98cb83df7f5bb60335b1ba1d25ef4b6ddcd4b9005c2946efd0f1dacacbcd5c0d"
+        },
+        "seed0001/factual.bin": {
+          "bytes": 878886,
+          "sha256": "0fd981a50d8f16ca1337c58658fc5bd6aba2b8f0ef5b4cfc35248ac1814f2b78"
+        },
+        "seed0001/summary.json": {
+          "bytes": 4016,
+          "sha256": "42e3fbf10aa7937b9bf161fa992077666ef7f65be67f7420cda893adb35eb088"
+        }
+      }
+    },
+    {
+      "seed": 2,
+      "path": "logs/seed0002.tar.gz",
+      "sha256": "9c56382cea82b279b95b312453b0b19c4654f2c80aafd3a51d9c7aeed88b7c63",
+      "bytes": 288330,
+      "members": {
+        "seed0002/baseline.bin": {
+          "bytes": 1133673,
+          "sha256": "fa70896218d870ee2491208e947c790146c11fd05cafdc5acd1acfdb158135cc"
+        },
+        "seed0002/config.yaml": {
+          "bytes": 325,
+          "sha256": "4bf0c199b8ef56e79ec1fa482a2b92b8fbb25bc281fefa69b217561c6bb57672"
+        },
+        "seed0002/factual.bin": {
+          "bytes": 1148454,
+          "sha256": "ab7b2998a596ccc6f6a5da8aa65034bacbee78d3b47e9c789a47efd970b3397a"
+        },
+        "seed0002/summary.json": {
+          "bytes": 4017,
+          "sha256": "c9955f1f270a4d33f2a853ea8a872960ed2663f6f19883d97610609528730e74"
+        }
+      }
+    },
+    {
+      "seed": 3,
+      "path": "logs/seed0003.tar.gz",
+      "sha256": "b03e5c4798cddd0274f125eb9843001bc05b0cb741fec38d570306f673e230d6",
+      "bytes": 229895,
+      "members": {
+        "seed0003/baseline.bin": {
+          "bytes": 857001,
+          "sha256": "d413ccb241ac3bab80c539f1f781488eb35eeccc820f9dfd1aecb5fb9bf15ec7"
+        },
+        "seed0003/config.yaml": {
+          "bytes": 325,
+          "sha256": "8c4e58c7a6afb4fdf5f2cabb7af96c0109d6490b69946394351ea6aef4e69e8a"
+        },
+        "seed0003/factual.bin": {
+          "bytes": 868038,
+          "sha256": "58659ba022b8bc28d726a362e186dfe7c6dabb93590d366697a8fd2f3f359527"
+        },
+        "seed0003/summary.json": {
+          "bytes": 4012,
+          "sha256": "a53cddd08692d1ede0c5a02be8636b932ad5f3f05d337df845ea7bb51e8cd877"
+        }
+      }
+    },
+    {
+      "seed": 4,
+      "path": "logs/seed0004.tar.gz",
+      "sha256": "1aad8686de13d2cb8f6ca1299944377b1188d2bca64dcda2f3080d6f0a6716d9",
+      "bytes": 270695,
+      "members": {
+        "seed0004/baseline.bin": {
+          "bytes": 1043913,
+          "sha256": "960ffdee42fb7918e66372cfbb419f0b4ad5e02a79838c59e70ae670d8a1bc56"
+        },
+        "seed0004/config.yaml": {
+          "bytes": 325,
+          "sha256": "20daeb0e65508c11b7b789f2728d785fb6d9245d28b9f18cca7837b2c0fa0f40"
+        },
+        "seed0004/factual.bin": {
+          "bytes": 1059654,
+          "sha256": "90fb538c26451fb9bca5126a5a2df806dff77d4a512781d78b47f4d4a20c0e78"
+        },
+        "seed0004/summary.json": {
+          "bytes": 4017,
+          "sha256": "448880c1ba7b87f0f13823f0ffaead83dfac3be038eb72564c5ab5f2e8f22643"
+        }
+      }
+    },
+    {
+      "seed": 5,
+      "path": "logs/seed0005.tar.gz",
+      "sha256": "a2573f7ab77e77c1dcc10eec474e04056435e6351ad000a4839d492e66cec1bc",
+      "bytes": 217882,
+      "members": {
+        "seed0005/baseline.bin": {
+          "bytes": 809673,
+          "sha256": "53da8bbb7a2a51a4b0ec5a8f634fffe18d0b345a6206672b78d0e91c983e5615"
+        },
+        "seed0005/config.yaml": {
+          "bytes": 325,
+          "sha256": "b556898e8c6e1151a2bff6a3607ea12abb652d3e38336b5fc24919e288c62c4b"
+        },
+        "seed0005/factual.bin": {
+          "bytes": 822438,
+          "sha256": "6df89779ed226d8d5c7ecb72aff452c79615e624b0be08b6e7a264fbe9835f99"
+        },
+        "seed0005/summary.json": {
+          "bytes": 4013,
+          "sha256": "6dc876db325f7ac83313a019a2191b8aceeb2969bbd88493510a96f40d3f31aa"
+        }
+      }
+    },
+    {
+      "seed": 6,
+      "path": "logs/seed0006.tar.gz",
+      "sha256": "0bc287894473c830ec8ed7f672879de2e37e2b9fe231af9902c81e371faa9982",
+      "bytes": 242333,
+      "members": {
+        "seed0006/baseline.bin": {
+          "bytes": 928905,
+          "sha256": "af001267500d6ca2884e912de25434b6fd0e8500c1e116e07cdbd5f07e389e78"
+        },
+        "seed0006/config.yaml": {
+          "bytes": 325,
+          "sha256": "ba59d4708fb762a2b5e26a5167f2c1ab533f0e258a1225eacdbe7aba49e32495"
+        },
+        "seed0006/factual.bin": {
+          "bytes": 917478,
+          "sha256": "0145bb9eeec59494eb6c36ef5557b96e28433ff84f35fc6262d8e5e53549ab0b"
+        },
+        "seed0006/summary.json": {
+          "bytes": 4011,
+          "sha256": "b964fff6c8d7c34227e20c25a54738bd32b881621eabb58a466abe7362a2ca7a"
+        }
+      }
+    },
+    {
+      "seed": 7,
+      "path": "logs/seed0007.tar.gz",
+      "sha256": "c5e5004f381dd870631dd2760ecbbfb90797cd2dd535d82b42f18a29391b1207",
+      "bytes": 268472,
+      "members": {
+        "seed0007/baseline.bin": {
+          "bytes": 1031721,
+          "sha256": "606cf49b5243f42538190a31e2b6dcbf09d261da27d1f9e0da7661454843e6e1"
+        },
+        "seed0007/config.yaml": {
+          "bytes": 325,
+          "sha256": "310de9be4fe006b34a67bb3b785250bc725c186f42c2cd9ca772599b7030cd19"
+        },
+        "seed0007/factual.bin": {
+          "bytes": 1052838,
+          "sha256": "57b7e58e1d378eeaa2aae323472928a43d9ad9089afe589050500635fb393cf6"
+        },
+        "seed0007/summary.json": {
+          "bytes": 4016,
+          "sha256": "90611d6df36a472843a8e1bfbae2b2060979a652dcb7576f8c71ad9dd0c72753"
+        }
+      }
+    },
+    {
+      "seed": 8,
+      "path": "logs/seed0008.tar.gz",
+      "sha256": "49c0824b485198dc488628c7b45e382b74a627ee3e2167c7d9dd53ec83eae831",
+      "bytes": 244967,
+      "members": {
+        "seed0008/baseline.bin": {
+          "bytes": 938697,
+          "sha256": "a2f5fe368d024e34023546a9be99abdd11d6bda1433baa3b94bd62aaa1d6d51a"
+        },
+        "seed0008/config.yaml": {
+          "bytes": 325,
+          "sha256": "d97c3bee4f4c6f34a0a93c8cffb699bf13a1642bb73b3c83f63a6f21856334cb"
+        },
+        "seed0008/factual.bin": {
+          "bytes": 932742,
+          "sha256": "58c0cfb507fe31249d9c1b646c9420d0ae307e3127dd34d639459325a15fdaae"
+        },
+        "seed0008/summary.json": {
+          "bytes": 4013,
+          "sha256": "2a7904cf56b3b8ab5a5fad995e3e26ba66f5ece19cf6a70d975c695e897aba15"
+        }
+      }
+    },
+    {
+      "seed": 9,
+      "path": "logs/seed0009.tar.gz",
+      "sha256": "631f52a00d00de9237cc492a66c41ed2d8295f756ce454becd4b25909c5147cd",
+      "bytes": 244230,
+      "members": {
+        "seed0009/baseline.bin": {
+          "bytes": 921705,
+          "sha256": "34362d395ee2f0efc63dc7aff887168fdbcac61b28b94b496999cba3d9133f8d"
+        },
+        "seed0009/config.yaml": {
+          "bytes": 325,
+          "sha256": "b9a8fec6665477473892f11892375ca8f3dce9f09c4fbc0b7a84929e7e5b2dfc"
+        },
+        "seed0009/factual.bin": {
+          "bytes": 929574,
+          "sha256": "de4cba0548884d6594122798684c073b89a3da59e350b34fca065e36d7d04ba5"
+        },
+        "seed0009/summary.json": {
+          "bytes": 4014,
+          "sha256": "617432f8e12b7e620c19ca5e530c81b439cf84252e1d7dd072257e8ec5154be6"
+        }
+      }
+    },
+    {
+      "seed": 10,
+      "path": "logs/seed0010.tar.gz",
+      "sha256": "da9a9746256337f15f0675fd4a61243e39a63bafc9b36c1151c61ea0a4e1cd3b",
+      "bytes": 271649,
+      "members": {
+        "seed0010/baseline.bin": {
+          "bytes": 1041899,
+          "sha256": "6266ca1a09cb512c10f61087135d57f80e4ec518d0d652b8502b92e408584673"
+        },
+        "seed0010/config.yaml": {
+          "bytes": 326,
+          "sha256": "14078d6c154e8d5e56bd96e1c77b000d38f78db7bf73bb8c6f507f6a32e715d1"
+        },
+        "seed0010/factual.bin": {
+          "bytes": 1070696,
+          "sha256": "41057a6202442264d997d445a150a53fa928924402519c7b81333a7c7c799e71"
+        },
+        "seed0010/summary.json": {
+          "bytes": 4022,
+          "sha256": "600e79c267694fe58d591adcc8482fc0938081324365a29671816d5c0a135591"
+        }
+      }
+    },
+    {
+      "seed": 11,
+      "path": "logs/seed0011.tar.gz",
+      "sha256": "14155ade6300edf5e05194b453cce84b2db6da35e0abf0834870068acd0a614a",
+      "bytes": 239776,
+      "members": {
+        "seed0011/baseline.bin": {
+          "bytes": 918443,
+          "sha256": "0b9bc55352be570877638179b9d441ce61545b61e013baa8680b0b72ab56a6f3"
+        },
+        "seed0011/config.yaml": {
+          "bytes": 326,
+          "sha256": "eacf32e817d152ff4dd7ee3576206ba1c9debc59b22e02ebfd59328d29ffb160"
+        },
+        "seed0011/factual.bin": {
+          "bytes": 897896,
+          "sha256": "49ce1aefd28c1e1ff21d62c9f5ff7e742ceaa0fe3cb4cb5aeb639c1c594927c0"
+        },
+        "seed0011/summary.json": {
+          "bytes": 4020,
+          "sha256": "ffc9347e8e71d96217404e7bf397baa99caa2dead709a5be4628a620d08c1785"
+        }
+      }
+    },
+    {
+      "seed": 12,
+      "path": "logs/seed0012.tar.gz",
+      "sha256": "242e436e6ef9b83a2b10b4f2497a62feedbba10835419b411e76a2e6987e76e2",
+      "bytes": 238682,
+      "members": {
+        "seed0012/baseline.bin": {
+          "bytes": 898955,
+          "sha256": "d3e3f40f56c208921873f61651cf9a5e553ca3a5e4af48cacec9b2a2595c23ff"
+        },
+        "seed0012/config.yaml": {
+          "bytes": 326,
+          "sha256": "ae658eb20b584c988dd51d1c63049b1eadafce2a0dc27afb1607f967782da930"
+        },
+        "seed0012/factual.bin": {
+          "bytes": 896840,
+          "sha256": "6e97c1f8bd73d9544f063238bc1950167a285945814ce3254c90bc51d5eec5c3"
+        },
+        "seed0012/summary.json": {
+          "bytes": 4020,
+          "sha256": "b94cdd61444c4f525d7eba90af5e3e400bc7f4473ccf9e0c8abeb079a5e053ec"
+        }
+      }
+    },
+    {
+      "seed": 14,
+      "path": "logs/seed0014.tar.gz",
+      "sha256": "b501840f7dda57f1adf7f3a69caee7233358c51548653bf8f5e7789f5f721bfc",
+      "bytes": 246702,
+      "members": {
+        "seed0014/baseline.bin": {
+          "bytes": 928331,
+          "sha256": "538f6941b24416cbde070f1473bad487afab4d6a0665fff811cc2b5928d5e4ea"
+        },
+        "seed0014/config.yaml": {
+          "bytes": 326,
+          "sha256": "387f31727518f5b30167602bdc76bc84e2e755cd99e103dda225cc0d04d3f5fa"
+        },
+        "seed0014/factual.bin": {
+          "bytes": 940040,
+          "sha256": "e2ec7feeb1cc17658b521acc2fb055d97dba4dd1a153367988f323a7c5f78ba9"
+        },
+        "seed0014/summary.json": {
+          "bytes": 4022,
+          "sha256": "8ac1291fc027c22f7c045787ecf5344ca965d304cd4ac9b8c6ccbd2e5eaa45fb"
+        }
+      }
+    },
+    {
+      "seed": 15,
+      "path": "logs/seed0015.tar.gz",
+      "sha256": "2e8ff1748f254b3efcd4eac30fc4e2c2e41b66387efd7276679f1472664cb754",
+      "bytes": 238075,
+      "members": {
+        "seed0015/baseline.bin": {
+          "bytes": 896267,
+          "sha256": "a08ba655754fe702f798aaaf0291123eb9d39a1f1696cc8031c309377759990d"
+        },
+        "seed0015/config.yaml": {
+          "bytes": 326,
+          "sha256": "f858c4e9ddaa3e81828038fff9ba46cc487e1d37aa2ee9bc49e380e7c6f64e4d"
+        },
+        "seed0015/factual.bin": {
+          "bytes": 887816,
+          "sha256": "64a99988ffa385b28bfe932d3a1443a180463dc2efb652d1a36caf43844b8eb3"
+        },
+        "seed0015/summary.json": {
+          "bytes": 4022,
+          "sha256": "5d844184d6fd9d74ce15ebbc9277553a95374291c0466c86558b47b47cdd1bbf"
+        }
+      }
+    },
+    {
+      "seed": 16,
+      "path": "logs/seed0016.tar.gz",
+      "sha256": "ba5ca3ee1ae07f8dad4e974d2e15cc28f63f01b3f23865880f398e1d5233aeca",
+      "bytes": 261459,
+      "members": {
+        "seed0016/baseline.bin": {
+          "bytes": 1013771,
+          "sha256": "a383a1dfa53761c8be01991e829ddfa1695a16f28e23e76bab52125ec017c9d0"
+        },
+        "seed0016/config.yaml": {
+          "bytes": 326,
+          "sha256": "ef7a9cdc579206f5c30b6b1010176634683de0a2b19eb6bfdf35498e7759cbc9"
+        },
+        "seed0016/factual.bin": {
+          "bytes": 1001480,
+          "sha256": "65788745ae3a53e43a1203bd505c09925abbd8b34f6321899e6fbaa69e6570ad"
+        },
+        "seed0016/summary.json": {
+          "bytes": 4022,
+          "sha256": "80ad3c8cb1fe3e818882a902c40ad795b5bd77ce7565e6122a70918f3587e808"
+        }
+      }
+    },
+    {
+      "seed": 17,
+      "path": "logs/seed0017.tar.gz",
+      "sha256": "84b5174bcfa6c19d9deeeb23087406ccdf6c0197652cb55e472ebed2c60efef2",
+      "bytes": 239735,
+      "members": {
+        "seed0017/baseline.bin": {
+          "bytes": 916715,
+          "sha256": "9ecde391b7580facec2c87ec1719dfbfa10bddb0a9bee19368a03b835ac22edd"
+        },
+        "seed0017/config.yaml": {
+          "bytes": 326,
+          "sha256": "ac90a9cd90b2b80cf71ad9221d1be921c10021f62544c3e16467252f804c9154"
+        },
+        "seed0017/factual.bin": {
+          "bytes": 908072,
+          "sha256": "9f1ef6418467a6b760bcee087208120f4ddb24094f7807c6bf24d509839135b0"
+        },
+        "seed0017/summary.json": {
+          "bytes": 4020,
+          "sha256": "de95f143ac6382778de97132c6bf1de1e6e666eed0b31973710f4ea0a1e13949"
+        }
+      }
+    },
+    {
+      "seed": 18,
+      "path": "logs/seed0018.tar.gz",
+      "sha256": "5d27979ffc903aa928456e8626811bc1a83e6d823a576a28b09fd8167b380f17",
+      "bytes": 247280,
+      "members": {
+        "seed0018/baseline.bin": {
+          "bytes": 954347,
+          "sha256": "ded5195c7284afea26807257cc6e4f5012f6ee793b69ef506a7467c9140279ba"
+        },
+        "seed0018/config.yaml": {
+          "bytes": 326,
+          "sha256": "7415d2db294c27f77a3da47eb664519d37de69c6620ec2f65448c675d671212a"
+        },
+        "seed0018/factual.bin": {
+          "bytes": 943976,
+          "sha256": "8830bd83b0ce25e47cd696732fcbf28a97cb4f5cadc3e2d5d7a8abe616e95713"
+        },
+        "seed0018/summary.json": {
+          "bytes": 4021,
+          "sha256": "02e3c42b5d9f4adb7ac0008efda1f3e56a46384f114dfd1aea800ae6d9a9e5b9"
+        }
+      }
+    },
+    {
+      "seed": 19,
+      "path": "logs/seed0019.tar.gz",
+      "sha256": "862ec7e38e3d3b5b11124a326651ca398613cae13648cd141d52f16036973d3e",
+      "bytes": 231635,
+      "members": {
+        "seed0019/baseline.bin": {
+          "bytes": 878699,
+          "sha256": "5c84800876f35cff8719aa1e9d85a78e28b5d5a9dbfd92b2a616b794470bca6a"
+        },
+        "seed0019/config.yaml": {
+          "bytes": 326,
+          "sha256": "eaaf7665a4c756c35a47beed57039c77ed3931c6cd0de8d518d6b1e3214f75bd"
+        },
+        "seed0019/factual.bin": {
+          "bytes": 851528,
+          "sha256": "3355f4e56c2f3ceed74a58a3205ca4a0a74b1563a7de19fedc2097824863b81c"
+        },
+        "seed0019/summary.json": {
+          "bytes": 4020,
+          "sha256": "fd6666632188f58d1df92f7d39c5513b35779c1a037d608ebe6ce90f3c6a2095"
+        }
+      }
+    },
+    {
+      "seed": 20,
+      "path": "logs/seed0020.tar.gz",
+      "sha256": "afbf4148b3065a743fc0bd9d9def9e30300470255d0158ab5082955a88e0ee7c",
+      "bytes": 226495,
+      "members": {
+        "seed0020/baseline.bin": {
+          "bytes": 836555,
+          "sha256": "d0a2aa24b01dc6978ce19cf26ae215c058ec519ee5674eefb304e77b8c58dab0"
+        },
+        "seed0020/config.yaml": {
+          "bytes": 326,
+          "sha256": "afdda2f6ed634698cc481fea7ced760292cfed18e890541858dab0f4cac12777"
+        },
+        "seed0020/factual.bin": {
+          "bytes": 849608,
+          "sha256": "a0fb6cd7b480fca1fa1e48124028bcfc88d434ff79bfef578710245db9adfa12"
+        },
+        "seed0020/summary.json": {
+          "bytes": 4020,
+          "sha256": "0514d9b1839a9a585a8f47b26bbafea4ca696036d638bc19f69a48a7cdb63967"
+        }
+      }
+    },
+    {
+      "seed": 21,
+      "path": "logs/seed0021.tar.gz",
+      "sha256": "7e652ea65cb5a3c732fca6f7dff33b96456d4f441c0d384a1e8ca50259180343",
+      "bytes": 231128,
+      "members": {
+        "seed0021/baseline.bin": {
+          "bytes": 873611,
+          "sha256": "80ce8488422c57f7c4200df9d6637f7acda1cef7185e3dc8fe66b65ec4ec81f2"
+        },
+        "seed0021/config.yaml": {
+          "bytes": 326,
+          "sha256": "ce26650d0eb8d713cbdb3d0600406347c85dcd0b1b9f5b0264031b63cec938ba"
+        },
+        "seed0021/factual.bin": {
+          "bytes": 863624,
+          "sha256": "58e5e542b9c9c81e47586ffbabb91408c6addd2f606417d7a5e13eb270136972"
+        },
+        "seed0021/summary.json": {
+          "bytes": 4020,
+          "sha256": "71aba19d3a4858d1dc72ce60fcd4ef4601b6a5774c9c4c6fb65acdf4e4cecb2b"
+        }
+      }
+    },
+    {
+      "seed": 22,
+      "path": "logs/seed0022.tar.gz",
+      "sha256": "690c3347a03fdcc435360622e739a55a9d0784be487f101a0d6ed9b8add40ef5",
+      "bytes": 252713,
+      "members": {
+        "seed0022/baseline.bin": {
+          "bytes": 951179,
+          "sha256": "abb1a1017fa49b67490b0f238e69b71e8a540b31c9dfa1488172e6ef5155bca3"
+        },
+        "seed0022/config.yaml": {
+          "bytes": 326,
+          "sha256": "d50579ff28d7dc37fe57221419f936c0da869a06befb02344a73a261d0d6191c"
+        },
+        "seed0022/factual.bin": {
+          "bytes": 967496,
+          "sha256": "26e80010cd855ebba951148debdff08234e873006950388c60cb34e2a2b79ee3"
+        },
+        "seed0022/summary.json": {
+          "bytes": 4022,
+          "sha256": "86d7f4e38ae84b66201bee59ac28c7277afeca5ce8ee0b1f709635bab5da3a66"
+        }
+      }
+    },
+    {
+      "seed": 23,
+      "path": "logs/seed0023.tar.gz",
+      "sha256": "1236ba1f929eb5555f897bd67abbcdc91d1cd685fa63003596a3c96866795435",
+      "bytes": 242484,
+      "members": {
+        "seed0023/baseline.bin": {
+          "bytes": 921995,
+          "sha256": "7b6931e24d2b736f0fee09e251709875150321d3d55c61b12ced7210ae7b6bae"
+        },
+        "seed0023/config.yaml": {
+          "bytes": 326,
+          "sha256": "6709d31aebb53c26e2bfa458ecd8e5137124dae7303e0eb59d2fab92151ad4f1"
+        },
+        "seed0023/factual.bin": {
+          "bytes": 924296,
+          "sha256": "2d917362202d8ef32e1b1847dace458d0cc5a4daaa99091edffaae068e71d534"
+        },
+        "seed0023/summary.json": {
+          "bytes": 4020,
+          "sha256": "8d3dd9b66da68c210c1330378dc53d90415844e2dc0ac7b5c05a34193ed3a395"
+        }
+      }
+    },
+    {
+      "seed": 24,
+      "path": "logs/seed0024.tar.gz",
+      "sha256": "73cf1112b3ca60c9f7e07541ce9b100f9585e18ea2121dfffd0b6443e5e35145",
+      "bytes": 253212,
+      "members": {
+        "seed0024/baseline.bin": {
+          "bytes": 1000619,
+          "sha256": "4343a71a37bd852dd71e9770cea324c04e64a1ae1721c5782e9067f77b5ef71d"
+        },
+        "seed0024/config.yaml": {
+          "bytes": 326,
+          "sha256": "33dd3587bcf6687d90111d1c02e2ddd596d26349bd7ebae397e1417181a7d1d7"
+        },
+        "seed0024/factual.bin": {
+          "bytes": 962024,
+          "sha256": "4e89120f47c1e6c5cecd24a7d0f45d02ffa32c0b4dfba0c8200e9079ed9552ce"
+        },
+        "seed0024/summary.json": {
+          "bytes": 4023,
+          "sha256": "6c682de90b408e5dbe9431af93e61cd7129dcb095ed89d33aa25cd62b8ea0df9"
+        }
+      }
+    },
+    {
+      "seed": 25,
+      "path": "logs/seed0025.tar.gz",
+      "sha256": "5e0c773af89d7e201b18ddf38295b717ec740e2ff0686e49197b920caf0e6c39",
+      "bytes": 287521,
+      "members": {
+        "seed0025/baseline.bin": {
+          "bytes": 1128587,
+          "sha256": "5e1ce031eacfdd1a76c7aba9870d81e510f34aebcb1009aef9c80d969f67538c"
+        },
+        "seed0025/config.yaml": {
+          "bytes": 326,
+          "sha256": "5fe89069221ead629828d4e487ed890121d9dd330ba04327e27e136d4ded2a0e"
+        },
+        "seed0025/factual.bin": {
+          "bytes": 1162952,
+          "sha256": "4775822d837d054f4926c094ac9991b276455334ababce1636263cf2c2a7d232"
+        },
+        "seed0025/summary.json": {
+          "bytes": 4021,
+          "sha256": "881b8cdc69cf49d7d708e2e99bcda6aee1aa899d73705273196bf22e5fc8cd5f"
+        }
+      }
+    },
+    {
+      "seed": 26,
+      "path": "logs/seed0026.tar.gz",
+      "sha256": "faaea128a1e9d4a3410e9a0ccf307f2db6f3225e4e533bc968f5208872e74d9f",
+      "bytes": 242225,
+      "members": {
+        "seed0026/baseline.bin": {
+          "bytes": 919595,
+          "sha256": "2b34c7149258055e97d66ab7ca71d498994e93b9e2ed5d21280f3d1bcdf3bfc8"
+        },
+        "seed0026/config.yaml": {
+          "bytes": 326,
+          "sha256": "805bdbfcd8e0daa5fa1d693b1a14d8d458a0ef70ef54739bcce45bea02997938"
+        },
+        "seed0026/factual.bin": {
+          "bytes": 917576,
+          "sha256": "b434f11ad9ec9ea423dd0a9cf4add2b29e24e3c4a8dd93296c9651ae2e2e1b73"
+        },
+        "seed0026/summary.json": {
+          "bytes": 4020,
+          "sha256": "0105362e52579134bcfbba6df916b48e5ac6a84678c635f26cd6a528cebbe4f0"
+        }
+      }
+    },
+    {
+      "seed": 27,
+      "path": "logs/seed0027.tar.gz",
+      "sha256": "7b67db3c688c3a0f3957a519bf9858f37a24ecc11f3f79c24efe868a0abdc0a9",
+      "bytes": 220977,
+      "members": {
+        "seed0027/baseline.bin": {
+          "bytes": 842507,
+          "sha256": "95109ab0b09e9ee246aeaf0303ae0f8d337eeabbda2520d75a4a73a1e7ce0083"
+        },
+        "seed0027/config.yaml": {
+          "bytes": 326,
+          "sha256": "3d01d91ed0ad45ba29bc4b4d4a5d51dca98879ee85c0c492fa1bbfd87e3004e0"
+        },
+        "seed0027/factual.bin": {
+          "bytes": 813608,
+          "sha256": "4e73678df85e2885c3189677f6d5e1305d0ae883f556e0636eddefa1e086e55a"
+        },
+        "seed0027/summary.json": {
+          "bytes": 4019,
+          "sha256": "fd1f646282eed4a77015ec9091050e5024e735233c29ce860957b1554adc9d7d"
+        }
+      }
+    },
+    {
+      "seed": 28,
+      "path": "logs/seed0028.tar.gz",
+      "sha256": "1ffbb41322ca3ad46304f55cf8ff6deb8e30c5439121d9c9a4c71c9227a75b31",
+      "bytes": 258169,
+      "members": {
+        "seed0028/baseline.bin": {
+          "bytes": 979211,
+          "sha256": "859d3051fb326d65a4efa7cb6f7344c6d37341e1f2fb499dc4421b0b7b5cf844"
+        },
+        "seed0028/config.yaml": {
+          "bytes": 326,
+          "sha256": "821ff551dcbc2c29a7456beb4098531733c0ead1e3867493d133a418323d7c8f"
+        },
+        "seed0028/factual.bin": {
+          "bytes": 1001000,
+          "sha256": "9208e73ba8e80306730d085c7274299fe52ffbdf4d429ffa689dd96168a1cb44"
+        },
+        "seed0028/summary.json": {
+          "bytes": 4024,
+          "sha256": "37ddc2c5173136f219af5f117287431b4651ba21e5774f68c5bc029b77a6cb8a"
+        }
+      }
+    },
+    {
+      "seed": 29,
+      "path": "logs/seed0029.tar.gz",
+      "sha256": "31e5ece744db9ea7e3b7255c39548ecaca07d33985615dbb7ce2e055368824b2",
+      "bytes": 232121,
+      "members": {
+        "seed0029/baseline.bin": {
+          "bytes": 884459,
+          "sha256": "6427e6c9d827fb7bbcaf8274c18976cb2c46e1e194ece2562aa9a086d57b034e"
+        },
+        "seed0029/config.yaml": {
+          "bytes": 326,
+          "sha256": "919f3a0e0f05b456e31d84e08034106624a47f256df0110833b6efbe9823ac8c"
+        },
+        "seed0029/factual.bin": {
+          "bytes": 869960,
+          "sha256": "6581e90dca6460002495e0ab936f611c5c5a293993e403f064ae5344338e08c4"
+        },
+        "seed0029/summary.json": {
+          "bytes": 4020,
+          "sha256": "f2dd9c559dc9b18d99b4bb4ca373865f74038efdaf0191c306af958af3676afb"
+        }
+      }
+    },
+    {
+      "seed": 30,
+      "path": "logs/seed0030.tar.gz",
+      "sha256": "2e8cbabdf7b744124709115efc321346520e57fe71fd9a6f593f41a401659bec",
+      "bytes": 241970,
+      "members": {
+        "seed0030/baseline.bin": {
+          "bytes": 911915,
+          "sha256": "49ca50a068a5381c6bedca3c5ed3ec80cde2e5ba4efb1de030966e8cd854abce"
+        },
+        "seed0030/config.yaml": {
+          "bytes": 326,
+          "sha256": "1bc5d1a3aab0940280647afae38a6b4dcafebbfc85b87636c9db8cd48a0da6e0"
+        },
+        "seed0030/factual.bin": {
+          "bytes": 929480,
+          "sha256": "6cbf80e2d00d0ee3e7bf3f3de5ed7c182f976a93d35d6f447e341be43ccf2fe8"
+        },
+        "seed0030/summary.json": {
+          "bytes": 4017,
+          "sha256": "f1c2f3c40a99b7d8de12a0b572033eae4803467b0ca763e8e189c0d9ca6062a5"
+        }
+      }
+    },
+    {
+      "seed": 31,
+      "path": "logs/seed0031.tar.gz",
+      "sha256": "63cf99ff5898dd6e181da9bb6875c7f4f2ab477ff0d497ed36458b3ca114dcdd",
+      "bytes": 262944,
+      "members": {
+        "seed0031/baseline.bin": {
+          "bytes": 1028843,
+          "sha256": "6e113408da7b5a30f315f3c667d12eb7ccd88b4de19dda290fbbc7df35da2aef"
+        },
+        "seed0031/config.yaml": {
+          "bytes": 326,
+          "sha256": "a793d20dc85d9081cbf8f8bf660b947109d6d9c6842591e82782954cbd450839"
+        },
+        "seed0031/factual.bin": {
+          "bytes": 1014152,
+          "sha256": "0dbfc3bd42593919744d745c7ff76c0a86102ca6a941b91fb211036e4f22a5de"
+        },
+        "seed0031/summary.json": {
+          "bytes": 4018,
+          "sha256": "7c171ffadb6a3717b0e6b1eff0358790e34760240f63220b62d9e52bf313a012"
+        }
+      }
+    },
+    {
+      "seed": 32,
+      "path": "logs/seed0032.tar.gz",
+      "sha256": "960e0e1c3bb4ca52ea10d9416ed165573029d0a4ce3de52fd67ac70f89a9b8ea",
+      "bytes": 267810,
+      "members": {
+        "seed0032/baseline.bin": {
+          "bytes": 1033643,
+          "sha256": "43fcb6b0aa31ce52f841c3855cb0918f92b1358bfceb6da1c666d3f21fb124ef"
+        },
+        "seed0032/config.yaml": {
+          "bytes": 326,
+          "sha256": "15c11ae3969841590c4dc1770e350140c8e3c460a576357d6b8f22092a8455f9"
+        },
+        "seed0032/factual.bin": {
+          "bytes": 1058216,
+          "sha256": "dc1509b636789e8616427ecf7aad543595ca728e1d2c56314e23f3179b8c2dcf"
+        },
+        "seed0032/summary.json": {
+          "bytes": 4022,
+          "sha256": "e954cf12f9499f1ca9f3b31dea43309dcdccbbd2ba745a2edd3da18abbeab085"
+        }
+      }
+    },
+    {
+      "seed": 33,
+      "path": "logs/seed0033.tar.gz",
+      "sha256": "5976563e8ff93f33d38f6f376896c912ea55636a0b1e6ba07096ad21cf38fc0d",
+      "bytes": 247720,
+      "members": {
+        "seed0033/baseline.bin": {
+          "bytes": 962219,
+          "sha256": "4dbcb677b8b8c84e3709f279c2088133979d487962b4d53b904c770f3209aee9"
+        },
+        "seed0033/config.yaml": {
+          "bytes": 326,
+          "sha256": "216098bd4c988c6c94c5cc72b26ce132c17c7d7d8458fd846422733d9ce85217"
+        },
+        "seed0033/factual.bin": {
+          "bytes": 951272,
+          "sha256": "6015c09d6cbeb2ee67dfd3dbb43870d7f5720f653fc27602f5d004b03487c50b"
+        },
+        "seed0033/summary.json": {
+          "bytes": 4020,
+          "sha256": "bfdcda2f00ce12914c70f14a68f65e49a1387f9450d99dacae26eab8cd22f60b"
+        }
+      }
+    },
+    {
+      "seed": 34,
+      "path": "logs/seed0034.tar.gz",
+      "sha256": "5cf29d6b150d5317b379271f9281bb7f78e72bab4666d0ff6317ffa40c5a6e68",
+      "bytes": 241840,
+      "members": {
+        "seed0034/baseline.bin": {
+          "bytes": 919019,
+          "sha256": "3e739b7aa070023bd8996d2bca63f4ca14ea9ca0f0d331e44d8d9cd2163c703d"
+        },
+        "seed0034/config.yaml": {
+          "bytes": 326,
+          "sha256": "4addac42909d3814d2a3642772f74674c4849ca7bca8c11967acbec1ceead551"
+        },
+        "seed0034/factual.bin": {
+          "bytes": 911432,
+          "sha256": "3155ae2bdc3827e47cd7de9c3229db0b6da967e19af4bc15444fb5a7be433d80"
+        },
+        "seed0034/summary.json": {
+          "bytes": 4018,
+          "sha256": "e7368afb4eafb528ab94cf81751d7c81eb191aa7dd570e4b585cab098ab90554"
+        }
+      }
+    },
+    {
+      "seed": 35,
+      "path": "logs/seed0035.tar.gz",
+      "sha256": "4212ee02b86d21cfd981eb12bdc7cc00d0d815798a810b43fd589b21d516268e",
+      "bytes": 254919,
+      "members": {
+        "seed0035/baseline.bin": {
+          "bytes": 973355,
+          "sha256": "6b6bae43ebc9377ea5213a4f12244e97232355e33c91fee2ff4c49d45bf3e1a2"
+        },
+        "seed0035/config.yaml": {
+          "bytes": 326,
+          "sha256": "311710961b041ebf2efa82d0b8972b25cd61f4526a68145aac4400ab6279a03b"
+        },
+        "seed0035/factual.bin": {
+          "bytes": 986024,
+          "sha256": "571121a3943d68fdb40d3d5f7019f06a0d3ad43a9b15655322165676fde29d18"
+        },
+        "seed0035/summary.json": {
+          "bytes": 4023,
+          "sha256": "0eb0cb3cea411bd0f7835dfcb2fb808c00d2a7c82a6dd46070127cd7f692917c"
+        }
+      }
+    },
+    {
+      "seed": 36,
+      "path": "logs/seed0036.tar.gz",
+      "sha256": "850093388034339d695380ea3abfbf53880967efce87eb2d0b01745b81132aec",
+      "bytes": 267730,
+      "members": {
+        "seed0036/baseline.bin": {
+          "bytes": 1049675,
+          "sha256": "d8249dbe3b9839e76f45c21490c08ad8edc52b409efedaa12bd87fbaf88f1b35"
+        },
+        "seed0036/config.yaml": {
+          "bytes": 326,
+          "sha256": "1a286918081595999a7bf311ec8f772c995c4b69de99d5ee6de387801ec0fc85"
+        },
+        "seed0036/factual.bin": {
+          "bytes": 1038440,
+          "sha256": "0955b478873cee300a95c5772a43edf65c45310be5842e92f963b2f9c6570491"
+        },
+        "seed0036/summary.json": {
+          "bytes": 4020,
+          "sha256": "9606de4dfd7132a69609dc552b9f6b9f51264d3e7140a0b982033845787a4ea5"
+        }
+      }
+    },
+    {
+      "seed": 37,
+      "path": "logs/seed0037.tar.gz",
+      "sha256": "9e97cdc5f371850e08af085fd5581611b603260a312659171e753268670dd452",
+      "bytes": 274691,
+      "members": {
+        "seed0037/baseline.bin": {
+          "bytes": 1083083,
+          "sha256": "4d018d17c72af3bc7733d6a97d7cf8ddfea63c7137a06941c10def496e943b76"
+        },
+        "seed0037/config.yaml": {
+          "bytes": 326,
+          "sha256": "872c2c45e3c119203eb61b7f588759106b165205939f6470b2d458dc2c6f5377"
+        },
+        "seed0037/factual.bin": {
+          "bytes": 1074152,
+          "sha256": "f26bc1e3f85d40c82e434419f4a06d5f218fe6e72494be15d1cb4c255e80c576"
+        },
+        "seed0037/summary.json": {
+          "bytes": 4020,
+          "sha256": "4bd5186b79494a3aec68b449d012d6a640f713349e007428cf3509bb0988519c"
+        }
+      }
+    },
+    {
+      "seed": 38,
+      "path": "logs/seed0038.tar.gz",
+      "sha256": "f33aee2f6c61a2f9718fa28d09cff9be55a0232775a2cd3ea46c1dfe12cdb623",
+      "bytes": 256683,
+      "members": {
+        "seed0038/baseline.bin": {
+          "bytes": 980939,
+          "sha256": "bfd9d1696d202ad7b75c8125607777783a8497509c87b3744c90b6995ab8e970"
+        },
+        "seed0038/config.yaml": {
+          "bytes": 326,
+          "sha256": "5315579708b7218f422ab498e3d186351cba881bdabb7b0e4610b65bc79e2be4"
+        },
+        "seed0038/factual.bin": {
+          "bytes": 984680,
+          "sha256": "c2a2b3aa2106bb30f5c4a91d31bcccd651535182f31a53c7187847a274d4ab70"
+        },
+        "seed0038/summary.json": {
+          "bytes": 4022,
+          "sha256": "e6e1fdf93424605afa3d9f342d3b47c243f7a80adc84c78b77557dcc94ede0c9"
+        }
+      }
+    },
+    {
+      "seed": 39,
+      "path": "logs/seed0039.tar.gz",
+      "sha256": "ed8d61d3473c30b35c5c9148d29386aa8c5d48b7275fb0dabc0781fc3dc07214",
+      "bytes": 222633,
+      "members": {
+        "seed0039/baseline.bin": {
+          "bytes": 830795,
+          "sha256": "b4b0e7b4425900ea264e787bf42f1b00da48eaa2c05dbf7cd8b4da3981034496"
+        },
+        "seed0039/config.yaml": {
+          "bytes": 326,
+          "sha256": "3df182d723a7fb0b9c48755144594d9c3df4d5fe48f1888de7fda2654c6e1d5b"
+        },
+        "seed0039/factual.bin": {
+          "bytes": 845672,
+          "sha256": "b105feb88d0f323a8d7b877927b44a6c57869fe5ee9e6dfe07b4e6aa221bd843"
+        },
+        "seed0039/summary.json": {
+          "bytes": 4019,
+          "sha256": "4a8bc7c07a26fc9634d586a18ef41a8e32809a272a64aa2459f5f3f1c7445648"
+        }
+      }
+    }
+  ],
+  "uncompressed_bytes": 74222719,
+  "compressed_bytes": 9679498
+}
