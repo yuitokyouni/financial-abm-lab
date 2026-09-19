@@ -1,0 +1,52 @@
+name: Layout source audit
+on:
+  push:
+    branches: [refactor/experiment-layout-20260919]
+    paths: [.github/workflows/layout-audit.yml]
+permissions:
+  contents: read
+jobs:
+  source-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Bundle tracked source files and full tree inventory
+        run: |
+          python - <<'PY'
+          import json, pathlib, subprocess, zipfile
+          root = pathlib.Path('.')
+          tree = []
+          raw = subprocess.check_output(['git', 'ls-tree', '-rlz', 'HEAD'])
+          for record in raw.split(b'\0'):
+              if not record:
+                  continue
+              header, name = record.split(b'\t', 1)
+              mode, kind, sha, size = header.decode().split()
+              tree.append(dict(path=name.decode(), mode=mode, type=kind, sha=sha, size=None if size == '-' else int(size)))
+          text_extensions = {'.py', '.toml', '.md', '.rst', '.txt', '.yaml', '.yml', '.sh', '.json', '.csv', '.lock', '.html', '.ttl', '.ini', '.cfg'}
+          with zipfile.ZipFile('/tmp/layout-source.zip', 'w', compression=zipfile.ZIP_DEFLATED) as out:
+              out.writestr('_inventory.json', json.dumps(tree, indent=2))
+              out.writestr('_commit.txt', subprocess.check_output(['git', 'rev-parse', 'HEAD']))
+              count = 0
+              for item in tree:
+                  p = root / item['path']
+                  if item['type'] != 'blob' or item['mode'] == '120000' or (item['size'] or 0) > 2_000_000:
+                      continue
+                  if p.suffix not in text_extensions and p.name not in {'.gitignore', 'Makefile', 'LICENSE', 'Dockerfile'}:
+                      continue
+                  try:
+                      p.read_text(encoding='utf-8')
+                  except (UnicodeError, OSError):
+                      continue
+                  out.write(p, arcname='repo/' + item['path'])
+                  count += 1
+              print(f'Bundled {count} source files; inventory has {len(tree)} entries')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: layout-source
+          path: /tmp/layout-source.zip
+          retention-days: 1
