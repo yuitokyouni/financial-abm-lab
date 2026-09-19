@@ -593,7 +593,7 @@ def main() -> int:
 
     p_an = sub.add_parser("analytics",
                           help="render LLM learning-curve plots from executed proposals")
-    p_an.add_argument("--out", default="notebooks/propose_analytics/")
+    p_an.add_argument("--out", default="experiments/fingerprint_atlas/reports/propose_analytics/")
 
     p_auto = sub.add_parser(
         "auto",
@@ -605,7 +605,7 @@ def main() -> int:
     p_auto.add_argument("--temperature", type=float, default=0.7)
     p_auto.add_argument("--seed-base", type=int, default=9000,
                         help="execute seeds = seed-base + proposal_id")
-    p_auto.add_argument("--analytics-out", default="notebooks/propose_analytics/")
+    p_auto.add_argument("--analytics-out", default="experiments/fingerprint_atlas/reports/propose_analytics/")
     p_auto.add_argument("--skip-analytics", action="store_true")
     p_auto.add_argument(
         "--literature-top-n", type=int, default=7,

@@ -1,7 +1,7 @@
 """FactorModel — a_ij = mu_j + sum_k lambda_ik f_jk + eps_ij の推定 (YH010_HANDOFF §7-2)。
 
 ルートA: 列平均補完 + 低ランク分解の EM 型反復 (Bubb & Catan 2022 の欠測対応 PCA。
-  原典手続きは docs/2026-07-23-YH010g-method-notes-bolton-bubbcatan.md 参照:
+  原典手続きは experiments/YH010g/docs/2026-07-23-YH010g-method-notes-bolton-bubbcatan.md 参照:
   Kiers 1997; Ilin & Raiko 2010; Josse & Husson 2012)。
   1. 欠測を列平均で補完
   2. 補完済み行列を中心化して SVD、上位 k 次元を保持

@@ -279,8 +279,8 @@ def _find_canon_atlas(root: Path, explicit: str) -> str | None:
     candidates = [
         Path(explicit) if Path(explicit).is_absolute() else root / explicit,
         root / "canon_atlas.html",
-        root / "notebooks/canon_atlas/atlas.html",
-        root / "notebooks/canon_atlas.html",
+        root / "experiments/fingerprint_atlas/reports/canon_atlas/atlas.html",
+        root / "experiments/fingerprint_atlas/reports/canon_atlas.html",
         root / "dashboard/canon_atlas.html",
     ]
     for c in candidates:
@@ -692,11 +692,11 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
 
     overview = metric_html + (
         '<section class="band"><h2>Core analysis</h2><div class="grid">'
-        + _figure(out, str(root / "notebooks/atlas_v4/atlas.png"),
+        + _figure(out, str(root / "experiments/fingerprint_atlas/reports/atlas_v4/atlas.png"),
                   "ABM 市場特徴量ベクトル PCA",
                   "Model families in the standardized market-feature-vector space.",
                   lookfor=pca_lookfor)
-        + _figure(out, str(root / "notebooks/inverse_abm_heatmap.png"),
+        + _figure(out, str(root / "experiments/fingerprint_atlas/reports/inverse_abm_heatmap.png"),
                   "実市場 × ABM 距離",
                   "Nearest model families across observed periods.",
                   lookfor=distance_lookfor)
@@ -723,15 +723,15 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
     markets = (
         '<section class="band"><h2>市場特徴量の幾何 (market-feature geometry)</h2>'
         '<div class="grid">'
-        + _figure(out, str(root / "notebooks/atlas_v4/atlas.png"),
+        + _figure(out, str(root / "experiments/fingerprint_atlas/reports/atlas_v4/atlas.png"),
                   "PCA 市場アトラス",
                   "Two principal components of standardized ABM market-feature vectors.",
                   wide=True, lookfor=pca_lookfor)
-        + _figure(out, str(root / "notebooks/atlas_v4/features.png"),
+        + _figure(out, str(root / "experiments/fingerprint_atlas/reports/atlas_v4/features.png"),
                   "成分別分布 (per-feature distributions)",
                   "Per-family distributions for each market-feature dimension.",
                   wide=True, lookfor=features_lookfor)
-        + _figure(out, str(root / "notebooks/inverse_abm_heatmap.png"),
+        + _figure(out, str(root / "experiments/fingerprint_atlas/reports/inverse_abm_heatmap.png"),
                   "実市場 × ABM 距離ヒートマップ",
                   "Lower distance = closer market-feature-vector match.",
                   wide=True, lookfor=distance_lookfor)
@@ -842,15 +842,15 @@ def build_dashboard(rows: list[dict[str, Any]], out_dir: str, *,
         'Click any card for gotchas, reference papers, and OSS repos.</p>'
         + _technique_catalog_html() + '</section>'
         '<section class="band"><h2>Proposal diagnostics</h2><div class="grid">'
-        + _figure(out, str(root / "notebooks/propose_analytics/prediction_error_over_time.png"),
+        + _figure(out, str(root / "experiments/fingerprint_atlas/reports/propose_analytics/prediction_error_over_time.png"),
                   "Prediction error over time",
                   "Observed calibration drift across proposals.",
                   lookfor=pred_time_lookfor)
-        + _figure(out, str(root / "notebooks/propose_analytics/prediction_error_by_family.png"),
+        + _figure(out, str(root / "experiments/fingerprint_atlas/reports/propose_analytics/prediction_error_by_family.png"),
                   "Prediction error by family",
                   "Error distribution grouped by target model.",
                   lookfor=pred_family_lookfor)
-        + _figure(out, str(root / "notebooks/propose_analytics/novelty_calibration.png"),
+        + _figure(out, str(root / "experiments/fingerprint_atlas/reports/propose_analytics/novelty_calibration.png"),
                   "Novelty calibration",
                   "Predicted novelty against executed outcomes.", wide=True,
                   lookfor=novelty_lookfor)

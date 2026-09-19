@@ -53,3 +53,15 @@ YH007/
    で二重乖離確定 → **P3-F (recenter) 合格 = substrate 完成** (2026-07-21)。
 3. P3 FAIL は「同一基盤モデル共有 → directional 同期 → 集合 over-reaction」という
    **候補 finding として保存** (003 §12 round4 裁定、破棄しない)。
+
+## 配置の更新（2026-09-19）
+
+実験固有のテストは [`tests/`](tests/)、較正監査の文書は [`docs/audit/`](docs/audit/)、
+その数値出力は [`reports/audit/`](reports/audit/) に集約した。モデルの式・パラメータ・保存済み結果は変更していない。
+全体の監査計画は [`docs/audit/`](../../docs/audit/) を参照。
+
+```sh
+uv run pytest experiments/YH007/tests -m "not slow"
+```
+
+[配置台帳](experiment.toml) / [実験一覧](../README.md)

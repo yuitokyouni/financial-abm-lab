@@ -29,9 +29,11 @@ dev = [
     "ipykernel",
 ]
 
-# --- uv workspace (spec 001 C1): packages/ 配下を共有コアとして管理 ---
+# Shared packages and explicitly registered experiment-local packages.
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["packages/*", "experiments/YH010g"]
+# YH012 has a separately installed local lobcore dependency.
+exclude = ["experiments/YH012"]
 
 [tool.uv.sources]
 abm-models = { workspace = true }
@@ -42,6 +44,8 @@ agora-engine = { workspace = true }
 yh010g = { workspace = true }
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "packages"]
+# Make experiment modules importable with both pytest and python -m pytest.
+pythonpath = ["."]
+testpaths = ["tests", "packages", "experiments/YH007/tests", "experiments/YH009/tests", "experiments/YH010g/tests"]
 addopts = "-q"
 markers = ["slow: 重い実行 (T=20000 等)。CI 既定では除外"]
