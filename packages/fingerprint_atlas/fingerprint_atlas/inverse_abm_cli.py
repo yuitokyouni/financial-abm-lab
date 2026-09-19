@@ -22,7 +22,7 @@ Usage examples:
       --db ../test/knowhow/abm_knowhow.db nearest --returns-csv my_returns.csv --k 5
 
   uv run python -m fingerprint_atlas.inverse_abm_cli \\
-      --db ../test/knowhow/abm_knowhow.db heatmap --out notebooks/inverse_abm.png
+      --db ../test/knowhow/abm_knowhow.db heatmap --out experiments/fingerprint_atlas/reports/inverse_abm.png
 """
 from __future__ import annotations
 
@@ -116,7 +116,7 @@ def main() -> int:
 
     p_h = sub.add_parser("heatmap",
                           help="real × ABM family distance matrix as PNG")
-    p_h.add_argument("--out", default="notebooks/inverse_abm_heatmap.png")
+    p_h.add_argument("--out", default="experiments/fingerprint_atlas/reports/inverse_abm_heatmap.png")
 
     args = ap.parse_args()
     if args.cmd == "nearest":

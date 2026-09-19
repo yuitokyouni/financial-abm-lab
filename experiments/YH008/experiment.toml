@@ -1,0 +1,8 @@
+# 配置台帳。研究結果の合否や再現完了を意味しない。
+id = "YH008"
+title = "LLM内部活性への介入"
+kind = "archive"
+shared_packages = []
+paths = ["docs"]
+commands = []
+archives = ["imported/speculation-game-info/experiments/YH008"]

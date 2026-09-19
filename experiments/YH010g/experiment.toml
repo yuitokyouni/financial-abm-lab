@@ -1,0 +1,8 @@
+# 配置台帳。研究結果の合否や再現完了を意味しない。
+id = "YH010g"
+title = "議決権行使ガバナンス"
+kind = "empirical"
+shared_packages = ["agora_engine"]
+paths = ["yh010g", "tests", "specs", "docs", "data/fixtures"]
+commands = ["uv run python -m yh010g.validate_policy", "uv run pytest experiments/YH010g/tests"]
+archives = []

@@ -1,6 +1,6 @@
 """agora_engine — YH010 (価格空間) / YH010-g (ガバナンス空間) 共有エンジン。
 
-正本仕様: specs/YH010_HANDOFF.md §7。
+正本仕様: experiments/YH010/specs/HANDOFF.md §7。
   1. DecisionMatrix: 主体 i × インスタンス j × 行動 a_ij (欠測マスク付き)
   2. FactorModel: a_ij = mu_j + sum_k lambda_ik f_jk + eps_ij (ルートA: EM補完低ランク分解)
   3. Intervention: 宣言的介入 (テープに必ず記録)

@@ -1,0 +1,8 @@
+# 配置台帳。研究結果の合否や再現完了を意味しない。
+id = "YH007"
+title = "共有予測・注文板・較正／介入"
+kind = "simulation"
+shared_packages = ["abm_models", "stylized_facts"]
+paths = ["scripts", "specs", "docs", "tests", "reports"]
+commands = ["uv run pytest experiments/YH007/tests -m \"not slow\""]
+archives = []

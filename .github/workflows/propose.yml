@@ -53,12 +53,12 @@ jobs:
         # carries the mechanism descriptions and user notes default to empty
         # in CI. (TODO: an export/import flow to git-track user notes.)
         run: |
-          mkdir -p data notebooks/yahoo_cache
+          mkdir -p data data/cache/yahoo
           uv run python -m fingerprint_atlas.populate \
             --db "$DB_PATH" --n-per-model 12 --seed-base 1000 --rng-seed 7 --quiet
           uv run python -m fingerprint_atlas.populate_refs \
             --db "$DB_PATH" --n-synthetic-per-model 6 \
-            --cache-dir notebooks/yahoo_cache
+            --cache-dir data/cache/yahoo
           uv run python -m fingerprint_atlas.methods_cli --db "$DB_PATH" seed
 
       - name: Generate proposals via LLM

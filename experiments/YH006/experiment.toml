@@ -1,0 +1,8 @@
+# 配置台帳。研究結果の合否や再現完了を意味しない。
+id = "YH006"
+title = "SG on LOB（旧実装の保存）"
+kind = "archive"
+shared_packages = []
+paths = []
+commands = []
+archives = ["imported/speculation-game-info/experiments/YH006", "imported/speculation-game-info/experiments/YH006_1", "imported/speculation-game-info/experiments/YH006_3"]

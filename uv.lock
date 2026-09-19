@@ -547,7 +547,7 @@ requires-dist = [
     { name = "statsmodels" },
     { name = "stylized-facts", editable = "packages/stylized_facts" },
     { name = "tqdm" },
-    { name = "yh010g", editable = "packages/yh010g" },
+    { name = "yh010g", editable = "experiments/YH010g" },
 ]
 provides-extras = ["dev"]
 
@@ -2318,7 +2318,7 @@ wheels = [
 [[package]]
 name = "yh010g"
 version = "0.1.0"
-source = { editable = "packages/yh010g" }
+source = { editable = "experiments/YH010g" }
 dependencies = [
     { name = "agora-engine" },
     { name = "numpy" },

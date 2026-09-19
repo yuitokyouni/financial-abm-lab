@@ -33,5 +33,5 @@ parity を濁らせ、機構弁別という研究目的に反する)。
 
 - spec 001 の「SG 三重実装の統一」は「**本物 SG 1つを正準化 + 別モデル2つの誤名を是正**」に
   正確化される。
-- T0 backbone は本物 SG で実施し、parity を達成 (`docs/backbone_parity.md`)。
+- T0 backbone は本物 SG で実施し、parity を達成 (`experiments/YH005/docs/backbone_parity.md`)。
 - PRISM/PROV-ABM の FW系モデルの扱いは intervention_atlas 移行時に別途決める (本 ADR の射程外)。

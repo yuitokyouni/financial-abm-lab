@@ -1,0 +1,8 @@
+# 配置台帳。研究結果の合否や再現完了を意味しない。
+id = "YH010"
+title = "agent-agora / 協調とモノカルチャー"
+kind = "design"
+shared_packages = ["agora_engine"]
+paths = ["specs", "docs"]
+commands = []
+archives = []

@@ -1,0 +1,9 @@
+# 配置台帳。研究結果の合否や再現完了を意味しない。
+id = "YH012"
+title = "LOBcore単一注文インパクト"
+kind = "simulation"
+shared_packages = []
+paths = ["agents.py", "experiment.py", "configs", "specs", "tests", "reports"]
+commands = []
+archives = []
+external_dependencies = ["lobcore (local build; see README.md)"]

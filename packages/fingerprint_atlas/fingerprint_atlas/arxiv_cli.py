@@ -2106,7 +2106,7 @@ def main() -> int:
         help=("render the (mechanism × stylized fact) coverage matrix as "
               "a PNG heatmap + markdown table"),
     )
-    p_cv.add_argument("--out-dir", default="notebooks/coverage/")
+    p_cv.add_argument("--out-dir", default="experiments/fingerprint_atlas/reports/coverage/")
     p_cv.add_argument("--top-rows", type=int, default=15,
                       help="number of top mechanism tags to include")
 
@@ -2115,7 +2115,7 @@ def main() -> int:
         help=("render the literature 2D map (PNG + CSV) — TF-IDF over "
               "tags+concepts+title, projected via SVD, colored by tag"),
     )
-    p_at.add_argument("--out-dir", default="notebooks/literature_map/")
+    p_at.add_argument("--out-dir", default="experiments/fingerprint_atlas/reports/literature_map/")
     p_at.add_argument("--top-labels", type=int, default=12,
                       help="annotate the K most-cited papers")
 
@@ -2188,7 +2188,7 @@ def main() -> int:
         help="comma-separated terms to reject even when --keywords matches",
     )
     p_gn.add_argument("--sleep", type=float, default=0.5)
-    p_gn.add_argument("--out", default="notebooks/genealogy/tree.html")
+    p_gn.add_argument("--out", default="experiments/fingerprint_atlas/reports/genealogy/tree.html")
 
     p_cn = sub.add_parser(
         "canon",
@@ -2255,7 +2255,7 @@ def main() -> int:
               "coverage heatmap + per-subfield detail. "
               "--auto-ingest-missing pulls every missing canon arxiv paper."),
     )
-    p_ca.add_argument("--out", default="notebooks/canon_atlas/atlas.html")
+    p_ca.add_argument("--out", default="experiments/fingerprint_atlas/reports/canon_atlas/atlas.html")
     p_ca.add_argument("--n", type=int, default=8,
                       help="how many top-cited papers per subfield")
     p_ca.add_argument("--year-max", type=int, default=None,

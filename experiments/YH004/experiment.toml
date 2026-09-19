@@ -1,0 +1,8 @@
+# 配置台帳。研究結果の合否や再現完了を意味しない。
+id = "YH004"
+title = "Grand Canonical Minority Game"
+kind = "simulation"
+shared_packages = ["abm_models"]
+paths = ["baseline.py"]
+commands = ["uv run python -m experiments.YH004.baseline --seed 42"]
+archives = ["imported/speculation-game-info/experiments/YH004"]

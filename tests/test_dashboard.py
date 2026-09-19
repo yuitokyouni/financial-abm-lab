@@ -5,15 +5,15 @@ def test_build_dashboard_writes_navigable_pages(tmp_path):
     from fingerprint_atlas.dashboard import build_dashboard
 
     root = tmp_path / "repo"
-    (root / "notebooks/atlas_v4").mkdir(parents=True)
-    (root / "notebooks/propose_analytics").mkdir(parents=True)
+    (root / "experiments/fingerprint_atlas/reports/atlas_v4").mkdir(parents=True)
+    (root / "experiments/fingerprint_atlas/reports/propose_analytics").mkdir(parents=True)
     for relative in [
-        "notebooks/atlas_v4/atlas.png",
-        "notebooks/atlas_v4/features.png",
-        "notebooks/inverse_abm_heatmap.png",
-        "notebooks/propose_analytics/prediction_error_over_time.png",
-        "notebooks/propose_analytics/prediction_error_by_family.png",
-        "notebooks/propose_analytics/novelty_calibration.png",
+        "experiments/fingerprint_atlas/reports/atlas_v4/atlas.png",
+        "experiments/fingerprint_atlas/reports/atlas_v4/features.png",
+        "experiments/fingerprint_atlas/reports/inverse_abm_heatmap.png",
+        "experiments/fingerprint_atlas/reports/propose_analytics/prediction_error_over_time.png",
+        "experiments/fingerprint_atlas/reports/propose_analytics/prediction_error_by_family.png",
+        "experiments/fingerprint_atlas/reports/propose_analytics/novelty_calibration.png",
         "canon_atlas.html",
     ]:
         path = root / relative
@@ -97,12 +97,12 @@ def test_figures_include_what_to_look_for_toggle(tmp_path):
 
     root = tmp_path / "repo"
     for relative in [
-        "notebooks/atlas_v4/atlas.png",
-        "notebooks/atlas_v4/features.png",
-        "notebooks/inverse_abm_heatmap.png",
-        "notebooks/propose_analytics/prediction_error_over_time.png",
-        "notebooks/propose_analytics/prediction_error_by_family.png",
-        "notebooks/propose_analytics/novelty_calibration.png",
+        "experiments/fingerprint_atlas/reports/atlas_v4/atlas.png",
+        "experiments/fingerprint_atlas/reports/atlas_v4/features.png",
+        "experiments/fingerprint_atlas/reports/inverse_abm_heatmap.png",
+        "experiments/fingerprint_atlas/reports/propose_analytics/prediction_error_over_time.png",
+        "experiments/fingerprint_atlas/reports/propose_analytics/prediction_error_by_family.png",
+        "experiments/fingerprint_atlas/reports/propose_analytics/novelty_calibration.png",
     ]:
         p = root / relative
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -184,11 +184,11 @@ def test_abm_family_grid_renders_with_provenance():
 def test_markets_page_embeds_family_reference_and_distance_doc(tmp_path):
     from fingerprint_atlas.dashboard import build_dashboard
     root = tmp_path / "repo"
-    (root / "notebooks/atlas_v4").mkdir(parents=True)
+    (root / "experiments/fingerprint_atlas/reports/atlas_v4").mkdir(parents=True)
     for relative in [
-        "notebooks/atlas_v4/atlas.png",
-        "notebooks/atlas_v4/features.png",
-        "notebooks/inverse_abm_heatmap.png",
+        "experiments/fingerprint_atlas/reports/atlas_v4/atlas.png",
+        "experiments/fingerprint_atlas/reports/atlas_v4/features.png",
+        "experiments/fingerprint_atlas/reports/inverse_abm_heatmap.png",
     ]:
         p = root / relative
         p.parent.mkdir(parents=True, exist_ok=True)
@@ -264,11 +264,11 @@ def test_japanese_relabeling_in_markets_page(tmp_path):
     in English."""
     from fingerprint_atlas.dashboard import build_dashboard
     root = tmp_path / "repo"
-    (root / "notebooks/atlas_v4").mkdir(parents=True)
+    (root / "experiments/fingerprint_atlas/reports/atlas_v4").mkdir(parents=True)
     for relative in [
-        "notebooks/atlas_v4/atlas.png",
-        "notebooks/atlas_v4/features.png",
-        "notebooks/inverse_abm_heatmap.png",
+        "experiments/fingerprint_atlas/reports/atlas_v4/atlas.png",
+        "experiments/fingerprint_atlas/reports/atlas_v4/features.png",
+        "experiments/fingerprint_atlas/reports/inverse_abm_heatmap.png",
     ]:
         p = root / relative
         p.parent.mkdir(parents=True, exist_ok=True)

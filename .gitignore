@@ -1,4 +1,4 @@
-notebooks/yahoo_cache/
+data/cache/yahoo/
 dashboard/assets/
 canon_atlas.html
 __pycache__/
@@ -11,6 +11,10 @@ __pycache__/
 
 data/raw/
 data/processed/
+data/cache/
+experiments/**/runs/
+experiments/YH010g/data/raw/
+experiments/YH010g/data/processed/
 data/*.db
 experiments/runs/
 
@@ -19,5 +23,5 @@ experiments/runs/
 dashboard/*.html
 
 # YH010-g 検証セット (親の *.csv を例外)
-!docs/yh010g_validation_groundtruth.csv
-!docs/yh010g_validation_targets.csv
+!experiments/YH010g/data/fixtures/*.csv
+!experiments/YH010g/data/fixtures/validation_targets.csv

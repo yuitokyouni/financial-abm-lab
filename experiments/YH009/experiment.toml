@@ -1,0 +1,8 @@
+# 配置台帳。研究結果の合否や再現完了を意味しない。
+id = "YH009"
+title = "unwind-tape / 政策保有株解消"
+kind = "empirical"
+shared_packages = []
+paths = ["scripts", "abm", "configs", "docs", "tests", "data"]
+commands = ["uv run pytest experiments/YH009/tests"]
+archives = []

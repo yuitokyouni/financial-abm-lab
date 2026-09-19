@@ -1,0 +1,8 @@
+# 配置台帳。研究結果の合否や再現完了を意味しない。
+id = "fingerprint_atlas"
+title = "モデル比較・研究探索の実行記録"
+kind = "workflow"
+shared_packages = ["fingerprint_atlas", "abm_models", "stylized_facts"]
+paths = ["docs", "reports"]
+commands = ["uv run python -m fingerprint_atlas.atlas --help"]
+archives = []
