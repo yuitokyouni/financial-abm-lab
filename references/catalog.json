@@ -1,4 +1,34 @@
 {
   "schema_version": 1,
-  "references": []
+  "references": [
+    {
+      "id": "katahira2019",
+      "title": "Development of an agent-based speculation game for higher reproducibility of financial stylized facts",
+      "authors": [
+        "Kei Katahira",
+        "Yu Chen",
+        "Gaku Hashimoto",
+        "Hiroshi Okuda"
+      ],
+      "doi": null,
+      "arxiv_id": "1902.02040",
+      "arxiv_version": "v1",
+      "zotero_item_key": null,
+      "drive_file_id": "1S0IfEGGJNJPssBgYNoMceM5ReCKL294T",
+      "sha256": "ca2cc7ad93a0620fa363f0afe935c81c48ff8c0cb5b22b39f2f488b7d60c4190",
+      "size_bytes": 3650172,
+      "pdf_pages": 37,
+      "used_by": [
+        "YH005"
+      ],
+      "notes": "Project-supplied preprint uploaded to private Drive and downloaded back with matching SHA-256. Selected for future YH005 source checks; not evidence that this exact file was used in historical runs. Zotero linkage pending authentication.",
+      "text": {
+        "drive_file_id": "1mgDgnv4F8hTgI62EPUl6VwpWvy0OyVWN",
+        "sha256": "c78268cd818d188051f6a376d80e0860367195df166e04449b6192ffcff1c493",
+        "size_bytes": 59090,
+        "source_pdf_sha256": "ca2cc7ad93a0620fa363f0afe935c81c48ff8c0cb5b22b39f2f488b7d60c4190",
+        "kind": "mechanical_page_numbered_extraction_not_verified_transcription"
+      }
+    }
+  ]
 }
