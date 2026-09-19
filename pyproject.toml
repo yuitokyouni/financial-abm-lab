@@ -44,6 +44,8 @@ agora-engine = { workspace = true }
 yh010g = { workspace = true }
 
 [tool.pytest.ini_options]
+# Make experiment modules importable with both pytest and python -m pytest.
+pythonpath = ["."]
 testpaths = ["tests", "packages", "experiments/YH007/tests", "experiments/YH009/tests", "experiments/YH010g/tests"]
 addopts = "-q"
 markers = ["slow: 重い実行 (T=20000 等)。CI 既定では除外"]
