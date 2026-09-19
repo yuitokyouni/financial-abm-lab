@@ -10,3 +10,5 @@
 - Never delete local ignored data to resolve a path conflict. Explain and preserve it.
 - Run `python tools/check_layout.py` and `uv run pytest -m "not slow"` after changes.
 - YH012 requires its separately installed local LOBcore; follow its own README for tests.
+
+- For paper-backed model rules, follow `docs/architecture/research-assets.md`; use registered canonical references when available and do not treat LLM summaries as source evidence.
