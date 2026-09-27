@@ -1,0 +1,13 @@
+event_group_id,event_leg_id,issuer_code,announce_day0,pricing_day0,settlement_day0,ADV20_shares,ADV60_shares,market_cap_JPY,market_cap_detail,model_used,alpha,beta,est_n,est_reason
+G001,L001,6902,2023-11-29,,,6824550,5901210,6820385657481,"close=2277.00 shares=2995338453 (approx: period-average shares, not period-end)",topix_adjusted,,,0,
+G002,L001,6201,2024-03-29,,,561445,643335,4879167977425,"close=15715.00 shares=310478395 (approx: period-average shares, not period-end)",topix_adjusted,,,0,
+G003,L001,7259,2024-06-27,,,2397930,2477840,472032724339,"close=1751.30 shares=269532761 (approx: period-average shares, not period-end)",topix_adjusted,,,0,
+G004,L001,7267,2024-07-04,,,12456990,12077172,8521362637182,"close=1738.50 shares=4901560332 (approx: period-average shares, not period-end)",topix_adjusted,,,0,
+G005,L001,8154,2025-08-07,,,104940,130080,154811949426,"close=2946.00 shares=52549881 (approx: period-average shares, not period-end)",topix_adjusted,,,0,
+G006,L001,3950,2025-08-29,,,90775,158327,67020806497,"close=1189.00 shares=56367373 (approx: period-average shares, not period-end)",topix_adjusted,,,0,
+G007,L001,4246,2026-01-19,,2026-01-26,276505,166230,57841452756,"close=828.00 shares=69856827 (approx: period-average shares, not period-end)",topix_adjusted,,,0,
+G008,L001,7974,2026-03-02,,,12677695,8324568,10472469047600,"close=8995.00 shares=1164254480 (approx: period-average shares, not period-end)",topix_adjusted,,,0,
+G008,L002,7974,2026-03-03,,,12875140,8474972,10177912664160,"close=8742.00 shares=1164254480 (approx: period-average shares, not period-end)",topix_adjusted,,,0,
+G009,L001,4063,,,,,,,,,,,0,
+G010,L001,4062,,,,,,,,,,,0,
+G011,L001,2871,,,,,,,,,,,0,
