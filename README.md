@@ -1,7 +1,7 @@
 # financial-abm-lab
 
 金融市場のエージェントベースモデルと関連する実証研究のモノレポ。
-**実験は`experiments/<ID>/`、再利用する実装は`packages/`、全体の説明は`docs/`**に分ける。
+**実験は`experiments/<ID>/`、再利用する実装は`packages/`、全体の説明は`docs/`  **に分ける。
 
 [実験一覧](experiments/README.md) · [文書入口](docs/README.md) · [共通コード](packages/README.md) · [配置規約](docs/architecture/repository-layout.md)
 
