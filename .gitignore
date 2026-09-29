@@ -25,3 +25,6 @@ dashboard/*.html
 # YH010-g 検証セット (親の *.csv を例外)
 !experiments/YH010g/data/fixtures/*.csv
 !experiments/YH010g/data/fixtures/validation_targets.csv
+
+# Remote research assets (papers/data are fetched on demand)
+.cache/research-assets/
