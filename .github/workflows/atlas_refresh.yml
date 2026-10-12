@@ -16,6 +16,11 @@ permissions:
   contents: write
   pull-requests: write
 
+# A manual run and a scheduled run must not both pass the queue check.
+concurrency:
+  group: automated-pr-atlas-refresh
+  cancel-in-progress: false
+
 jobs:
   refresh:
     runs-on: ubuntu-latest
@@ -25,17 +30,29 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Preserve pending generated PRs
+        id: queue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python tools/automation_pr_guard.py --prefix atlas-refresh/
 
       - name: Install uv
+        if: steps.queue.outputs.can_run == 'true'
         uses: astral-sh/setup-uv@v5
 
       - name: Set up Python
+        if: steps.queue.outputs.can_run == 'true'
         run: uv python install 3.11
 
       - name: Sync workspace
+        if: steps.queue.outputs.can_run == 'true'
         run: uv sync
 
       - name: Rebuild DB (methods seed + literature snapshot + ABM runs)
+        if: steps.queue.outputs.can_run == 'true'
         # Same shape as propose.yml / methods_annotate.yml: seed methods,
         # restore literature snapshot if present, repopulate runs from
         # the canonical model registry so the fingerprint atlas has data.
@@ -59,6 +76,7 @@ jobs:
             --cache-dir data/cache/yahoo
 
       - name: A) fingerprint atlas + per-feature box
+        if: steps.queue.outputs.can_run == 'true'
         run: |
           mkdir -p "$ATLAS_OUT_DIR"
           uv run python -m fingerprint_atlas.atlas \
@@ -68,6 +86,7 @@ jobs:
             --gate-json "$ATLAS_OUT_DIR/validation_gate.json"
 
       - name: B) literature 2D map
+        if: steps.queue.outputs.can_run == 'true'
         run: |
           uv run python -m fingerprint_atlas.arxiv_cli \
             --db "$DB_PATH" atlas --out-dir "$ATLAS_OUT_DIR"
@@ -77,24 +96,28 @@ jobs:
           fi
 
       - name: C) coverage heatmap
+        if: steps.queue.outputs.can_run == 'true'
         run: |
           uv run python -m fingerprint_atlas.arxiv_cli \
             --db "$DB_PATH" coverage --out-dir "$ATLAS_OUT_DIR"
 
       - name: D) canon atlas (25 subfields × OpenAlex top-cited)
+        if: steps.queue.outputs.can_run == 'true'
         run: |
           uv run python -m fingerprint_atlas.arxiv_cli \
             --db "$DB_PATH" canon-atlas \
             --out "$ATLAS_OUT_DIR/canon_atlas.html" --n 8 --sleep 0.3
 
       - name: List artifacts
+        if: steps.queue.outputs.can_run == 'true'
         run: ls -la "$ATLAS_OUT_DIR"
 
       - name: Open PR with refreshed maps
+        if: steps.queue.outputs.can_run == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: atlas-refresh/${{ github.run_id }}
+          branch: atlas-refresh/pending
           base: main
           add-paths: |
             experiments/fingerprint_atlas/reports/atlas/**

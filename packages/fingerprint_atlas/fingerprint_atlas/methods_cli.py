@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import os
+from pathlib import Path
 import platform
 import re
 import shutil
@@ -389,6 +390,61 @@ def cmd_normalize_newlines(db_path: str, dry_run: bool) -> int:
     return 0
 
 
+def cmd_restore_merged_drafts(db_path: str, directory: str) -> int:
+    """Restore structured, checked-in annotations into a newly seeded CI DB.
+
+    Run only on the checked-out base branch. For each method, the greatest
+    numeric run ID is the selected revision. Validate its method header and
+    all five sections before writing anything. File presence alone does not
+    count as commentary: deliberately empty sections remain empty.
+
+    Existing differing DB commentary is never overwritten by this command.
+    """
+    root = Path(directory)
+    if not root.exists():
+        print(f"no merged draft directory at {root}; nothing to restore")
+        return 0
+    if not root.is_dir():
+        print(f"merged draft path is not a directory: {root}", file=sys.stderr)
+        return 1
+    ensure_methods_schema(db_path)
+    selected = {}
+    try:
+        for path in sorted(root.glob("*/*.md")):
+            if not path.parent.name.isdecimal():
+                raise ValueError(f"expected a numeric run directory: {path}")
+            previous = selected.get(path.stem)
+            if previous is None or int(path.parent.name) > int(previous.parent.name):
+                selected[path.stem] = path
+        changes = []
+        for name, path in sorted(selected.items()):
+            method = get_method(db_path, name)
+            if method is None:
+                raise ValueError(f"unknown method in merged draft: {path}")
+            text = path.read_text(encoding="utf-8")
+            header = re.search(r"^# methodology notes for:\s+([A-Za-z0-9_]+)\s*$", text, re.MULTILINE)
+            if header is None or header.group(1) != name:
+                raise ValueError(f"method header does not match filename: {path}")
+            headers = _SECTION_RE.findall(text)
+            if any(headers.count(section) != 1 for section in SECTIONS):
+                raise ValueError(f"expected each of the five annotation sections exactly once: {path}")
+            values = _parse_edit_file(text)
+            current = {section: getattr(method, section) for section in SECTIONS}
+            if current == values:
+                continue
+            if _has_commentary(method):
+                raise ValueError(f"existing DB commentary differs for {name}; restore requires a newly seeded DB")
+            changes.append((name, path, values))
+        for name, path, values in changes:
+            update_method(db_path, name, **values)
+            print(f"restored {name} from {path} (latest merged run ID)")
+    except (OSError, UnicodeError, ValueError) as exc:
+        print(f"merged draft restore failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"restored {len(changes)} method annotation(s)")
+    return 0
+
+
 def cmd_tag(db_path: str, name: str, add: list[str], remove: list[str]) -> int:
     ensure_methods_schema(db_path)
     m = get_method(db_path, name)
@@ -539,6 +595,12 @@ def main() -> int:
     p_im.add_argument("name")
     p_im.add_argument("path")
 
+    p_restore = sub.add_parser(
+        "restore-merged-drafts",
+        help="restore validated base-branch annotations into a newly seeded CI DB",
+    )
+    p_restore.add_argument("directory")
+
     args = ap.parse_args()
     if args.cmd == "seed":
         return cmd_seed(args.db, args.overwrite_mechanism)
@@ -571,6 +633,8 @@ def main() -> int:
                                   out=args.out)
     if args.cmd == "import-md":
         return cmd_import_md(args.db, args.name, args.path)
+    if args.cmd == "restore-merged-drafts":
+        return cmd_restore_merged_drafts(args.db, args.directory)
     return 1
 
 
