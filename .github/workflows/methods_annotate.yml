@@ -26,6 +26,11 @@ permissions:
   contents: write
   pull-requests: write
 
+# A manual run and a scheduled run must not both pass the queue check.
+concurrency:
+  group: automated-pr-annotate
+  cancel-in-progress: false
+
 jobs:
   annotate:
     runs-on: ubuntu-latest
@@ -37,20 +42,36 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Preserve pending generated PRs
+        id: queue
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python tools/automation_pr_guard.py --prefix annotate/
 
       - name: Install uv
+        if: steps.queue.outputs.can_run == 'true'
         uses: astral-sh/setup-uv@v5
 
       - name: Set up Python
+        if: steps.queue.outputs.can_run == 'true'
         run: uv python install 3.11
 
       - name: Sync workspace
+        if: steps.queue.outputs.can_run == 'true'
         run: uv sync
 
       - name: Rebuild DB from sources (seed methods + literature snapshot)
+        if: steps.queue.outputs.can_run == 'true'
         run: |
           mkdir -p data
           uv run python -m fingerprint_atlas.methods_cli --db "$DB_PATH" seed
+          # Reuse the structured annotations already merged into main. The
+          # restore validates headers/sections and leaves existing DB notes intact.
+          uv run python -m fingerprint_atlas.methods_cli \
+            --db "$DB_PATH" restore-merged-drafts methods_drafts
           # If a literature_methods snapshot exists, restore it so drafts
           # benefit from arxiv context. Full-fidelity restore (same code
           # path as ingest_arxiv.yml) so enrichment columns survive.
@@ -61,6 +82,7 @@ jobs:
           fi
 
       - name: Pick next method(s) to draft
+        if: steps.queue.outputs.can_run == 'true'
         id: pick
         run: |
           NAMES=$(uv run python -m fingerprint_atlas.methods_cli \
@@ -78,7 +100,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Draft notes for each method
-        if: steps.pick.outputs.names != ''
+        if: steps.queue.outputs.can_run == 'true' && (steps.pick.outputs.names != '')
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -108,11 +130,11 @@ jobs:
           ls -la "$DRAFTS_DIR"
 
       - name: Open PR with annotation drafts
-        if: steps.pick.outputs.names != ''
+        if: steps.queue.outputs.can_run == 'true' && (steps.pick.outputs.names != '')
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: annotate/${{ github.run_id }}
+          branch: annotate/pending
           base: main
           add-paths: |
             methods_drafts/**
@@ -131,7 +153,8 @@ jobs:
                `## section` heading.
             2. Commit your edits to this PR branch.
             3. Merge.
-            4. Locally:
+            4. On the next scheduled run, merged annotations are restored before
+               choosing another empty method. To import into a local DB:
                ```
                git pull
                for f in methods_drafts/${{ github.run_id }}/*.md; do
