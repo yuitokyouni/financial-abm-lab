@@ -1,0 +1,478 @@
+arxiv_id,x,y,primary_tag,cited_by_count,title
+2609.13825,0.3095,0.0469,reinforcement-learning,0,ViperQ: Order Flow Pattern Recognition via Auction Market Theory for Reinforcement Learning Trading
+2606.21784v1,0.1628,-0.0043,multi-agent,0,"KineticSim: A Lightweight, High-Performance Execution Engine for Real-Time Market Simulators"
+2602.23784v1,0.0570,-0.0116,generative-transformer,0,TradeFM: A Generative Foundation Model for Trade-flow and Market Microstructure
+2602.23784,0.1008,0.0073,generative-model,0,TradeFM: A Generative Foundation Model for Trade-flow and Market Microstructure
+2601.17773v1,-0.0755,-0.0857,generative-adversarial-networks,0,MarketGANs: Multivariate financial time-series data augmentation using generative adversarial networks
+2511.02136v1,0.2260,-0.0146,multi-agent-reinforcement-learning,0,JaxMARL-HFT: GPU-Accelerated Large-Scale Multi-Agent Reinforcement Learning for High-Frequency Trading
+2511.02136,0.1868,-0.0204,multi-agent-reinforcement-learning,0,JaxMARL-HFT: GPU-Accelerated Large-Scale Multi-Agent Reinforcement Learning for High-Frequency Trading
+2511.02016,0.4108,0.2337,multi-agent-reinforcement-learning,0,ABIDES-MARL: A Multi-Agent Reinforcement Learning Environment for Endogenous Price Formation and Execution in a Limit Or
+2508.02247v2,0.0517,0.0000,autoregressive,0,ByteGen: A Tokenizer-Free Generative Model for Orderbook Events in Byte Space
+2508.02247,-0.0420,0.0256,byte-level-model,0,ByteGen: A Tokenizer-Free Generative Model for Orderbook Events in Byte Space
+2501.08822v1,0.3180,0.2233,queue-reactive,0,Deep Learning Meets Queue-Reactive: A Framework for Realistic Limit Order Book Simulation
+2411.16585v1,0.0060,-0.1194,order-book,0,MarketGPT: Developing a Pre-trained transformer (GPT) for Modeling Financial Time Series
+1902.02040v1,-0.0446,-0.2218,Minority-Game,0,Development of an agent-based speculation game for higher reproducibility of financial stylized facts
+1509.07710,-0.0313,-0.0503,Hawkes-process,0,Quadratic Hawkes processes for financial prices
+2606.09104v1,0.0008,-0.0988,BAVAR,0,Addressing Market Regime Changes and Heavy-Tailed Returns in Portfolio Optimization via Bayesian VAR and Elliptical Blac
+2510.26438v2,0.1718,-0.0201,Hawkes-process,0,An Impulse Control Approach to Market Making in a Hawkes LOB Market
+2510.26438,0.1602,0.0047,Hawkes-process,0,An Impulse Control Approach to Market Making in a Hawkes LOB Market
+2609.31260,0.3238,0.2074,reinforcement-learning,0,Agentic Limit Order Books: Phase Transitions and Market Impact
+2609.20192,0.0476,-0.0934,order-book,0,Herding and Liquidity in Order-Book Markets. III. Leverage and the Onset of Endogenous Liquidity Crises under Weak Ancho
+2609.11614,0.1873,0.0651,reinforcement-learning,0,Deep Learning of Robust Market Making under Regime-Switching Order Flow
+2609.06085,0.1434,0.0276,deep-learning,0,Explainable Deep Learning for Price-Trade Dynamics: From Black-Box Forecasts to Effective Parametric Models
+2608.18195,0.2666,0.0140,reinforcement-learning,0,Multi-Level Market Making with Reinforcement Learning
+2608.13096,0.2855,0.2632,flow-matching,0,FlowLOB: Efficient and Controllable Limit Order Book Generation with Flow Matching
+2608.00988,0.0410,-0.0233,nonlinear-time-series,0,Exactly solvable model for the diffusive price-dynamics paradox under long-range correlated market-order flow
+2607.27063,-0.0227,-0.1766,agent-based-model,0,"Herding, Momentum, and Reversal in China's A-Share Market: An Agent-Based Network Model with Information Diffusion"
+2607.16970,0.0584,-0.0569,order-book,0,Herding and Liquidity in Order-Book Markets. II. Fundamental Anchoring and the Resilience of Liquidity
+2607.08907,0.0644,-0.0833,order-book,0,Herding and Liquidity in Order-Book Markets. I. A Robust Liquidity-Stress Crossover and its Reflexive Mechanism
+2607.05141,0.0249,-0.0395,evolutionary-agent,0,Square-Root Price Impact Is Necessary for Endogenous Manipulation Cycles in Learning-Agent Markets
+2607.04280,0.1900,0.0882,limit-order-book,0,Order Splitting and Liquidity Replenishment Are Jointly Necessary for the Square-Root Law of Market Impact:
+2607.01550,0.0867,-0.0023,microstructure,0,Is Trend Still Your Friend?: A Microstructural Account of the Demise of Short-Term Trend-Following
+2607.01198,0.0676,-0.0405,limit-order-book,0,When large trades are not (automatically) news: liquidity tail risk and price discovery
+2606.29556,0.3466,0.2682,limit-order-book,0,Persona-Trained Monte Carlo: Estimating Market-Outcome Distributions via Swarms of Persona-Conditioned Neural Policy Bot
+2606.23492v1,-0.0518,-0.0163,hidden-Markov,0,Continuous Hidden Markov Models for Equity Returns: Heavy-Tail Emission Families and Regime-Conditional Value-at-Risk
+2606.23070v1,-0.0558,0.0346,agent-based-model,0,Mitigating Adverse Selection in Concentrated Liquidity AMMs with Dynamic Fees: An Agent-Based Model Approach
+2606.23070,0.0447,-0.0798,agent-based-model,0,Mitigating Adverse Selection in Concentrated Liquidity AMMs with Dynamic Fees: An Agent-Based Model Approach
+2606.22293v1,-0.0207,-0.0586,asymmetric-brownian-motion,0,Innovative Extensions to Option Pricing: Asymmetric Brownian Motion and Random Walk Approaches
+2606.21784,0.1628,-0.0043,GPU-simulation,0,"KineticSim: A Lightweight, High-Performance Execution Engine for Real-Time Market Simulators"
+2606.16269,0.0347,0.0220,reaction-diffusion,0,Revisiting Trade-sign Long-memory and Square-root Law price impact
+2606.15715v1,0.1786,0.0357,limit-order-book,0,Trading in the Sunshine or in the Shade: Market Impact and Adverse Selection on Hyperliquid
+2606.15715,0.1280,-0.0212,limit-order-book,0,Trading in the Sunshine or in the Shade: Market Impact and Adverse Selection on Hyperliquid
+2606.09478v1,-0.2929,0.2035,Markov-switching,0,Volatility Forecasting and Return Prediction under Market Regimes: Evidence from High-Frequency Chinese Equity Data
+2606.09454v1,0.1510,0.0509,market-maker,0,Axiomatic Market Making
+2606.08379v1,0.1962,0.0167,actor-critic,0,TT-DAC-PS: Twin-Target Deterministic Actor-Critic with Policy Smoothing for Optimal Trade Execution
+2606.08379,0.2136,0.0226,actor-critic,0,TT-DAC-PS: Twin-Target Deterministic Actor-Critic with Policy Smoothing for Optimal Trade Execution
+2606.06823v1,-0.0511,-0.0677,LLM-agent,0,PandaAI: A Practical Agent CQ2 for Neuro-symbolic Data Analysis And Integrated Decision-Making in Quantitative Finance
+2606.06190v1,-0.2914,0.1942,Markov-Switching,0,Multi-Scale Markov Switching GARCH
+2606.05882v2,0.1283,0.0414,agent-based-model,0,Market Informedness and Market-Maker Profitability: The Trade-Off Between Adverse Selection and Price Discovery
+2606.05882,0.0614,-0.0578,agent-based-model,0,Market Informedness and Market-Maker Profitability: The Trade-Off Between Adverse Selection and Price Discovery
+2606.03184v1,-0.0591,0.0092,volatility-clustering,0,FinStressTS: A Parametric Synthetic Benchmark for Time-Series Forecasting in Finance
+2605.27848v1,0.1591,-0.0444,Hidden-Markov-Model,0,Regime-Based Portfolio Allocation Using Hidden Markov Models and Reinforcement Learning
+2605.24490v1,0.0239,-0.0843,Shapley-credits,0,Market Regime Council for Dynamic Credit Assignment in Multi-Agent LLM Decision Systems
+2605.17307v1,0.1348,-0.0904,reinforcement-learning,0,Deep Reinforcement Learning Framework for Diversified Portfolio Management Across Global Equity Markets
+2605.13998v1,-0.4605,0.3213,Jump-HMM,0,Synthetic American Option Pricing via Jump-HMM-Driven Heston Implied Volatility
+2605.00854v1,0.0174,-0.0608,cubic-momentum,0,Dynamics of Periodic Bubbles and Crashes: Modeling Market Overheating and Panic Selling via Cubic Momentum
+2605.00854,0.0185,-0.0649,cubic-momentum,0,Dynamics of Periodic Bubbles and Crashes: Modeling Market Overheating and Panic Selling via Cubic Momentum
+2604.23961v1,0.0400,0.5048,Hawkes-process,0,Extended State-dependent Hawkes Process for Limit Order Books: Mathematical Foundation and the Reproduction of Volatilit
+2604.23961,0.1483,0.3454,Hawkes-process,0,Extended State-dependent Hawkes Process for Limit Order Books: Mathematical Foundation and the Reproduction of Volatilit
+2604.21993,0.2877,0.2208,order-book,0,When Quotes Crumble: Detecting Transient Mechanical Liquidity Erosion in Limit Order Books
+2604.18602v2,-0.0198,-0.1823,LLM-agent,0,Machine Spirits: Speculation and Adaptation of LLM Agents in Asset Markets
+2604.18602,-0.0110,-0.1450,LLM-agent,0,Machine Spirits: Speculation and Adaptation of LLM Agents in Asset Markets
+2604.18373v1,-0.0315,-0.0618,LLM-agent,0,Dissecting AI Trading: Behavioral Finance and Market Bubbles
+2604.18373,-0.0396,-0.0560,LLM-agent,0,Dissecting AI Trading: Behavioral Finance and Market Bubbles
+2604.18046,0.1235,-0.0959,multi-agent,0,EvoMarket: A High-Fidelity and Scalable Financial Market Simulator
+2604.00346v1,-0.0169,-0.0894,self-exciting-process,0,Forecasting duration in high-frequency financial data using a self-exciting flexible residual point process
+2604.00346,-0.0166,-0.0837,self-exciting-process,0,Forecasting duration in high-frequency financial data using a self-exciting flexible residual point process
+2603.29763v1,-0.0811,-0.0380,constant-product-AMM,0,Option Pricing on Automated Market Maker Tokens
+2603.24137v1,0.4258,0.3860,limit-order-book,0,Bridging the Reality Gap in Limit Order Book Simulation
+2603.24137,0.3887,0.3380,limit-order-book,0,Bridging the Reality Gap in Limit Order Book Simulation
+2603.20456v1,0.0834,0.0329,Neural-HMM,0,Neural Hidden Markov Model with Adaptive Granularity Attention for High-Frequency Order Flow Modeling
+2603.20456,0.1078,0.0530,Neural-HMM,0,Neural Hidden Markov Model with Adaptive Granularity Attention for High-Frequency Order Flow Modeling
+2602.00133,0.0805,-0.0389,event-driven-simulation,0,PredictionMarketBench: A SWE-bench-Style Framework for Backtesting Trading Agents on Prediction Markets
+2601.20452v1,-0.0633,-0.1259,agent-based-model,0,Manipulation in Prediction Markets: An Agent-based Modeling Experiment
+2601.17247v1,0.0885,-0.0647,Deep-Q-Learning,0,Learning Market Making with Closing Auctions
+2601.02310v1,0.2520,0.3211,LSTM,0,"Temporal Kolmogorov-Arnold Networks (T-KAN) for High-Frequency Limit Order Book Forecasting: Efficiency, Interpretabilit"
+2512.15720v1,-0.1310,0.2350,order-flow,0,Hidden Order in Trades Predicts the Size of Price Moves
+2512.05734,0.3259,0.2638,deep-learning,0,KANFormer for Predicting Fill Probabilities via Survival Analysis in Limit Order Books
+2512.02166v1,-0.5299,0.4246,regime-switching,0,The Three-Dimensional Decomposition of Volatility Memory
+2511.15262v1,0.3101,0.0308,reinforcement-learning,0,Reinforcement Learning in Queue-Reactive Models: Application to Optimal Execution
+2511.15262,0.2918,0.0365,reinforcement-learning,0,Reinforcement Learning in Queue-Reactive Models: Application to Optimal Execution
+2511.07434v1,0.2473,-0.0110,reinforcement-learning,0,"RL-Exec: Impact-Aware Reinforcement Learning for Opportunistic Optimal Liquidation, Outperforms TWAP and a Book-Liquidit"
+2511.07434,0.2665,0.0161,reinforcement-learning,0,"RL-Exec: Impact-Aware Reinforcement Learning for Opportunistic Optimal Liquidation, Outperforms TWAP and a Book-Liquidit"
+2511.02016v1,0.4175,0.1810,multi-agent-reinforcement-learning,0,ABIDES-MARL: A Multi-Agent Reinforcement Learning Environment for Endogenous Price Formation and Execution in a Limit Or
+2510.27334v1,0.1876,-0.0312,Hawkes-process,0,When AI Trading Agents Compete: Adverse Selection of Meta-Orders by Reinforcement Learning-Based Market Making
+2510.27334,0.1978,-0.0050,Hawkes-process,0,When AI Trading Agents Compete: Adverse Selection of Meta-Orders by Reinforcement Learning-Based Market Making
+2510.22685v1,0.0869,-0.0229,agent-based-model,0,TABL-ABM: A Hybrid Framework for Synthetic LOB Generation
+2510.22685,0.0768,-0.0137,agent-based-model,0,TABL-ABM: A Hybrid Framework for Synthetic LOB Generation
+2510.22206v1,0.2193,-0.0427,reinforcement-learning,0,"Right Place, Right Time: Market Simulation-based RL for Execution Optimisation"
+2510.08085v1,0.5133,0.4840,limit-order-book,0,A Deterministic Limit Order Book Simulator with Hawkes-Driven Order Flow
+2510.04569,0.0023,-0.0151,constrained-RL,0,Risk-Sensitive Option Market Making with Arbitrage-Free eSSVI Surfaces: A Constrained RL and Stochastic Control Bridge
+2509.21244v1,-0.1789,0.1370,Hawkes-process,0,Multivariate Quadratic Hawkes Processes -- Part II: Non-Parametric Empirical Calibration
+2509.19663v3,-0.2153,0.0736,ARFIMA,0,Long-Range Dependence in Financial Markets: Empirical Evidence and Generative Modeling Challenges
+2509.12456v2,0.3037,0.1441,reinforcement-learning,0,Reinforcement Learning-Based Market Making as a Stochastic Control on Non-Stationary Limit Order Book Dynamics
+2509.12456,0.3403,0.2241,reinforcement-learning,0,Reinforcement Learning-Based Market Making as a Stochastic Control on Non-Stationary Limit Order Book Dynamics
+2509.05107v1,0.1880,0.1651,generative-diffusion,0,Painting the market: generative diffusion models for financial limit order book simulation and forecasting
+2508.20426v1,-0.2327,0.1327,detrended-fluctuation-analysis,0,Nonlinear Evidence of Investor Heterogeneity: Retail Cash Flows as Drivers of Market Dynamics
+2508.17837,0.2787,0.2526,limit-order-book,0,Bimodal Dynamics of the Artificial Limit Order Book Stock Exchange with Autonomous Traders
+2508.08698v1,0.2669,0.2608,diffusion-model,0,DiffVolume: Diffusion Models for Volume Generation in Limit Order Books
+2508.06788v4,0.0264,0.0640,structural-VAR,0,Returns and Order Flow Imbalances: Intraday Dynamics and Macroeconomic News Effects
+2507.06345v2,0.3937,0.1524,reinforcement-learning,0,Reinforcement Learning for Trade Execution with Market and Limit Orders
+2506.24111v1,-0.0111,-0.0725,fractional-Brownian-motion,0,Pricing Fractal Derivatives under Sub-Mixed Fractional Brownian Motion with Jumps
+2506.11813v2,0.1168,0.0013,stochastic-process,0,Optimal Execution under Liquidity Uncertainty
+2506.07711v6,0.0188,0.3400,metaorder-impact,0,"The Subtle Interplay between Square-root Impact, Order Imbalance & Volatility: A Unifying Framework"
+2505.17388v1,0.0262,0.0897,Ornstein-Uhlenbeck,0,Stochastic Price Dynamics in Response to Order Flow Imbalance: Evidence from CSI 300 Index Futures
+2505.15155,0.0422,-0.0692,multi-agent,0,R&D-Agent-Quant: A Multi-Agent Framework for Data-Centric Factors and Model Joint Optimization
+2505.07820v3,-0.2734,0.1971,Chiarella-model,0,Revisiting the Excess Volatility Puzzle Through the Lens of the Chiarella Model
+2505.05595v1,0.0316,-0.0981,transformer,0,Trading Under Uncertainty: A Distribution-Based Strategy for Futures Markets Using FutureQuant Transformer
+2504.20349v3,0.1896,0.1395,clustering,0,ClusterLOB: Enhancing Trading Strategies by Clustering Orders in Limit Order Books
+2504.03445v3,-0.3603,0.2994,Hawkes-process,0,A stochastic volatility approximation for a tick-by-tick price model with mean-field interaction
+2503.05254v2,0.1876,0.1024,Zero-Intelligence,0,Modeling metaorder impact with a Non-Markovian Zero Intelligence model
+2503.03858v1,0.4081,0.3406,limit-order-book,0,Looking into informal currency markets as Limit Order Books: impact of market makers
+2503.00320v2,-0.0308,-0.1899,LLM-agent,0,"Shifting Power: Leveraging LLMs to Simulate Human Aversion in ABMs of Bilateral Financial Exchanges, A bond market study"
+2502.17906v4,0.1145,0.0585,Lillo-Mike-Farmer,0,Why do financial prices exhibit Brownian motion despite predictable order flow?
+2502.15757v3,0.2357,0.1694,transformer,0,TLOB: A Novel Transformer Model with Dual Attention for Price Trend Prediction with Limit Order Book Data
+2502.13165v1,-0.0618,-0.0820,multi-agent-system,0,HedgeAgents: A Balanced-aware Multi-agent Financial Trading System
+2502.07071v3,0.0280,-0.0793,diffusion-model,0,TRADES: Generating Realistic Market Simulations with Diffusion Models
+2502.07071,0.0330,-0.0708,diffusion-model,0,TRADES: Generating Realistic Market Simulations with Diffusion Models
+2501.09404v1,0.0693,-0.0633,order-book,0,Agent-Based Simulation of a Perpetual Futures Market
+2501.09404,0.1067,-0.0176,limit-order-book,0,Agent-Based Simulation of a Perpetual Futures Market
+2501.00826,0.0113,-0.0840,multi-agent-system,0,LLM-Powered Multi-Agent System for Automated Crypto Portfolio Management
+2412.19372,0.1109,-0.0338,reinforcement-learning,0,Minimal Batch Adaptive Learning Policy Engine for Real-Time Mid-Price Forecasting in High-Frequency Trading
+2411.16585,0.0067,-0.1371,order-book,0,MarketGPT: Developing a Pre-trained transformer (GPT) for Modeling Financial Time Series
+2411.06389v2,0.2963,0.0035,reinforcement-learning,0,Optimal Execution with Reinforcement Learning
+2411.06389,0.3049,0.0108,reinforcement-learning,0,Optimal Execution with Reinforcement Learning
+2411.04616v1,0.1365,0.0043,Hawkes-process,1,Optimal Execution under Incomplete Information
+2410.21280v1,0.0180,-0.0885,LLM-agent,0,TraderTalk: An LLM Behavioural ABM applied to Simulating Human Bilateral Trading Interactions
+2410.21280,0.0180,-0.0885,GABM,0,TraderTalk: An LLM Behavioural ABM applied to Simulating Human Bilateral Trading Interactions
+2410.18897v1,-0.0571,-0.0808,diffusion-model,1,Generation of synthetic financial time series by diffusion models
+2410.18897,-0.0220,-0.1194,diffusion-model,0,Generation of synthetic financial time series by diffusion models
+2410.08744v3,0.3900,0.3699,Hawkes-process,0,No Tick-Size Too Small: A General Method for Modelling Small Tick Limit Order Books
+2410.08744,0.3906,0.3554,Hawkes-process,0,No Tick-Size Too Small: A General Method for Modelling Small Tick Limit Order Books
+2408.02322,0.2106,-0.0184,reinforcement-learning,0,Consistent time travel for realistic interactions with historical data: reinforcement learning for market making
+2402.09563,0.1034,-0.0794,reinforcement-learning,0,ABIDES-Economist: Agent-Based Simulator of Economic Systems with Learning Agents
+2311.13743,-0.0183,-0.0635,LLM-agent,0,FinMem: A Performance-Enhanced LLM Trading Agent with Layered Memory and Character Design
+2202.01043v2,-0.0868,0.0101,Hawkes-process,3,2T-POT Hawkes model for left- and right-tail conditional quantile forecasts of financial log-returns: out-of-sample comp
+2201.09434v6,-0.0751,-0.1290,SV-GARCH,0,Data-Driven Risk Measurement by SV-GARCH-EVT Model
+2106.00288v2,-0.2892,0.1018,Realized-GARCH,0,A Bayesian realized threshold measurement GARCH framework for financial tail risk forecasting
+1909.03185v1,-0.1985,0.0261,agent-based-model,0,"Heterogeneous wealth distribution, round-trip trading and the emergence of volatility clustering in Speculation Game"
+1909.03185,-0.1332,-0.0134,agent-based-model,0,"Heterogeneous wealth distribution, round-trip trading and the emergence of volatility clustering in Speculation Game"
+oa:W2117178771,0.0620,-0.0870,batch-auction,877,The High-Frequency Trading Arms Race: Frequent Batch Auctions as a Market Design Response *
+1407.5258v1,-0.1690,-0.0582,asymmetric-trading,0,Agent-based model with asymmetric trading and herding for complex financial systems
+1405.6047v2,-0.0919,0.1357,Hawkes-process,7,Modeling FX market activity around macroeconomic news: a Hawkes process approach
+oa:W1994417358,-0.0484,-0.0777,multifractal,11,Analysis of market returns using multifractal time series and agent-based simulation
+1211.6695v2,-0.2455,0.0796,adaptive-control,8,Unstable Price Dynamics as a Result of Information Absorption in Speculative Markets
+1112.1838v1,0.0144,-0.0022,Hawkes-process,0,Non-parametric kernel estimation for symmetric Hawkes processes. Application to high frequency financial data
+0908.2347v1,0.0022,-0.1737,Minority-game,0,"Minority games, evolving capitals and replicator dynamics"
+0805.3593v1,-0.0933,-0.0552,order-driven,0,On the probability distribution of stock returns in the Mike-Farmer model
+physics/0503230v1,-0.0718,-0.2256,Ising-model,2,Self-fulfilling Ising Model of Financial Markets
+oa:W642400324,-0.5459,0.3444,ARCH,179,A Practical Guide to Forecasting Financial Market Volatility
+cond-mat/0503607v2,-0.0876,-0.2124,Ising-model,0,Importance of Positive Feedbacks and Over-confidence in a Self-Fulfilling Ising Model of Financial Markets
+cond-mat/0403649v1,-0.0004,-0.1598,minority-game,1,Generalized minority games with adaptive trend-followers and contrarians
+cond-mat/0210549v2,-0.0100,-0.1150,Minority-Game,7,Criticality and finite size effects in a simple realistic model of stock market
+cond-mat/0101326v1,-0.1503,-0.1367,Minority-game,1,Stylized facts of financial markets and market crashes in Minority Games
+oa:W2152762434,-0.4000,0.2247,multi-agent,706,VOLATILITY CLUSTERING IN FINANCIAL MARKETS: A MICROSIMULATION OF INTERACTING AGENTS
+oa:W3124009593,-0.4145,0.2838,fractional-integration,635,Heterogeneous Information Arrivals and Return Volatility Dynamics: Uncovering the Long‐Run in High Frequency Returns
+2609.27786,0.1265,-0.0373,quadratically-constrained,0,Feasible Multi-Asset Optimal Execution under Cash Constraints
+2609.13715,0.0486,0.0148,order-book,0,"Event-Time Order-Flow Memory, Operational-Time Impact, and Subordinated Market Observables"
+2609.13597,0.3663,0.2794,partial-identification,0,"Same Book, Different Fills: Partial Identification of FIFO Execution from Aggregate Order Books"
+2608.04373,0.0798,0.0077,limit-order-book,0,Public Trader Identity: Adverse Selection and Return Predictability
+2607.09230,0.1800,0.1305,L2-liquidity-state,0,When Does Order Flow Matter? State-Dependent L2 Liquidity-State Transitions in Crypto Futures
+2606.27100v1,-0.0909,-0.0498,time-series-models,0,Pretrained Time-Series Foundation Models for Financial Return Forecasting
+2606.25986v1,0.3509,0.2993,limit-order-book,0,The Inference-Compute Frontier and a Latency-Efficient Architecture for Limit Order Book Prediction
+2606.25986,0.2757,0.2209,limit-order-book,0,The Inference-Compute Frontier and a Latency-Efficient Architecture for Limit Order Book Prediction
+2606.25466v1,-0.0675,-0.0398,network-analysis,0,Time-dependent weighted directed networks of cryptocurrency interaction from high-frequency returns
+2606.25466,-0.0159,-0.0409,network-analysis,0,Time-dependent weighted directed networks of cryptocurrency interaction from high-frequency returns
+2606.24019v1,-0.0374,0.0094,market-impact,0,Empirical Confirmation of the Square-Root Law of Market Impact in a U.S. Large-Cap Equity
+2606.19318v1,-0.0871,-0.0129,stochastic-volatility,0,Fitting Accumulated Stock Returns with Tempered Skew t-Distribution
+2606.16269v2,0.0076,0.0108,reaction-diffusion,0,Revisiting Trade-sign Long-memory and Square-root Law price impact
+2606.14331v1,-0.0248,-0.1142,agent-based-model,0,Wealth Inequality and Planetary Boundaries in a Stylized Agent-Based Model
+2606.14182v1,0.2543,0.2365,coupled-limit-order-books,0,Correlation emergence and the Epps effect in two coupled limit order books
+2606.14182,0.2617,0.2282,limit-order-book,0,Correlation emergence and the Epps effect in two coupled limit order books
+2606.09454,0.0579,-0.0573,quoting-rule,0,Axiomatic Market Making
+2606.09003v1,0.0034,-0.0727,mean-field,0,Proof of Stake economy under centralized exchanges--a mean field model
+2606.09003,0.0152,-0.0551,mean-field,0,Proof of Stake economy under centralized exchanges--a mean field model
+2606.08141,-0.2533,0.1805,structural-autoregressive,0,"A Structural Matrix Autoregressive Model for the Joint Dynamics of Volume, Volatility, and Returns"
+2606.03457v1,0.0610,-0.0628,ensemble-learning,0,Hybrid News Sentiment Engine: Real-Time Market Analysis via Adaptive Ensemble Learning on News-Price Pairs
+2605.30363v1,-0.0057,-0.0078,LLM-agent,0,Enhancing Regime Shift Detection Using Unstructured Data: A Study on the Treasury Market
+2605.24285v1,-0.4430,0.2125,long-memory,0,"Memory, Roughness, and Information Persistence in Financial Markets: A Structural Approach to Volatility Forecasting"
+2605.24242v2,0.2991,0.1587,limit-order-book,0,Explicit Signal-Adaptive Sequential Optimal Execution Quotes
+2605.24242,0.2022,0.0414,limit-order-book,0,Explicit Signal-Adaptive Sequential Optimal Execution Quotes
+2605.13407v1,-0.0229,-0.1045,vector-quantization,0,Vector-Quantized Discrete Latent Factors Meet Financial Priors: Dynamic Cross-Sectional Stock Ranking Prediction for Por
+2605.00864,0.0402,-0.0546,order-book,0,Arbitrage Analysis in Polymarket NBA Markets
+2604.24366v2,0.1953,0.1287,order-book,0,The Anatomy of a Decentralized Prediction Market: Microstructure Evidence from the Polymarket Order Book
+2604.24366,0.2670,0.1833,order-book,0,The Anatomy of a Decentralized Prediction Market: Microstructure Evidence from the Polymarket Order Book
+2604.20949v1,0.3760,0.3506,latent-regime-detection,0,Early Detection of Latent Microstructure Regimes in Limit Order Books
+2604.20949,0.3136,0.3006,latent-regime-detection,0,Early Detection of Latent Microstructure Regimes in Limit Order Books
+2603.20271v1,-0.0336,-0.0696,Transfer-Entropy,0,Information Propagation Across Investor Types: Transfer Entropy Networks in the Korean Equity Market
+2603.20271,-0.0271,-0.0766,Transfer-Entropy,0,Information Propagation Across Investor Types: Transfer Entropy Networks in the Korean Equity Market
+2603.17692,0.0291,-0.0724,GNN,0,Can Blindfolded LLMs Still Trade? An Anonymization-First Framework for Portfolio Optimization
+2603.10569v1,-0.0060,-0.0444,stochastic-control,0,Win-score promotion gates in aggregator-routed RFQ markets: A two-tier stochastic control model
+2603.02357v2,-0.1349,-0.1251,quantile-regression,0,Quantile-based modeling of scale dynamics in financial returns for Value-at-Risk and Expected Shortfall forecasting
+2602.07023v2,-0.0013,-0.1234,LLM-agent,0,Behavioral Consistency Validation for LLM Agents: An Analysis of Trading-Style Switching through Stock-Market Simulation
+2602.07023,0.0058,-0.0771,LLM-agent,0,Behavioral Consistency Validation for LLM Agents: An Analysis of Trading-Style Switching through Stock-Market Simulation
+2602.00776v1,0.1520,0.0672,limit-order-book,0,Explainable Patterns in Cryptocurrency Microstructure
+2602.00776,0.1221,0.0486,order-book,0,Explainable Patterns in Cryptocurrency Microstructure
+2602.00097v1,-0.0184,-0.1586,martingale-optimal-transport,0,"Rough Martingale Optimal Transport: Theory, Implementation, and Regulatory Applications for Non-Modelable Risk Factors"
+2601.20452,-0.0178,-0.1327,agent-based-model,0,Manipulation in Prediction Markets: An Agent-based Modeling Experiment
+2601.10517v1,-0.1736,0.0470,multidimensional-S-fBM,0,From rough to multifractal multidimensional volatility: A multidimensional Log S-fBM model
+2601.07852v1,-0.0536,-0.0637,utility-weighted-calibration,0,Utility-Weighted Forecasting and Calibration for Risk-Adjusted Decisions under Trading Frictions
+2512.15088v2,0.0552,-0.0443,multi-head-attention,0,SigMA: Path Signatures and Multi-head Attention for Learning Parameters in fBm-driven SDEs
+2512.12924v1,0.1330,-0.0228,reinforcement-learning,0,Interpretable Hypothesis-Driven Trading:A Rigorous Walk-Forward Validation Framework for Market Microstructure Signals
+2512.12727v2,0.0156,0.0265,Transformer,0,EXFormer: A Multi-Scale Trend-Aware Transformer with Dynamic Variable Selection for Foreign Exchange Returns Prediction
+2512.10584v3,-0.3020,0.1762,quantum-circuit-learning,0,Volatility time series modeling by single-qubit quantum circuit learning
+2511.20606v2,0.3622,0.2734,limit-order-book,0,"Limit Order Book Dynamics in Matching Markets: Microstructure, Spread, and Execution Slippage"
+2511.20606,0.3895,0.2967,limit-order-book,0,"Limit Order Book Dynamics in Matching Markets: Microstructure, Spread, and Execution Slippage"
+2511.05126v1,-0.4270,0.3175,spatiotemporal-GARCH,0,Exponential Spatiotemporal GARCH Model with Asymmetric Volatility Spillovers
+2511.03628,0.0031,-0.0459,live-trading,0,LiveTradeBench: Seeking Real-World Alpha with Large Language Models
+2510.22834v1,-0.0794,-0.0680,Automated-Market-Maker,0,Deviations from Tradition: Stylized Facts in the Era of DeFi
+2510.15988v1,0.3339,0.2750,limit-order-book,0,On Bellman equation in the limit order optimization problem for high-frequency trading
+2510.01814v1,0.1071,0.0171,mean-field,0,Mean-field theory of the Santa Fe model revisited: a systematic derivation from an exact BBGKY hierarchy for the zero-in
+2509.09105v2,-0.0839,-0.0061,score-driven,0,Long memory score-driven models as approximations for rough Ornstein-Uhlenbeck processes
+2509.01683v1,0.3127,0.2091,order-book,0,The Impact of Sequential versus Parallel Clearing Mechanisms in Agent-Based Simulations of Artificial Limit Order Book E
+2509.00697v1,-0.1121,0.0230,complexity-science,0,Multi Scale Analysis of Nifty 50 Return Characteristics Valuation Dynamics and Market Complexity 1990 to 2024
+2508.17837v1,0.2229,0.2166,limit-order-book,0,Bimodal Dynamics of the Artificial Limit Order Book Stock Exchange with Autonomous Traders
+2508.17086v2,0.3031,0.2353,cascaded-LOB,0,Detecting Multilevel Manipulation from Limit Order Book via Cascaded Contrastive Representation Learning
+2508.16566,-0.0816,0.1697,bivariate-QHawkes,0,Asymmetric super-Heston-rough volatility model with Zumbach effect as scaling limit of quadratic Hawkes processes
+2507.22712v2,0.1028,0.1897,order-book,0,Order-Flow Filtration and Directional Association with Short-Horizon Returns
+2507.14960v1,0.2671,0.2101,anomaly-detection,0,A Comparative Analysis of Statistical and Machine Learning Models for Outlier Detection in Bitcoin Limit Order Books
+2506.11843v1,0.0351,-0.0342,queue-reactive,0,Multi-dimensional queue-reactive model and signal-driven models: a unified framework
+2506.05764v2,0.2353,0.2051,limit-order-book,0,Exploring Microstructural Dynamics in Cryptocurrency Limit Order Books: Better Inputs Matter More Than Stacking Another 
+2505.24831,-0.0239,-0.0301,network-analysis,0,Optimising cryptocurrency portfolios through stable clustering of price correlation networks
+2505.08654v3,-0.1450,0.1176,multi-scale,0,Holistic Multi-Scale Inference of the Leverage Effect: Efficiency under Dependent Microstructure Noise
+2505.02678v4,-0.1336,-0.0457,nested-factor-model,0,A Nested Factor Model for Equity Markets: Reconciling Multifractal Stock Returns and Rough Index Volatilities
+2504.15985v1,-0.1204,0.0228,multivariate-fractional-Brownian-motion,1,Modeling and Forecasting Realized Volatility with Multivariate Fractional Brownian Motion
+2504.15908v1,0.2231,0.1476,Hawkes-process,0,Learning the Spoofability of Limit Order Books With Interpretable Probabilistic Neural Networks
+2504.15908,0.2678,0.2021,Hawkes-process,0,Learning the Spoofability of Limit Order Books With Interpretable Probabilistic Neural Networks
+2504.11258,0.1487,-0.0521,Nash-DQN,0,Multi-Agent Reinforcement Learning for Greenhouse Gas Offset Credit Markets
+2503.20787v2,-0.0039,-0.1411,agent-based-modeling,0,Advanced simulation paradigm of human behaviour unveils complex financial systemic projection
+2503.18199v2,0.0035,-0.0867,metaorder-generation,0,Generating realistic metaorders from public data
+2503.02031v1,-0.1464,0.1303,time-varying-models,0,A Comparative Modelling of Essential Characteristics of Volatility: Simulation and Empirical Study
+2502.09172v2,0.1825,0.2790,generative-models,0,LOB-Bench: Benchmarking Generative AI for Finance -- an Application to Limit Order Book Data
+2501.16772v2,-0.0613,-0.2143,lattice-gas-model,0,Trends and Reversion in Financial Markets on Time Scales from Minutes to Decades
+2412.12199v1,0.0274,0.0339,stochastic-gradient-descent,0,Stochastic Gradient Descent in the Optimal Control of Execution Costs
+2412.07461v1,0.1946,0.0155,microstructure,0,A theory of passive market impact
+2411.13381v2,0.0014,-0.1346,agent-based-modeling,0,Simulating Liquidity: Agent-Based Modeling of Illiquid Markets for Fractional Ownership
+2410.06839v1,0.2826,0.2326,order-book,0,Simulating and analyzing a sparse order book: an application to intraday electricity markets
+2410.01352v2,-0.0196,-0.1087,mean-field-game,0,Mean field equilibrium asset pricing model under partial observation: An exponential quadratic Gaussian approach
+2407.13687,0.0184,-0.1132,contextual-bandit,0,Dynamic Pricing in Securities Lending Market: Application in Revenue Optimization for an Agent Lender Portfolio
+2404.16295v5,-0.1094,-0.0499,time-changed-Levy,0,Joint Pricing in SPX and VIX Derivative Markets with Composite Change of Time Models
+2401.12856v1,-0.1176,-0.0409,reference-dependent-preferences,0,Reference-dependent asset pricing with a stochastic consumption-dividend ratio
+2401.04702v1,-0.0685,-0.0497,power-law,0,Scaling Laws And Statistical Properties of The Transaction Flows And Holding Times of Bitcoin
+2305.18991v1,-0.3126,0.2208,GAS-model,0,Generalized Autoregressive Score Trees and Forests
+2305.18991,-0.0558,0.0042,GAS-model,0,Generalized Autoregressive Score Trees and Forests
+2205.00104v1,-0.4934,0.3626,intrinsic-entropy,0,The Cross-Sectional Intrinsic Entropy. A Comprehensive Stock Market Volatility Estimator
+2202.03351v2,-0.3209,0.2311,regime-switching,0,Threshold Asymmetric Conditional Autoregressive Range (TACARR) Model
+2112.06290,-0.0620,-0.1423,q-spin-Potts,0,A q-spin Potts model of markets: Gain-loss asymmetry in stock indices as an emergent phenomenon
+2104.06044,-0.0182,-0.0706,Bayesian-analysis,0,A Bayesian analysis of gain-loss asymmetry
+2102.02865v2,-0.2537,0.1234,MF-ADCCA,0,Exploring asymmetric multifractal cross-correlations of price-volatility and asymmetric volatility dynamics in cryptocur
+2011.06909v2,-0.1877,0.0877,dynamic-factor-model,0,"Dynamic factor, leverage and realized covariances in multivariate stochastic volatility"
+2010.08962v1,-0.0610,-0.2660,agent-based-model,0,Evolutionary dynamics in financial markets with heterogeneities in strategies and risk tolerance
+2010.07402v1,-0.3457,0.2254,GARCH,1,A Horserace of Volatility Models for Cryptocurrency: Evidence from Bitcoin Spot and Option Markets
+2009.04200,0.0470,-0.0162,high-frequency-trading,0,Rise of the Machines? Intraday High-Frequency Trading Patterns of Cryptocurrencies
+2007.14328v1,-0.1674,0.0944,fractional-integral,0,A decomposition formula for fractional Heston jump diffusion models
+2006.00158v1,-0.2393,0.0784,HAR-model,0,The impacts of asymmetry on modeling and forecasting realized volatility in Japanese stock markets
+2004.13708,-0.0493,-0.0519,stochastic-volatility,0,Classical Option Pricing and Some Steps Further
+2004.08891v3,0.0295,-0.0431,neural-network,3,Hedging with Linear Regressions and Neural Networks
+2004.05870v2,-0.1082,-0.0465,stochastic-process,0,The leverage effect and other stylized facts displayed by Bitcoin returns
+1911.10106v4,0.0165,-0.1530,optimal-stopping,0,"Speculative Trading, Prospect Theory and Transaction Costs"
+1902.08483v1,-0.0445,-0.1861,Debt-Rank,0,Controlling systemic risk - network structures that minimize it and node properties to calculate it
+oa:W1905823147,-0.0292,-0.1862,heterogeneous-agents,275,Asset Pricing Under Endogenous Expectations in an Artificial Stock Market
+1812.05378v1,-0.0276,-0.1490,noisy-voter-model,0,Herding and idiosyncratic choices: Nonlinearity and aging-induced transitions in the noisy voter model
+1712.06263,-0.3435,0.2484,GARCH,0,"The relationship between trading volumes, number of transactions, and stock volatility in GARCH models"
+1608.04506,-0.0345,-0.0885,time-window-shuffling,0,Time-scale effects on the gain-loss asymmetry in stock indices
+1606.07381,-0.0546,0.0108,order-book,0,"Spread, volatility, and volume relationship in financial markets and market making profit optimization"
+1606.03590v1,0.0667,-0.1023,market-microstructure,0,Market Microstructure During Financial Crisis: Dynamics of Informed and Heuristic-Driven Trading
+1512.01806v1,-0.0334,-0.1494,equilibrium-model,0,Generalized asset pricing: Expected Downside Risk-Based Equilibrium Modelling
+1506.03708v2,-0.0514,-0.1595,stochastic-ABM,0,"Markets, herding and response to external information"
+1501.01504,0.0603,-0.0919,cumulative-prospect-theory,0,Optimal investment under behavioural criteria in incomplete diffusion market models
+oa:W2238750598,0.0089,-0.0408,liquidity-demanding-orders,1198,High-Frequency Trading and Price Discovery
+1410.2550v1,-0.0559,-0.1877,socio-financial-model,0,Communication impacting financial markets
+1409.1748,-0.0540,-0.0425,spring-block,0,A spring-block analogy for the dynamics of stock indexes
+1408.2859v1,-0.0873,-0.0598,realization-utility,0,Realization Utility with Reference-Dependent Preferences
+1403.5227v3,-0.0050,-0.0092,Hawkes-process,0,Branching ratio approximation for the self-exciting Hawkes process
+1403.5193,-0.2089,0.1188,volume-volatility-corr,0,Predicting market instability: New dynamics between volume and volatility
+1402.6393v3,-0.0203,-0.2230,prospect-theory,0,Prospect Theory for Online Financial Trading
+1312.0690v2,-0.0492,-0.1957,evolutionary-minority-game,0,Self-organization and phase transition in financial markets with multiple choices
+oa:W1995245793,-0.0129,-0.1981,interbank-network,417,Failure and Rescue in an Interbank Network
+1212.6601v4,0.0103,-0.2087,minority-game,0,Strategy switches and co-action equilibria in a minority game
+1110.5222v3,-0.0311,-0.2408,Minority-Game,0,Continuous transition of social efficiencies in the stochastic strategy Minority Game
+oa:W1839160043,-0.3754,0.2658,GARCH,12,A Comparison of Conditional Volatility Estimators for the ISE National 100 Index Returns
+0911.4679,-0.0621,-0.0860,EGARCH,0,Gain/loss asymmetry in time series of individual stock prices and its relationship to the leverage effect
+0907.0554,-0.0290,-0.0700,mutual-information,0,Temporal structure and gain/loss asymmetry for real and artificial stock indices
+oa:W2162288466,0.4425,0.3932,limit-order-book,498,High-frequency trading in a limit order book
+0807.4639v3,-0.3352,0.2119,order-driven,0,Emergence of long memory in stock volatility from a modified Mike-Farmer model
+0807.4163,-0.0464,-0.1499,Wiener-process-mixture,0,The Ups and Downs of Modeling Financial Time Series with Wiener Process Mixtures
+0801.3560v1,0.0220,-0.0771,pair-pattern-strategy,0,Trading Model with Pair Pattern Strategies
+physics/0609038v1,-0.0236,-0.0837,minority-majority,0,Detecting the traders' strategies in Minority-Majority games and real stock-prices
+oa:W2142626631,-0.2196,0.0817,heterogeneous-agents,368,Model Uncertainty and Option Markets with Heterogeneous Beliefs
+physics/0509078v1,-0.0067,-0.1859,minority-game,0,Minority Games with heterogeneous timescales
+oa:W3122175640,-0.3789,0.2549,GARCH,1751,"A forecast comparison of volatility models: does anything beat a GARCH(1,1)?"
+cond-mat/0501333v2,0.0026,-0.1569,minority-game,0,Effects of Diversity on Multi-agent Systems: Minority Games
+oa:W1539628942,-0.0477,-0.3586,minority-game,236,Minority Games: Interacting agents in financial markets
+cond-mat/0412524v1,-0.0051,-0.2437,minority-game,0,Effects of Contrarians in the Minority Game
+cond-mat/0406391v1,-0.0066,-0.2940,minority-game,0,Theory of Networked Minority Games based on Strategy Pattern Dynamics
+cond-mat/0406326v3,-0.0004,-0.2809,minority-game,0,Global Optimization of Minority Game by Smart Agents
+oa:W3122013013,-0.5489,0.4291,log-periodogram,61,LOG-PERIODOGRAM ESTIMATION OF LONG MEMORY VOLATILITY DEPENDENCIES WITH CONDITIONALLY HEAVY TAILED RETURNS
+oa:W2166422272,-0.0543,-0.2246,rational-expectations,1102,A Rational Expectations Model of Financial Contagion
+cond-mat/0205423v1,-0.0186,-0.1778,minority-game,0,The $-game
+oa:W2020710668,0.0183,-0.1442,continuous-time,962,Contagion as a Wealth Effect
+cond-mat/0005430,0.0345,-0.0603,order-book,0,A Continuous Time Asynchronous Model of the Stock Market; Beyond the LLS Model
+cond-mat/0005152v1,-0.0066,-0.3166,Minority-Game,0,Crowd-anticrowd theory of the Minority Game
+cond-mat/0003379v1,-0.0056,-0.2964,evolutionary-game,0,Theory of the evolutionary minority game
+oa:W3102551942,0.1234,-0.1007,reinforcement-learning,82,Exact solution of a modified El Farol's bar problem:Efficiency and the role of market impact
+cond-mat/9909265v1,0.0000,-0.2820,minority-game,0,Modeling Market Mechanism with Minority Game
+cond-mat/9908480v3,0.0837,-0.1035,reinforcement-learning,0,Exact solution of a modified El Farol's bar problem: Efficiency and the role of market impact
+cond-mat/9901243v1,-0.0045,-0.1084,conditional-entropy,0,Toward a Theory of Marginally Efficient Markets
+oa:W2011586511,-0.4651,0.3819,long-memory,632,The detection and estimation of long memory in stochastic volatility
+cond-mat/9805084v2,-0.0082,-0.2891,minority-game,0,On the Minority Game : Analytical and Numerical Studies
+cond-mat/9804126v1,-0.2199,0.0998,truncated-Lévy-flight,0,"Modeling of Financial Data: Comparison of the Truncated Lévy Flight and the ARCH(1) and GARCH(1,1) processes"
+oa:W2033815796,-0.4606,0.4172,stochastic-volatility,1018,Return Volatility and Trading Volume: An Information Flow Interpretation of Stochastic Volatility
+oa:W1533920443,-0.4507,0.3151,unobserved-component-model,525,A Permanent and Transitory Component Model of Stock Return Volatility
+oa:W2009358468,-0.3274,0.2617,latent-factor,736,The dynamics of exchange rate volatility: A multivariate latent factor ARCH model
+oa:W1966977762,0.0360,-0.0455,market-maker,1815,Information Effects on the Bid‐Ask Spread
+2606.23558v1,-0.0085,0.0048,regime-switching,0,Regime-Switching Volterra Operators: Modal Stability and Quenched Amplification
+2606.20649v1,0.0169,-0.0743,agent-based,0,Simulating a Post-Automation Economy
+2606.15058v1,0.0261,-0.0292,machine-learning,0,Machine Learning and the Random Walk Puzzle: Forecasting the CAD/USD Exchange Rate with Expanding Window Evaluation and 
+2606.12460v1,-0.2803,0.1316,network-analysis,0,Sovereign Stress Avalanches and Network Amplification in Latin America
+2606.09564v2,-0.0242,-0.0592,Markov-lattice,0,Option prices from operational-time reaction-boundary lattices
+2606.09274v1,-0.0968,-0.0141,reverse-stress-testing,0,Reverse Stress Testing for Multivariate Scenarios: A Conditional Framework for Stressed Time Series
+2606.08586v1,-0.0169,-0.0515,topological-anomaly,0,"Cross-sectional topological anomaly scores and intraday return predictability in the S&P 500: A BallMapper, decoder-cond"
+2605.14632v1,0.0622,-0.0200,deep-reinforcement-learning,0,DRL-STAF: A Deep Reinforcement Learning Framework for State-Aware Forecasting of Complex Multivariate Hidden Markov Proc
+2605.10400v1,0.0462,-0.0396,risk-design-framework,0,Resolution-Aware Perpetual Futures on Binary Prediction Markets: An Empirical Risk-Design Framework Using Polymarket Dat
+2605.00864v1,0.0293,-0.0555,order-book,0,Arbitrage Analysis in Polymarket NBA Markets
+2603.16916,-0.0034,-0.0716,prospect-theory,0,Noncooperative Human-AI Agent Dynamics
+2602.00548v2,-0.0515,-0.0956,multifractal-analysis,0,The Impact of Trump-Era Tariffs on Financial Market Efficiency
+2512.09590v1,0.0015,-0.0494,Volterra-process,0,On Inhomogeneous Affine Volterra Processes: Stationarity and Applications to the Volterra Heston Model
+2511.03314v1,-0.3090,0.1953,multifractal-analysis,0,Multifractality and sample size influence on Bitcoin volatility patterns
+2510.24467v1,-0.0282,-0.0536,fractional-Brownian-motion,0,"The Omniscient, yet Lazy, Investor"
+2509.20015v4,-0.3190,0.2220,Kolmogorov-Smirnov,0,Randomized Kolmogorov-Smirnov Analysis of Volatility Roughness
+2507.19445v2,-0.0928,-0.0168,mixed-fractional-brownian-motion,0,Modeling Excess Mortality and Interest Rates using Mixed Fractional Brownian Motions
+2507.05749v2,0.0803,-0.0061,Hawkes-process,0,Event-Time Anchor Selection for Multi-Contract Quoting
+2501.12591v2,0.0594,-0.0813,Nash-equilibrium,0,"Optimal Rebate Design: Incentives, Competition and Efficiency in Auction Markets"
+2412.10947v1,0.0666,-0.0333,OLS-estimation,0,Auto-Regressive Control of Execution Costs
+2312.16637,0.0048,-0.0331,entropy-based-test,0,Price predictability at ultra-high frequency: Entropy-based randomness test
+2310.05322v1,0.0326,-0.0988,behavioral-model,0,"Market Crowds' Trading Behaviors, Agreement Prices, and the Implications of Trading Volume"
+2305.04137v2,-0.5127,0.3806,nonparametric-estimation,4,Volatility of Volatility and Leverage Effect from Options
+2109.15052,-0.1996,0.1153,C-ARIMA,0,Causal effect of regulated Bitcoin futures on volatility and volume
+2102.08187v1,-0.2561,0.1513,power-law,0,Power-Law Return-Volatility Cross Correlations of Bitcoin
+2102.07425v1,-0.3731,0.2467,rolling-window,0,Time-varying properties of asymmetric volatility and multifractality in Bitcoin
+1905.03211v1,-0.0590,-0.0652,scaling,0,"Relevant Stylized Facts About Bitcoin: Fluctuations, First Return Probability, and Natural Phenomena"
+1902.07855,0.0194,-0.0666,ensemble-method,0,Stacking with Neural network for Cryptocurrency investment
+1709.08134v2,-0.0660,-0.1603,Prospect-Theory,2,Option Pricing with Greed and Fear Factor: The Rational Finance Approach
+1707.02587v5,-0.0102,-0.0639,Bayesian,0,Dynamic Quantile Function Models
+oa:W2003670180,-0.0450,-0.1103,network-structure,245,Filling in the blanks: network structure and interbank contagion
+1302.2063v4,-0.0050,-0.0941,network-analysis,0,Early-warning signals of topological collapse in interbank networks
+1106.1415,-0.0828,-0.0916,multi-scaling,0,Financial factor influence on scaling and memory of trading volume in stock market
+0712.3350v1,0.0137,-0.0888,heterogeneous-agents,0,Market Model with Heterogeneous Buyers
+physics/0601002,0.0335,-0.0932,inverse-statistics,0,Optimal Investment Horizons for Stocks and Markets
+physics/0511091,-0.0256,-0.0835,investment-horizon-distribution,0,Inverse Statistics for Stocks and Markets
+physics/0504134v2,-0.0054,-0.2806,minority-game,0,Multiplpe Choice Minority Game With Different Publicly Known Histories
+cond-mat/0305625v2,-0.0087,-0.1260,majority-minority-game,0,Statistical mechanics of the mixed majority-minority game with random external information
+cond-mat/0211039,-0.0110,-0.0784,investment-horizon-distribution,0,Inverse Statistics in Economics : The gain-loss asymmetry
+cond-mat/0201002v1,-0.0275,-0.2174,minority-game,0,Self-Segregation vs. Clustering in the Evolutionary Minority Game
+oa:W4248503640,-0.0015,-0.1912,inter-regional-claims,3120,Financial Contagion
+cond-mat/9812215v1,-0.0609,-0.2050,minority-game,0,Irrelevance of memory in the minority game
+oa:W2171217792,0.4240,0.3920,order-book,1130,An Empirical Analysis of the Limit Order Book and the Order Flow in the Paris Bourse
+oa:W2088503847,0.3900,0.3186,order-book,1003,Is the Electronic Open Limit Order Book Inevitable?
+2609.36257,0.0701,-0.0049,binomial-model,0,When Hedging Changes the Payoff: Option Replication with Price Impact and Execution Costs
+2607.26245,0.0574,-0.0113,logistic-model,0,OpenMarket: A Synchronized Polymarket-Binance Dataset for High-Frequency Prediction-Market Research
+2606.22109v2,0.0018,-0.0771,Bayesian-inference,0,Internal-state criticality in Bayesian-inverse-Bayesian inference
+2606.15078v1,-0.0244,-0.1139,cognitive-debt,0,Cognitive Debt: AI as Intellectual Leverage and the Dynamics of Systemic Fragility
+2605.14976v1,-0.0698,0.0192,Markov-switching,0,Multi-regime Markov-switching models with time-varying transition probabilities: An application to U.S. Treasury yields
+2605.12977v1,-0.0756,-0.1410,maximum-likelihood,0,Enhancing a Risk Model by Adding Transient Statistical Factors
+2605.11640v1,0.0898,0.0034,density-based-clustering,0,Fill-Side Non-Retail Trading on Polymarket: An Empirical Study of Behavioral Tiers and Microstructure Signatures Under Q
+2605.07352v1,-0.0217,-0.1040,behavioral-bias,0,Corporate transparency and the disposition effect
+2604.26063,-0.0007,-0.0803,technical-indicator,0,A Volume-Price-Adjusted MACD Trading Strategy with Sensitivity Calibration for U.S. Equity Indices
+2507.17023v1,0.0212,-0.0815,agent-based-modeling,0,Modeling for the Growth of Unorganized Retailing in the Presence of Organized and E-Retailing in Indian Pharmaceutical I
+2505.23928v2,-0.0451,-0.0725,multifractal-random-walk,0,Critical Dynamics of Random Surfaces and Multifractal Scaling
+2505.20608v1,-0.2996,0.1621,econometric-analysis,0,Replication of Reference-Dependent Preferences and the Risk-Return Trade-Off in the Chinese Market
+2505.01876,-0.0265,-0.0144,stochastic-control,0,Well-posedness of behavioral singular stochastic control problems
+2109.03740v1,-0.0296,-0.1795,geometric-brownian-motion,0,Behavioral Bias Benefits: Beating Benchmarks By Bundling Bouncy Baskets
+oa:W3019724901,-0.0264,-0.1810,volatility-relationship,862,The contagion effects of the COVID-19 pandemic: Evidence from gold and cryptocurrencies
+2010.12415v2,-0.0284,-0.0942,disposition-effect,0,Exploring investor behavior in Bitcoin: a study of the disposition effect
+oa:W3125260748,-0.1011,-0.0111,recursive-procedure,1056,TESTING FOR MULTIPLE BUBBLES: HISTORICAL EPISODES OF EXUBERANCE AND COLLAPSE IN THE S&amp;P 500
+1402.1046,-0.0581,-0.1899,random-matrix-theory,0,Spatial and temporal structures of four financial markets in Greater China
+1308.0669,-0.0519,-0.1523,large-fluctuation-dynamics,0,Time-reversal asymmetry in financial systems
+1002.3747,-0.0830,-0.1630,power-law,0,Large-volatility dynamics in financial markets
+physics/0608214,-0.0209,-0.0737,other,0,Comparison of gain-loss asymmetry behavior for stocks and indexes
+physics/0504150,-0.0033,-0.1164,time-dependent-measure,0,Investment horizons : A time-dependent measure of asset performance
+cond-mat/9803374v3,-0.1049,-0.0127,Stock (firearms),1,Inverse Cubic Law for the Probability Distribution of Stock Price Variations
+oa:W1481739896,-0.0022,-0.0302,chartist-fundamentalist,263,"Chartists, Fundamentalists, and the Demand for Dollars"
+oa:W2072612272,-0.0150,-0.2128,prospect-theory,676,ATTITUDES TOWARD RISK AND THE RISK-RETURN PARADOX: PROSPECT THEORY EXPLANATIONS.
+2610.00005,0.1446,0.0618,data-corpus,0,A Multi-Venue Solana/DeFi Microstructure Data Corpus: The RED-2400 Family v2
+2609.33058,0.1259,0.0138,market-microstructure,0,Evolution of Market Microstructure in the Age of AI
+2606.22984v2,0.0139,-0.0672,transformer,0,Scalable Physics-Inspired Transformers for Spin Glasses
+2606.22092v1,-0.0193,-0.1201,sandpile-model,0,Effect of rewiring for a sandpile model on a directed network
+2606.20485v1,0.1880,0.0565,multi-agent-systems,0,Optimal Order of Multi-Agent and General Many-Body Systems
+2606.19488v1,-0.0017,-0.1158,agent-based-model,0,Networks of agglomeration: how population density rewires social networks and reshapes contagion dynamics
+2606.17383v1,0.0660,-0.0530,POMDP,0,"Model Validation of Agentic AI Systems: A POMDP-Based Framework for Belief-State, Forecast, and Policy Validation"
+2606.17181v1,0.0038,-0.0408,HMM,0,Tropical Viterbi Tubes for Decoding Uncertainty in Hidden Markov Models
+2606.16645v1,-0.0017,-0.0803,agent-based-model,0,Targeting Behavior or Intention? Intervention Strategies in Expressed-Private Opinion Dynamics
+2606.08209v1,-0.0177,-0.0943,causal-systems,0,"Markets Are Not Random, They Are Hard to Predict"
+2606.02657v1,-0.0437,-0.0218,regime-switching,0,Regime-Arrival Uncertainty in Generalization Bounds under Distribution Shift
+2606.02646v1,0.0158,-0.0803,scaling-law,0,The Ringelmann Effect in Multi-Agent LLM Systems: A Scaling Law for Effective Team Size
+2606.00149v2,0.0041,-0.0797,two-state-random-walk,0,Decomposition of Anomalous Diffusion in two-state random walks
+2606.00071v1,-0.0147,-0.0416,evaluation-methodology,0,Bitcoin Price Prediction: Peer-Reviewed Evidence and Social Media Discourse
+2605.13320v1,-0.4116,0.3149,stochastic-partial-differential-equation,0,The fine structure of electricity price volatility
+2605.09123v1,-0.3107,0.1766,conditional-exposure,0,The Engineering of Skew: A Path-Dependent Framework for Asymmetric Volatility Management
+2605.05814v1,-0.0426,-0.0979,social-media,0,Does social media information affect individual investor disposition effect? Evidence from Xueqiu
+2602.01902v2,-0.0079,-0.0899,majority-rule,0,Effect of higher-order interactions on noisy majority-rule dynamics with random group sizes
+2511.18804v2,-0.0130,-0.1382,quantum-NLP,0,Diagram-to-Circuit QNLP for Financial Sentiment Analysis
+2511.03474v1,-0.0549,-0.0571,Stochastic-Volterra,0,On a Stationarity Theory for Stochastic Volterra Integral Equations
+2509.10094v1,0.2241,0.1597,Principal-Agent,0,Competition and Incentives in a Shared Order Book
+2509.10094,0.2237,0.1568,Principal-Agent,0,Competition and Incentives in a Shared Order Book
+2504.18960v1,-0.2877,0.1212,time-series-analysis,0,"Impact of the COVID-19 pandemic on the financial market efficiency of price returns, absolute returns, and volatility in"
+2504.06932v3,0.2203,0.1393,high-frequency-trading,0,Maximizing Battery Storage Profits via High-Frequency Intraday Trading
+2503.09377v1,-0.0983,-0.0956,cointegration,0,Long-range dependent mortality modeling with cointegration
+2501.12591,0.0598,-0.0779,Nash-equilibrium,0,"Optimal Rebate Design: Incentives, Competition and Efficiency in Auction Markets"
+2405.03402v1,-0.1446,0.0357,reference-class-selection,0,Distributional Reference Class Forecasting of Corporate Sales Growth With Multiple Reference Variables
+2303.16158v4,0.0443,-0.0336,machine-learning,0,Behavioral Machine Learning? Regularization and Forecast Bias
+2302.08897v1,-0.0421,0.0284,exponential-smoothing,0,Forecasting the Turkish Lira Exchange Rates through Univariate Techniques: Can the Simple Models Outperform the Sophisti
+2012.11649v3,-0.0794,-0.0186,density-forecasting,0,On the Aggregation of Probability Assessments: Regularized Mixtures of Predictive Densities for Eurozone Inflation and R
+1808.00810v1,0.0129,-0.0690,self-excitation,0,Identifying exogenous and endogenous activity in social media
+1709.06071,0.0241,-0.1180,Stackelberg-game,0,Managing Price Uncertainty in Prosumer-Centric Energy Trading: A Prospect-Theoretic Stackelberg Game Approach
+oa:W3124616821,-0.0111,-0.1610,multiplex-network,284,The multiplex structure of interbank networks
+1405.7483v1,-0.2164,0.1609,nonparametric-estimation,0,Efficient estimation of integrated volatility in presence of infinite variation jumps
+1312.2203v1,-0.0332,-0.0840,overconfidence,0,Research on fresh agriculture product based on overconfidence of the retailer under options and spot markets dominated
+1311.5101v1,-0.0179,-0.0909,copulas,0,Copulas and time series with long-ranged dependences
+1310.2964v1,0.0213,-0.0545,reference-dependence,2,Optimistic versus Pessimistic--Optimal Judgemental Bias with Reference Point
+oa:W2148083922,-0.0649,0.0255,fire-sale,597,"Fear of Fire Sales, Illiquidity Seeking, and Credit Freezes *"
+oa:W61617225,0.0516,-0.0715,sequential-auctions,19,PERFORMANCE AND ANALYSIS OF SPOT TRUCK-LOAD PROCUREMENT MARKETS USING SEQUENTIAL AUCTIONS
+oa:W1984522981,-0.0065,-0.1206,network-theory,844,Network topology of the interbank market
+oa:W3121758033,-0.0378,-0.1791,multinomial-logistic-regression,982,A New Approach to Measuring Financial Contagion
+oa:W827755203,0.0538,-0.0902,bounded-rationality,10,"The Fable of Entry: Bounded Rationality, Market Discipline, and Legal Policy"
+cond-mat/9803308v1,0.0215,-0.1478,minority-game,67,Modeling Market Mechanism with Evolutionary Games
+oa:W1516422303,0.0494,-0.0161,overshooting-theory,352,"Chartists, Fundamentalists, and Trading in the Foreign Exchange Market"
+oa:W2158120228,0.0064,-0.0232,bid-ask-spread,2763,A Simple Implicit Measure of the Effective Bid‐Ask Spread in an Efficient Market
+2606.20807v1,-0.0144,-0.0842,Generalized-Langevin-Equation,0,Tuning ergodicity breaking: Anomalous diffusion under asymptotic power-law forcing
+2606.15929v1,0.0031,-0.0459,wavelet-localisation,0,Wavelet Localisation and Local Modulation Freezing in MRW Unwrapping
+2606.08342v1,-0.0156,-0.0836,spectral-mechanism,0,A spectral model of power-law decay in natural and engineered systems
+2603.09197v2,0.0457,-0.0847,optimization,0,GradNet: A Gradient-Based Framework for Optimal Network Science
+oa:W4285219580,0.0129,-0.0214,Gaussian-process,19,Deep Graph Gaussian Processes for Short-Term Traffic Flow Forecasting From Spatiotemporal Data
+1908.11492v1,-0.0185,-0.1025,Disposition,0,Culture and the disposition effect
+1705.03805,0.0031,-0.0459,game-theory,0,Smart Routing of Electric Vehicles for Load Balancing in Smart Grids
+oa:W2149988534,-0.0349,-0.1784,Disposition effect,272,Prospect Theory and the Disposition Effect
+oa:W2104913438,-0.0324,-0.1873,Economics,987,Technological Revolutions and Financial Capital: The Dynamics of Bubbles and Golden Ages
+oa:W4401096697,-0.0450,-0.2349,Systemic risk,18,Corporate ESG performance and systemic risk: a network perspective
+oa:W4377101102,-0.0481,-0.2639,Systemic risk,26,Global systemic risk dynamic network connectedness during the COVID-19: Evidence from nonlinear Granger causality
+oa:W4308620270,-0.0673,-0.2692,Systemic risk,30,Systemic risk and CO2 emissions in the U.S.
+oa:W3203240297,0.0274,-0.1819,Prospect theory,49,A Peer-to-Peer energy trading market model based on time-driven prospect theory in a smart and sustainable energy commun
+oa:W3026479760,-0.0485,-0.2225,Financial crisis,873,Financial contagion during COVID–19 crisis
+oa:W2965652924,-0.0713,-0.2661,Systemic risk,72,Interconnectedness and systemic risk network of Chinese financial institutions: A LASSO-CoVaR approach
+oa:W2910256560,0.0024,-0.0427,Reinsurance,13,Optimal mean–variance investment/reinsurance with common shock in a regime-switching market
+oa:W2790896740,-0.0729,-0.2717,Systemic risk,107,Systemic risk network of Chinese financial institutions
+oa:W2533919294,-0.0990,-0.1655,Herding,51,Direct comparison of agent-based models of herding in financial markets
+oa:W2278936033,-0.0535,-0.1803,Cryptocurrency,516,Negative bubbles and shocks in cryptocurrency markets
+oa:W2162077858,0.1527,0.0315,High-frequency trading,608,High frequency market microstructure
+oa:W3122163201,-0.0600,-0.2650,Systemic risk,66,Forecasting systemic impact in financial networks
+oa:W2086722369,-0.0816,-0.0979,Expected shortfall,37,Fuzzy value-at-risk and expected shortfall for portfolios with heavy-tailed returns
+oa:W3121341026,-0.1332,-0.0410,Contrarian,40,Prospect theory and trading patterns
+oa:W2153720349,-0.0768,-0.3159,Systemic risk,367,"Bubbles, Financial Crises, and Systemic Risk"
+oa:W2133231666,-0.0011,-0.2112,Interbank lending market,392,The effect of the interbank network structure on contagion and common shocks
+oa:W2063037929,-0.0716,-0.2727,Systemic risk,24,Forecasting Systemic Impact in Financial Networks
+oa:W2060331219,0.0484,-0.0772,High-frequency trading,761,High frequency trading and the new market makers
+oa:W3125481303,-0.0219,-0.1839,Disposition effect,199,"Prospect theory, the disposition effect, and asset prices"
+oa:W3124513728,-0.1777,0.1525,Exchange rate,80,Heterogeneity in exchange rate expectations: evidence on the chartist-fundamentalist approach
+oa:W2083541493,-0.0332,-0.0599,Interest rate,31,Asset allocation under stochastic interest rate with regime switching
+oa:W2065609569,-0.0513,-0.1636,Terrorism,47,Global terrorism and adaptive expectations in financial markets: Evidence from Japanese equity market
+oa:W2014359507,-0.0409,-0.0609,Portfolio,50,Continuous-time mean–variance portfolio selection with liability and regime switching
+oa:W2007163929,-0.0331,0.0264,Econometrics,53,Heterogeneity in Exchange Rate Expectations: Evidence on the Chartist-Fundamentalist Approach
+oa:W3124124033,-0.0866,-0.1941,Herding,892,Dynamic correlation analysis of financial contagion: Evidence from Asian markets
+oa:W1875153640,-0.4951,0.3871,Econometrics,203,Long memory in stochastic volatility
+oa:W3121299579,-0.0353,-0.1618,Economics,322,Asset pricing with heterogeneous beliefs
+oa:W2075052170,0.0190,-0.0050,Harmonics,26,Log-periodic crashes revisited
+oa:W2034161641,-0.4772,0.3723,Volatility (finance),196,"Forecasting realized volatility using a long-memory stochastic volatility model: estimation, prediction and seasonal adj"
+oa:W2144246192,-0.4329,0.3229,Econometrics,657,Bayesian analysis of stochastic volatility models with fat-tails and correlated errors
+oa:W2138349601,-0.3590,0.2378,Econometrics,538,The dynamics of stochastic volatility: evidence from underlying and options markets
+oa:W2169644959,-0.0416,-0.1260,Efficient-market hypothesis,135,On the emergent properties of artificial stock markets: the efficient market hypothesis and the rational expectations hy
+oa:W2163701744,-0.3795,0.2727,Mathematics,308,Rescaled variance and related tests for long memory in volatility and levels
+oa:W2145535248,0.0145,-0.0624,Genetic programming,271,Evolving traders and the business school with genetic programming: A new architecture of the agent-based artificial stoc
+oa:W2067243889,-0.4025,0.2791,Volatility (finance),185,Intraday and interday volatility in the Japanese stock market
+oa:W2017474768,-0.1823,0.0492,Predictability,747,Time series properties of an artificial stock market
+oa:W2006128341,-0.0263,-0.1516,Asset (computer security),1743,Heterogeneous beliefs and routes to chaos in a simple asset pricing model
+oa:W3122275712,-0.0377,-0.1818,Financial economics,820,Asset Pricing Under Endogenous Expectations in an Artificial Stock Market
+oa:W2146399390,-0.4029,0.1385,Volatility (finance),1359,Intraday periodicity and volatility persistence in financial markets
+oa:W2008464074,-0.0345,-0.1520,Asset (computer security),393,Intertemporal Asset Pricing with Heterogeneous Beliefs
+oa:W2035606631,-0.0187,-0.0176,Bid–ask spread,1686,Estimating the components of the bid/ask spread
+oa:W2046519558,-0.0212,-0.0712,Bid–ask spread,5320,Asset pricing and the bid-ask spread
